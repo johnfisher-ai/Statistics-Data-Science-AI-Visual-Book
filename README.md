@@ -1,4 +1,4 @@
-# Statistics & Data Science: A Visual Handbook
+# Statistics, Data Science and AI: A Visual Handbook
 
 A visual, clickable handbook on statistics and data science — HTML chapter pages paired with
 runnable Python notebooks. By **John Fisher**.
