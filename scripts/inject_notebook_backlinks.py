@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+"""Inject a styled "Back to the book" card into the rendered notebook HTML pages.
+
+Run AFTER `nbconvert`. The card is added only to the View-Notebook HTML (which opens
+in the same browser tab) — NOT to the .ipynb files (those open in their own Colab tab,
+so they need no back-link). Wired into both scripts/build_notebook_html.sh and the
+GitHub Actions deploy workflow so it survives every re-render.
+
+Add a chapter's notebooks to MAP as they ship.
+"""
+import os
+
+HTML_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "chapters", "notebooks", "html")
+
+# notebook-html filename -> (relative href to the chapter section, kicker, title)
+MAP = {
+    "ch01_what_is_statistics.html":
+        ("../../ch01.html#notebook", "Back to the book", "Chapter 1 · What Is Statistics?"),
+    "ch01_challenges_solutions.html":
+        ("../../ch01.html#quiz", "Back to the book", "Chapter 1 · Take the quiz &amp; aim for 100%"),
+}
+
+def card(href, kicker, title):
+    # Matches the book's chapter-nav card look (inlined, since nbconvert HTML has no book CSS).
+    return (
+      '<a class="book-backlink" href="' + href + '" '
+      'style="display:flex;align-items:center;gap:12px;max-width:760px;margin:18px auto;'
+      'text-decoration:none;border:1px solid #e6e9f2;border-radius:13px;padding:15px 20px;'
+      'background:#ffffff;box-shadow:0 6px 18px rgba(20,30,80,0.06);'
+      "font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif\">"
+      '<span style="font-size:22px;color:#0891b2;line-height:1">&#8592;</span>'
+      '<span>'
+      '<span style="display:block;font-size:11px;font-weight:700;letter-spacing:0.08em;'
+      'text-transform:uppercase;color:#8b94b3">' + kicker + '</span>'
+      '<span style="font-weight:700;color:#1a2138;font-size:15px">' + title + '</span>'
+      '</span></a>'
+    )
+
+def inject(path, href, kicker, title):
+    html = open(path, encoding="utf-8").read()
+    if 'class="book-backlink"' in html:
+        return "already had link"
+    c = card(href, kicker, title)
+    # top: right after the opening <body ...> tag
+    i = html.find("<body")
+    if i != -1:
+        j = html.find(">", i) + 1
+        html = html[:j] + "\n" + c + html[j:]
+    # bottom: right before </body>
+    html = html.replace("</body>", c + "\n</body>", 1)
+    open(path, "w", encoding="utf-8").write(html)
+    return "injected"
+
+def main():
+    if not os.path.isdir(HTML_DIR):
+        print("No HTML dir yet:", HTML_DIR); return
+    for fname, (href, kicker, title) in MAP.items():
+        path = os.path.join(HTML_DIR, fname)
+        if os.path.exists(path):
+            print(f"{fname}: {inject(path, href, kicker, title)}")
+        else:
+            print(f"{fname}: (not rendered yet, skipped)")
+
+if __name__ == "__main__":
+    main()

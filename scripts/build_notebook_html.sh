@@ -20,4 +20,7 @@ for nb in "$SRC"/*.ipynb; do
   count=$((count+1))
 done
 
+# Add the styled "Back to the book" card to each rendered HTML page
+python3 "$(dirname "$0")/inject_notebook_backlinks.py"
+
 echo "Done. Rendered $count notebook(s) to $OUT/"
