@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Table of Contents — Statistics & Data Science</title>
+  <link rel="stylesheet" href="assets/css/book.css">
+  <style>
+    body { padding-top: 60px; }
+
+    /* ── Layout ── */
+    .toc-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: calc(100vh - 60px);
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      position: sticky; top: 60px; height: calc(100vh - 60px);
+      overflow-y: auto; overflow-x: hidden;
+      background: var(--navy-2);
+      border-right: 1px solid var(--border);
+      padding: 1.5rem 0;
+    }
+    .sidebar-header {
+      padding: 0 1.25rem 1rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 0.75rem;
+    }
+    .sidebar-header h2 {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.75rem;
+    }
+    .search-box {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+    }
+    .search-box svg { flex-shrink: 0; color: var(--text-muted); }
+    .search-box input {
+      background: none; border: none; outline: none;
+      color: var(--text); font-size: 0.82rem; width: 100%;
+      font-family: inherit;
+    }
+    .search-box input::placeholder { color: var(--text-muted); }
+
+    .part-nav-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 0.45rem 1.25rem; cursor: pointer;
+      font-size: 0.78rem; color: var(--text-dim); font-weight: 500;
+      transition: var(--transition); border-left: 2px solid transparent;
+      text-decoration: none;
+    }
+    .part-nav-item:hover { color: var(--cyan); background: rgba(0,212,255,0.05); }
+    .part-nav-item.active { color: var(--cyan); border-left-color: var(--cyan); background: rgba(0,212,255,0.07); }
+    .part-nav-num {
+      width: 20px; height: 20px; border-radius: 4px;
+      background: rgba(255,255,255,0.06);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.65rem; font-weight: 700; flex-shrink: 0;
+    }
+
+    /* ── Main ── */
+    .toc-main {
+      padding: 2.5rem 3rem 5rem;
+      max-width: 900px;
+    }
+    .toc-page-header { margin-bottom: 2.5rem; }
+    .toc-page-header h1 {
+      font-size: 2.2rem; font-weight: 900; color: #fff;
+      letter-spacing: -0.03em; margin-bottom: 0.5rem;
+    }
+    .toc-page-header p { color: var(--text-dim); font-size: 0.9rem; }
+    .toc-meta {
+      display: flex; gap: 1.5rem; flex-wrap: wrap;
+      margin-top: 1.25rem; padding-top: 1.25rem;
+      border-top: 1px solid var(--border);
+    }
+    .toc-meta-item { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--text-dim); }
+    .toc-meta-item strong { color: var(--text); }
+
+    /* ── Part block ── */
+    .part-block {
+      margin-bottom: 1.25rem;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .part-block:hover { border-color: rgba(255,255,255,0.13); }
+    .part-block.expanded { border-color: rgba(0,212,255,0.2); }
+
+    .part-header {
+      display: flex; align-items: center; gap: 1rem;
+      padding: 1.1rem 1.4rem; cursor: pointer;
+      background: rgba(255,255,255,0.03);
+      transition: background 0.2s; user-select: none;
+    }
+    .part-header:hover { background: rgba(255,255,255,0.055); }
+    .part-block.expanded .part-header { background: rgba(0,212,255,0.06); }
+
+    .part-icon {
+      width: 42px; height: 42px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; flex-shrink: 0;
+    }
+    .part-meta { flex: 1; min-width: 0; }
+    .part-label {
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--text-muted); margin-bottom: 2px;
+    }
+    .part-title {
+      font-size: 1rem; font-weight: 700; color: #fff;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .part-count {
+      font-size: 0.72rem; color: var(--text-muted); margin-top: 1px;
+    }
+    .part-chevron {
+      width: 28px; height: 28px; border-radius: 6px;
+      background: rgba(255,255,255,0.05);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: transform 0.25s ease;
+    }
+    .part-block.expanded .part-chevron { transform: rotate(180deg); }
+
+    /* Chapter list */
+    .chapter-list {
+      display: none; padding: 0.5rem 0 0.75rem;
+      border-top: 1px solid var(--border);
+    }
+    .part-block.expanded .chapter-list { display: block; }
+
+    .ch-item {
+      display: flex; align-items: baseline; gap: 0.75rem;
+      padding: 0.55rem 1.4rem 0.55rem 1.4rem;
+      transition: background 0.15s;
+      text-decoration: none;
+    }
+    .ch-item:hover { background: rgba(255,255,255,0.04); }
+    .ch-num {
+      font-family: var(--font-mono); font-size: 0.7rem;
+      color: var(--text-muted); width: 28px; flex-shrink: 0;
+      padding-top: 1px;
+    }
+    .ch-title-wrap { flex: 1; }
+    .ch-title {
+      font-size: 0.875rem; color: var(--text);
+      font-weight: 500; display: block;
+      transition: color 0.15s;
+    }
+    .ch-item:hover .ch-title { color: var(--cyan); }
+    .ch-desc {
+      font-size: 0.75rem; color: var(--text-muted);
+      margin-top: 1px; display: block; line-height: 1.4;
+    }
+    .ch-badges { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+    .badge-new {
+      font-size: 0.62rem; font-weight: 700; letter-spacing: 0.07em;
+      text-transform: uppercase; padding: 1px 6px; border-radius: 4px;
+      background: rgba(245,158,11,0.12); color: var(--amber);
+      border: 1px solid rgba(245,158,11,0.25);
+    }
+    .badge-nb {
+      font-size: 0.62rem; font-weight: 700; letter-spacing: 0.07em;
+      text-transform: uppercase; padding: 1px 6px; border-radius: 4px;
+      background: rgba(16,185,129,0.1); color: var(--green);
+      border: 1px solid rgba(16,185,129,0.25);
+    }
+    .badge-ready {
+      font-size: 0.62rem; font-weight: 700; letter-spacing: 0.07em;
+      text-transform: uppercase; padding: 1px 6px; border-radius: 4px;
+      background: rgba(0,212,255,0.12); color: var(--cyan);
+      border: 1px solid rgba(0,212,255,0.35);
+    }
+    .badge-soon {
+      font-size: 0.62rem; font-weight: 700; letter-spacing: 0.07em;
+      text-transform: uppercase; padding: 1px 6px; border-radius: 4px;
+      background: rgba(255,255,255,0.05); color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+    /* Not-yet-written chapters: visible but non-clickable */
+    .ch-item.disabled { opacity: 0.55; cursor: default; }
+    .ch-item.disabled:hover { background: transparent; }
+    .ch-item.disabled:hover .ch-title { color: var(--text); }
+    .ch-item.ready .ch-title { color: var(--cyan); }
+
+    /* Part color themes */
+    .pi1  .part-icon { background:rgba(0,212,255,0.12); }
+    .pi2  .part-icon { background:rgba(167,139,250,0.12); }
+    .pi3  .part-icon { background:rgba(245,158,11,0.12); }
+    .pi4  .part-icon { background:rgba(16,185,129,0.12); }
+    .pi5  .part-icon { background:rgba(244,114,182,0.12); }
+    .pi6  .part-icon { background:rgba(59,130,246,0.12); }
+    .pi7  .part-icon { background:rgba(251,146,60,0.12); }
+    .pi8  .part-icon { background:rgba(52,211,153,0.12); }
+    .pi9  .part-icon { background:rgba(196,181,253,0.12); }
+    .pi10 .part-icon { background:rgba(253,186,116,0.12); }
+    .pi11 .part-icon { background:rgba(129,140,248,0.12); }
+    .pi12 .part-icon { background:rgba(34,211,238,0.12); }
+    .pi13 .part-icon { background:rgba(163,230,53,0.12); }
+    .pi14 .part-icon { background:rgba(248,113,113,0.12); }
+    .pi15 .part-icon { background:rgba(192,132,252,0.12); }
+    .pi16 .part-icon { background:rgba(94,234,212,0.12); }
+    .pi17 .part-icon { background:rgba(251,207,232,0.1); }
+    .pi18 .part-icon { background:rgba(254,240,138,0.1); }
+
+    /* Expand all toggle */
+    .toc-controls {
+      display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap;
+    }
+    .ctrl-btn {
+      padding: 0.4rem 0.9rem; border-radius: 6px; cursor: pointer;
+      font-size: 0.78rem; font-weight: 600; border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04); color: var(--text-dim);
+      font-family: inherit; transition: var(--transition);
+    }
+    .ctrl-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+
+    /* Search highlight */
+    .ch-item.hidden { display: none; }
+    .part-block.all-hidden { opacity: 0.3; pointer-events: none; }
+
+    @media (max-width: 800px) {
+      .toc-layout { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .toc-main { padding: 1.5rem 1.25rem 4rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Top Nav ── -->
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span>Stats<span>&DS</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="toc.html" class="active">Contents</a>
+  </div>
+</nav>
+
+<div class="toc-layout">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h2>Navigate</h2>
+      <div class="search-box">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M10 10l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <input type="text" id="search-input" placeholder="Search chapters…">
+      </div>
+    </div>
+    <div id="part-nav"></div>
+  </aside>
+
+  <!-- ── Main TOC ── -->
+  <main class="toc-main">
+    <div class="toc-page-header">
+      <h1 class="gradient-text">Table of Contents</h1>
+      <p>A complete visual handbook from statistical foundations to production machine learning.</p>
+      <div class="toc-meta">
+        <div class="toc-meta-item">📚 <strong>18</strong>&nbsp;Parts</div>
+        <div class="toc-meta-item">📖 <strong>103</strong>&nbsp;Chapters</div>
+        <div class="toc-meta-item">🖼️ <strong>758</strong>&nbsp;Visual cards</div>
+        <div class="toc-meta-item">🐍 <strong>100+</strong>&nbsp;Python notebooks</div>
+        <div class="toc-meta-item">✦ <strong>★</strong>&nbsp;= new chapter in v2</div>
+      </div>
+    </div>
+
+    <div class="toc-controls">
+      <button class="ctrl-btn" onclick="expandAll()">Expand All</button>
+      <button class="ctrl-btn" onclick="collapseAll()">Collapse All</button>
+    </div>
+
+    <div id="toc-container"></div>
+  </main>
+</div>
+
+<footer class="book-footer">
+  <strong>Statistics &amp; Data Science: A Visual Handbook</strong> &nbsp;·&nbsp;
+  © 2026 John Fisher &nbsp;·&nbsp; All rights reserved
+</footer>
+
+<script>
+// ── Data ──
+const PARTS = [
+  {
+    n:1, emoji:"🧮", title:"Foundations: Thinking with Data",
+    desc:"What statistics is, the data science workflow, types of data, math prerequisites.",
+    chapters:[
+      {n:1, t:"What Is Statistics?", d:"The science of learning from data; descriptive vs. inferential; a brief history."},
+      {n:2, t:"Statistics, Data Science & AI", d:"How the fields relate; the modern toolset landscape; math you actually need."},
+      {n:3, t:"The Data Science Lifecycle ★", d:"CRISP-DM end-to-end: business understanding → data → preparation → modeling → evaluation → deployment.", isNew:true},
+      {n:4, t:"Types of Data & Variables", d:"Qualitative vs. quantitative; discrete vs. continuous; independent/dependent/control/moderator/mediator/confounding variables."},
+      {n:5, t:"Levels of Measurement", d:"Nominal, ordinal, interval, ratio — and why the level determines which statistics apply."},
+      {n:6, t:"Population vs. Sample; Parameter vs. Statistic", d:"The core vocabulary of inference: μ vs. x̄, σ vs. s, N vs. n."},
+      {n:7, t:"Math Refresher for Statistics", d:"Set theory & Venn diagrams; permutations & combinations; logarithms; key calculus ideas; linear algebra (eigenvalues, matrices); 25 important equations of data science."}
+    ]
+  },
+  {
+    n:2, emoji:"📊", title:"Describing Data",
+    desc:"Summarising distributions numerically — center, spread, shape, position.",
+    chapters:[
+      {n:8,  t:"Measures of Central Tendency", d:"Mean (arithmetic, geometric, harmonic), median, mode; raw vs. grouped data; AM ≥ GM ≥ HM."},
+      {n:9,  t:"Measures of Dispersion", d:"Range, variance, standard deviation, IQR, mean deviation, coefficient of variation."},
+      {n:10, t:"Measures of Position", d:"Quartiles, deciles, percentiles, five-number summary."},
+      {n:11, t:"Shape of a Distribution", d:"Skewness, kurtosis, leptokurtic vs. platykurtic; Q-Q plots."},
+      {n:12, t:"Standardization & Z-Scores", d:"The standard scale, comparing across distributions, outlier detection."},
+      {n:13, t:"Frequency Distributions", d:"Grouped/ungrouped data, relative & cumulative frequency, ogives, weighted mean."}
+    ]
+  },
+  {
+    n:3, emoji:"📉", title:"Visualizing Data",
+    desc:"Choosing and building the right chart for the story you need to tell.",
+    chapters:[
+      {n:14, t:"Charts for Categorical Data", d:"Bar charts, pie charts; bar chart vs. histogram; when to use each."},
+      {n:15, t:"Charts for Numerical Data", d:"Histograms, box plots, line graphs, scatter plots."},
+      {n:16, t:"Multivariate & Specialized Visuals", d:"Heat maps, scatterplot matrices, Lorenz curves, dashboards."},
+      {n:17, t:"Choosing the Right Visualization", d:"Decision guide: data type × message × audience → chart type."}
+    ]
+  },
+  {
+    n:4, emoji:"🧹", title:"Preparing Data for Analysis",
+    desc:"Clean, dedup, handle missing values, transform, and engineer features before modelling.",
+    chapters:[
+      {n:18, t:"The Data-Cleaning Mindset", d:"'Garbage in, garbage out'; what dirty data costs you; taxonomy of data problems."},
+      {n:19, t:"Finding & Removing Duplicates and Inconsistencies ★", d:"Deduplication, standardising categories/formats/casing, data validation rules.", isNew:true},
+      {n:20, t:"Handling Missing Data", d:"MCAR/MAR/MNAR; deletion vs. imputation (mean/median, regression, KNN, MICE)."},
+      {n:21, t:"Detecting & Treating Outliers", d:"IQR rule, z-score method, visual detection; when to remove vs. transform."},
+      {n:22, t:"Transformations", d:"Log, square-root, Box-Cox to address skew & heteroscedasticity."},
+      {n:23, t:"Combining & Reshaping Data ★", d:"Joins/merges, pivoting/melting, parsing dates & times, basic text cleaning.", isNew:true},
+      {n:24, t:"Feature Engineering", d:"Encoding (one-hot, label, target), scaling/normalisation, binning. Revisited in Part XII."},
+      {n:25, t:"Exploratory Data Analysis (EDA)", d:"Univariate, bivariate, multivariate exploration; correlation heatmaps; 5 ways to spot outliers."}
+    ]
+  },
+  {
+    n:5, emoji:"🎲", title:"Probability",
+    desc:"The mathematical language of uncertainty — the engine beneath all of inference.",
+    chapters:[
+      {n:26, t:"Probability Fundamentals", d:"Experiments, sample spaces, events; types of probability; the probability scale."},
+      {n:27, t:"Rules of Probability", d:"Addition rule, multiplication rule, complement; mutually exclusive vs. non-mutually-exclusive events."},
+      {n:28, t:"Conditional Probability & Independence", d:"P(A|B), independent vs. dependent events, tree diagrams."},
+      {n:29, t:"Bayes' Theorem", d:"Prior, likelihood, posterior; frequentist vs. Bayesian worldviews; probability in AI; MLE vs. MAP."},
+      {n:30, t:"Random Variables & Expectation", d:"Discrete vs. continuous; expected value, variance; joint/marginal/conditional distributions; the Jacobian."}
+    ]
+  },
+  {
+    n:6, emoji:"🔔", title:"Probability Distributions",
+    desc:"The named distributions that power statistics and machine learning.",
+    chapters:[
+      {n:31, t:"Discrete Distributions", d:"Bernoulli, binomial, Poisson, geometric, hypergeometric, negative binomial — PMFs, mean, variance."},
+      {n:32, t:"Continuous Distributions", d:"Uniform, normal/Gaussian, exponential, gamma; PDFs and CDFs."},
+      {n:33, t:"The Normal Distribution in Depth", d:"The bell curve, the empirical rule (68-95-99.7), the standard normal, z-tables."},
+      {n:34, t:"Sampling Distributions & the Central Limit Theorem", d:"Standard error, why normality emerges; the square-root law."},
+      {n:35, t:"Distributions for Inference", d:"Student's t, chi-square, F — how they relate to the normal; degrees of freedom."}
+    ]
+  },
+  {
+    n:7, emoji:"🎯", title:"Sampling & Data Collection",
+    desc:"How we collect data, design studies, and size samples correctly.",
+    chapters:[
+      {n:36, t:"Why We Sample", d:"Census vs. sampling; sampling error; cost, time, and feasibility trade-offs."},
+      {n:37, t:"Probability Sampling Methods", d:"Simple random, systematic, stratified, cluster, multistage."},
+      {n:38, t:"Non-Probability Sampling Methods", d:"Convenience, quota, purposive, snowball."},
+      {n:39, t:"Determining Sample Size", d:"Formulas for means, proportions, ANOVA, regression; margin of error; power-based sizing."},
+      {n:40, t:"Study Design & Data Quality", d:"Experimental vs. observational studies; randomisation, replication, blocking; reliability & validity; accuracy vs. precision."},
+      {n:41, t:"Bias in Data Collection ★", d:"Selection bias, survivorship bias, response/non-response bias, confirmation bias; how to mitigate.", isNew:true}
+    ]
+  },
+  {
+    n:8, emoji:"📏", title:"Estimation & Confidence Intervals",
+    desc:"Moving from sample statistics to statements about population parameters.",
+    chapters:[
+      {n:42, t:"Point vs. Interval Estimation", d:"Estimators and their properties: unbiased, consistent, efficient; BLUE."},
+      {n:43, t:"Confidence Intervals for a Mean", d:"σ known (z-interval) vs. σ unknown (t-interval); checking conditions."},
+      {n:44, t:"Confidence Intervals for Proportions & Differences", d:"One- and two-sample intervals; success-failure condition."},
+      {n:45, t:"Margin of Error", d:"What drives it; effect of sample size; precision vs. confidence."},
+      {n:46, t:"Resampling & Simulation ★", d:"Bootstrap confidence intervals, jackknife, permutation tests, Monte Carlo methods.", isNew:true}
+    ]
+  },
+  {
+    n:9, emoji:"⚗️", title:"Hypothesis Testing & Inference",
+    desc:"The largest section — the full toolkit of statistical decision-making.",
+    chapters:[
+      {n:47, t:"The Logic of Hypothesis Testing", d:"Null vs. alternative; one- vs. two-tailed; the test-statistic idea; steps of a test."},
+      {n:48, t:"Significance, p-values & Errors", d:"α, p-values, Type I/II errors, statistical power; p-value misconceptions; effect size (Cohen's d, η²)."},
+      {n:49, t:"z-Tests", d:"One-sample mean and proportion; two-sample z-test; when population σ is known."},
+      {n:50, t:"t-Tests", d:"One-sample, independent two-sample, paired, Welch's; degrees of freedom."},
+      {n:51, t:"ANOVA", d:"One-way, two-way/factorial, post-hoc (Tukey, Bonferroni, Holm/FDR); ANCOVA, MANOVA, MANCOVA."},
+      {n:52, t:"Chi-Square Tests", d:"Goodness-of-fit, independence, homogeneity; expected counts; effect size."},
+      {n:53, t:"Nonparametric Tests", d:"Mann-Whitney U, Wilcoxon signed-rank, Kruskal-Wallis, Friedman; when to go nonparametric."},
+      {n:54, t:"Choosing the Right Test", d:"Decision guides, assumption checklists, normality tests, the multiple-comparisons problem."},
+      {n:55, t:"A/B Testing & Online Experiments ★", d:"Controlled experiments, conversion metrics, sample-size & duration planning, common pitfalls.", isNew:true}
+    ]
+  },
+  {
+    n:10, emoji:"🔗", title:"Correlation & Association",
+    desc:"Measuring the direction and strength of relationships between variables.",
+    chapters:[
+      {n:56, t:"Covariance", d:"What it measures; covariance vs. correlation; units and scale."},
+      {n:57, t:"Correlation Coefficients", d:"Pearson's r, Spearman's rank, partial correlation; strength & direction; interpretation guide."},
+      {n:58, t:"Correlation vs. Causation", d:"Confounding variables, spurious relationships, reverse causation; DAG intuition."}
+    ]
+  },
+  {
+    n:11, emoji:"📐", title:"Regression Analysis",
+    desc:"From simple linear regression to panel data econometrics.",
+    chapters:[
+      {n:59, t:"Simple Linear Regression", d:"Least squares, slope/intercept, prediction, R²; worked examples."},
+      {n:60, t:"The OLS Framework", d:"Normal equations, matrix form, the Gauss-Markov theorem (BLUE)."},
+      {n:61, t:"Multiple Linear Regression", d:"Coefficients, adjusted R², dummy variables, interaction terms, coefficient interpretation."},
+      {n:62, t:"Regression Assumptions & Diagnostics", d:"Linearity, independence, homoscedasticity, normality of errors; multicollinearity & VIF; heteroscedasticity tests."},
+      {n:63, t:"Logistic Regression", d:"The sigmoid, odds ratios, MLE estimation; binary & multinomial."},
+      {n:64, t:"Regularisation & Flexible Models", d:"Ridge, LASSO, elastic net; polynomial regression & splines."},
+      {n:65, t:"Generalised Linear Models ★", d:"The GLM umbrella (link functions); Poisson & count regression; overdispersion.", isNew:true},
+      {n:66, t:"Econometrics & Panel Data", d:"Fixed vs. random effects, endogeneity & instrumental variables, omitted-variable bias, log transformations, ARDL."}
+    ]
+  },
+  {
+    n:12, emoji:"🤖", title:"Machine Learning",
+    desc:"From the ML workflow and core algorithms through ensemble methods and model evaluation.",
+    chapters:[
+      {n:67, t:"What Is Machine Learning?", d:"Taxonomy; supervised vs. unsupervised vs. reinforcement; statistics vs. ML."},
+      {n:68, t:"The Machine Learning Workflow ★", d:"Train/validation/test split, cross-validation, hyperparameter tuning (grid/random search), pipelines, data leakage.", isNew:true},
+      {n:69, t:"Distance Metrics", d:"Euclidean, Manhattan, Minkowski, cosine, Jaccard, Hamming, Mahalanobis."},
+      {n:70, t:"Core Classification & Regression Algorithms", d:"KNN, decision trees, naïve Bayes, SVM, logistic regression; when to use each."},
+      {n:71, t:"Ensemble Methods", d:"Bagging, random forests, boosting (AdaBoost, XGBoost, LightGBM, CatBoost), stacking."},
+      {n:72, t:"Feature Selection ★", d:"Filter, wrapper & embedded methods; regularisation-based selection; importance scores.", isNew:true},
+      {n:73, t:"Optimisation & Gradient Descent ★", d:"Loss functions, SGD, Adam, learning rate schedules; the geometry of training.", isNew:true},
+      {n:74, t:"Model Evaluation", d:"Confusion matrix; accuracy, precision, recall, F1; ROC-AUC; MAE, MSE, RMSE, R²."},
+      {n:75, t:"Model Pitfalls", d:"Overfitting, the bias-variance trade-off, imbalanced data (SMOTE), cross-validation strategies."},
+      {n:76, t:"Model Interpretability & Explainability ★", d:"Feature importance, SHAP values, LIME, partial dependence plots.", isNew:true}
+    ]
+  },
+  {
+    n:13, emoji:"🗂️", title:"Unsupervised Learning",
+    desc:"Finding structure in unlabelled data — clustering, dimensionality reduction, anomaly detection.",
+    chapters:[
+      {n:77, t:"Clustering", d:"K-means, hierarchical/dendrograms, DBSCAN; choosing k (elbow, silhouette); distance metrics."},
+      {n:78, t:"Dimensionality Reduction", d:"PCA (loadings, scree plots, biplots), factor analysis, t-SNE/UMAP."},
+      {n:79, t:"Association Rule Mining ★", d:"Market-basket analysis, Apriori, FP-Growth; support, confidence, lift.", isNew:true},
+      {n:80, t:"Anomaly Detection ★", d:"Statistical, distance- and density-based methods; isolation forest; use cases.", isNew:true}
+    ]
+  },
+  {
+    n:14, emoji:"📅", title:"Time Series & Forecasting",
+    desc:"Decomposing, modelling, and forecasting temporal data.",
+    chapters:[
+      {n:81, t:"Components of a Time Series", d:"Trend, seasonality, cyclical, irregular; stationarity; white noise."},
+      {n:82, t:"Forecasting Models", d:"Moving averages, exponential smoothing, ARIMA/SARIMA; dynamic vs. static forecasting."},
+      {n:83, t:"Volatility & Advanced Models", d:"ARCH/GARCH; ACF/PACF; unit-root tests (ADF, PP, KPSS); Granger causality; ARDL."},
+      {n:84, t:"Forecast Accuracy", d:"ME, MAE, MSE, RMSE, MAPE, Theil's U; comparing models."}
+    ]
+  },
+  {
+    n:15, emoji:"🔭", title:"Advanced & Applied Topics",
+    desc:"Bayesian inference, causal inference, survival analysis, deep learning, NLP, and more.",
+    chapters:[
+      {n:85, t:"Bayesian Inference in Practice", d:"MLE vs. MAP vs. full Bayes; MCMC/HMC (PyMC3/Stan); credible intervals; posterior predictive checks."},
+      {n:86, t:"Causal Inference ★", d:"DAGs, potential outcomes, propensity scores, difference-in-differences, regression discontinuity, instrumental variables.", isNew:true},
+      {n:87, t:"Survival Analysis ★", d:"Censoring, Kaplan-Meier curves, log-rank test, Cox proportional-hazards regression.", isNew:true},
+      {n:88, t:"Structural Equation Modelling & Mixed Models ★", d:"Latent variables, path analysis, random-intercept/slope models, multilevel modelling.", isNew:true},
+      {n:89, t:"Deep Learning Primer", d:"Perceptrons & neural nets, bias terms, activation functions; CNNs, RNNs/LSTMs, Transformers."},
+      {n:90, t:"Recommendation Systems ★", d:"Collaborative & content-based filtering, matrix factorisation, implicit feedback.", isNew:true},
+      {n:91, t:"Reinforcement Learning Primer ★", d:"Agents, rewards, policies, Q-learning, Deep Q-Networks.", isNew:true},
+      {n:92, t:"NLP & Large Language Models", d:"Text representation, evaluation metrics (BLEU, ROUGE, perplexity, BERTScore); LLM overview."},
+      {n:93, t:"Big Data & Scaling", d:"The 5 Vs; Hadoop & Spark; distributed computing concepts."},
+      {n:94, t:"From Model to Production (MLOps)", d:"Deployment, monitoring, model drift, trust and safety for AI agents."}
+    ]
+  },
+  {
+    n:16, emoji:"🛠️", title:"Tools & Workflow",
+    desc:"The practitioner's toolkit — Python, R, SQL, statistical software, and reproducibility.",
+    chapters:[
+      {n:95,  t:"Python for Data Analysis", d:"NumPy, pandas (groupby, merge, cleaning), Matplotlib, Seaborn; the analytics roadmap."},
+      {n:96,  t:"R for Statistics", d:"Base R, tidyverse/dplyr, ggplot2; reading statistical output."},
+      {n:97,  t:"Statistical Software", d:"SPSS, Stata, EViews, Minitab; importing data; interpreting outputs."},
+      {n:98,  t:"SQL & Databases ★", d:"Querying, joins, aggregation, window functions; getting data ready for analysis.", isNew:true},
+      {n:99,  t:"Excel & BI Tools", d:"What-if analysis, Goal Seek, dashboards; Power BI & Tableau."},
+      {n:100, t:"Reproducibility & Version Control ★", d:"Git, Jupyter notebooks, virtual environments, project structure best practices.", isNew:true}
+    ]
+  },
+  {
+    n:17, emoji:"🌐", title:"Communicating Results & Data Ethics",
+    desc:"Translating analysis into decisions — and doing it responsibly.",
+    chapters:[
+      {n:101, t:"Communicating Insights & Storytelling with Data ★", d:"Reports, stakeholder dashboards, effective tables & figures, avoiding misleading visuals.", isNew:true},
+      {n:102, t:"Data Ethics, Bias & Fairness ★", d:"Algorithmic bias, fairness metrics, privacy, data governance, responsible AI.", isNew:true}
+    ]
+  },
+  {
+    n:18, emoji:"🏆", title:"Capstone",
+    desc:"Apply the full pipeline end-to-end on real problems.",
+    chapters:[
+      {n:103, t:"End-to-End Case Studies ★", d:"Clean → explore → model → evaluate → communicate; full worked examples using the book's visual cards as anchors.", isNew:true}
+    ]
+  }
+];
+
+// ── Which chapters are written & live? (add chapter numbers here as they ship) ──
+const AVAILABLE = new Set([1]);
+
+// ── Render TOC ──
+const container = document.getElementById('toc-container');
+const navEl = document.getElementById('part-nav');
+const colors = ['cyan','purple','amber','green','pink','blue','cyan','green','purple','amber','blue','cyan','green','amber','purple','blue','pink','amber'];
+
+PARTS.forEach((part, idx) => {
+  const colorClass = `pi${part.n}`;
+  const totalChs = part.chapters.length;
+
+  // Sidebar nav item
+  const navItem = document.createElement('a');
+  navItem.className = 'part-nav-item';
+  navItem.href = `#part-${part.n}`;
+  navItem.innerHTML = `<span class="part-nav-num">${part.n}</span>${part.title.split(':')[0].split('—')[0].trim()}`;
+  navEl.appendChild(navItem);
+
+  // Part block
+  const block = document.createElement('div');
+  block.className = `part-block ${colorClass}`;
+  block.id = `part-${part.n}`;
+
+  const chapterItems = part.chapters.map(ch => {
+    const ready = AVAILABLE.has(ch.n);
+    const href  = `chapters/ch${String(ch.n).padStart(2,'0')}.html`;
+    const tag   = ready ? 'a' : 'div';
+    const attrs = ready ? `class="ch-item ready" href="${href}"` : `class="ch-item disabled"`;
+    const statusBadge = ready
+      ? '<span class="badge-ready">✓ Ready</span><span class="badge-nb">🐍 Notebook</span>'
+      : '<span class="badge-soon">Coming soon</span>';
+    return `
+    <${tag} ${attrs}>
+      <span class="ch-num">${String(ch.n).padStart(2,'0')}</span>
+      <span class="ch-title-wrap">
+        <span class="ch-title">${ch.t.replace(' ★','')}</span>
+        <span class="ch-desc">${ch.d}</span>
+        <span class="ch-badges">
+          ${ch.isNew ? '<span class="badge-new">★ New</span>' : ''}
+          ${statusBadge}
+        </span>
+      </span>
+    </${tag}>`;
+  }).join('');
+
+  block.innerHTML = `
+    <div class="part-header" onclick="togglePart(this)">
+      <div class="part-icon">${part.emoji}</div>
+      <div class="part-meta">
+        <div class="part-label">Part ${part.n} of 18</div>
+        <div class="part-title">${part.title}</div>
+        <div class="part-count">${totalChs} chapter${totalChs>1?'s':''} · ${part.desc}</div>
+      </div>
+      <div class="part-chevron">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+    <div class="chapter-list">${chapterItems}</div>
+  `;
+  container.appendChild(block);
+});
+
+// ── Toggle ──
+function togglePart(header) {
+  header.parentElement.classList.toggle('expanded');
+}
+function expandAll() {
+  document.querySelectorAll('.part-block').forEach(b => b.classList.add('expanded'));
+}
+function collapseAll() {
+  document.querySelectorAll('.part-block').forEach(b => b.classList.remove('expanded'));
+}
+
+// ── Search ──
+document.getElementById('search-input').addEventListener('input', function() {
+  const q = this.value.toLowerCase().trim();
+  document.querySelectorAll('.part-block').forEach(block => {
+    let anyVisible = false;
+    block.querySelectorAll('.ch-item').forEach(item => {
+      const text = item.textContent.toLowerCase();
+      const match = !q || text.includes(q);
+      item.classList.toggle('hidden', !match);
+      if (match) anyVisible = true;
+    });
+    block.classList.toggle('all-hidden', !anyVisible);
+    if (q && anyVisible) block.classList.add('expanded');
+  });
+});
+
+// ── Sidebar active on scroll ──
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const id = e.target.id;
+      document.querySelectorAll('.part-nav-item').forEach(el => {
+        el.classList.toggle('active', el.getAttribute('href') === `#${id}`);
+      });
+    }
+  });
+}, { rootMargin: '-30% 0px -60% 0px' });
+document.querySelectorAll('.part-block').forEach(b => observer.observe(b));
+</script>
+</body>
+</html>
