@@ -40,6 +40,10 @@ MAP = {
         ("../../ch06.html#notebook", "Back to the book", "Chapter 6 · Population vs. Sample"),
     "ch06_challenges_solutions.html":
         ("../../ch06.html#quiz", "Back to the book", "Chapter 6 · Take the quiz &amp; aim for 100%"),
+    "ch07_math_refresher.html":
+        ("../../ch07.html#notebook", "Back to the book", "Chapter 7 · Math Refresher for Statistics"),
+    "ch07_challenges_solutions.html":
+        ("../../ch07.html#quiz", "Back to the book", "Chapter 7 · Take the quiz &amp; aim for 100%"),
 }
 
 def card(href, kicker, title):
