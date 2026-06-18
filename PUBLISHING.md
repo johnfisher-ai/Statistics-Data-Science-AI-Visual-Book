@@ -57,6 +57,10 @@ First deploy takes ~1–2 minutes; the live URL appears under the Actions run an
    ```
 4. **Flip the chapter live** in `toc.html`: add its number to `const AVAILABLE = new Set([1, ...]);`
    and restore the "Next" link on the previous chapter page.
+   - **TOC badges (transient — reset every push cycle):** a published chapter never shows the planning ★ "New".
+     If you *revised an already-published chapter's content* this cycle, add its number to
+     `const UPDATED_CHAPTERS = new Set([...])` so it shows a temporary "✦ Updated" badge. **Clear
+     `UPDATED_CHAPTERS` back to `new Set([])` on the very next push cycle** so the badge doesn't linger.
 5. **(Optional) Render locally to preview:** `bash scripts/build_notebook_html.sh`
    *(Not required for production — the deploy workflow renders notebooks in the cloud.)*
 6. **Commit & push:**
