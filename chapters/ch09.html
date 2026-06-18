@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 9 · Measures of Dispersion — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .formula-box { background:var(--panel); border:1px solid var(--line); border-left:4px solid var(--c-cyan);
+      border-radius:10px; padding:0.9rem 1.2rem; margin:1rem 0; font-family:'JetBrains Mono',monospace;
+      font-size:1.0rem; color:var(--ink); text-align:center; }
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.88rem;
+      border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.65rem 0.9rem; text-align:left; border-bottom:1px solid var(--line); }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.76rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+  </style>
+</head>
+<body class="chapter">
+
+<!-- ============ TOP NAV ============ -->
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch09_dispersion.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<!-- ============ HERO ============ -->
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part II · Describing Data</span><span class="sep">/</span>
+      <span>Chapter 9</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part II · Describing Data</span> Summarizing a dataset</div>
+    <h1>Measures of <span class="accent">Dispersion</span></h1>
+    <p class="dek">The average tells you where the data sits. Dispersion tells you how spread out it is, and that is
+       often the more important half of the story.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~13 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 9</b>&nbsp;of 103</div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <!-- ===== Intro / why spread ===== -->
+  <section id="intro">
+    <p class="lead">Two classes both average 75 on a test. In one, everyone scored in the 70s. In the other, scores
+       ran from 50 to 100. Same mean, completely different reality. <span class="term">Dispersion</span> is what the
+       average leaves out: how much the data <em>varies</em>.</p>
+
+    <div class="def-card">
+      <div class="sigma">σ</div>
+      <div class="def-body">
+        A <span class="def-kw">measure of dispersion</span> (or spread) summarizes how far the values stray from
+        the center. The main ones are the <span class="def-kw">range</span>, the
+        <span class="def-kw">interquartile range</span>, the <span class="def-kw">variance</span> and
+        <span class="def-kw">standard deviation</span>, and the <span class="def-kw">coefficient of variation</span>.
+      </div>
+    </div>
+    <div class="callout note">
+      <div class="cico">📉</div>
+      <div><div class="ctitle">Why it matters</div>
+        <p>A self-driving car that brakes "on average" at the right moment but with huge variability is dangerous.
+           In finance, spread <em>is</em> risk. Reporting a mean without a measure of spread tells only half the story.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: Range & IQR ===== -->
+  <section id="range-iqr">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Range, Quartiles &amp; the IQR</h2></div>
+    <p>The simplest measure is the <span class="term">range</span> (max − min), but it depends entirely on the two
+       most extreme values, so a single outlier wrecks it. The <span class="term">interquartile range (IQR)</span>
+       is sturdier: it's the spread of the <em>middle half</em> of the data.</p>
+
+    <p>Sort the data and split it into quarters. <span class="hl">Q1</span> is the 25th percentile,
+       <span class="hl">Q3</span> the 75th, and <span class="math" style="font-family:'JetBrains Mono',monospace">IQR = Q3 − Q1</span>.
+       The <span class="term">five-number summary</span> (min, Q1, median, Q3, max) is exactly what a
+       <span class="term">box plot</span> draws:</p>
+
+    <figure style="margin:1.5rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.4rem">
+      <svg viewBox="0 0 720 190" width="100%" font-family="Inter, sans-serif" aria-label="Anatomy of a box plot">
+        <!-- whisker line -->
+        <line x1="120" y1="80" x2="520" y2="80" stroke="#8b94b3" stroke-width="2"/>
+        <!-- whisker caps -->
+        <line x1="120" y1="62" x2="120" y2="98" stroke="#8b94b3" stroke-width="2"/>
+        <line x1="520" y1="62" x2="520" y2="98" stroke="#8b94b3" stroke-width="2"/>
+        <!-- box Q1..Q3 -->
+        <rect x="220" y="50" width="200" height="60" rx="4" fill="#e0f7fb" stroke="#0891b2" stroke-width="2"/>
+        <!-- median -->
+        <line x1="300" y1="50" x2="300" y2="110" stroke="#7c3aed" stroke-width="3"/>
+        <!-- outlier -->
+        <circle cx="640" cy="80" r="6" fill="#db2777"/>
+        <!-- labels -->
+        <g font-size="11.5" fill="#1a2138" text-anchor="middle" font-weight="700">
+          <text x="120" y="130">Min</text>
+          <text x="220" y="40">Q1</text>
+          <text x="300" y="40" fill="#7c3aed">Median</text>
+          <text x="420" y="40">Q3</text>
+          <text x="520" y="130">Max</text>
+          <text x="640" y="110" fill="#db2777">outlier</text>
+        </g>
+        <!-- IQR bracket -->
+        <text x="320" y="150" text-anchor="middle" font-size="11" fill="#0891b2" font-weight="700">← IQR (middle 50%) →</text>
+        <text x="640" y="55" text-anchor="middle" font-size="9.5" fill="#8b94b3">beyond 1.5×IQR</text>
+      </svg>
+      <figcaption style="text-align:center;font-size:0.8rem;color:var(--ink-faint);margin-top:0.3rem">
+        The box spans Q1 to Q3 (the IQR); whiskers reach the furthest non-outlier points; dots beyond the
+        1.5×IQR fences are flagged as outliers.
+      </figcaption>
+    </figure>
+
+    <div class="callout tip">
+      <div class="cico">🔎</div>
+      <div><div class="ctitle">The 1.5×IQR outlier rule</div>
+        <p>A common, automatic test: any value below <span class="math" style="font-family:'JetBrains Mono',monospace">Q1 − 1.5×IQR</span>
+           or above <span class="math" style="font-family:'JetBrains Mono',monospace">Q3 + 1.5×IQR</span> is flagged
+           as a potential outlier. It's exactly how box plots decide which points to draw separately.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 2: Variance & SD ===== -->
+  <section id="variance-sd">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Variance &amp; Standard Deviation</h2></div>
+    <p>These are the workhorses of spread. The idea: measure how far each value is from the mean (its
+       <em>deviation</em>), then average those distances. Two wrinkles make it work.</p>
+
+    <div class="cardgrid cols-2">
+      <div class="ic-card bg-cyan"><div class="ic" style="background:#fff">②</div>
+        <h4>Variance: square the deviations</h4>
+        <p>Deviations sum to zero (positives cancel negatives), so we <strong>square</strong> them first. Squaring
+           also makes big misses count more. The catch: the result is in <em>squared</em> units.</p></div>
+      <div class="ic-card bg-purple"><div class="ic" style="background:#fff">√</div>
+        <h4>Standard deviation: take the root</h4>
+        <p>The square root of the variance brings the number back into the <strong>data's own units</strong>, which
+           is why we usually report the standard deviation, not the variance.</p></div>
+    </div>
+
+    <div class="formula-box">variance = average of (value − mean)²  &nbsp;·&nbsp;  standard deviation = √variance</div>
+
+    <div class="callout key">
+      <div class="cico">🧮</div>
+      <div><div class="ctitle">Population vs. sample: why divide by n − 1?</div>
+        <p>For a whole <strong>population</strong> you divide the squared deviations by N (giving σ², σ). For a
+           <strong>sample</strong> you divide by <strong>n − 1</strong> (giving s², s). The reason: the sample mean
+           sits at the center of its own data, so deviations from it run slightly too small. Dividing by the smaller
+           n − 1 (called <strong>Bessel's correction</strong>) nudges the estimate up to undo that bias. With large
+           n the difference is tiny; it matters most for small samples.</p></div>
+    </div>
+    <p style="font-size:0.9rem;color:var(--ink-faint)">Heads-up on units: if data is in dollars, the variance is in
+       "dollars squared" (not meaningful to read), while the standard deviation is back in dollars. Always report spread
+       with the standard deviation.</p>
+  </section>
+
+  <!-- ===== Section 3: Empirical rule ===== -->
+  <section id="empirical">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Reading the SD: the 68-95-99.7 Rule</h2></div>
+    <p>A standard deviation only feels meaningful once you can picture it. For data that is roughly
+       <span class="hl">bell-shaped (normal)</span>, the <span class="term">empirical rule</span> says:</p>
+
+    <div class="cardgrid cols-3">
+      <div class="ic-card bg-cyan"><h4 class="tx-cyan">±1 SD ≈ 68%</h4><p>About two-thirds of values fall within one standard deviation of the mean.</p></div>
+      <div class="ic-card bg-purple"><h4 class="tx-purple">±2 SD ≈ 95%</h4><p>The vast majority fall within two. Values beyond ±2 SD start to look unusual.</p></div>
+      <div class="ic-card bg-amber"><h4 class="tx-amber">±3 SD ≈ 99.7%</h4><p>Almost everything. A value past ±3 SD is genuinely rare.</p></div>
+    </div>
+
+    <div class="callout note">
+      <div class="cico">📐</div>
+      <div><div class="ctitle">Two important footnotes</div>
+        <p><strong>Chebyshev's rule</strong> works for <em>any</em> shape of data, not just bell curves: at least
+           75% of values lie within 2 SD and at least 89% within 3 SD (looser, but always true). And the SD is the
+           unit behind the <strong>z-score</strong>, <span class="math" style="font-family:'JetBrains Mono',monospace">z = (value − mean) / SD</span>,
+           which says how many standard deviations from the mean a value is. More on that in the standardization chapter.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 4: MAD + CV + robustness ===== -->
+  <section id="mad-cv">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Two More Tools: MAD &amp; the Coefficient of Variation</h2></div>
+
+    <table class="disp-table">
+      <thead><tr><th>Measure</th><th>What it is</th><th>Good for</th><th>Watch out</th></tr></thead>
+      <tbody>
+        <tr><td class="nm tx-cyan">Range</td><td>Max − Min</td><td>A 5-second feel for spread</td><td>Ruined by one outlier</td></tr>
+        <tr><td class="nm tx-green">IQR</td><td>Q3 − Q1 (middle 50%)</td><td>Skewed data; box plots</td><td>Ignores the tails entirely</td></tr>
+        <tr><td class="nm tx-purple">Std deviation</td><td>√(avg squared deviation)</td><td>Bell-shaped data; most of statistics</td><td>Sensitive to outliers</td></tr>
+        <tr><td class="nm tx-amber">MAD</td><td>Avg of |value − mean|</td><td>An intuitive, robust alternative to SD</td><td>Less tidy mathematically</td></tr>
+        <tr><td class="nm tx-pink">CV</td><td>SD ÷ mean (often ×100%)</td><td>Comparing spread across different units/scales</td><td>Needs positive data with a true zero</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout key">
+      <div class="cico">📊</div>
+      <div><div class="ctitle">The coefficient of variation makes spreads comparable</div>
+        <p>Is height (in cm) more variable than weight (in kg)? You can't compare their standard deviations directly,
+           the units differ. The <strong>CV = SD / mean</strong> is unitless, so it can: a higher CV means more
+           <em>relative</em> spread. Just don't use it when the mean is near zero or the data can be negative.</p></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">🧭</div>
+      <div><div class="ctitle">Which measure should you report?</div>
+        <p>Use <strong>mean ± standard deviation</strong> for roughly symmetric data with no wild outliers. Use the
+           <strong>median + IQR</strong> (and a box plot) for skewed or outlier-prone data, because, like the median,
+           the IQR shrugs off extreme values.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Bring it to life in Python</h3>
+          <p>The companion notebook contrasts two same-mean datasets, builds variance and SD from scratch (n vs n−1),
+             checks the 68-95-99.7 rule, runs the box-plot outlier test, and compares scales with the coefficient of variation.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch09_dispersion.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch09_dispersion.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch09_dispersion.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, <code>matplotlib</code>
+      and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Key Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Dispersion</strong> measures what the mean hides: how spread out the data is.</span></li>
+        <li><span class="ck">✓</span><span><strong>Range</strong> is quick but fragile; the <strong>IQR</strong> (middle 50%) resists outliers and drives the box plot and the 1.5×IQR rule.</span></li>
+        <li><span class="ck">✓</span><span><strong>Variance</strong> squares deviations; <strong>standard deviation</strong> roots it back into real units. Use n − 1 for a sample.</span></li>
+        <li><span class="ck">✓</span><span><strong>68-95-99.7</strong> makes the SD a ruler for bell-shaped data; Chebyshev gives looser limits for any shape; the z-score counts SDs from the mean.</span></li>
+        <li><span class="ck">✓</span><span><strong>CV</strong> compares relative spread across scales; report mean ± SD for symmetric data, median + IQR when skewed.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Practice Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges covering the chapter. Beginner to intermediate; try them on paper or in Python.</p>
+
+    <div class="challenges">
+      <div class="challenge">
+        <div class="cnum">1</div>
+        <div class="cbody">
+          <h4>Range &amp; IQR</h4>
+          <p>For <code>[12, 15, 14, 10, 18, 20, 13, 16]</code>, find the <strong>range</strong>, <strong>Q1</strong>,
+             <strong>Q3</strong>, and the <strong>IQR</strong>.</p>
+          <div class="chint">Hint: sort first; the IQR is Q3 − Q1.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">2</div>
+        <div class="cbody">
+          <h4>Variance &amp; SD by hand</h4>
+          <p>For <code>[5, 7, 3, 9, 6]</code>, compute the deviations from the mean, then the <strong>sample
+             variance</strong> (÷ n−1) and <strong>sample standard deviation</strong>.</p>
+          <div class="chint">Hint: the deviations should sum to zero; divide the squared sum by n−1 = 4.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">3</div>
+        <div class="cbody">
+          <h4>Use the 68-95-99.7 rule</h4>
+          <p>Scores are bell-shaped with <strong>mean 500, SD 100</strong>. (a) What range holds the middle ~95%?
+             (b) Roughly what % score above 700?</p>
+          <div class="chint">Hint: 700 is 2 SD above the mean.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">4</div>
+        <div class="cbody">
+          <h4>Coefficient of variation</h4>
+          <p>Stock A: mean 8%, SD 4%. Stock B: mean 2%, SD 1.5%. Which is <strong>relatively</strong> more variable?</p>
+          <div class="chint">Hint: CV = SD ÷ mean; compare the two CVs, not the raw SDs.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">5</div>
+        <div class="cbody">
+          <h4>Robustness check</h4>
+          <p>Start with <code>[20, 22, 21, 23, 19]</code>, then add <code>200</code>. Recompute the <strong>SD</strong>
+             and the <strong>IQR</strong>. Which measure is the robust one, and why?</p>
+          <div class="chint">Hint: see which number barely moves.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges in the same visual
+           style. Try them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/ch09_challenges_solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch09_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch09_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on dispersion. Answer them, hit <strong>Check Answers</strong>, and keep refining until
+       you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <!-- ===== Chapter Nav ===== -->
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch08.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 8 · Previous</span><br><span class="cn-title">Measures of Central Tendency</span></span>
+    </a>
+    <div class="cn-btn next" style="cursor:default;opacity:0.6" title="Coming soon">
+      <span><span class="cn-dir">Chapter 10 · Coming soon</span><br><span class="cn-title">Measures of Position</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </div>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 9 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<!-- ===== Quiz data for this chapter ===== -->
+<script>
+  window.QUIZ_ID = "ch09";
+  window.QUIZ_DATA = [
+    {
+      q: "Why isn't the mean alone enough to describe a dataset?",
+      options: [
+        "Means are hard to compute",
+        "Two datasets can share a mean yet differ wildly in spread",
+        "The mean is always wrong for real data",
+        "It only works for categorical data"
+      ],
+      answer: 1,
+      explain: "Central tendency tells you the center; dispersion tells you how spread out the values are. You need both."
+    },
+    {
+      q: "The interquartile range (IQR) is…",
+      options: [
+        "Max minus min",
+        "Q3 minus Q1, the spread of the middle 50% of the data",
+        "The average distance from the mean",
+        "The most frequent value"
+      ],
+      answer: 1,
+      explain: "IQR = Q3 − Q1 captures the middle half of the data and resists outliers."
+    },
+    {
+      q: "Why do we SQUARE the deviations when computing variance?",
+      options: [
+        "To make the math harder",
+        "So positive and negative deviations don't cancel to zero (and big gaps count more)",
+        "To convert to percentages",
+        "Because deviations are always negative"
+      ],
+      answer: 1,
+      explain: "Raw deviations sum to zero; squaring removes the sign and weights large deviations more heavily."
+    },
+    {
+      q: "Why report the standard deviation rather than the variance?",
+      options: [
+        "The variance is always negative",
+        "The standard deviation is in the data's original units; variance is in squared units",
+        "They are the same number",
+        "Variance can't be computed from a sample"
+      ],
+      answer: 1,
+      explain: "Taking the square root returns the spread to the data's units (e.g., dollars, not dollars²)."
+    },
+    {
+      q: "When estimating spread from a SAMPLE, you divide the squared deviations by…",
+      options: ["n", "n − 1", "n + 1", "the mean"],
+      answer: 1,
+      explain: "Bessel's correction: dividing by n − 1 corrects the downward bias from measuring deviations against the sample's own mean."
+    },
+    {
+      q: "For roughly bell-shaped data, about what percentage of values lie within 2 standard deviations of the mean?",
+      options: ["50%", "68%", "95%", "99.7%"],
+      answer: 2,
+      explain: "The empirical rule: ~68% within 1 SD, ~95% within 2 SD, ~99.7% within 3 SD (for approximately normal data)."
+    },
+    {
+      q: "You add one extreme outlier to a dataset. Which measure of spread changes the LEAST?",
+      options: ["The range", "The standard deviation", "The IQR", "The variance"],
+      answer: 2,
+      explain: "The IQR depends only on the middle 50%, so it barely moves. Range, variance, and SD all jump with an outlier."
+    },
+    {
+      q: "The coefficient of variation (CV = SD ÷ mean) is most useful for…",
+      options: [
+        "Finding the median",
+        "Comparing the relative spread of datasets with different units or scales",
+        "Detecting outliers",
+        "Data that can be negative"
+      ],
+      answer: 1,
+      explain: "Because it's unitless, the CV lets you compare variability across different scales, as long as the data is positive with a true zero."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
