@@ -62,10 +62,20 @@ def card(href, kicker, title):
       '</span></a>'
     )
 
+# Override nbconvert's centered tables so they left-align like Colab.
+TABLE_ALIGN_CSS = (
+    '<style id="book-table-align">'
+    '.jp-RenderedHTMLCommon table{margin-left:0 !important;margin-right:auto !important;}'
+    '</style>'
+)
+
 def inject(path, href, kicker, title):
     html = open(path, encoding="utf-8").read()
     if 'class="book-backlink"' in html:
         return "already had link"
+    # left-align tables (inject the style once, before </head>)
+    if 'id="book-table-align"' not in html:
+        html = html.replace("</head>", TABLE_ALIGN_CSS + "\n</head>", 1)
     c = card(href, kicker, title)
     # top: right after the opening <body ...> tag
     i = html.find("<body")
