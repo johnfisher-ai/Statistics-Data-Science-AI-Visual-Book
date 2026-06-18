@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 14 · Charts for Categorical Data — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.86rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.6rem 0.85rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.74rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+  </style>
+</head>
+<body class="chapter">
+
+<!-- ============ TOP NAV ============ -->
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch14_categorical_charts.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<!-- ============ HERO ============ -->
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part III · Visualizing Data</span><span class="sep">/</span>
+      <span>Chapter 14</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part III · Visualizing Data</span> Showing the data</div>
+    <h1>Charts for <span class="accent">Categorical Data</span></h1>
+    <p class="dek">A chart is an argument made in pictures. This chapter is about the honest ones for categories:
+       the bar chart and its variants, the pie chart and its traps, and the axis tricks that quietly lie.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~12 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 14</b>&nbsp;of 103</div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <!-- ===== Intro / Section 1 ===== -->
+  <section id="intro">
+    <p class="lead">Part II turned data into numbers. Part III turns it into pictures. We start where most real
+       datasets do: <span class="term">categories</span>, and the question of how a total splits across them.</p>
+
+    <div class="def-card">
+      <div class="sigma">▦</div>
+      <div class="def-body">
+        A chart for <span class="def-kw">categorical data</span> shows how a whole breaks down across distinct
+        groups, as counts, frequencies, or proportions. Each category is a label, not a number on a scale.
+      </div>
+    </div>
+
+    <div class="section-eyebrow"><div class="num">1</div><h2>What Categorical Charts Show</h2></div>
+    <p>Recall the levels of measurement from Chapter 5. Whether a category is ordered changes how you may draw it:</p>
+    <div class="cardgrid cols-2">
+      <div class="ic-card bg-cyan"><h4 class="tx-cyan">Nominal</h4><p>Unordered labels: browser, country, product. You may freely <strong>sort bars by value</strong>.</p></div>
+      <div class="ic-card bg-purple"><h4 class="tx-purple">Ordinal</h4><p>Ordered labels: S/M/L/XL, survey ratings, age bands. <strong>Keep the natural order</strong>; do not resort.</p></div>
+    </div>
+    <p>Categorical charts answer "how many, or what share, in each group?" That is a different question from the
+       numerical charts in Chapter 15, which describe the distribution of a continuous quantity.</p>
+  </section>
+
+  <!-- ===== Section 2: the bar chart ===== -->
+  <section id="bar">
+    <div class="section-eyebrow"><div class="num">2</div><h2>The Bar Chart: the Workhorse</h2></div>
+    <p>The bar chart is the default for a reason. It encodes each amount as a <span class="hl">bar length on a
+       common baseline</span>, and length on a shared scale is the encoding our eyes read most accurately. A few
+       habits separate a good bar chart from a misleading one.</p>
+
+    <div class="cardgrid cols-2">
+      <div class="ic-card bg-cyan"><h4 class="tx-cyan">Vertical or horizontal</h4><p>Go <strong>horizontal</strong> when labels are long or there are many categories; it reads like a ranked list, no rotated text.</p></div>
+      <div class="ic-card bg-amber"><h4 class="tx-amber">Sort, when you can</h4><p>For nominal categories, sort by value so comparisons are instant. Keep natural order for ordinal data.</p></div>
+      <div class="ic-card bg-green"><h4 class="tx-green">Mind the gaps</h4><p>Bars sit apart, with gaps, to signal distinct categories. Touching bars mean a histogram (next section).</p></div>
+      <div class="ic-card bg-pink"><h4 class="tx-pink">Start at zero</h4><p>A bar's length must be proportional to its value, so the axis has to begin at zero. This one is non-negotiable.</p></div>
+    </div>
+
+    <div class="callout note">
+      <div class="cico">🚨</div>
+      <div><div class="ctitle">The truncated axis: how a bar chart lies</div>
+        <p>Cut the baseline above zero and a small difference balloons into a huge one. The two charts below plot the
+           <em>same</em> two numbers, 35% and 39.6%. Only the axis changed.</p></div>
+    </div>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.4rem">
+      <svg viewBox="0 0 640 280" width="100%" font-family="Inter, sans-serif" aria-label="Same data with a truncated axis versus a zero baseline">
+        <!-- LEFT: truncated -->
+        <text x="160" y="22" text-anchor="middle" font-size="12" fill="#db2777" font-weight="800">Truncated axis (misleading)</text>
+        <line x1="60" y1="230" x2="300" y2="230" stroke="#1a2138" stroke-width="1.5"/>
+        <line x1="60" y1="50"  x2="60"  y2="230" stroke="#1a2138" stroke-width="1.5"/>
+        <text x="52" y="234" text-anchor="end" font-size="9" fill="#8b94b3">34%</text>
+        <text x="52" y="54"  text-anchor="end" font-size="9" fill="#8b94b3">40%</text>
+        <rect x="105" y="200" width="60" height="30"  fill="#db2777"/>
+        <rect x="205" y="62"  width="60" height="168" fill="#db2777"/>
+        <text x="135" y="246" text-anchor="middle" font-size="10.5" fill="#1a2138" font-weight="700">35%</text>
+        <text x="235" y="246" text-anchor="middle" font-size="10.5" fill="#1a2138" font-weight="700">39.6%</text>
+        <!-- RIGHT: honest -->
+        <text x="480" y="22" text-anchor="middle" font-size="12" fill="#059669" font-weight="800">Zero baseline (honest)</text>
+        <line x1="380" y1="230" x2="620" y2="230" stroke="#1a2138" stroke-width="1.5"/>
+        <line x1="380" y1="50"  x2="380" y2="230" stroke="#1a2138" stroke-width="1.5"/>
+        <text x="372" y="234" text-anchor="end" font-size="9" fill="#8b94b3">0%</text>
+        <text x="372" y="54"  text-anchor="end" font-size="9" fill="#8b94b3">40%</text>
+        <rect x="425" y="73" width="60" height="157" fill="#059669"/>
+        <rect x="525" y="52" width="60" height="178" fill="#059669"/>
+        <text x="455" y="246" text-anchor="middle" font-size="10.5" fill="#1a2138" font-weight="700">35%</text>
+        <text x="555" y="246" text-anchor="middle" font-size="10.5" fill="#1a2138" font-weight="700">39.6%</text>
+        <text x="320" y="270" text-anchor="middle" font-size="10" fill="#8b94b3">Same numbers. The left chart manufactures a gap that is not in the data.</text>
+      </svg>
+    </figure>
+
+    <p>For a second categorical variable you have two layouts, and they answer different questions:</p>
+    <div class="cardgrid cols-2">
+      <div class="ic-card bg-cyan"><h4 class="tx-cyan">Grouped (clustered)</h4><p>Sub-bars side by side on one baseline. Best to <strong>compare the series precisely</strong>. Gets cluttered past about five series.</p></div>
+      <div class="ic-card bg-amber"><h4 class="tx-amber">Stacked</h4><p>Segments stacked into one bar. Best to <strong>read the total</strong> per category. Weakness: only the bottom segment touches the baseline, so the floating upper segments are hard to compare.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 3: bar vs histogram ===== -->
+  <section id="bar-vs-hist">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Bar Chart vs. Histogram</h2></div>
+    <p>They look like cousins, and that resemblance trips up almost everyone. The quickest tell:
+       <span class="hl">bar charts have gaps; histograms touch</span>.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.4rem">
+      <svg viewBox="0 0 640 250" width="100%" font-family="Inter, sans-serif" aria-label="Bar chart with gaps versus histogram with touching bars">
+        <!-- LEFT bar chart (gaps) -->
+        <text x="160" y="22" text-anchor="middle" font-size="12" fill="#0891b2" font-weight="800">Bar chart · categories</text>
+        <line x1="50" y1="200" x2="300" y2="200" stroke="#1a2138" stroke-width="1.5"/>
+        <rect x="70"  y="120" width="38" height="80"  fill="#0891b2"/>
+        <rect x="128" y="90"  width="38" height="110" fill="#0891b2"/>
+        <rect x="186" y="140" width="38" height="60"  fill="#0891b2"/>
+        <rect x="244" y="110" width="38" height="90"  fill="#0891b2"/>
+        <g font-size="10" fill="#4a5578" font-weight="700" text-anchor="middle">
+          <text x="89" y="216">A</text><text x="147" y="216">B</text><text x="205" y="216">C</text><text x="263" y="216">D</text>
+        </g>
+        <text x="175" y="238" text-anchor="middle" font-size="10" fill="#8b94b3">gaps between bars · reorderable</text>
+        <!-- RIGHT histogram (touching) -->
+        <text x="480" y="22" text-anchor="middle" font-size="12" fill="#7c3aed" font-weight="800">Histogram · continuous</text>
+        <line x1="370" y1="200" x2="620" y2="200" stroke="#1a2138" stroke-width="1.5"/>
+        <rect x="385" y="160" width="42" height="40"  fill="#7c3aed"/>
+        <rect x="427" y="120" width="42" height="80"  fill="#7c3aed"/>
+        <rect x="469" y="80"  width="42" height="120" fill="#7c3aed"/>
+        <rect x="511" y="130" width="42" height="70"  fill="#7c3aed"/>
+        <rect x="553" y="165" width="42" height="35"  fill="#7c3aed"/>
+        <g font-size="10" fill="#4a5578" text-anchor="middle">
+          <text x="385" y="216">0</text><text x="469" y="216">20</text><text x="595" y="216">50</text>
+        </g>
+        <text x="500" y="238" text-anchor="middle" font-size="10" fill="#8b94b3">bars touch · fixed numeric order</text>
+      </svg>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th></th><th>Bar chart</th><th>Histogram</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Bars</td><td>Separated by gaps</td><td>Touch (no gaps)</td></tr>
+          <tr><td class="nm">X-axis</td><td>Category labels</td><td>Continuous number line, binned</td></tr>
+          <tr><td class="nm">Reordering</td><td>Fine, sort by value or logic</td><td>Fixed, bins stay in numeric order</td></tr>
+          <tr><td class="nm">Answers</td><td>How many in each category?</td><td>How is this quantity distributed?</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== Section 4: pie + honest design ===== -->
+  <section id="pie">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Pie Charts &amp; Honest Design</h2></div>
+    <p>The pie chart shows parts of a whole, and the slices must sum to 100%. The trouble is perceptual: it asks the
+       eye to compare <span class="hl">angles and areas</span>, which we judge far worse than lengths on a common
+       scale. That is why a sorted bar chart usually wins.</p>
+
+    <div class="callout key">
+      <div class="cico">👁️</div>
+      <div><div class="ctitle">We read length better than angle</div>
+        <p>Classic perception research (Cleveland &amp; McGill) ranks how accurately we decode visual cues:
+           <strong>position and length on a common scale come first</strong>; angle and area are near the bottom.
+           A bar uses the best cue, a pie uses some of the worst.</p></div>
+    </div>
+
+    <p>If you do reach for a pie, keep it disciplined:</p>
+    <div class="cardgrid cols-2">
+      <div class="ic-card bg-amber"><h4 class="tx-amber">Few slices</h4><p>About five at most. Fold the small ones into "Other".</p></div>
+      <div class="ic-card bg-cyan"><h4 class="tx-cyan">Sorted &amp; whole</h4><p>Order by size and make sure the slices actually sum to 100%.</p></div>
+      <div class="ic-card bg-green"><h4 class="tx-green">Direct labels</h4><p>Put the name and value on each slice; skip the legend hunt.</p></div>
+      <div class="ic-card bg-pink"><h4 class="tx-pink">No 3D or explode</h4><p>3D perspective and exploded slices distort area. Always flat.</p></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">🧰</div>
+      <div><div class="ctitle">Better alternatives worth knowing</div>
+        <p>For many categories, a <strong>dot plot</strong> (a dot per category on a common axis) is clean and, unlike
+           a bar, needs no zero baseline. A <strong>treemap</strong> handles hierarchical part-to-whole; a
+           <strong>pictograph</strong> of repeated icons suits lay audiences, as long as you scale by adding icons,
+           never by enlarging one (area grows as the square of size and exaggerates the count).</p></div>
+    </div>
+
+    <div class="callout note">
+      <div class="cico">🎨</div>
+      <div><div class="ctitle">Design that respects the reader</div>
+        <p>Strip the chartjunk: heavy gridlines, dark borders, 3D, and decorative color all add ink without adding
+           information (Tufte's data-ink idea). Use a <strong>qualitative palette</strong> of distinct hues for
+           categories, and do not rely on color alone, around 1 in 12 men has a color-vision deficiency, so add
+           labels or position and use a colorblind-safe palette. Gray the context and let one color carry the point.</p></div>
+    </div>
+
+    <div class="callout note">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for data science</div>
+        <p>Category breakdowns are the bread and butter of exploratory analysis (<code>value_counts().plot.bar()</code>,
+           seaborn's <code>countplot</code>) and of every stakeholder deck. The chart you choose is an argument about
+           the data. Make it an honest one: the right encoding, a zero baseline, and a fair ordering.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Bring it to life in Python</h3>
+          <p>The companion notebook builds bar charts from counts, sorts and flips them, contrasts grouped versus
+             stacked layouts, recreates the truncated-axis deception side by side with an honest version, and shows
+             why a sorted bar reads more clearly than a pie.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch14_categorical_charts.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch14_categorical_charts.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch14_categorical_charts.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>,
+      <code>matplotlib</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Key Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Categorical charts</strong> show how a whole splits across groups; sort nominal categories, keep ordinal order.</span></li>
+        <li><span class="ck">✓</span><span><strong>The bar chart</strong> is the default; bars have gaps and must start at zero.</span></li>
+        <li><span class="ck">✓</span><span><strong>A truncated axis</strong> exaggerates differences, the most common way a bar chart misleads.</span></li>
+        <li><span class="ck">✓</span><span><strong>Bars have gaps, histograms touch</strong>: categories vs. binned continuous data.</span></li>
+        <li><span class="ck">✓</span><span><strong>Pies read poorly</strong> (angle beats no one); prefer a sorted bar, and keep design honest and clutter-free.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Practice Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them on paper or in Python before checking the solutions.</p>
+
+    <div class="challenges">
+      <div class="challenge">
+        <div class="cnum">1</div>
+        <div class="cbody">
+          <h4>Sorted bars</h4>
+          <p>From a set of pet-ownership counts, draw a horizontal bar chart sorted by value. Why is horizontal and
+             sorted a good choice, and would sorting be fair if the categories were ordinal?</p>
+          <div class="chint">Hint: <code>sort_values()</code> then <code>barh</code>; nominal categories may be reordered.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">2</div>
+        <div class="cbody">
+          <h4>Spot the lie</h4>
+          <p>Two satisfaction scores, 82 and 86, are charted with the y-axis starting at 80. Redraw it honestly and
+             quantify how much the truncated axis exaggerates the gap.</p>
+          <div class="chint">Hint: compare bar-height ratio under <code>ylim(80,…)</code> vs a zero baseline.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">3</div>
+        <div class="cbody">
+          <h4>Bar or histogram?</h4>
+          <p>For each, pick the chart and name the visual tell: (a) counts of favorite ice-cream flavor; (b) the
+             distribution of 500 customers' ages.</p>
+          <div class="chint">Hint: categorical vs. continuous; gaps vs. touching bars.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">4</div>
+        <div class="cbody">
+          <h4>Pie to bar</h4>
+          <p>A survey with eight genre categories is shown as a pie and readers cannot rank the middle slices.
+             Convert it to a sorted bar chart and explain why the bar is clearer.</p>
+          <div class="chint">Hint: too many slices, near-equal angles; bars share a common scale.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">5</div>
+        <div class="cbody">
+          <h4>Grouped vs stacked</h4>
+          <p>For two product lines across three regions, make both a grouped and a stacked bar chart. Which answers
+             "which line sells more in each region?" and which answers "what is each region's total?"</p>
+          <div class="chint">Hint: grouped shares a baseline; stacked sums to the total.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges in the same visual
+           style. Try them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/ch14_challenges_solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch14_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch14_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on categorical charts. Answer them, hit <strong>Check Answers</strong>, and keep
+       refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <!-- ===== Chapter Nav ===== -->
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch13.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 13 · Previous</span><br><span class="cn-title">Frequency Distributions</span></span>
+    </a>
+    <div class="cn-btn next" style="cursor:default;opacity:0.6" title="Coming soon">
+      <span><span class="cn-dir">Chapter 15 · Coming soon</span><br><span class="cn-title">Charts for Numerical Data</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </div>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 14 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<!-- ===== Quiz data for this chapter ===== -->
+<script>
+  window.QUIZ_ID = "ch14";
+  window.QUIZ_DATA = [
+    {
+      q: "Charts for categorical data primarily show…",
+      options: [
+        "How a continuous quantity is distributed",
+        "How a total breaks down across distinct groups",
+        "The correlation between two numbers",
+        "A trend over continuous time"
+      ],
+      answer: 1,
+      explain: "Categorical charts show counts, frequencies, or proportions across distinct category labels."
+    },
+    {
+      q: "Why must a bar chart's value axis start at zero?",
+      options: [
+        "To save space",
+        "Because the bar's length must be proportional to the value it represents",
+        "Because negative numbers are not allowed",
+        "It does not have to start at zero"
+      ],
+      answer: 1,
+      explain: "Bars encode amount as length. If the axis is truncated, length is no longer proportional and differences look exaggerated."
+    },
+    {
+      q: "You have 12 categories with long names to compare. The best bar layout is…",
+      options: [
+        "Vertical bars with the labels rotated 90 degrees",
+        "Horizontal bars, often sorted by value",
+        "A 3D bar chart",
+        "A pie chart"
+      ],
+      answer: 1,
+      explain: "Horizontal bars give long labels room and read like a ranked list; sorting (for nominal data) makes comparison instant."
+    },
+    {
+      q: "The clearest visual difference between a bar chart and a histogram is…",
+      options: [
+        "Color",
+        "Bar charts have gaps between bars; histogram bars touch",
+        "Histograms are always horizontal",
+        "Bar charts cannot show counts"
+      ],
+      answer: 1,
+      explain: "Gaps signal distinct categories (bar chart); touching bars signal continuous data binned along a number line (histogram)."
+    },
+    {
+      q: "For ordinal categories like S, M, L, XL, you should…",
+      options: [
+        "Always sort the bars from tallest to shortest",
+        "Keep the natural order (S, M, L, XL)",
+        "Use a pie chart instead",
+        "Randomize the order"
+      ],
+      answer: 1,
+      explain: "Ordinal categories have a meaningful order, so preserve it. Sorting by value is only fair for unordered (nominal) categories."
+    },
+    {
+      q: "A pie chart is hard to read mainly because…",
+      options: [
+        "It uses too much color",
+        "People judge angles and areas less accurately than lengths on a common scale",
+        "It cannot show percentages",
+        "Pies can only show two categories"
+      ],
+      answer: 1,
+      explain: "Position/length on a common scale is decoded most accurately; pies rely on angle and area, which we judge poorly."
+    },
+    {
+      q: "To compare a second variable PRECISELY across categories, the better choice is…",
+      options: [
+        "A stacked bar chart",
+        "A grouped (clustered) bar chart",
+        "A 100% stacked bar chart",
+        "A 3D pie chart"
+      ],
+      answer: 1,
+      explain: "Grouped bars all share the zero baseline, so series compare directly. In stacked bars the upper segments float and are hard to compare."
+    },
+    {
+      q: "Drawing a pictograph, you should represent a larger count by…",
+      options: [
+        "Making a single icon bigger",
+        "Showing more icons of the same fixed size",
+        "Using a brighter color",
+        "Tilting the icon in 3D"
+      ],
+      answer: 1,
+      explain: "Enlarging one icon scales its area as the square of size, exaggerating the value. Add more equal-sized icons instead."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
