@@ -23,10 +23,15 @@ else
   git remote add origin "$REMOTE_URL"
 fi
 
-# Optional: stage + commit if a message was supplied
+# Optional: stage + commit if a message was supplied.
+# Guard the commit so "nothing to commit" does NOT abort the push (set -e).
 if [ "${1:-}" != "" ]; then
   git add -A
-  git -c user.name="John Fisher" -c user.email="johnrfisher@gmail.com" commit -m "$1"
+  if git diff --cached --quiet; then
+    echo "No new changes to commit; pushing existing commits."
+  else
+    git -c user.name="John Fisher" -c user.email="johnrfisher@gmail.com" commit -m "$1"
+  fi
 fi
 
 echo "Pushing to $REMOTE_URL (branch main) ..."
