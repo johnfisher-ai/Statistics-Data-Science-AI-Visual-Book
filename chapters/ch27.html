@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 27 · Case Study: Spotify Track Features — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .disp-table code { font-size:0.82em; }
+  </style>
+</head>
+<body class="chapter">
+
+<!-- ============ TOP NAV ============ -->
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch27_spotify_case.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<!-- ============ HERO ============ -->
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part V · Putting It All Together</span><span class="sep">/</span>
+      <span>Chapter 27</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part V · Case Study</span> Describe → visualize → prepare</div>
+    <h1>Case Study: <span class="accent">Spotify Track Features</span></h1>
+    <p class="dek">Our first full case study. One file of 915 songs, audio features like danceability, energy, loudness,
+       and tempo, taken from its raw, messy state all the way to an analysis-ready table, with the reason for every
+       cleaning decision spelled out as we go.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~15 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 27</b>&nbsp;of 107</div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <!-- ===== Intro ===== -->
+  <section id="intro">
+    <p class="lead">Time to put the whole toolkit to work. This chapter follows the five-beat routine from Chapter 26,
+       first contact, describe, visualize, prepare, recap, on a dataset of Spotify track features. The data is fun and
+       intuitive, and it is messy in exactly the ways that teach the most.</p>
+
+    <div class="callout key">
+      <div class="cico">🎧</div>
+      <div><div class="ctitle">The dataset</div>
+        <p><code>spotify_tracks.csv</code> holds 915 songs. Each row is a track with audio features Spotify computes
+           automatically: <span class="term">danceability</span>, <span class="term">energy</span>,
+           <span class="term">loudness</span>, <span class="term">tempo</span>, <span class="term">valence</span>
+           (how happy it sounds), <code>duration_ms</code>, plus <code>genre</code>, <code>key</code>, <code>mode</code>,
+           and a <code>popularity</code> score. It is a realistic teaching file: duplicates, missing values, inconsistent
+           text, impossible numbers, and features on wildly different scales, all waiting for us.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: First contact ===== -->
+  <section id="audit">
+    <div class="section-eyebrow"><div class="num">1</div><h2>First Contact: Audit the Raw File</h2></div>
+    <p>Before describing or cleaning anything, we look. The first-contact audit (shape, dtypes, duplicates, missingness,
+       and how the categories were actually typed) turns a mystery file into a concrete to-do list.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>What the audit found</th><th>Evidence</th><th>The fix (and its chapter)</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Duplicate rows</td><td>8 exact-copy rows</td><td>Deduplicate · Ch 19</td></tr>
+          <tr><td class="nm">Inconsistent categories</td><td><code>genre</code> typed 19 ways for 8 genres; <code>mode</code> 8 ways for 2</td><td>Standardise categories · Ch 19</td></tr>
+          <tr><td class="nm">Missing values</td><td><code>tempo</code> (18), <code>key</code> (12), <code>popularity</code> (73)</td><td>Handle missing data · Ch 20</td></tr>
+          <tr><td class="nm">Missing in disguise</td><td><code>tempo</code> recorded as <strong>0 BPM</strong> (impossible) in 23 rows</td><td>Recode then impute · Ch 20</td></tr>
+          <tr><td class="nm">Impossible numbers</td><td><code>duration_ms</code> up to 18,000,000 (5 hours)</td><td>Outlier treatment · Ch 21</td></tr>
+          <tr><td class="nm">Clashing scales</td><td>features span 0–1, −40–0, and the hundreds of thousands</td><td>Scaling · Ch 24</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout note">
+      <div class="cico">🧭</div>
+      <div><div class="ctitle">Look before you leap</div>
+        <p>Notice we have not changed a single value yet. The entire point of first contact is to <em>understand</em> the
+           damage before touching it, so each later step is deliberate. A 0 BPM tempo and an 18,000,000 ms duration would
+           both quietly wreck any average we computed; spotting them now means they never get the chance.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 2: Describe & Visualize ===== -->
+  <section id="explore">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Describe &amp; Visualize: What the Data Says</h2></div>
+    <p>With the problems catalogued, we explore. Two things jump out immediately, one about the <em>scales</em> of the
+       features, and one about how they <em>relate</em>.</p>
+
+    <h3 style="font-size:1.05rem;margin:1.4rem 0 0.4rem">Every feature lives on a different scale</h3>
+    <p>Descriptive statistics show the audio features do not share a number range at all: danceability is a decimal near
+       1, loudness is negative decibels, tempo runs to the hundreds, and <code>duration_ms</code> is in the hundreds of
+       thousands. On one shared (logarithmic) axis the gap is impossible to miss:</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 232" width="100%" font-family="Inter, sans-serif" aria-label="Spotify features span many orders of magnitude on a log axis">
+        <text x="340" y="16" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Seven features, seven different number scales (log axis)</text>
+        <!-- log gridlines -->
+        <g font-size="8" fill="#b6bdd0" text-anchor="middle">
+          <line x1="110" y1="34" x2="110" y2="196" stroke="#e6e9f2"/><text x="110" y="208">1</text>
+          <line x1="195" y1="34" x2="195" y2="196" stroke="#e6e9f2"/><text x="195" y="208">10</text>
+          <line x1="280" y1="34" x2="280" y2="196" stroke="#e6e9f2"/><text x="280" y="208">100</text>
+          <line x1="365" y1="34" x2="365" y2="196" stroke="#e6e9f2"/><text x="365" y="208">1k</text>
+          <line x1="450" y1="34" x2="450" y2="196" stroke="#e6e9f2"/><text x="450" y="208">10k</text>
+          <line x1="535" y1="34" x2="535" y2="196" stroke="#e6e9f2"/><text x="535" y="208">100k</text>
+          <line x1="620" y1="34" x2="620" y2="196" stroke="#e6e9f2"/><text x="620" y="208">1M</text>
+        </g>
+        <!-- bars: from x=110 (value 1) to log10(max) -->
+        <g font-size="9">
+          <!-- danceability max .95 -->
+          <text x="103" y="48" text-anchor="end" fill="#1a2138">danceability</text>
+          <circle cx="110" cy="44" r="3.5" fill="#0891b2"/><text x="120" y="48" fill="#8b94b3">0.08 – 0.95</text>
+          <!-- energy -->
+          <text x="103" y="66" text-anchor="end" fill="#1a2138">energy</text>
+          <circle cx="110" cy="62" r="3.5" fill="#0891b2"/><text x="120" y="66" fill="#8b94b3">0.02 – 0.98</text>
+          <!-- valence -->
+          <text x="103" y="84" text-anchor="end" fill="#1a2138">valence</text>
+          <circle cx="110" cy="80" r="3.5" fill="#0891b2"/><text x="120" y="84" fill="#8b94b3">0.01 – 1.00</text>
+          <!-- loudness (range magnitude ~40) -->
+          <text x="103" y="102" text-anchor="end" fill="#1a2138">loudness (dB)</text>
+          <rect x="110" y="95" width="136" height="10" rx="3" fill="#22b6d6"/><text x="252" y="103" fill="#8b94b3">−40 – 0</text>
+          <!-- popularity max 81 -->
+          <text x="103" y="120" text-anchor="end" fill="#1a2138">popularity</text>
+          <rect x="110" y="113" width="162" height="10" rx="3" fill="#22b6d6"/><text x="278" y="121" fill="#8b94b3">0 – 81</text>
+          <!-- tempo max 299 -->
+          <text x="103" y="138" text-anchor="end" fill="#1a2138">tempo (BPM)</text>
+          <rect x="110" y="131" width="210" height="10" rx="3" fill="#0e6a8f"/><text x="326" y="139" fill="#8b94b3">0 – 299</text>
+          <!-- duration max ~600k -->
+          <text x="103" y="156" text-anchor="end" fill="#1a2138">duration (ms)</text>
+          <rect x="110" y="149" width="491" height="10" rx="3" fill="#0a1230"/><text x="607" y="157" text-anchor="end" fill="#fff" font-size="8">~600,000</text>
+        </g>
+        <text x="340" y="226" text-anchor="middle" font-size="9.5" fill="#d97706">duration dwarfs danceability by ~6 orders of magnitude, so without scaling it would dominate every distance and gradient.</text>
+      </svg>
+    </figure>
+
+    <h3 style="font-size:1.05rem;margin:1.6rem 0 0.4rem">One strong relationship, and a surprise</h3>
+    <p>A correlation heatmap of the seven numeric features is almost entirely pale, the features are mostly independent,
+       except for one hot cell: <strong>energy and loudness correlate at r ≈ 0.94</strong>. The surprise is the
+       <code>popularity</code> row: it is near-zero against every audio feature, what makes a song popular here is not
+       its sound.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 560 330" width="100%" font-family="Inter, sans-serif" aria-label="Correlation heatmap of the seven Spotify audio features">
+        <text x="250" y="22" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Audio-feature correlations (one hot pair: energy &amp; loudness)</text>
+<g font-size="9" fill="#4a5578" font-weight="700" text-anchor="middle">
+<text x="139" y="38">dnc</text>
+<text x="177" y="38">eng</text>
+<text x="215" y="38">lou</text>
+<text x="253" y="38">tmp</text>
+<text x="291" y="38">val</text>
+<text x="329" y="38">dur</text>
+<text x="367" y="38">pop</text>
+</g>
+<g font-size="9" fill="#4a5578" font-weight="700" text-anchor="end">
+<text x="112" y="66">dnc</text>
+<text x="112" y="104">eng</text>
+<text x="112" y="142">lou</text>
+<text x="112" y="180">tmp</text>
+<text x="112" y="218">val</text>
+<text x="112" y="256">dur</text>
+<text x="112" y="294">pop</text>
+</g>
+<g font-size="8.5" text-anchor="middle">
+<rect x="120" y="44" width="38" height="38" fill="#b30326"/><text x="139" y="66" fill="#fff">1.00</text>
+<rect x="158" y="44" width="38" height="38" fill="#e2d9d4"/><text x="177" y="66" fill="#1a2138">0.04</text>
+<rect x="196" y="44" width="38" height="38" fill="#dfdbd9"/><text x="215" y="66" fill="#1a2138">0.02</text>
+<rect x="234" y="44" width="38" height="38" fill="#e3d9d3"/><text x="253" y="66" fill="#1a2138">0.05</text>
+<rect x="272" y="44" width="38" height="38" fill="#dedbda"/><text x="291" y="66" fill="#1a2138">0.01</text>
+<rect x="310" y="44" width="38" height="38" fill="#e0dad7"/><text x="329" y="66" fill="#1a2138">0.03</text>
+<rect x="348" y="44" width="38" height="38" fill="#dbdcde"/><text x="367" y="66" fill="#1a2138">-0.01</text>
+<rect x="120" y="82" width="38" height="38" fill="#e2d9d4"/><text x="139" y="104" fill="#1a2138">0.04</text>
+<rect x="158" y="82" width="38" height="38" fill="#b30326"/><text x="177" y="104" fill="#fff">1.00</text>
+<rect x="196" y="82" width="38" height="38" fill="#be232d"/><text x="215" y="104" fill="#fff">0.94</text>
+<rect x="234" y="82" width="38" height="38" fill="#e8d5ca"/><text x="253" y="104" fill="#1a2138">0.10</text>
+<rect x="272" y="82" width="38" height="38" fill="#e8d5ca"/><text x="291" y="104" fill="#1a2138">0.10</text>
+<rect x="310" y="82" width="38" height="38" fill="#e0dad7"/><text x="329" y="104" fill="#1a2138">0.03</text>
+<rect x="348" y="82" width="38" height="38" fill="#dbdcde"/><text x="367" y="104" fill="#1a2138">-0.01</text>
+<rect x="120" y="120" width="38" height="38" fill="#dfdbd9"/><text x="139" y="142" fill="#1a2138">0.02</text>
+<rect x="158" y="120" width="38" height="38" fill="#be232d"/><text x="177" y="142" fill="#fff">0.94</text>
+<rect x="196" y="120" width="38" height="38" fill="#b30326"/><text x="215" y="142" fill="#fff">1.00</text>
+<rect x="234" y="120" width="38" height="38" fill="#ead3c7"/><text x="253" y="142" fill="#1a2138">0.11</text>
+<rect x="272" y="120" width="38" height="38" fill="#e8d5ca"/><text x="291" y="142" fill="#1a2138">0.10</text>
+<rect x="310" y="120" width="38" height="38" fill="#e2d9d4"/><text x="329" y="142" fill="#1a2138">0.04</text>
+<rect x="348" y="120" width="38" height="38" fill="#dbdcde"/><text x="367" y="142" fill="#1a2138">-0.01</text>
+<rect x="120" y="158" width="38" height="38" fill="#e3d9d3"/><text x="139" y="180" fill="#1a2138">0.05</text>
+<rect x="158" y="158" width="38" height="38" fill="#e8d5ca"/><text x="177" y="180" fill="#1a2138">0.10</text>
+<rect x="196" y="158" width="38" height="38" fill="#ead3c7"/><text x="215" y="180" fill="#1a2138">0.11</text>
+<rect x="234" y="158" width="38" height="38" fill="#b30326"/><text x="253" y="180" fill="#fff">1.00</text>
+<rect x="272" y="158" width="38" height="38" fill="#dfdbd9"/><text x="291" y="180" fill="#1a2138">0.02</text>
+<rect x="310" y="158" width="38" height="38" fill="#e2d9d4"/><text x="329" y="180" fill="#1a2138">0.04</text>
+<rect x="348" y="158" width="38" height="38" fill="#d5dbe5"/><text x="367" y="180" fill="#1a2138">-0.06</text>
+<rect x="120" y="196" width="38" height="38" fill="#dedbda"/><text x="139" y="218" fill="#1a2138">0.01</text>
+<rect x="158" y="196" width="38" height="38" fill="#e8d5ca"/><text x="177" y="218" fill="#1a2138">0.10</text>
+<rect x="196" y="196" width="38" height="38" fill="#e8d5ca"/><text x="215" y="218" fill="#1a2138">0.10</text>
+<rect x="234" y="196" width="38" height="38" fill="#dfdbd9"/><text x="253" y="218" fill="#1a2138">0.02</text>
+<rect x="272" y="196" width="38" height="38" fill="#b30326"/><text x="291" y="218" fill="#fff">1.00</text>
+<rect x="310" y="196" width="38" height="38" fill="#dbdcde"/><text x="329" y="218" fill="#1a2138">-0.01</text>
+<rect x="348" y="196" width="38" height="38" fill="#e3d9d3"/><text x="367" y="218" fill="#1a2138">0.05</text>
+<rect x="120" y="234" width="38" height="38" fill="#e0dad7"/><text x="139" y="256" fill="#1a2138">0.03</text>
+<rect x="158" y="234" width="38" height="38" fill="#e0dad7"/><text x="177" y="256" fill="#1a2138">0.03</text>
+<rect x="196" y="234" width="38" height="38" fill="#e2d9d4"/><text x="215" y="256" fill="#1a2138">0.04</text>
+<rect x="234" y="234" width="38" height="38" fill="#e2d9d4"/><text x="253" y="256" fill="#1a2138">0.04</text>
+<rect x="272" y="234" width="38" height="38" fill="#dbdcde"/><text x="291" y="256" fill="#1a2138">-0.01</text>
+<rect x="310" y="234" width="38" height="38" fill="#b30326"/><text x="329" y="256" fill="#fff">1.00</text>
+<rect x="348" y="234" width="38" height="38" fill="#d9dce0"/><text x="367" y="256" fill="#1a2138">-0.03</text>
+<rect x="120" y="272" width="38" height="38" fill="#dbdcde"/><text x="139" y="294" fill="#1a2138">-0.01</text>
+<rect x="158" y="272" width="38" height="38" fill="#dbdcde"/><text x="177" y="294" fill="#1a2138">-0.01</text>
+<rect x="196" y="272" width="38" height="38" fill="#dbdcde"/><text x="215" y="294" fill="#1a2138">-0.01</text>
+<rect x="234" y="272" width="38" height="38" fill="#d5dbe5"/><text x="253" y="294" fill="#1a2138">-0.06</text>
+<rect x="272" y="272" width="38" height="38" fill="#e3d9d3"/><text x="291" y="294" fill="#1a2138">0.05</text>
+<rect x="310" y="272" width="38" height="38" fill="#d9dce0"/><text x="329" y="294" fill="#1a2138">-0.03</text>
+<rect x="348" y="272" width="38" height="38" fill="#b30326"/><text x="367" y="294" fill="#fff">1.00</text>
+</g>
+<rect x="196" y="82" width="38" height="38" fill="none" stroke="#0a1230" stroke-width="2.5"/>
+<rect x="158" y="120" width="38" height="38" fill="none" stroke="#0a1230" stroke-width="2.5"/>
+        <!-- annotation -->
+        <text x="408" y="104" font-size="10" fill="#b30326" font-weight="800">eng ↔ lou = 0.94</text>
+        <text x="408" y="120" font-size="8.5" fill="#4a5578">near-duplicate pair:</text>
+        <text x="408" y="132" font-size="8.5" fill="#7c3aed" font-weight="700">multicollinearity</text>
+        <text x="408" y="284" font-size="8.5" fill="#4a5578">pop row ≈ 0:</text>
+        <text x="408" y="296" font-size="8.5" fill="#4a5578">sound doesn't</text>
+        <text x="408" y="308" font-size="8.5" fill="#4a5578">explain popularity</text>
+        <text x="250" y="324" text-anchor="middle" font-size="8.5" fill="#8b94b3">dnc danceability · eng energy · lou loudness · tmp tempo · val valence · dur duration · pop popularity</text>
+      </svg>
+    </figure>
+
+    <div class="callout note">
+      <div class="cico">🔎</div>
+      <div><div class="ctitle">Exploration produces findings, not just clean data</div>
+        <p>The heatmap earns its keep twice. The <strong>energy/loudness</strong> pair is a cleaning flag (we may drop or
+           combine one before modelling). The flat <strong>popularity</strong> row is a genuine insight: a folk belief
+           that "louder, higher-energy songs are more popular" simply is not supported in this data. Both came from one
+           picture, which is the whole reason we visualize before we model.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 3: Cleaning ===== -->
+  <section id="clean">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Cleaning: Duplicates, Categories, Missing Values</h2></div>
+    <p>Now we fix the to-do list, in order, and we say why at each step.</p>
+
+    <p><strong>Duplicates first (Ch 19).</strong> Eight rows are exact copies of other rows. Left in, they would
+       double-count those songs in every average and every chart, so <code>drop_duplicates()</code> removes them:
+       <strong>915 → 907</strong> rows.</p>
+
+    <p><strong>Standardise the categories (Ch 19).</strong> The <code>genre</code> column was typed nineteen ways
+       (<code>"Pop"</code>, <code>"pop "</code>, <code>"POP"</code>, <code>"EDM"</code> for electronic, and so on). Until
+       those collapse to the eight real genres, any group-by treats them as different. Trimming whitespace and mapping
+       the variants fixes it; <code>mode</code> shrinks from eight spellings to two (Major / Minor) the same way.</p>
+
+    <p><strong>Missing values, each on its merits (Ch 20).</strong> This is the step that rewards thought: the same
+       problem has three different right answers depending on the column.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Column</th><th>What is missing</th><th>Decision</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">tempo</td><td>18 NaN + 23 zeros (impossible) = 41</td><td>Recode 0 → NaN, then <strong>median-impute</strong></td><td>A measurement gap; the median resists extreme tempos</td></tr>
+          <tr><td class="nm">key</td><td>12 missing musical keys</td><td><strong>Mode-impute</strong></td><td>A nominal category; fill the most common value</td></tr>
+          <tr><td class="nm">popularity</td><td>73 missing</td><td><strong>Drop those rows</strong></td><td>It is the outcome we want to explain; never invent a target</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🎯</div>
+      <div><div class="ctitle">The decision that matters most here</div>
+        <p>Imputing a missing <strong>feature</strong> is routine; imputing a missing <strong>target</strong> is
+           dangerous. Because <code>popularity</code> is the thing we ultimately want to understand or predict, filling
+           it with a guess would bake our assumptions into the answer. Dropping those 73 rows (about 8%) is the honest
+           choice. Same missing-data problem, opposite treatment, because the column plays a different role.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 4: Prepare to model ===== -->
+  <section id="prepare">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Preparing to Model: Outliers, Transform, Scale &amp; Encode</h2></div>
+
+    <p><strong>Treat the outliers (Ch 21).</strong> A box plot of <code>duration_ms</code> shows a few tracks running to
+       impossible lengths, one at 18,000,000 ms, five hours. The IQR rule flags a couple dozen long songs, but most are
+       genuine (extended mixes, classical works). Only <strong>three</strong> are physically impossible, so we remove
+       just those errors and keep the real long songs. An outlier rule detects; a human decides.</p>
+
+    <p><strong>Transform the skew (Ch 22).</strong> Even after the errors are gone, <code>duration</code> has a long
+       right tail (skew ≈ +0.93). A natural-log transform straightens it to near-symmetric (skew ≈ +0.04), which steadies
+       any model that prefers well-behaved inputs.</p>
+
+    <p><strong>Scale, then encode (Ch 24).</strong> Recall the log-axis chart: the features are on utterly different
+       scales. <strong>Standardising</strong> rescales each to mean 0 and SD 1 so none dominates by sheer magnitude.
+       Finally, the cleaned <code>genre</code> is <strong>one-hot encoded</strong> into eight binary columns a model can
+       read. Here is the whole journey, from raw file to analysis-ready table:</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 180" width="100%" font-family="Inter, sans-serif" aria-label="The Spotify cleaning journey from 915 raw rows to an analysis-ready table">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">From raw file to analysis-ready: every row accounted for</text>
+        <!-- chips -->
+        <g text-anchor="middle" font-family="Inter, sans-serif">
+          <rect x="14" y="46" width="100" height="52" rx="10" fill="#0a1230"/><text x="64" y="70" font-size="16" font-weight="800" fill="#fff">915</text><text x="64" y="86" font-size="8" fill="#9fb0d8">raw rows</text>
+          <rect x="160" y="46" width="100" height="52" rx="10" fill="#e0f7fb" stroke="#0891b2"/><text x="210" y="70" font-size="16" font-weight="800" fill="#0891b2">907</text><text x="210" y="86" font-size="8" fill="#4a5578">deduped</text>
+          <rect x="306" y="46" width="100" height="52" rx="10" fill="#fef3e2" stroke="#d97706"/><text x="356" y="70" font-size="16" font-weight="800" fill="#d97706">834</text><text x="356" y="86" font-size="8" fill="#4a5578">target kept</text>
+          <rect x="452" y="46" width="100" height="52" rx="10" fill="#e3f6ee" stroke="#059669"/><text x="502" y="70" font-size="16" font-weight="800" fill="#059669">831</text><text x="502" y="86" font-size="8" fill="#4a5578">errors gone</text>
+          <rect x="586" y="40" width="84" height="64" rx="10" fill="#f0e9fe" stroke="#7c3aed"/><text x="628" y="62" font-size="14" font-weight="800" fill="#7c3aed">831×15</text><text x="628" y="78" font-size="7.5" fill="#4a5578">analysis-</text><text x="628" y="89" font-size="7.5" fill="#4a5578">ready</text>
+        </g>
+        <!-- arrows + labels -->
+        <g stroke="#8b94b3" stroke-width="1.5" fill="none" marker-end="url(#a27)">
+          <line x1="114" y1="72" x2="158" y2="72"/><line x1="260" y1="72" x2="304" y2="72"/>
+          <line x1="406" y1="72" x2="450" y2="72"/><line x1="552" y1="72" x2="584" y2="72"/>
+        </g>
+        <defs><marker id="a27" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8b94b3"/></marker></defs>
+        <g font-size="8" fill="#8b94b3" text-anchor="middle">
+          <text x="136" y="112">−8 dupes</text><text x="136" y="122">Ch 19</text>
+          <text x="282" y="112">−73 no target</text><text x="282" y="122">Ch 20</text>
+          <text x="428" y="112">−3 errors</text><text x="428" y="122">Ch 21</text>
+          <text x="568" y="118">log · scale · encode</text><text x="568" y="128">Ch 22 &amp; 24</text>
+        </g>
+        <text x="340" y="160" text-anchor="middle" font-size="9.5" fill="#059669">831 clean songs, 6 scaled features + popularity + 8 genre columns = 15 model-ready columns.</text>
+      </svg>
+    </figure>
+
+    <div class="callout note">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Order matters</div>
+        <p>We transformed <em>before</em> scaling, and scaled <em>after</em> the outliers were handled. That order is not
+           cosmetic: scaling a skewed, outlier-ridden column just bakes the skew and the outliers into the scaled values.
+           Clean, then transform, then scale, then encode. Each step assumes the previous one is done.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Run the whole case study in Python</h3>
+          <p>The companion notebook is the full walkthrough end to end: the first-contact audit, descriptive statistics,
+             the popularity histogram, the correlation heatmap and the energy-versus-loudness scatter, then every cleaning
+             step (dedup, category standardisation, the three missing-value treatments, outlier removal, the log
+             transform, scaling, and one-hot encoding), finishing at the analysis-ready table. Every cell explains its
+             decision.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch27_spotify_case.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch27_spotify_case.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch27_spotify_case.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>,
+      <code>scikit-learn</code>, <code>scipy</code>, <code>matplotlib</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Key Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Audit first</strong>: shape, duplicates, missingness, and how categories were typed turned a messy file into a clear to-do list.</span></li>
+        <li><span class="ck">✓</span><span><strong>Visualize to find, not just to check</strong>: the heatmap exposed an energy/loudness near-duplicate (r ≈ 0.94) and that audio features barely explain popularity.</span></li>
+        <li><span class="ck">✓</span><span><strong>Missing data has no single fix</strong>: median-impute a feature gap, mode-impute a category, but drop rows missing the <em>target</em>.</span></li>
+        <li><span class="ck">✓</span><span><strong>Outliers need judgment</strong>: remove the 3 impossible durations, keep the genuine long songs.</span></li>
+        <li><span class="ck">✓</span><span><strong>Order the prep</strong>: clean → transform skew → scale → encode took 915 raw rows to an 831 × 15 analysis-ready table.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Practice Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Practice Challenges</h2></div>
+    <p>Five challenges on the Spotify data, following the case study beat by beat. Try them in Python before checking the
+       solutions.</p>
+
+    <div class="challenges">
+      <div class="challenge">
+        <div class="cnum">1</div>
+        <div class="cbody">
+          <h4>Dedup &amp; standardise categories</h4>
+          <p>Remove exact duplicate rows, then collapse the many <code>genre</code> spellings into the real genres.
+             Report the before/after label count and the genre value counts.</p>
+          <div class="chint">Hint: <code>drop_duplicates()</code>, then <code>.str.strip()</code> + a replace map.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">2</div>
+        <div class="cbody">
+          <h4>Fix missing-as-zero tempo</h4>
+          <p>Recode a <code>tempo</code> of 0 to <code>NaN</code>, count the now-missing values, and median-impute them.
+             Why the median rather than the mean?</p>
+          <div class="chint">Hint: <code>replace(0, np.nan)</code> then <code>fillna(median)</code>; the median resists extremes.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">3</div>
+        <div class="cbody">
+          <h4>Errors vs genuine extremes</h4>
+          <p>Apply the IQR rule to <code>duration_ms</code>. How many rows does it flag, and which are real data errors?
+             Remove only the errors and justify keeping the rest.</p>
+          <div class="chint">Hint: fence = Q3 + 1.5·IQR; only the &gt; 10-minute values are impossible.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">4</div>
+        <div class="cbody">
+          <h4>Find the multicollinear pair</h4>
+          <p>Compute the correlation matrix of the audio features and identify the most strongly correlated pair. What
+             would you do about it before fitting a linear model?</p>
+          <div class="chint">Hint: largest off-diagonal |r| is energy &amp; loudness (≈ 0.94); drop or combine one.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">5</div>
+        <div class="cbody">
+          <h4>Transform, then scale</h4>
+          <p>Log-transform <code>duration</code> (report skew before and after), then standardise the feature set so each
+             column has mean 0 and SD 1. Why transform before scaling?</p>
+          <div class="chint">Hint: <code>np.log</code>, then <code>StandardScaler</code>; scaling a skewed column keeps the skew.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> answers all five on the real data, in the same visual
+           style. Try them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/ch27_challenges_solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch27_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch27_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on the Spotify case study. Answer them, hit <strong>Check Answers</strong>, and keep refining until
+       you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <!-- ===== Chapter Nav ===== -->
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch26.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 26 · Previous</span><br><span class="cn-title">Review &amp; Case-Study Roadmap</span></span>
+    </a>
+    <div class="cn-btn next" style="cursor:default;opacity:0.6" title="Coming soon">
+      <span><span class="cn-dir">Chapter 28 · Coming soon</span><br><span class="cn-title">Case Study: Ames Housing Prices</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </div>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 27 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<!-- ===== Quiz data for this chapter ===== -->
+<script>
+  window.QUIZ_ID = "ch27";
+  window.QUIZ_DATA = [
+    {
+      q: "The audit found 8 rows that are exact copies of other rows. The fix is to…",
+      options: [
+        "Impute them",
+        "Drop the duplicates (drop_duplicates)",
+        "Scale them",
+        "Leave them; duplicates are harmless"
+      ],
+      answer: 1,
+      explain: "Exact duplicate rows double-count those songs in every statistic and chart. Removing them with drop_duplicates is the Chapter 19 fix."
+    },
+    {
+      q: "The genre column is typed 19 ways ('Pop', 'pop ', 'POP', 'EDM'…) for 8 real genres. Before any group-by you must…",
+      options: [
+        "One-hot encode immediately",
+        "Standardise the labels (trim, lowercase, map variants) to the real categories",
+        "Delete the column",
+        "Nothing; pandas handles it"
+      ],
+      answer: 1,
+      explain: "Until the variants collapse to the true genres, a group-by treats 'Pop' and 'pop ' as different. Standardising categories is part of Chapter 19 cleaning."
+    },
+    {
+      q: "Some tempo values are recorded as 0 BPM. The right treatment is…",
+      options: [
+        "Keep 0 as a valid slow tempo",
+        "Recode 0 to NaN, then median-impute",
+        "Drop the whole tempo column",
+        "Replace 0 with the maximum tempo"
+      ],
+      answer: 1,
+      explain: "0 BPM is impossible, so it is missing in disguise: recode to NaN, then median-impute (the median resists extreme tempos). That is Chapter 20."
+    },
+    {
+      q: "popularity has 73 missing values and is the outcome we want to explain. The best move is…",
+      options: [
+        "Median-impute it like any other column",
+        "Fill it with 0",
+        "Drop the rows missing it (never invent a target)",
+        "Fill it with the most popular value"
+      ],
+      answer: 2,
+      explain: "Imputing the target bakes your assumptions into the answer. Because popularity is the outcome, you drop those rows instead, the opposite of how you'd treat a missing feature."
+    },
+    {
+      q: "duration_ms contains a value of 18,000,000 (5 hours) and the IQR rule flags two dozen long tracks. You should…",
+      options: [
+        "Delete every flagged row",
+        "Keep everything; rules are unreliable",
+        "Remove only the impossible values; keep genuine long songs",
+        "Scale the column to hide them"
+      ],
+      answer: 2,
+      explain: "An outlier rule detects, it does not decide. Inspect the flags: the 3 impossible (multi-hour) values are errors to remove; the genuine long tracks stay (Chapter 21)."
+    },
+    {
+      q: "energy and loudness correlate at r ≈ 0.94. For a linear model this is…",
+      options: [
+        "Multicollinearity; consider dropping or combining one",
+        "A sign the data is clean",
+        "Proof that loudness causes energy",
+        "Irrelevant"
+      ],
+      answer: 0,
+      explain: "Two near-duplicate features are multicollinear: they inflate coefficient variance and muddy interpretation. Drop or combine one before fitting (Chapter 24)."
+    },
+    {
+      q: "The audio features span 0–1, −40–0 dB, and the hundreds of thousands. Before a distance- or gradient-based model you should…",
+      options: [
+        "Standardise them to mean 0, SD 1 (or min-max)",
+        "Leave them; scale never matters",
+        "Delete the large-valued columns",
+        "Convert all of them to categories"
+      ],
+      answer: 0,
+      explain: "On raw scales, duration_ms would dominate any distance or gradient by sheer magnitude. Standardising puts every feature on equal footing (Chapter 24)."
+    },
+    {
+      q: "After removing the errors, duration is still right-skewed (≈ +0.93). A log transform…",
+      options: [
+        "Makes the skew worse",
+        "Pulls the long right tail in toward symmetry (≈ +0.04)",
+        "Deletes the outliers",
+        "Has no effect on skew"
+      ],
+      answer: 1,
+      explain: "A natural log compresses a long right tail, dropping duration's skew from about +0.93 to near 0, which steadies models that prefer symmetric inputs (Chapter 22)."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
