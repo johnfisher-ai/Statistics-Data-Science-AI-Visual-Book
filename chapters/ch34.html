@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 34 · Bayes' Theorem &amp; the Law of Total Probability — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .disp-table code { font-size:0.82em; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch34_bayes.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part VI · Probability</span><span class="sep">/</span>
+      <span>Chapter 34</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part VI · Probability</span> Reversing the conditional</div>
+    <h1>Bayes' Theorem &amp; the <span class="accent">Law of Total Probability</span></h1>
+    <p class="dek">Chapter 33 found P(evidence given a cause). Bayes' theorem runs the arrow backward, from P(evidence | cause)
+       to P(cause | evidence), and it is how you update a belief when new data arrives. Its denominator is the Law of
+       Total Probability.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~16 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 34</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">You almost always observe an <em>effect</em> and want to infer its <em>cause</em>: you see a positive
+       test and ask about the disease, read a word and ask whether the email is spam. Conditional probability runs the
+       other way, from cause to effect. <span class="term">Bayes' theorem</span> reverses it.</p>
+
+    <div class="def-card">
+      <div class="sigma">B</div>
+      <div class="def-body">
+        <span class="def-kw">Bayes' theorem</span> rewrites a conditional in terms of its reverse:
+        <strong>P(H | E) = P(E | H) &#215; P(H) / P(E)</strong>. It updates a <em>prior</em> belief P(H) into a
+        <em>posterior</em> P(H | E) after seeing evidence E.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">📜</div>
+      <div><div class="ctitle">A theorem read aloud to the dead man's society</div>
+        <p>The Reverend <strong>Thomas Bayes</strong> worked out the rule in the 1740s but never published it. After his
+           death his friend <strong>Richard Price</strong> edited the manuscript and read it to the Royal Society on
+           <strong>23 December 1763</strong>. A decade later <strong>Pierre-Simon Laplace</strong> rediscovered it
+           independently and gave it the general form we use, in his 1812 <em>Theorie analytique des probabilites</em>.
+           For two centuries it was a curiosity; today it is the backbone of spam filters, medical diagnosis, and machine
+           learning.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: the theorem ===== -->
+  <section id="theorem">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Reversing the Conditional</h2></div>
+    <p>Bayes' theorem comes straight from the definition of conditional probability. Since P(H and E) can be written two
+       ways, P(E | H)P(H) or P(H | E)P(E), setting them equal and solving gives the rule. Its four pieces each have a
+       name worth memorizing.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 230" width="100%" font-family="Inter, sans-serif" aria-label="The anatomy of Bayes' theorem: posterior equals likelihood times prior over evidence">
+        <text x="340" y="22" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Flip P(evidence | hypothesis) into P(hypothesis | evidence)</text>
+        <!-- formula -->
+        <text x="120" y="118" text-anchor="middle" font-size="20" fill="#4f46e5" font-weight="800">P(H | E)</text>
+        <text x="200" y="118" text-anchor="middle" font-size="20" fill="#1a2138" font-weight="700">=</text>
+        <text x="400" y="104" text-anchor="middle" font-size="18" fill="#1a2138" font-weight="700">P(E | H) &#215; P(H)</text>
+        <line x1="300" y1="116" x2="500" y2="116" stroke="#1a2138" stroke-width="2"/>
+        <text x="400" y="140" text-anchor="middle" font-size="18" fill="#1a2138" font-weight="700">P(E)</text>
+        <!-- labels -->
+        <text x="120" y="150" text-anchor="middle" font-size="9.5" fill="#4f46e5" font-weight="800">posterior</text>
+        <text x="120" y="164" text-anchor="middle" font-size="8.5" fill="#8b94b3">what we want</text>
+        <text x="355" y="74" text-anchor="middle" font-size="9.5" fill="#059669" font-weight="800">likelihood</text>
+        <text x="452" y="74" text-anchor="middle" font-size="9.5" fill="#d97706" font-weight="800">prior</text>
+        <text x="400" y="170" text-anchor="middle" font-size="9.5" fill="#db2777" font-weight="800">evidence (total probability)</text>
+        <text x="340" y="210" text-anchor="middle" font-size="10" fill="#4a5578">posterior &#8733; likelihood &#215; prior: the evidence in the denominator just rescales it to sum to 1</text>
+      </svg>
+    </figure>
+
+    <p>Read it as a sentence: the <span class="hl">posterior</span> (belief in the hypothesis after seeing the evidence)
+       equals the <span class="hl">likelihood</span> (how well the hypothesis predicts the evidence) times the
+       <span class="hl">prior</span> (belief before), divided by the <span class="hl">evidence</span> (how likely that
+       data was overall). The shape <strong>posterior &#8733; likelihood &#215; prior</strong> is the whole of Bayesian
+       reasoning in five symbols.</p>
+  </section>
+
+  <!-- ===== Section 2: total probability ===== -->
+  <section id="total-probability">
+    <div class="section-eyebrow"><div class="num">2</div><h2>The Law of Total Probability</h2></div>
+    <p>That denominator P(E) is usually not handed to you. You compute it with the <span class="term">Law of Total
+       Probability</span>: split the world into cases that cover every possibility, find the chance of E within each, and
+       add them up, weighted by how likely each case is.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 240" width="100%" font-family="Inter, sans-serif" aria-label="A tree splitting defects across two machines to total the overall defect rate">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Two machines partition every part: total the defect paths</text>
+        <g stroke="#8b94b3" stroke-width="1.4" fill="none">
+          <line x1="70" y1="120" x2="240" y2="68"/><line x1="70" y1="120" x2="240" y2="172"/>
+          <line x1="290" y1="68" x2="450" y2="58"/><line x1="290" y1="172" x2="450" y2="162"/>
+        </g>
+        <circle cx="70" cy="120" r="14" fill="#1e1b4b"/><text x="70" y="124" text-anchor="middle" font-size="8.5" fill="#fff">part</text>
+        <g font-size="8.5" fill="#4a5578">
+          <text x="150" y="84">P(A) = 0.60</text><text x="150" y="160">P(B) = 0.40</text>
+          <text x="356" y="50">defect 0.02</text><text x="356" y="186">defect 0.05</text>
+        </g>
+        <circle cx="265" cy="68" r="13" fill="#eef2ff" stroke="#4f46e5"/><text x="265" y="72" text-anchor="middle" font-size="9" fill="#4f46e5" font-weight="700">A</text>
+        <circle cx="265" cy="172" r="13" fill="#eef2ff" stroke="#4f46e5"/><text x="265" y="176" text-anchor="middle" font-size="9" fill="#4f46e5" font-weight="700">B</text>
+        <rect x="452" y="46" width="150" height="26" rx="7" fill="#eef2ff" stroke="#4f46e5"/><text x="527" y="63" text-anchor="middle" font-size="9.5" fill="#1a2138" font-weight="700">0.60 &#215; 0.02 = 0.012</text>
+        <rect x="452" y="150" width="150" height="26" rx="7" fill="#fee2e2" stroke="#db2777"/><text x="527" y="167" text-anchor="middle" font-size="9.5" fill="#1a2138" font-weight="700">0.40 &#215; 0.05 = 0.020</text>
+        <rect x="150" y="206" width="380" height="28" rx="8" fill="#4f46e5"/>
+        <text x="340" y="224" text-anchor="middle" font-size="11" fill="#fff" font-weight="800">P(defective) = 0.012 + 0.020 = 0.032</text>
+      </svg>
+    </figure>
+
+    <p>For two machines, P(defective) = P(def | A)P(A) + P(def | B)P(B) = 0.012 + 0.020 = <strong>0.032</strong>. Now Bayes
+       can run: given a defect, P(B | defective) = 0.020 / 0.032 = <strong>0.625</strong>. Machine B makes fewer parts but
+       is so much more defect-prone that it is the likelier source of any given defect, the prior 0.40 updates upward to
+       0.625.</p>
+
+    <div class="callout note">
+      <div class="cico">🧩</div>
+      <div><div class="ctitle">The denominator is just the sum of the numerators</div>
+        <p>A handy shortcut: P(E) is always the sum over every branch of likelihood &#215; prior. So Bayes' theorem is
+           really "this branch divided by the total of all branches". If you can draw the tree, you can read the posterior
+           straight off it without memorizing anything.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 3: prior to posterior ===== -->
+  <section id="update">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Prior to Posterior: a Worked Update</h2></div>
+    <p>Bayes shines when a hypothesis is rare. Suppose a disease has 0.5% prevalence, and a test has 99% sensitivity
+       (catches the sick) and 95% specificity (clears the healthy). You test positive. What now?</p>
+
+    <p>The prevalence is the <strong>prior</strong>, P(disease) = 0.005. The evidence, by total probability, is
+       P(positive) = 0.005 &#215; 0.99 + 0.995 &#215; 0.05 = <strong>0.0547</strong>. Bayes gives the
+       <strong>posterior</strong>:</p>
+
+    <div class="callout key">
+      <div class="cico">🧮</div>
+      <div><div class="ctitle">The update</div>
+        <p style="font-size:1.02rem;text-align:center;margin:0.3rem 0">
+           <strong>P(disease | positive) = (0.005 &#215; 0.99) / 0.0547 &#8776; 0.090</strong></p>
+        <p>One positive test raises the chance of disease from 0.5% to about <strong>9%</strong>, an 18-fold jump, yet
+           still far from certain. The base rate does not vanish just because a test fired; Bayes keeps it in view, which
+           is exactly what intuition forgets (the base-rate trap of Chapter 33).</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 4: evidence accumulates ===== -->
+  <section id="accumulate">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Evidence Accumulates</h2></div>
+    <p>Bayesian updating is sequential, and that is its superpower. Take a second, independent positive test. The
+       posterior you just computed becomes the new <em>prior</em>, and you run Bayes again.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 210" width="100%" font-family="Inter, sans-serif" aria-label="The posterior probability of disease climbing with each independent positive test">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Each independent positive test updates the posterior; belief compounds</text>
+        <line x1="60" y1="172" x2="640" y2="172" stroke="#cdd3e6" stroke-width="1"/>
+        <!-- bars: values 0.005, 0.09, 0.66, 0.975 scaled by 140 -->
+        <rect x="98"  y="171" width="80" height="1"   rx="3" fill="#c7d2fe"/>
+        <rect x="258" y="159" width="80" height="13"  rx="3" fill="#a5b4fc"/>
+        <rect x="418" y="80"  width="80" height="92"  rx="3" fill="#6366f1"/>
+        <rect x="540" y="35"  width="80" height="137" rx="3" fill="#4f46e5"/>
+        <g font-size="10.5" font-weight="800" fill="#1a2138" text-anchor="middle">
+          <text x="138" y="163">0.5%</text><text x="298" y="151">9%</text><text x="458" y="72">66%</text><text x="580" y="27">97%</text>
+        </g>
+        <g font-size="9" fill="#8b94b3" text-anchor="middle">
+          <text x="138" y="188">prior</text><text x="298" y="188">+1 positive</text><text x="458" y="188">+2 positive</text><text x="580" y="188">+3 positive</text>
+        </g>
+      </svg>
+    </figure>
+
+    <p>Two positives push the posterior to about <strong>66%</strong>; a third crosses <strong>97%</strong>. No single
+       test is conclusive, but independent evidence compounds, each result reweighting the last. This is the engine of
+       all Bayesian learning: data arrives, the posterior shifts, and that posterior is the starting point for whatever
+       comes next.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Bayes in Machine Learning &amp; AI</h2></div>
+    <p>Bayes' theorem is not just a probability exercise; it is one of the load-bearing ideas of machine learning. Whole
+       families of models are Bayes' theorem wearing different clothes.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 150" width="100%" font-family="Inter, sans-serif" aria-label="A naive Bayes spam filter updates the probability of spam after seeing a word">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Naive Bayes is Bayes' theorem on words: prior P(spam) updates to a posterior</text>
+        <text x="118" y="56" font-size="10" fill="#4a5578">prior P(spam)</text>
+        <rect x="118" y="62" width="190" height="22" rx="4" fill="#e6e9f2"/><rect x="118" y="62" width="76" height="22" rx="4" fill="#8b94b3"/>
+        <text x="320" y="78" font-size="10" fill="#1a2138" font-weight="700">0.40</text>
+        <text x="118" y="108" font-size="10" fill="#4a5578">posterior P(spam | "free")</text>
+        <rect x="118" y="114" width="190" height="22" rx="4" fill="#ddd6fe"/><rect x="118" y="114" width="160" height="22" rx="4" fill="#4f46e5"/>
+        <text x="320" y="130" font-size="10" fill="#4f46e5" font-weight="800">0.84</text>
+        <text x="430" y="92" font-size="9.5" fill="#4a5578">P(spam|free) = P(free|spam)P(spam) / P(free)</text>
+        <text x="430" y="108" font-size="9.5" fill="#4a5578">= (0.80 &#215; 0.40) / 0.38 &#8776; 0.84;</text>
+        <text x="430" y="124" font-size="9.5" fill="#4a5578">many words multiply into the posterior.</text>
+      </svg>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Bayesian idea</th><th>In ML / AI it appears as</th><th>Concrete example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">posterior &#8733; likelihood &#215; prior</td><td>The <strong>naive Bayes</strong> classifier</td><td>P(spam | words) from per-word likelihoods</td></tr>
+          <tr><td class="nm">Prior distribution</td><td>Regularization and prior belief</td><td>a prior on weights pulls a model toward simpler fits</td></tr>
+          <tr><td class="nm">Posterior over parameters</td><td>Bayesian inference (MAP, MCMC)</td><td>a full distribution of plausible models, not one point</td></tr>
+          <tr><td class="nm">Sequential updating</td><td>Online learning, Kalman filters</td><td>each new observation refines the estimate</td></tr>
+          <tr><td class="nm">Posterior comparison</td><td>Bayesian A/B testing</td><td>P(variant B is better | the data) directly</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p><strong>Naive Bayes</strong> is the textbook case: Bayes' theorem plus the conditional-independence assumption
+           from Chapter 33, multiplying one word likelihood after another into P(class | features). More broadly,
+           Bayesian methods treat a model's parameters as a <strong>posterior distribution</strong> rather than a single
+           guess, which is how modern systems express <strong>uncertainty</strong>, regularize with priors, and update
+           online as data streams in. Where a classical model says "the answer is 0.84", a Bayesian model says "here is
+           the whole range of what is plausible, and how sure I am", a distinction that matters enormously when an AI's
+           confidence has real consequences.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Update beliefs in Python</h3>
+          <p>The companion notebook builds the two-machine tree and reads P(B | defective) = 0.625 straight off it,
+             totals the defect rate with the Law of Total Probability, turns a 0.5% prior into a 9% posterior after one
+             positive test, then chains a second and third test to watch belief climb past 97%, and finishes with a tiny
+             naive Bayes spam filter, each result checked by simulation.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch34_bayes.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch34_bayes.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch34_bayes.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code> and <code>matplotlib</code> and launch
+      <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Bayes' theorem</strong>: P(H | E) = P(E | H) P(H) / P(E); it reverses a conditional, turning likelihood and prior into a posterior.</span></li>
+        <li><span class="ck">✓</span><span><strong>posterior &#8733; likelihood &#215; prior</strong> is the whole idea; the denominator just rescales so the posteriors sum to 1.</span></li>
+        <li><span class="ck">✓</span><span><strong>Law of Total Probability</strong>: P(E) = &#931; P(E | H&#7522;) P(H&#7522;) over a partition; it is the sum of all the tree's branches.</span></li>
+        <li><span class="ck">✓</span><span><strong>Rare hypotheses stay rare</strong>: one positive test on a 0.5% disease gives only a 9% posterior; evidence compounds across independent tests.</span></li>
+        <li><span class="ck">✓</span><span><strong>In ML/AI</strong>: naive Bayes, Bayesian inference, priors as regularization, and uncertainty estimates are all this one formula.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them on paper or in Python before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Reverse a conditional</h4>
+        <p>70% of email is legitimate, 30% is spam. The word "offer" is in 60% of spam and 5% of legit mail. An email has
+           "offer". Find P(spam | "offer").</p>
+        <div class="chint">Hint: P("offer") = 0.30(0.60) + 0.70(0.05).</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Total probability</h4>
+        <p>Three suppliers ship parts: S1 = 50% at 1% defective, S2 = 30% at 2%, S3 = 20% at 3%. What fraction of all
+           parts are defective?</p>
+        <div class="chint">Hint: weight each defect rate by the supplier's share, then add.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>One test</h4>
+        <p>A condition has 2% prevalence; a test has 90% sensitivity and 85% specificity. Given one positive, find
+           P(condition | positive).</p>
+        <div class="chint">Hint: P(positive) = 0.02(0.90) + 0.98(0.15).</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>A second test</h4>
+        <p>The same patient tests positive again on an independent test. Update once more, using your Challenge 3
+           posterior as the new prior.</p>
+        <div class="chint">Hint: prior &#8776; 0.109; run Bayes again.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Naive Bayes</h4>
+        <p>A filter has prior P(spam) = 0.5. The word "win" is in 70% of spam and 5% of ham. Given "win", find
+           P(spam | "win").</p>
+        <div class="chint">Hint: (0.5)(0.70) / [(0.5)(0.70) + (0.5)(0.05)].</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code.
+           Try them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/ch34_challenges_solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch34_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch34_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on Bayes' theorem and total probability. Answer them, hit <strong>Check Answers</strong>, and
+       keep refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch33.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 33 · Previous</span><br><span class="cn-title">Conditional Probability &amp; Independence</span></span>
+    </a>
+    <div class="cn-btn next" style="cursor:default;opacity:0.6" title="Coming soon">
+      <span><span class="cn-dir">Chapter 35 · Coming soon</span><br><span class="cn-title">Random Variables &amp; Expectation</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </div>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 34 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch34";
+  window.QUIZ_DATA = [
+    {
+      q: "Bayes' theorem is written…",
+      options: ["P(H | E) = P(E | H) + P(H)", "P(H | E) = P(E | H) × P(H) / P(E)", "P(H | E) = P(H) / P(E)", "P(H | E) = P(E | H) × P(E)"],
+      answer: 1,
+      explain: "P(H | E) = P(E | H) P(H) / P(E): likelihood times prior, divided by the evidence. It reverses the conditional from P(E | H) to P(H | E)."
+    },
+    {
+      q: "In Bayes' theorem, the probability of the hypothesis BEFORE seeing the evidence is the…",
+      options: ["Posterior", "Likelihood", "Prior", "Evidence"],
+      answer: 2,
+      explain: "P(H) is the prior, your belief before the data. After updating, P(H | E) is the posterior."
+    },
+    {
+      q: "The compact summary of Bayesian reasoning is…",
+      options: ["posterior = prior − likelihood", "posterior ∝ likelihood × prior", "prior ∝ posterior × evidence", "likelihood = posterior × prior"],
+      answer: 1,
+      explain: "posterior ∝ likelihood × prior. The denominator P(E) only rescales the result so the posteriors sum to 1."
+    },
+    {
+      q: "The Law of Total Probability computes P(E) by…",
+      options: ["Taking the largest P(E | Hᵢ)", "Summing P(E | Hᵢ) × P(Hᵢ) over a partition of cases", "Multiplying all the priors", "Dividing P(E | H) by P(H)"],
+      answer: 1,
+      explain: "Split the world into cases that cover every possibility, then add likelihood × prior across them. It is the sum of all the branches of the tree."
+    },
+    {
+      q: "Machine A makes 60% of parts at 2% defective; B makes 40% at 5%. A part is defective. P(it came from B) is…",
+      options: ["0.40", "0.50", "0.625", "0.05"],
+      answer: 2,
+      explain: "P(B | defective) = (0.40 × 0.05) / (0.60×0.02 + 0.40×0.05) = 0.020 / 0.032 = 0.625. B's higher defect rate makes it the likelier source."
+    },
+    {
+      q: "A disease has 0.5% prevalence; a test is 99% sensitive and 95% specific. After ONE positive, P(disease) is about…",
+      options: ["99%", "9%", "50%", "0.5%"],
+      answer: 1,
+      explain: "P(disease | positive) = (0.005 × 0.99) / 0.0547 ≈ 0.09. The low base rate keeps the posterior modest even after a positive test."
+    },
+    {
+      q: "In sequential Bayesian updating, after the first observation the posterior becomes the…",
+      options: ["New likelihood", "New prior for the next update", "Evidence", "Final answer, no more updates allowed"],
+      answer: 1,
+      explain: "Yesterday's posterior is today's prior. Independent evidence compounds: one positive gave 9%, two give about 66%, three cross 97%."
+    },
+    {
+      q: "A naive Bayes spam classifier works by…",
+      options: ["Ignoring the prior P(spam)", "Using Bayes' theorem with per-word likelihoods to get P(spam | words)", "Counting only the longest word", "Assuming every email is spam"],
+      answer: 1,
+      explain: "It applies posterior ∝ likelihood × prior, multiplying each word's likelihood (assuming conditional independence) to update P(spam | the words)."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
