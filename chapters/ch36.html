@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 36 · Probability by Simulation (Monte Carlo) — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .disp-table code { font-size:0.82em; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch36_simulation.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part VI · Probability</span><span class="sep">/</span>
+      <span>Chapter 36</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part VI · Probability</span> The computational shortcut</div>
+    <h1>Probability by <span class="accent">Simulation</span></h1>
+    <p class="dek">Every rule in this Part can be checked, or replaced, by a computer that simply runs the experiment many
+       times and counts. The Monte Carlo method turns "I cannot derive this" into "I can simulate this", and it is one of
+       the most practical ideas in all of statistics and AI.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~15 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 36</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">This Part taught you to <em>derive</em> probabilities: count outcomes, apply rules, reverse
+       conditionals. But many real questions resist a clean formula. The way out is wonderfully direct: build the random
+       experiment in code, run it tens of thousands of times, and let the frequencies answer the question.</p>
+
+    <div class="def-card">
+      <div class="sigma">~</div>
+      <div class="def-body">
+        The <span class="def-kw">Monte Carlo method</span> estimates a probability or an expectation by simulating the
+        random process many times and averaging the results. It rests on the Law of Large Numbers: as the number of
+        trials grows, the observed frequency converges to the true probability.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🎰</div>
+      <div><div class="ctitle">Named for a casino</div>
+        <p>The method was developed in the 1940s by <strong>Stanislaw Ulam and John von Neumann</strong> on the Manhattan
+           Project, while computing how neutrons scatter, a problem too tangled for pen and paper. Ulam's uncle gambled at
+           the Monte Carlo casino in Monaco, and the codename stuck. Today the same idea prices options, renders movie
+           lighting, trains reinforcement-learning agents, and powered the engine behind AlphaGo.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: the loop ===== -->
+  <section id="loop">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Monte Carlo Loop</h2></div>
+    <p>The entire method is one short loop. Define what counts as a success, run the experiment once at random, repeat a
+       large number of times, and divide the successes by the trials. That ratio is your estimated probability.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 200" width="100%" font-family="Inter, sans-serif" aria-label="The four steps of a Monte Carlo simulation, with a repeat loop">
+        <text x="340" y="22" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Estimate a probability by repeating a random trial</text>
+        <!-- boxes -->
+        <rect x="20"  y="80" width="140" height="60" rx="10" fill="#eef2ff" stroke="#4f46e5"/>
+        <text x="90"  y="105" text-anchor="middle" font-size="10" fill="#1a2138" font-weight="700">Define the event</text>
+        <text x="90"  y="123" text-anchor="middle" font-size="9" fill="#4a5578">e.g. "sum = 7"</text>
+        <rect x="200" y="80" width="140" height="60" rx="10" fill="#eef2ff" stroke="#4f46e5"/>
+        <text x="270" y="105" text-anchor="middle" font-size="10" fill="#1a2138" font-weight="700">Simulate one</text>
+        <text x="270" y="123" text-anchor="middle" font-size="9" fill="#4a5578">random trial</text>
+        <rect x="380" y="80" width="150" height="60" rx="10" fill="#eef2ff" stroke="#4f46e5"/>
+        <text x="455" y="105" text-anchor="middle" font-size="10" fill="#1a2138" font-weight="700">Repeat N times,</text>
+        <text x="455" y="123" text-anchor="middle" font-size="9" fill="#4a5578">count the successes</text>
+        <rect x="570" y="80" width="100" height="60" rx="10" fill="#4f46e5"/>
+        <text x="620" y="105" text-anchor="middle" font-size="10" fill="#fff" font-weight="800">Estimate</text>
+        <text x="620" y="123" text-anchor="middle" font-size="9" fill="#c7d2fe">= count / N</text>
+        <!-- arrows -->
+        <g stroke="#8b94b3" stroke-width="1.5" fill="none" marker-end="url(#a36)">
+          <line x1="160" y1="110" x2="196" y2="110"/><line x1="340" y1="110" x2="376" y2="110"/><line x1="530" y1="110" x2="566" y2="110"/>
+        </g>
+        <defs><marker id="a36" markerWidth="9" markerHeight="9" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8b94b3"/></marker></defs>
+        <!-- repeat loop -->
+        <path d="M270,80 C270,46 455,46 455,78" stroke="#db2777" stroke-width="1.5" fill="none" marker-end="url(#a36b)"/>
+        <defs><marker id="a36b" markerWidth="9" markerHeight="9" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#db2777"/></marker></defs>
+        <text x="362" y="40" text-anchor="middle" font-size="9" fill="#db2777" font-weight="800">repeat &#215; N</text>
+      </svg>
+    </figure>
+
+    <p>For example, the chance of at least one six in four rolls is <strong>1 &#8722; (5/6)&#8308; &#8776; 0.5177</strong>
+       by the complement rule. Simulate 500,000 sets of four rolls, count the ones containing a six, and the frequency
+       comes out 0.517: a measurement of the probability, accurate to a few thousandths, with no algebra at all.</p>
+  </section>
+
+  <!-- ===== Section 2: estimating pi ===== -->
+  <section id="pi">
+    <div class="section-eyebrow"><div class="num">2</div><h2>A Classic: Estimating &#960; with Darts</h2></div>
+    <p>The showpiece of Monte Carlo: estimate &#960; using nothing but random points. Scatter darts uniformly over a unit
+       square. The fraction landing inside the quarter circle equals the ratio of the areas, which is &#960;/4. Multiply
+       by 4 and you have &#960;.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 300" width="100%" font-family="Inter, sans-serif" aria-label="Random darts in a square, with those inside a quarter circle counted to estimate pi">
+        <text x="340" y="22" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">The fraction of darts inside the quarter circle is &#960;/4</text>
+        <!-- square -->
+        <rect x="220" y="40" width="240" height="240" fill="#fafbfe" stroke="#cdd3e6"/>
+        <!-- quarter circle region, corner at bottom-left (220,280), r=240 -->
+        <path d="M220,280 L460,280 A240,240 0 0,0 220,40 Z" fill="#eef2ff"/>
+        <path d="M460,280 A240,240 0 0,0 220,40" fill="none" stroke="#db2777" stroke-width="2"/>
+        <!-- dots inside (indigo) -->
+        <g fill="#4f46e5">
+          <circle cx="250" cy="260" r="3.2"/><circle cx="300" cy="250" r="3.2"/><circle cx="350" cy="270" r="3.2"/>
+          <circle cx="420" cy="265" r="3.2"/><circle cx="260" cy="210" r="3.2"/><circle cx="320" cy="200" r="3.2"/>
+          <circle cx="380" cy="210" r="3.2"/><circle cx="430" cy="220" r="3.2"/><circle cx="250" cy="160" r="3.2"/>
+          <circle cx="310" cy="150" r="3.2"/><circle cx="360" cy="160" r="3.2"/><circle cx="250" cy="100" r="3.2"/>
+          <circle cx="300" cy="90" r="3.2"/><circle cx="250" cy="60" r="3.2"/>
+        </g>
+        <!-- dots outside (gray) -->
+        <g fill="#94a3b8">
+          <circle cx="450" cy="190" r="3.2"/><circle cx="450" cy="130" r="3.2"/><circle cx="400" cy="90" r="3.2"/>
+          <circle cx="440" cy="80" r="3.2"/><circle cx="360" cy="60" r="3.2"/><circle cx="420" cy="55" r="3.2"/>
+        </g>
+        <!-- legend / result -->
+        <circle cx="500" cy="120" r="4" fill="#4f46e5"/><text x="512" y="124" font-size="9.5" fill="#4a5578">inside (counts)</text>
+        <circle cx="500" cy="142" r="4" fill="#94a3b8"/><text x="512" y="146" font-size="9.5" fill="#4a5578">outside</text>
+        <text x="500" y="180" font-size="10" fill="#1a2138" font-weight="700">fraction inside &#8776; 0.785</text>
+        <text x="500" y="200" font-size="13" fill="#4f46e5" font-weight="800">&#960; &#8776; 4 &#215; 0.785 = 3.14</text>
+      </svg>
+    </figure>
+
+    <p>With 100,000 darts the estimate comes out near <strong>3.141</strong>. No formula for &#960; was used, only random
+       points and a ratio of areas. This is <span class="hl">Monte Carlo integration</span> in miniature: a hard quantity,
+       an area, an integral, an expectation, becomes a simple average over random samples.</p>
+  </section>
+
+  <!-- ===== Section 3: error ===== -->
+  <section id="error">
+    <div class="section-eyebrow"><div class="num">3</div><h2>How Accurate? The 1/&#8730;N Law</h2></div>
+    <p>Simulation is not magic, the estimate has its own random error. That error shrinks in proportion to
+       <strong>1/&#8730;N</strong>, where N is the number of trials. The honest, and slightly painful, consequence: to
+       cut the error in half you need four times the samples; for one more decimal place, a hundred times.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 210" width="100%" font-family="Inter, sans-serif" aria-label="The simulation estimate funneling toward the true value as trials increase">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">More trials, less error: the estimate funnels onto the truth</text>
+        <!-- funnel band -->
+        <path d="M60,40 L140,70 L240,85 L360,93 L500,97 L630,99 L630,101 L500,103 L360,107 L240,115 L140,130 L60,160 Z"
+              fill="#c7d2fe" fill-opacity="0.5"/>
+        <!-- true value line -->
+        <line x1="60" y1="100" x2="630" y2="100" stroke="#db2777" stroke-width="1.6" stroke-dasharray="5 4"/>
+        <text x="636" y="103" font-size="9" fill="#db2777" font-weight="700" text-anchor="end" transform="translate(0,14)">true value</text>
+        <!-- estimate path -->
+        <polyline points="60,58 100,150 140,82 190,122 240,92 300,108 360,97 440,103 520,99 630,100"
+                  fill="none" stroke="#4f46e5" stroke-width="2"/>
+        <text x="345" y="190" text-anchor="middle" font-size="9.5" fill="#4a5578">number of trials N  &#8594;  (to halve the error, quadruple N; error &#8733; 1/&#8730;N)</text>
+      </svg>
+    </figure>
+
+    <p>On log-log axes, plotting error against N gives a straight line of slope &#8722;1/2, the fingerprint of 1/&#8730;N
+       convergence. The takeaway is balance: simulation is trivially easy to <em>write</em>, but can be expensive to make
+       <em>precise</em>. For a rough answer it is unbeatable; for high precision, an exact formula (when one exists) wins.</p>
+
+    <div class="callout note">
+      <div class="cico">🌱</div>
+      <div><div class="ctitle">Set a seed</div>
+        <p>Because simulation uses randomness, two runs give slightly different answers. Fixing the random
+           <strong>seed</strong> (for example <code>np.random.default_rng(36)</code>) makes a run reproducible: you, and
+           anyone reading your work, get the exact same numbers every time. Reproducibility is a courtesy and a discipline,
+           not an optional extra.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 4: Monty Hall ===== -->
+  <section id="monty">
+    <div class="section-eyebrow"><div class="num">4</div><h2>When Intuition Fails: Monty Hall</h2></div>
+    <p>Simulation's greatest gift is settling arguments. Three doors hide one car and two goats. You pick a door; the
+       host, who knows where the car is, opens a <em>different</em> door to reveal a goat, then asks if you want to
+       switch. Should you? Almost everyone says it cannot matter. Almost everyone is wrong.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 170" width="100%" font-family="Inter, sans-serif" aria-label="Monty Hall simulation results: switching wins twice as often as staying">
+        <text x="340" y="22" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">200,000 simulated games: switching wins twice as often</text>
+        <text x="120" y="58" font-size="10" fill="#4a5578">Stay</text>
+        <rect x="118" y="64" width="420" height="22" rx="4" fill="#e6e9f2"/>
+        <rect x="118" y="64" width="140" height="22" rx="4" fill="#94a3b8"/>
+        <text x="548" y="80" font-size="10" fill="#1a2138" font-weight="700">wins 1/3 (&#8776; 33%)</text>
+        <text x="120" y="110" font-size="10" fill="#4a5578">Switch</text>
+        <rect x="118" y="116" width="420" height="22" rx="4" fill="#ddd6fe"/>
+        <rect x="118" y="116" width="280" height="22" rx="4" fill="#4f46e5"/>
+        <text x="548" y="132" font-size="10" fill="#4f46e5" font-weight="800">wins 2/3 (&#8776; 67%)</text>
+      </svg>
+    </figure>
+
+    <p>Switching wins about <strong>2/3</strong> of the time, double the odds of staying. The reason: your first pick is
+       right only 1/3 of the time, so 2/3 of the time the car is behind one of the other two doors, and the host helpfully
+       removes the wrong one. The host's choice is <em>not</em> random, it leaks information. You can argue this in words
+       forever; 200,000 simulated games end the debate in a second.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Monte Carlo in Machine Learning &amp; AI</h2></div>
+    <p>Monte Carlo is not a beginner's toy that real systems outgrow, it is everywhere in modern AI. Whenever a quantity
+       is an expectation or an integral too hard to compute exactly, the answer is almost always: sample it.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Monte Carlo idea</th><th>In ML / AI it appears as</th><th>Concrete example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Estimate an expectation</td><td>Reinforcement learning</td><td>average sampled rollouts to estimate expected reward</td></tr>
+          <tr><td class="nm">Sample a posterior</td><td>Bayesian inference (MCMC)</td><td>draw from P(parameters | data) when no formula exists</td></tr>
+          <tr><td class="nm">Resample your data</td><td>The bootstrap</td><td>a confidence interval for any statistic, no algebra</td></tr>
+          <tr><td class="nm">Random forward passes</td><td>Monte Carlo dropout</td><td>run a net many times to estimate its uncertainty</td></tr>
+          <tr><td class="nm">Search by random rollouts</td><td>Monte Carlo Tree Search</td><td>the planning engine behind AlphaGo</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>The hardest quantities in machine learning are <strong>expectations over enormous or unknown distributions</strong>:
+           an agent's expected return, a model's posterior over parameters, the uncertainty in a prediction. None has a
+           closed form, so practitioners reach for the tool in this chapter, average a batch of samples. <strong>MCMC</strong>
+           samples Bayesian posteriors; <strong>policy-gradient</strong> methods estimate reward gradients from sampled
+           episodes; <strong>Monte Carlo dropout</strong> turns a single network into an uncertainty estimate; the
+           <strong>bootstrap</strong> quantifies confidence with no formula; and <strong>Monte Carlo Tree Search</strong>
+           let AlphaGo plan in a space with more positions than atoms in the universe. The simple dart-throwing loop you
+           just wrote is, quite literally, a load-bearing pillar of modern AI.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Simulate it yourself</h3>
+          <p>The companion notebook estimates a probability by counting (and matches the exact 0.5177), throws 100,000
+             random darts to approximate &#960; with a scatter plot, measures the 1/&#8730;N error law on log-log axes,
+             settles Monty Hall with 200,000 games (stay 1/3, switch 2/3), and bootstraps a 95% confidence interval from a
+             single sample.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch36_simulation.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch36_simulation.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch36_simulation.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code> and <code>matplotlib</code> and launch
+      <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Monte Carlo</strong> estimates a probability or expectation by simulating the experiment many times and averaging; it rests on the Law of Large Numbers.</span></li>
+        <li><span class="ck">✓</span><span><strong>The loop</strong> is: define the event, run one random trial, repeat N times, divide successes by N.</span></li>
+        <li><span class="ck">✓</span><span><strong>Estimating &#960;</strong> with random darts shows the core trick: a hard area or integral becomes an average over samples.</span></li>
+        <li><span class="ck">✓</span><span><strong>Error shrinks like 1/&#8730;N</strong>: quadruple the samples to halve the error. Set a seed for reproducibility.</span></li>
+        <li><span class="ck">✓</span><span><strong>In ML/AI</strong>: reinforcement learning, MCMC, the bootstrap, MC dropout, and tree search (AlphaGo) are all Monte Carlo.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them in Python before checking the solutions, simulation is
+       best learned by writing the loop yourself.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Estimate a probability</h4>
+        <p>Simulate 200,000 sets of 3 fair coin flips and estimate P(at least one head). Compare to the exact value.</p>
+        <div class="chint">Hint: exact is 1 &#8722; (1/2)&#179; = 7/8.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Estimate an expectation</h4>
+        <p>Estimate E[max of two dice] by simulation. (Awkward by hand, easy to simulate.)</p>
+        <div class="chint">Hint: average the per-trial maximum; exact is 161/36 &#8776; 4.47.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>The birthday problem</h4>
+        <p>In a room of 23 people, estimate P(at least two share a birthday). Prepare to be surprised.</p>
+        <div class="chint">Hint: draw 23 birthdays from 0&#8211;364; check for any repeat. Expect about 0.51.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Monte Carlo integration</h4>
+        <p>Estimate the integral of x&#178; from 0 to 1 by averaging f(U) for uniform U on [0,1].</p>
+        <div class="chint">Hint: E[U&#178;] equals the integral; exact is 1/3.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Bootstrap a CI</h4>
+        <p>Given a sample, estimate a 95% confidence interval for its median by resampling with replacement 10,000 times.</p>
+        <div class="chint">Hint: take the 2.5th and 97.5th percentiles of the resample medians.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code.
+           Try them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/ch36_challenges_solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch36_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch36_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on simulation and Monte Carlo. Answer them, hit <strong>Check Answers</strong>, and keep
+       refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">🏁</div>
+    <div><div class="ctitle">That completes Part VI</div>
+      <p>You have built probability from outcomes and events all the way to Bayesian updating, expectation, and
+         simulation. Next, <strong>Part VII</strong> turns to the named <strong>probability distributions</strong>, the
+         Bernoulli, binomial, Poisson, and the famous normal curve, that give these ideas their standard shapes.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch35.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 35 · Previous</span><br><span class="cn-title">Random Variables &amp; Expectation</span></span>
+    </a>
+    <div class="cn-btn next" style="cursor:default;opacity:0.6" title="Coming soon">
+      <span><span class="cn-dir">Chapter 37 · Coming soon</span><br><span class="cn-title">Discrete Distributions</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </div>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 36 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch36";
+  window.QUIZ_DATA = [
+    {
+      q: "The Monte Carlo method estimates a probability by…",
+      options: ["Solving an exact formula", "Simulating the experiment many times and counting", "Asking an expert", "Always returning 0.5"],
+      answer: 1,
+      explain: "Monte Carlo runs the random experiment a large number of times and uses the observed frequency of successes as the estimate."
+    },
+    {
+      q: "Which theorem justifies why simulation works?",
+      options: ["Bayes' theorem", "The Law of Large Numbers", "The multiplication rule", "Pythagoras' theorem"],
+      answer: 1,
+      explain: "The Law of Large Numbers guarantees the observed relative frequency converges to the true probability as the number of trials grows."
+    },
+    {
+      q: "To estimate π by throwing random darts at a unit square, you compute…",
+      options: ["The average dart position", "4 × (fraction landing inside the quarter circle)", "The largest distance from the corner", "The number of darts squared"],
+      answer: 1,
+      explain: "The fraction inside the quarter circle equals π/4 (a ratio of areas), so multiplying that fraction by 4 estimates π."
+    },
+    {
+      q: "A Monte Carlo estimate's error shrinks roughly like…",
+      options: ["1/N", "1/√N", "N", "It never shrinks"],
+      answer: 1,
+      explain: "The standard error of a Monte Carlo estimate is proportional to 1/√N, so quadrupling the samples halves the error."
+    },
+    {
+      q: "To get one extra decimal place of accuracy (10× smaller error), you need about…",
+      options: ["10× more samples", "2× more samples", "100× more samples", "No more samples"],
+      answer: 2,
+      explain: "Since error ∝ 1/√N, reducing it by a factor of 10 requires N to grow by 10² = 100 times. Precision is expensive."
+    },
+    {
+      q: "In the Monty Hall problem, simulation shows that switching doors wins about…",
+      options: ["1/2 of the time", "1/3 of the time", "2/3 of the time", "Always"],
+      answer: 2,
+      explain: "Your first pick is right only 1/3 of the time, so switching wins the other 2/3. The host's reveal is not random and leaks information."
+    },
+    {
+      q: "Why set a random seed before simulating?",
+      options: ["It makes the simulation faster", "It makes the run reproducible (same numbers every time)", "It increases accuracy", "It is required by Python"],
+      answer: 1,
+      explain: "Fixing the seed makes the random draws repeatable, so you and your readers get identical results, which is essential for reproducible work."
+    },
+    {
+      q: "Which of these is NOT a Monte Carlo technique used in machine learning?",
+      options: ["MCMC sampling of a Bayesian posterior", "The bootstrap for confidence intervals", "Monte Carlo Tree Search in AlphaGo", "Solving a linear equation with the quadratic formula"],
+      answer: 3,
+      explain: "MCMC, the bootstrap, and tree search are all Monte Carlo methods. The quadratic formula is an exact analytic solution, not a simulation."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
