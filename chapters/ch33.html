@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 33 · Conditional Probability &amp; Independence — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .disp-table code { font-size:0.82em; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch33_conditional.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part VI · Probability</span><span class="sep">/</span>
+      <span>Chapter 33</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part VI · Probability</span> Updating on evidence</div>
+    <h1>Conditional Probability &amp; <span class="accent">Independence</span></h1>
+    <p class="dek">How does knowing one fact change the probability of another? Conditional probability is the answer, and
+       it is the idea behind tree diagrams, the notorious base-rate trap, and every classifier in machine learning.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~15 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 33</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Most real probabilities are conditional. We rarely ask "what is the chance of rain?" in a vacuum; we
+       ask given the clouds, given the season, given the forecast. <span class="term">Conditional probability</span> makes
+       "given" precise, and it turns out to be the hinge between basic probability and machine learning.</p>
+
+    <div class="def-card">
+      <div class="sigma">|</div>
+      <div class="def-body">
+        <span class="def-kw">P(A | B)</span> is the probability of A <em>given that</em> B has happened, defined as
+        <strong>P(A | B) = P(A and B) / P(B)</strong>. Two events are <span class="def-kw">independent</span> when
+        conditioning changes nothing: P(A | B) = P(A).
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🔎</div>
+      <div><div class="ctitle">Conditioning shrinks the world</div>
+        <p>The whole idea: once you know B happened, the only outcomes that remain possible are the ones inside B. So you
+           recompute A's probability using B as the new, smaller sample space. That single shift, from the full space to
+           "the world where B is true", explains tree diagrams, the base-rate trap, and how a spam filter reasons.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: P(A|B) ===== -->
+  <section id="conditional">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Conditional Probability: P(A | B)</h2></div>
+    <p>To find P(A | B), restrict attention to the outcomes where B is true, then ask what fraction of <em>those</em>
+       also have A. The denominator is no longer the whole sample space, it is just B.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 230" width="100%" font-family="Inter, sans-serif" aria-label="Conditioning on B reduces the sample space to B">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Given B, the world shrinks to B</text>
+        <!-- left: full sample space -->
+        <rect x="26" y="40" width="250" height="160" rx="8" fill="#fafbfe" stroke="#cdd3e6"/>
+        <text x="40" y="58" font-size="9" fill="#8b94b3" font-weight="700">sample space S</text>
+        <circle cx="130" cy="125" r="58" fill="#2563eb" fill-opacity="0.18" stroke="#2563eb" stroke-width="1.4"/>
+        <circle cx="200" cy="125" r="50" fill="#d97706" fill-opacity="0.20" stroke="#d97706" stroke-width="1.4"/>
+        <text x="92" y="100" font-size="12" fill="#2563eb" font-weight="800">A</text>
+        <text x="226" y="100" font-size="12" fill="#d97706" font-weight="800">B</text>
+        <!-- arrow -->
+        <text x="340" y="118" text-anchor="middle" font-size="10.5" fill="#1a2138" font-weight="700">given B</text>
+        <path d="M300,128 L400,128" stroke="#7c3aed" stroke-width="1.6" fill="none" marker-end="url(#a33)"/>
+        <defs><marker id="a33" markerWidth="9" markerHeight="9" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#7c3aed"/></marker></defs>
+        <!-- right: B is the new universe -->
+        <circle cx="540" cy="120" r="78" fill="#d97706" fill-opacity="0.14" stroke="#d97706" stroke-width="1.6"/>
+        <path d="M540,42 A78,78 0 0,0 480,150 A55,55 0 0,1 540,42 Z" fill="#2563eb" fill-opacity="0.35"/>
+        <text x="505" y="92" font-size="9.5" fill="#1a2138" font-weight="700">A and B</text>
+        <text x="568" y="150" font-size="9" fill="#92400e">B only</text>
+        <text x="540" y="214" text-anchor="middle" font-size="9" fill="#8b94b3">B is now everything; A's chance is the shaded share</text>
+      </svg>
+    </figure>
+
+    <p>In the notebook, among 1,000 visitors only 11% buy, but among the 400 who saw an ad, 20% buy:
+       P(buy | saw ad) = 80 / 400 = 0.20. The denominator dropped from 1,000 to 400 because we conditioned on the ad.
+       That the conditional probability differs from the overall one is precisely what makes the events
+       <strong>dependent</strong>.</p>
+  </section>
+
+  <!-- ===== Section 2: Multiplication & trees ===== -->
+  <section id="trees">
+    <div class="section-eyebrow"><div class="num">2</div><h2>The Multiplication Rule &amp; Tree Diagrams</h2></div>
+    <p>Rearranging the definition gives the general multiplication rule, <strong>P(A and B) = P(B) &#215; P(A | B)</strong>.
+       A probability tree draws it: the chance of a path is the product of its branch probabilities, and later branches
+       are <em>conditional</em> on earlier ones.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 240" width="100%" font-family="Inter, sans-serif" aria-label="A tree for drawing two cards without replacement">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Two cards, no replacement: the second branch is conditional on the first</text>
+        <g stroke="#8b94b3" stroke-width="1.4" fill="none">
+          <line x1="70" y1="120" x2="240" y2="64"/><line x1="70" y1="120" x2="240" y2="180"/>
+          <line x1="290" y1="64" x2="470" y2="44"/><line x1="290" y1="64" x2="470" y2="96"/>
+        </g>
+        <circle cx="70" cy="120" r="13" fill="#1e1b4b"/><text x="70" y="124" text-anchor="middle" font-size="9" fill="#fff">deck</text>
+        <g font-size="8.5" fill="#4a5578">
+          <text x="150" y="84">P(ace) = 4/52</text><text x="150" y="162">48/52</text>
+          <text x="372" y="46">P(ace | ace) = 3/51</text><text x="372" y="92">48/51</text>
+        </g>
+        <circle cx="262" cy="64" r="13" fill="#eef2ff" stroke="#4f46e5"/><text x="262" y="68" text-anchor="middle" font-size="9" fill="#4f46e5" font-weight="700">ace</text>
+        <circle cx="262" cy="180" r="13" fill="#eef2ff" stroke="#8b94b3"/><text x="262" y="184" text-anchor="middle" font-size="8.5" fill="#8b94b3">other</text>
+        <circle cx="483" cy="44" r="11" fill="#4f46e5"/><text x="483" y="48" text-anchor="middle" font-size="8" fill="#fff">ace</text>
+        <text x="505" y="48" font-size="10" fill="#1a2138" font-weight="700">both aces</text>
+        <rect x="120" y="206" width="440" height="26" rx="7" fill="#eef2ff" stroke="#4f46e5"/>
+        <text x="340" y="223" text-anchor="middle" font-size="11" fill="#4f46e5" font-weight="800">P(ace and ace) = 4/52 &#215; 3/51 &#8776; 0.0045 (about 1 in 221)</text>
+      </svg>
+    </figure>
+
+    <p>Removing the first ace changes the deck, so the second probability is the conditional 3/51, not 4/52. If you drew
+       <em>with</em> replacement the draws would be independent and you would multiply 4/52 by 4/52 instead. The tree
+       makes the dependence visible: the second fork depends on which way the first went.</p>
+  </section>
+
+  <!-- ===== Section 3: Independence ===== -->
+  <section id="independence">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Independence, Through Conditioning</h2></div>
+    <p>Chapter 31 tested independence with P(A and B) = P(A) &#215; P(B). Conditional probability gives the more
+       intuitive version of the same idea.</p>
+
+    <div class="callout note">
+      <div class="cico">🟰</div>
+      <div><div class="ctitle">Independent means "the condition tells you nothing"</div>
+        <p>A and B are <strong>independent</strong> exactly when <strong>P(A | B) = P(A)</strong>: knowing B happened
+           does not change A's probability at all. Two dice are independent, P(die 2 is a six) stays 1/6 whether or not
+           die 1 is even. The card draw is <strong>dependent</strong>: P(second is an ace) falls from 4/52 to 3/51 once
+           you learn the first was an ace. Same test as before, stated as "does conditioning move the needle?"</p></div>
+    </div>
+
+    <p>This is also the cleanest way to spot dependence in data: compare P(A | B) to P(A). If they differ, B carries
+       information about A, which is exactly the signal a model wants to learn.</p>
+  </section>
+
+  <!-- ===== Section 4: Base rate ===== -->
+  <section id="base-rate">
+    <div class="section-eyebrow"><div class="num">4</div><h2>The Base-Rate Trap</h2></div>
+    <p>Now the chapter's headline: a test can be 99% accurate and still be wrong half the time it says "positive". The
+       reason is conditional probability colliding with a rare event.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 250" width="100%" font-family="Inter, sans-serif" aria-label="Natural-frequency tree for a 99 percent accurate test on a 1 percent disease">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">10,000 people · 1% have the disease · test is 99% accurate</text>
+        <rect x="288" y="28" width="104" height="26" rx="8" fill="#1e1b4b"/><text x="340" y="45" text-anchor="middle" font-size="10" fill="#fff" font-weight="700">10,000 people</text>
+        <g stroke="#8b94b3" stroke-width="1.4" fill="none">
+          <line x1="320" y1="54" x2="170" y2="84"/><line x1="360" y1="54" x2="510" y2="84"/>
+          <line x1="150" y1="108" x2="80" y2="150"/><line x1="180" y1="108" x2="250" y2="150"/>
+          <line x1="490" y1="108" x2="420" y2="150"/><line x1="520" y1="108" x2="600" y2="150"/>
+        </g>
+        <g font-size="8.5" fill="#4a5578"><text x="225" y="74">1%</text><text x="445" y="74">99%</text></g>
+        <rect x="108" y="84" width="120" height="26" rx="7" fill="#fee2e2" stroke="#db2777"/><text x="168" y="101" text-anchor="middle" font-size="9.5" fill="#1a2138" font-weight="700">100 sick</text>
+        <rect x="448" y="84" width="130" height="26" rx="7" fill="#dcfce7" stroke="#059669"/><text x="513" y="101" text-anchor="middle" font-size="9.5" fill="#1a2138" font-weight="700">9,900 healthy</text>
+        <!-- level 2 -->
+        <rect x="22" y="150" width="116" height="40" rx="7" fill="#db2777"/><text x="80" y="167" text-anchor="middle" font-size="9.5" fill="#fff" font-weight="800">99 test +</text><text x="80" y="181" text-anchor="middle" font-size="7.5" fill="#fde2ef">true positive</text>
+        <rect x="200" y="156" width="96" height="28" rx="7" fill="#fafbfe" stroke="#cdd3e6"/><text x="248" y="174" text-anchor="middle" font-size="8.5" fill="#8b94b3">1 test -</text>
+        <rect x="362" y="150" width="116" height="40" rx="7" fill="#db2777"/><text x="420" y="167" text-anchor="middle" font-size="9.5" fill="#fff" font-weight="800">99 test +</text><text x="420" y="181" text-anchor="middle" font-size="7.5" fill="#fde2ef">false positive</text>
+        <rect x="540" y="156" width="120" height="28" rx="7" fill="#fafbfe" stroke="#cdd3e6"/><text x="600" y="174" text-anchor="middle" font-size="8.5" fill="#8b94b3">9,801 test -</text>
+        <rect x="150" y="210" width="380" height="30" rx="8" fill="#eef2ff" stroke="#4f46e5"/>
+        <text x="340" y="229" text-anchor="middle" font-size="11" fill="#4f46e5" font-weight="800">P(disease | positive) = 99 / (99 + 99) = 50%</text>
+      </svg>
+    </figure>
+
+    <p>The 99 true positives are exactly matched by 99 <em>false</em> positives, because a 1% error rate applied to the
+       huge healthy majority produces just as many. So a positive result means only a <strong>50%</strong> chance of
+       disease. This is the <strong>base-rate fallacy</strong>: a 1978 study found most Harvard physicians answered around
+       95%, ignoring how rare the disease was. The fix is to count natural frequencies, true against false positives,
+       which Chapter 34 turns into Bayes' theorem.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Conditional Probability in Machine Learning &amp; AI</h2></div>
+    <p>Conditional probability is not a side topic for machine learning, it is the main event. Most models exist to
+       estimate one conditional probability or another.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 150" width="100%" font-family="Inter, sans-serif" aria-label="A spam filter raises P(spam) once it sees the word free">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">A classifier estimates P(class | features): one word can move it a lot</text>
+        <text x="120" y="56" font-size="10" fill="#4a5578">P(spam)</text>
+        <rect x="120" y="62" width="180" height="22" rx="4" fill="#e6e9f2"/><rect x="120" y="62" width="54" height="22" rx="4" fill="#8b94b3"/>
+        <text x="312" y="78" font-size="10" fill="#1a2138" font-weight="700">0.30</text>
+        <text x="120" y="108" font-size="10" fill="#4a5578">P(spam | "free")</text>
+        <rect x="120" y="114" width="180" height="22" rx="4" fill="#fae0ec"/><rect x="120" y="114" width="130" height="22" rx="4" fill="#db2777"/>
+        <text x="312" y="130" font-size="10" fill="#db2777" font-weight="800">0.72</text>
+        <text x="430" y="92" font-size="9.5" fill="#4a5578">seeing one word updates the</text>
+        <text x="430" y="106" font-size="9.5" fill="#4a5578">conditional probability of spam;</text>
+        <text x="430" y="120" font-size="9.5" fill="#4a5578">a model combines many such words.</text>
+      </svg>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Conditional idea</th><th>In ML / AI it appears as</th><th>Concrete example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">P(class | features)</td><td>What every classifier estimates</td><td>spam filter: P(spam | the words in the email)</td></tr>
+          <tr><td class="nm">Conditional independence</td><td>The "naive" in <strong>naive Bayes</strong></td><td>features assumed independent given the class</td></tr>
+          <tr><td class="nm">P(next | previous)</td><td>Language models and autoregression</td><td>an LLM predicts P(next token | the context so far)</td></tr>
+          <tr><td class="nm">Conditional dependence</td><td>Bayesian networks, graphical models</td><td>encode which variables depend on which</td></tr>
+          <tr><td class="nm">Base rate P(class)</td><td>Class imbalance and calibration</td><td>on a rare class, accuracy hides the screening trap</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>A large language model is, at heart, an enormous estimator of <strong>P(next token | everything so far)</strong>,
+           generating text by sampling from that conditional distribution one token at a time. <strong>Naive Bayes</strong>
+           is named for its conditional-independence assumption, that features are independent given the class, which is
+           usually false yet works surprisingly well. And the base-rate trap returns as the <strong>precision problem</strong>
+           on imbalanced data: a fraud detector that is "99% accurate" can still flag mostly false alarms when fraud is
+           rare. Reading P(A | B) correctly, base rate and all, is a core research skill.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Condition it in Python</h3>
+          <p>The companion notebook reads P(A | B) off a contingency table, draws two cards without replacement (and
+             checks the multiplication rule by simulation), tests independence by comparing P(A | B) with P(A), works the
+             full base-rate screening example with a prevalence curve, and computes P(spam | "free") the way naive Bayes
+             does.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch33_conditional.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch33_conditional.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch33_conditional.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code> and <code>matplotlib</code> and launch
+      <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>P(A | B) = P(A and B) / P(B)</strong>: conditioning restricts the world to B and recomputes A inside it.</span></li>
+        <li><span class="ck">✓</span><span><strong>Multiplication rule</strong>: P(A and B) = P(B) &#215; P(A | B); trees multiply along conditional branches.</span></li>
+        <li><span class="ck">✓</span><span><strong>Independence</strong> means P(A | B) = P(A): the condition changes nothing.</span></li>
+        <li><span class="ck">✓</span><span><strong>Base-rate trap</strong>: a 99%-accurate test for a 1% disease gives P(disease | positive) = 50%, not 99%.</span></li>
+        <li><span class="ck">✓</span><span><strong>In ML/AI</strong>: classifiers estimate P(class | features); LLMs estimate P(next | context); naive Bayes assumes conditional independence.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them on paper or in Python before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>From a table</h4>
+        <p>Of 200 students, 120 study Python, 90 study Python and statistics, 130 study statistics. Find
+           P(statistics | Python). Is it higher or lower than P(statistics)?</p>
+        <div class="chint">Hint: condition on Python, so divide by 120.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Without replacement</h4>
+        <p>A bag has 5 red and 3 blue marbles. Draw 2 without replacement. Find P(both red) and verify by simulation.</p>
+        <div class="chint">Hint: (5/8) &#215; (4/7).</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Independent?</h4>
+        <p>Draw one card. Let A = {King}, B = {Heart}. Is A independent of B? Check whether P(A | B) = P(A).</p>
+        <div class="chint">Hint: P(King) = 4/52, P(King | Heart) = 1/13.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Base rate</h4>
+        <p>A disease has 2% prevalence; a test has 95% sensitivity and 90% specificity. In a town of 10,000, find
+           P(disease | positive).</p>
+        <div class="chint">Hint: count true positives vs false positives, then take the ratio.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>P(class | feature)</h4>
+        <p>Of 500 reviews, 200 are negative. The word "refund" appears in 120 negative and 30 positive reviews. Find
+           P(negative | "refund").</p>
+        <div class="chint">Hint: of the reviews with "refund", what fraction are negative?</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code.
+           Try them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/ch33_challenges_solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch33_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch33_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on conditional probability and independence. Answer them, hit <strong>Check Answers</strong>,
+       and keep refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch32.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 32 · Previous</span><br><span class="cn-title">Counting &amp; Combinatorics</span></span>
+    </a>
+    <div class="cn-btn next" style="cursor:default;opacity:0.6" title="Coming soon">
+      <span><span class="cn-dir">Chapter 34 · Coming soon</span><br><span class="cn-title">Bayes' Theorem</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </div>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 33 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch33";
+  window.QUIZ_DATA = [
+    {
+      q: "Conditional probability P(A | B) is defined as…",
+      options: ["P(A) + P(B)", "P(A and B) / P(B)", "P(A) × P(B)", "P(B) / P(A)"],
+      answer: 1,
+      explain: "P(A | B) = P(A and B) / P(B): restrict to outcomes where B is true, then find the share that also have A."
+    },
+    {
+      q: "Intuitively, conditioning on B means…",
+      options: ["Ignoring B", "Treating B as the new, smaller sample space", "Adding B's probability", "Assuming A and B are independent"],
+      answer: 1,
+      explain: "Once B is known to have happened, only outcomes inside B remain possible, so B becomes the new denominator."
+    },
+    {
+      q: "The general multiplication rule is P(A and B) = …",
+      options: ["P(A) + P(B)", "P(B) × P(A | B)", "P(A) × P(B) always", "P(A | B) / P(B)"],
+      answer: 1,
+      explain: "P(A and B) = P(B) × P(A | B). It reduces to P(A) × P(B) only when A and B are independent."
+    },
+    {
+      q: "Two events are independent exactly when…",
+      options: ["P(A | B) = P(A)", "P(A and B) = 0", "P(A | B) = 0", "P(A) = P(B)"],
+      answer: 0,
+      explain: "Independence means conditioning changes nothing: P(A | B) = P(A). Equivalently, P(A and B) = P(A) × P(B)."
+    },
+    {
+      q: "Drawing 2 cards WITHOUT replacement, P(second is an ace | first was an ace) = …",
+      options: ["4/52", "3/51", "4/51", "1/2"],
+      answer: 1,
+      explain: "Removing the first ace leaves 3 aces among 51 cards, so the conditional probability is 3/51. The draws are dependent."
+    },
+    {
+      q: "A disease affects 1% of people. A test is 99% accurate (both ways). A positive result means the chance of disease is about…",
+      options: ["99%", "90%", "50%", "1%"],
+      answer: 2,
+      explain: "Among 10,000 people, 99 true positives are matched by 99 false positives from the large healthy group, so P(disease | positive) = 99/198 = 50%."
+    },
+    {
+      q: "The 'naive' in naive Bayes refers to its assumption that…",
+      options: ["The data is small", "Features are conditionally independent given the class", "All classes are equally likely", "The model never errs"],
+      answer: 1,
+      explain: "Naive Bayes assumes features are independent given the class, a simplifying (often false) assumption that still works well in practice."
+    },
+    {
+      q: "A large language model fundamentally estimates…",
+      options: ["P(class | image)", "P(next token | the context so far)", "P(A) + P(B)", "The mean of the data"],
+      answer: 1,
+      explain: "An LLM models P(next token | previous tokens) and generates text by sampling from that conditional distribution one token at a time."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
