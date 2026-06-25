@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 53 · Case Study: Software Reliability (Negative Binomial) — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch53_software_negbinomial.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part IX · Probability &amp; Distributions Case Studies</span><span class="sep">/</span>
+      <span>Chapter 53</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part IX · Case Study</span> Negative binomial distribution</div>
+    <h1>Software Reliability: the <span class="accent">Negative Binomial</span></h1>
+    <p class="dek">A test suite runs until 10 cases pass. How many total runs does that take, and how many fail along the
+       way? Counting trials to a quota of successes is the negative binomial. From 1,000 test runs we fit the model and
+       turn deployment readiness into a probability.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~12 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 53</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">The geometric waits for the <em>first</em> success. But what if you need a quota, ten passing tests
+       before you ship? Counting the trials (or the failures) on the way to r successes is the
+       <span class="term">negative binomial</span>, the geometric scaled up to a goal.</p>
+
+    <div class="def-card">
+      <div class="sigma">r/p</div>
+      <div class="def-body">
+        The <span class="def-kw">negative binomial</span> counts the failures (or trials) before the r-th success, with
+        PMF <strong>C(k + r &#8722; 1, k) p<sup>r</sup>(1 &#8722; p)<sup>k</sup></strong>. Its
+        <span class="def-kw">mean is r/p</span> in total trials, and it is the sum of r geometric waits.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🧪</div>
+      <div><div class="ctitle">The dataset</div>
+        <p><code>software_reliability_testing.csv</code> records 1,000 suites, each run until
+           <code>target_successes_r</code> = 10 cases pass, logging <code>failures_encountered</code> and
+           <code>total_tests_run</code>. We model the failures as negative binomial.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: model ===== -->
+  <section id="model">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Trials to a Quota</h2></div>
+    <p>Since total tests = 10 passes + failures, the per-test pass probability is p = r / mean(total) =
+       <strong>0.79</strong>. The negative binomial built on that p reproduces the observed failures, averaging
+       <strong>2.6 failures</strong> before the tenth pass.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 200" width="100%" font-family="Inter, sans-serif" aria-label="The negative binomial distribution of failures before the 10th pass">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Failures before the 10th pass: NegBinom(r=10, p=0.79)</text>
+        <line x1="60" y1="170" x2="630" y2="170" stroke="#1a2138" stroke-width="1.1"/>
+        <!-- nbinom(10,0.79) PMF, peak near 2 -->
+        <g fill="#d97706" fill-opacity="0.85">
+          <rect x="80" y="120" width="34" height="50"/><rect x="118" y="86" width="34" height="84"/><rect x="156" y="74" width="34" height="96"/>
+          <rect x="194" y="84" width="34" height="86"/><rect x="232" y="104" width="34" height="66"/><rect x="270" y="126" width="34" height="44"/>
+          <rect x="308" y="142" width="34" height="28"/><rect x="346" y="153" width="34" height="17"/><rect x="384" y="160" width="34" height="10"/>
+          <rect x="422" y="164" width="34" height="6"/><rect x="460" y="167" width="34" height="3"/>
+        </g>
+        <line x1="173" y1="62" x2="173" y2="170" stroke="#db2777" stroke-width="1.3" stroke-dasharray="4 3"/>
+        <text x="173" y="56" text-anchor="middle" font-size="9" fill="#db2777" font-weight="800">mean failures &#8776; 2.6</text>
+        <text x="345" y="190" text-anchor="middle" font-size="9" fill="#8b94b3">failures before the 10th pass &#8594;</text>
+      </svg>
+    </figure>
+
+    <p>The PMF <strong>C(k + 9, k) p<sup>10</sup>(1&#8722;p)<sup>k</sup></strong> drops onto the data. It is the geometric
+       (one success) generalized to a quota of ten, and its variance (3.34) exceeds its mean (2.64), a hallmark of
+       <span class="hl">overdispersion</span>.</p>
+  </section>
+
+  <!-- ===== Section 2: readiness ===== -->
+  <section id="readiness">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Deployment Readiness</h2></div>
+    <p>Total tests = 10 passes + the failures along the way, so on average the suite needs about <strong>13 runs</strong>
+       (r/p) to bank 10 passes. The CDF then converts a test budget into a clear-probability, the number a release manager
+       actually wants.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Test budget</th><th>failures allowed</th><th>P(suite clears)</th></tr></thead>
+        <tbody>
+          <tr><td>12 runs</td><td>&#8804; 2</td><td class="nm">0.527</td></tr>
+          <tr><td>14 runs</td><td>&#8804; 4</td><td class="nm">0.850</td></tr>
+          <tr><td>16 runs</td><td>&#8804; 6</td><td class="nm">0.967</td></tr>
+          <tr><td>18 runs</td><td>&#8804; 8</td><td class="nm">0.994</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>A 14-run budget clears the suite about <strong>85%</strong> of the time; 16 runs reach 97% and 18 runs about 99%.
+       The negative binomial turns "is it ready to ship?" from a gut call into a budgeted probability, the foundation of a
+       sane release gate.</p>
+  </section>
+
+  <!-- ===== Section 3: sum of geometrics ===== -->
+  <section id="sum">
+    <div class="section-eyebrow"><div class="num">3</div><h2>A Sum of Geometrics</h2></div>
+    <p>The structure explains the shape. A negative binomial for r successes is the <strong>sum of r independent
+       geometric waits</strong>, one for each pass. Simulating ten stacked geometric waits reproduces the distribution
+       exactly.</p>
+
+    <div class="callout note">
+      <div class="cico">&#8721;</div>
+      <div><div class="ctitle">Why the tail is heavy</div>
+        <p>Each pass is quick on average, but the occasional run of failures compounds across the ten waits, giving the
+           negative binomial a <strong>longer right tail</strong> than a Poisson of the same mean (variance 3.34 vs mean
+           2.64). That extra spread, overdispersion, is exactly why the negative binomial is the standard model for counts
+           that are more variable than Poisson allows, from defect clustering to insurance claims.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Run the reliability audit</h3>
+          <p>The companion notebook fits the per-test pass rate, overlays the negative binomial on the observed failures,
+             converts test budgets into clear-probabilities with the CDF, and rebuilds the distribution as ten stacked
+             geometric waits, confirming the mean and exposing the overdispersed tail.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch53_software_negbinomial.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch53_software_negbinomial.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch53_software_negbinomial.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, <code>scipy</code>,
+      and <code>matplotlib</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Trials to a quota of r successes are negative binomial</strong>: PMF C(k+r&#8722;1, k) p<sup>r</sup>(1&#8722;p)<sup>k</sup>.</span></li>
+        <li><span class="ck">✓</span><span><strong>Fit p from the mean</strong>: p = r/mean(total) = 0.79; mean failures r(1&#8722;p)/p = 2.6, mean total r/p = 13.</span></li>
+        <li><span class="ck">✓</span><span><strong>The CDF gives readiness</strong>: a 14-run budget clears the suite 85% of the time, 18 runs 99%.</span></li>
+        <li><span class="ck">✓</span><span><strong>It is a sum of r geometrics</strong>, which is why it generalizes the geometric and has a heavy right tail.</span></li>
+        <li><span class="ck">✓</span><span><strong>Variance &gt; mean (overdispersion)</strong>, the reason it models counts too variable for a Poisson.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on the negative binomial case study. Answer them, hit <strong>Check Answers</strong>, and
+       keep refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch52.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 52 · Previous</span><br><span class="cn-title">Capture-Recapture (Hypergeometric)</span></span>
+    </a>
+    <div class="cn-btn next" style="cursor:default;opacity:0.6" title="Coming soon">
+      <span><span class="cn-dir">Chapter 54 · Coming soon</span><br><span class="cn-title">Standardized Exam Scores (Normal)</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </div>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 53 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch53";
+  window.QUIZ_DATA = [
+    {
+      q: "Counting the trials until the r-th success follows which distribution?",
+      options: ["Geometric", "Negative binomial", "Poisson", "Hypergeometric"],
+      answer: 1,
+      explain: "The negative binomial generalizes the geometric (r = 1) to waiting for r successes; here r = 10 passing tests."
+    },
+    {
+      q: "How does the negative binomial relate to the geometric?",
+      options: ["They are unrelated", "It is the sum of r independent geometric waits", "It is the inverse", "It is the square"],
+      answer: 1,
+      explain: "Waiting for r successes is r consecutive 'wait for one success' problems, so it is the sum of r geometrics."
+    },
+    {
+      q: "The per-test pass probability p was estimated as…",
+      options: ["mean failures", "r ÷ mean(total tests) = 0.79", "1 − mean", "the variance"],
+      answer: 1,
+      explain: "Since mean total tests = r/p, solving gives p = r/mean(total) = 10/12.64 ≈ 0.79."
+    },
+    {
+      q: "The mean number of total tests to reach 10 passes is…",
+      options: ["10", "r/p ≈ 13", "1/p", "r·p"],
+      answer: 1,
+      explain: "The expected total trials for r successes is r/p = 10/0.79 ≈ 13 runs."
+    },
+    {
+      q: "A 14-run test budget clears the suite about…",
+      options: ["50%", "85% of the time", "99%", "10%"],
+      answer: 1,
+      explain: "A 14-run budget allows ≤ 4 failures; P(failures ≤ 4) = 0.85 from the negative binomial CDF."
+    },
+    {
+      q: "The negative binomial here has variance 3.34 and mean 2.64, meaning it is…",
+      options: ["Underdispersed", "Overdispersed (variance > mean)", "Symmetric", "Uniform"],
+      answer: 1,
+      explain: "Variance exceeding the mean is overdispersion, which is why the negative binomial fits counts too variable for a Poisson."
+    },
+    {
+      q: "Compared to a Poisson with the same mean, the negative binomial has…",
+      options: ["A shorter tail", "A longer right tail", "No tail", "The same shape"],
+      answer: 1,
+      explain: "Its extra variance gives a heavier right tail, modeling clustered or bursty counts that a Poisson would underestimate."
+    },
+    {
+      q: "The CDF of the negative binomial is used to answer…",
+      options: ["The exact failure count", "The probability the suite clears within a test budget", "The mean only", "Nothing useful"],
+      answer: 1,
+      explain: "P(failures ≤ budget − r) gives the chance the suite reaches 10 passes within a given number of total runs, a release gate."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
