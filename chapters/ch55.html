@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 55 · Case Study: Hardware Lifespans (Exponential) — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch55_hardware_exponential.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part IX · Probability &amp; Distributions Case Studies</span><span class="sep">/</span>
+      <span>Chapter 55</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part IX · Case Study</span> Exponential distribution</div>
+    <h1>Hardware Lifespans: the <span class="accent">Exponential</span></h1>
+    <p class="dek">How long until a component fails? The time between random failures follows the exponential distribution.
+       From 1,000 components we fit the failure rate, read reliability and early-fatigue risk off the CDF, and confront
+       its strange memoryless property.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~12 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 55</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">The Poisson counted events per interval. Flip it around to ask about the <em>gap</em> between events,
+       the time until the next failure, and you get the <span class="term">exponential</span> distribution, the
+       continuous twin of the geometric and the workhorse of reliability engineering.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#955;</div>
+      <div class="def-body">
+        The <span class="def-kw">exponential</span> models the waiting time between Poisson events, with PDF
+        <strong>&#955;e<sup>&#8722;&#955;x</sup></strong> and CDF <strong>1 &#8722; e<sup>&#8722;&#955;x</sup></strong>. Its
+        <span class="def-kw">mean is 1/&#955;</span>, and it is <span class="def-kw">memoryless</span> with a constant
+        hazard rate.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">⏳</div>
+      <div><div class="ctitle">The dataset</div>
+        <p><code>hardware_component_lifespans.csv</code> records <code>lifespan_years</code> for 1,000 components (plus
+           type). We model time-to-failure as exponential and ask about reliability, warranties, and aging.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: fit ===== -->
+  <section id="fit">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Fit the Failure Rate</h2></div>
+    <p>The rate is one over the mean lifespan: <strong>&#955; = 0.20 per year</strong>, a mean lifetime of 5 years. The
+       exponential is right-skewed, many parts fail relatively early while a few last a long time, and its
+       <strong>mean and standard deviation are equal</strong> (both 5 years), a defining signature.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 200" width="100%" font-family="Inter, sans-serif" aria-label="The right-skewed exponential density of component lifespans">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Lifespans: Exponential(&#955; = 0.20), right-skewed, mean 5 years</text>
+        <line x1="60" y1="170" x2="630" y2="170" stroke="#1a2138" stroke-width="1.1"/>
+        <path d="M70,52 C150,120 260,158 400,167 C500,170 560,170 620,170 L620,170 L70,170 Z" fill="#fde68a" fill-opacity="0.55" stroke="#d97706" stroke-width="2.4"/>
+        <line x1="186" y1="50" x2="186" y2="170" stroke="#0d9488" stroke-width="1.2" stroke-dasharray="3 3"/>
+        <text x="186" y="46" text-anchor="middle" font-size="8.5" fill="#0f766e">median &#8776; 3.4</text>
+        <line x1="252" y1="50" x2="252" y2="170" stroke="#db2777" stroke-width="1.4" stroke-dasharray="5 4"/>
+        <text x="252" y="46" text-anchor="middle" font-size="9" fill="#db2777" font-weight="800">mean = 5</text>
+        <text x="345" y="190" text-anchor="middle" font-size="9" fill="#8b94b3">lifespan (years) &#8594;</text>
+      </svg>
+    </figure>
+
+    <p>The median, ln(2)/&#955; &#8776; <strong>3.4 years</strong>, sits well below the mean, the telltale gap of a
+       right-skewed distribution. Half the parts are gone by 3.4 years even though the average lifetime is 5.</p>
+  </section>
+
+  <!-- ===== Section 2: reliability ===== -->
+  <section id="reliability">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Reliability from the CDF</h2></div>
+    <p>Reliability is a <span class="hl">CDF</span> question. The chance a part fails before age x is 1 &#8722;
+       e<sup>&#8722;&#955;x</sup>; its complement, the <strong>survival function</strong> e<sup>&#8722;&#955;x</sup>, is the
+       chance it is still running.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Age</th><th>P(failed by then)</th><th>survival (still alive)</th></tr></thead>
+        <tbody>
+          <tr><td>1 year</td><td class="nm">0.182</td><td>0.818</td></tr>
+          <tr><td>2 years</td><td class="nm">0.331</td><td>0.669</td></tr>
+          <tr><td>5 years (one mean)</td><td class="nm">0.634</td><td>0.366</td></tr>
+          <tr><td>10 years</td><td class="nm">0.866</td><td>0.134</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>About <strong>18%</strong> of components fail within the first year (the early-fatigue risk, matched by the data),
+       and <strong>37%</strong> survive to 5 years, exactly e<sup>&#8722;1</sup> since one mean lifetime has elapsed. To
+       cap early failures at 5%, the warranty should run only about <strong>0.26 years</strong>: the CDF turns a risk
+       target straight into a policy.</p>
+  </section>
+
+  <!-- ===== Section 3: memoryless ===== -->
+  <section id="memoryless">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Memoryless: No Wear-Out</h2></div>
+    <p>The exponential shares the geometric's most surprising trait: it is <span class="hl">memoryless</span>. A part that
+       has run for five years has the same chance of lasting one more as a brand-new one, its <strong>hazard rate is
+       constant</strong>. Parts modeled this way simply do not age.</p>
+
+    <div class="callout note">
+      <div class="cico">&#9881;</div>
+      <div><div class="ctitle">A simplification, and its limit</div>
+        <p>In the simulation, P(survive one more year) is <strong>82%</strong> whether the part is fresh or already five
+           years old, memorylessness in action. That constant hazard is the exponential's great convenience, but also its
+           blind spot: real components that genuinely <em>wear out</em> have a rising hazard and need the
+           <strong>Weibull</strong> distribution. Knowing when "as good as new" is realistic, and when it is not, is the
+           engineer's judgment.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Run the reliability analysis</h3>
+          <p>The companion notebook fits the exponential failure rate, overlays the density on the lifespan histogram,
+             tabulates failure and survival probabilities from the CDF, derives a warranty length from a risk target, and
+             demonstrates the memoryless, constant-hazard property by simulation.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch55_hardware_exponential.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch55_hardware_exponential.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch55_hardware_exponential.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, <code>scipy</code>,
+      and <code>matplotlib</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Time-to-failure is exponential</strong>: PDF &#955;e<sup>&#8722;&#955;x</sup>, mean 1/&#955;; here &#955; = 0.20/yr, mean 5 years.</span></li>
+        <li><span class="ck">✓</span><span><strong>Right-skewed</strong>: mean = std = 5, but the median is only 3.4 years.</span></li>
+        <li><span class="ck">✓</span><span><strong>Reliability is the CDF</strong>: P(fail by x) = 1 &#8722; e<sup>&#8722;&#955;x</sup>; 18% fail in year one, 37% survive to 5 years.</span></li>
+        <li><span class="ck">✓</span><span><strong>Invert it for policy</strong>: a 5%-early-failure warranty runs about 0.26 years.</span></li>
+        <li><span class="ck">✓</span><span><strong>Memoryless / constant hazard</strong>: a 5-year-old part is as good as new; genuine wear-out needs a Weibull.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on the exponential case study. Answer them, hit <strong>Check Answers</strong>, and keep
+       refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch54.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 54 · Previous</span><br><span class="cn-title">Standardized Exam Scores (Normal)</span></span>
+    </a>
+    <div class="cn-btn next" style="cursor:default;opacity:0.6" title="Coming soon">
+      <span><span class="cn-dir">Chapter 56 · Coming soon</span><br><span class="cn-title">Regional Rainfall (Gamma)</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </div>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 55 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch55";
+  window.QUIZ_DATA = [
+    {
+      q: "Time between random failures is modeled by which distribution?",
+      options: ["Normal", "Exponential", "Binomial", "Poisson"],
+      answer: 1,
+      explain: "The exponential models the waiting time between Poisson events, here the time until a component fails."
+    },
+    {
+      q: "The exponential failure rate λ is estimated as…",
+      options: ["The mean lifespan", "1 ÷ mean lifespan", "The variance", "The median"],
+      answer: 1,
+      explain: "The exponential mean is 1/λ, so λ = 1/mean = 1/4.97 ≈ 0.20 failures per year."
+    },
+    {
+      q: "A signature of the exponential is that…",
+      options: ["It is symmetric", "Its mean equals its standard deviation", "Its mean is 0", "It is bounded above"],
+      answer: 1,
+      explain: "For an exponential, mean = std = 1/λ. It is right-skewed, so the median (ln2/λ) is below the mean."
+    },
+    {
+      q: "The probability a part fails before age x is…",
+      options: ["e^(−λx)", "1 − e^(−λx)", "λx", "1/λ"],
+      answer: 1,
+      explain: "The CDF, 1 − e^(−λx), gives the failure-by-age-x probability; its complement e^(−λx) is the survival function."
+    },
+    {
+      q: "Exactly 37% of parts survive to 5 years here because…",
+      options: ["5 years is the median", "5 years is one mean lifetime, so survival = e^(−1) ≈ 0.368", "It is a coincidence", "Half fail by then"],
+      answer: 1,
+      explain: "At x = mean = 1/λ, the survival function e^(−λx) = e^(−1) ≈ 0.37, a universal exponential fact."
+    },
+    {
+      q: "To set a warranty so only 5% of parts fail within it, you…",
+      options: ["Use the mean", "Invert the CDF at the 5th percentile (≈ 0.26 years)", "Use the variance", "Pick 5 years"],
+      answer: 1,
+      explain: "The 5th-percentile lifetime, from the inverse CDF, is about 0.26 years, the warranty that keeps early failures at 5%."
+    },
+    {
+      q: "The exponential is 'memoryless', meaning…",
+      options: ["Parts wear out faster over time", "A used part's remaining-life distribution is the same as a new part's", "It forgets the rate", "It has no mean"],
+      answer: 1,
+      explain: "P(survive t more | survived s) = P(survive t): a 5-year-old part is as good as new, because the hazard rate is constant."
+    },
+    {
+      q: "The exponential is a poor model when…",
+      options: ["Failures are random", "Parts genuinely wear out (rising hazard), which needs a Weibull", "The mean is known", "There are many parts"],
+      answer: 1,
+      explain: "Constant hazard means no aging. Components that degrade over time have an increasing hazard rate, better captured by the Weibull distribution."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
