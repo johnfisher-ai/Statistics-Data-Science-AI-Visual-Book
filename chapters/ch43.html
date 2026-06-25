@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 43 · Transformations of Random Variables — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .disp-table code { font-size:0.82em; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch43_transformations.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part VIII · Mathematical Statistics</span><span class="sep">/</span>
+      <span>Chapter 43</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part VIII · Mathematical Statistics</span> Reshaping distributions</div>
+    <h1>Transformations of <span class="accent">Random Variables</span></h1>
+    <p class="dek">Push a random variable through a function and its distribution changes shape. The rules that govern that
+       change, the change-of-variables formula and its Jacobian, are the mathematics behind random samplers, normalizing
+       flows, and the reparameterization trick that trains modern generative models.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~16 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 43</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">A random variable rarely arrives in the form you want. You measure a radius but care about the area;
+       you model log-returns but trade prices; you have uniform random numbers but need a normal. Each case is a
+       <span class="term">transformation</span>, a function applied to a random variable, and it changes the distribution
+       in a precise, computable way.</p>
+
+    <div class="def-card">
+      <div class="sigma">g(X)</div>
+      <div class="def-body">
+        A <span class="def-kw">transformation</span> Y = g(X) produces a new random variable. For a one-to-one g, the
+        density transforms by the <span class="def-kw">change-of-variables formula</span>:
+        f<tspan style="font-size:0.7em">Y</tspan>(y) = f<tspan style="font-size:0.7em">X</tspan>(x) / |g&#8242;(x)|, the
+        Jacobian factor.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🔧</div>
+      <div><div class="ctitle">Why transformations matter</div>
+        <p>Almost every random sampler, and every modern flow-based or variational generative model, works by
+           transforming one distribution into another. Master how a function reshapes a density and you hold the key to
+           both classical change-of-variables problems and a large slice of generative AI.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: linear ===== -->
+  <section id="linear">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Linear Transformations: Shift and Scale</h2></div>
+    <p>The simplest transform is linear: <strong>Y = aX + b</strong>. It shifts the mean to a&#956; + b and scales the
+       standard deviation to |a|&#963;, but it does not change the <em>shape</em>, a linear function of a normal is still
+       normal.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 190" width="100%" font-family="Inter, sans-serif" aria-label="A bell curve shifted and widened by a linear transformation">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Y = 2X + 5: same bell, relocated and stretched</text>
+        <line x1="40" y1="160" x2="640" y2="160" stroke="#1a2138" stroke-width="1"/>
+        <!-- X: narrow bell left -->
+        <path d="M70,160 C120,160 135,70 165,70 C195,70 210,160 260,160" fill="#ddd6fe" fill-opacity="0.6" stroke="#7c3aed" stroke-width="2"/>
+        <text x="165" y="60" text-anchor="middle" font-size="9" fill="#6d28d9" font-weight="800">X</text>
+        <text x="165" y="176" text-anchor="middle" font-size="8.5" fill="#8b94b3">&#956;=50, &#963;=10</text>
+        <!-- arrow -->
+        <path d="M285,110 L345,110" stroke="#db2777" stroke-width="1.8" fill="none" marker-end="url(#a43a)"/>
+        <defs><marker id="a43a" markerWidth="9" markerHeight="9" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#db2777"/></marker></defs>
+        <text x="315" y="102" text-anchor="middle" font-size="8.5" fill="#db2777" font-weight="800">2X+5</text>
+        <!-- Y: wider bell right -->
+        <path d="M380,160 C460,160 480,86 530,86 C580,86 600,160 640,160" fill="#c4b5fd" fill-opacity="0.5" stroke="#6d28d9" stroke-width="2"/>
+        <text x="530" y="78" text-anchor="middle" font-size="9" fill="#6d28d9" font-weight="800">Y</text>
+        <text x="530" y="176" text-anchor="middle" font-size="8.5" fill="#8b94b3">&#956;=105, &#963;=20</text>
+      </svg>
+    </figure>
+
+    <p>In the notebook, X ~ Normal(50, 10) becomes Y = 2X + 5 ~ Normal(105, 20): the +5 shifts the center, the &#215;2
+       doubles the spread, and the bell shape survives intact. This is the standardization of Chapter 39 run in reverse.</p>
+  </section>
+
+  <!-- ===== Section 2: nonlinear ===== -->
+  <section id="nonlinear">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Nonlinear Transformations: a New Shape</h2></div>
+    <p>A nonlinear function can change the shape entirely. Exponentiating a normal, <strong>Y = e<sup>X</sup></strong>,
+       produces the right-skewed <span class="term">lognormal</span>, the standard model for incomes, stock prices, and
+       city sizes, quantities that are positive and multiply rather than add.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 190" width="100%" font-family="Inter, sans-serif" aria-label="A symmetric normal transformed by the exponential into a right-skewed lognormal">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Y = exp(X): symmetric normal becomes a skewed lognormal</text>
+        <line x1="40" y1="160" x2="300" y2="160" stroke="#1a2138" stroke-width="1"/>
+        <path d="M70,160 C120,160 135,66 165,66 C195,66 210,160 260,160" fill="#ddd6fe" fill-opacity="0.6" stroke="#7c3aed" stroke-width="2"/>
+        <text x="165" y="58" text-anchor="middle" font-size="9" fill="#6d28d9" font-weight="800">X ~ Normal</text>
+        <path d="M315,110 L375,110" stroke="#db2777" stroke-width="1.8" fill="none" marker-end="url(#a43b)"/>
+        <defs><marker id="a43b" markerWidth="9" markerHeight="9" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#db2777"/></marker></defs>
+        <text x="345" y="102" text-anchor="middle" font-size="8.5" fill="#db2777" font-weight="800">exp</text>
+        <line x1="400" y1="160" x2="650" y2="160" stroke="#1a2138" stroke-width="1"/>
+        <path d="M410,160 C430,90 450,60 470,60 C510,60 560,150 650,158 L650,160 Z" fill="#fbcfe8" fill-opacity="0.6" stroke="#db2777" stroke-width="2"/>
+        <text x="500" y="50" text-anchor="middle" font-size="9" fill="#9d174d" font-weight="800">Y = exp(X) ~ Lognormal</text>
+      </svg>
+    </figure>
+
+    <p>The symmetric input becomes a one-sided, heavy-right-tailed output, with a skewness of about 1.8 in the notebook.
+       To handle reshaping like this precisely, we need a rule that tracks how a transform stretches and compresses
+       probability, the change-of-variables formula.</p>
+  </section>
+
+  <!-- ===== Section 3: change of variables ===== -->
+  <section id="jacobian">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The Change-of-Variables Formula</h2></div>
+    <p>For a one-to-one transform Y = g(X), the density transforms as
+       <strong>f<sub>Y</sub>(y) = f<sub>X</sub>(x) / |g&#8242;(x)|</strong>. The derivative term, the
+       <span class="term">Jacobian</span>, corrects for how much the transform stretches or squeezes the axis at each
+       point.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 200" width="100%" font-family="Inter, sans-serif" aria-label="A transform stretching an interval, so probability density must rescale to conserve area">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">The Jacobian conserves probability: stretch the axis, lower the density</text>
+        <!-- input interval -->
+        <line x1="60" y1="70" x2="280" y2="70" stroke="#1a2138" stroke-width="1.2"/>
+        <rect x="150" y="58" width="30" height="24" fill="#7c3aed" fill-opacity="0.4" stroke="#7c3aed"/>
+        <text x="165" y="50" text-anchor="middle" font-size="8.5" fill="#6d28d9">small dx</text>
+        <text x="60" y="96" font-size="9" fill="#8b94b3">x-axis</text>
+        <!-- mapping arrows showing stretch -->
+        <g stroke="#8b94b3" stroke-width="1" fill="none">
+          <path d="M150,82 L360,138"/><path d="M180,82 L470,138"/>
+        </g>
+        <text x="340" y="116" text-anchor="middle" font-size="9" fill="#db2777" font-weight="800">g stretches this interval</text>
+        <!-- output interval (wider) -->
+        <line x1="340" y1="150" x2="640" y2="150" stroke="#1a2138" stroke-width="1.2"/>
+        <rect x="360" y="138" width="110" height="24" fill="#7c3aed" fill-opacity="0.18" stroke="#7c3aed"/>
+        <text x="415" y="180" text-anchor="middle" font-size="8.5" fill="#6d28d9">wide dy = |g&#8242;| dx, so density &#247; |g&#8242;|</text>
+        <text x="340" y="176" text-anchor="middle" font-size="0" fill="none"> </text>
+      </svg>
+    </figure>
+
+    <p>Probability is conserved: the same mass that sat in a small interval dx now spreads over a wider interval
+       dy = |g&#8242;| dx, so the density must drop by the factor |g&#8242;|. For Y = e<sup>X</sup> with X standard normal,
+       the formula gives f<sub>Y</sub>(y) = &#966;(ln y)/y, and the notebook confirms it matches SciPy's lognormal to
+       within 10<sup>&#8722;16</sup>. The 1/y <em>is</em> the Jacobian.</p>
+  </section>
+
+  <!-- ===== Section 4: inverse transform ===== -->
+  <section id="inverse">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Inverse-Transform Sampling</h2></div>
+    <p>One transform is so useful it deserves its own name. If U is uniform on [0, 1], then
+       <strong>X = F<sup>&#8722;1</sup>(U)</strong> has cumulative distribution function F. Feeding uniform numbers through
+       an inverse CDF generates samples from <em>any</em> distribution, the engine inside every random sampler.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 210" width="100%" font-family="Inter, sans-serif" aria-label="Uniform values on the vertical axis mapped through the inverse CDF to samples on the horizontal axis">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Pick a uniform height, read across the CDF, drop down to a sample</text>
+        <line x1="80" y1="180" x2="600" y2="180" stroke="#1a2138" stroke-width="1.2"/>
+        <line x1="80" y1="40" x2="80" y2="180" stroke="#1a2138" stroke-width="1.2"/>
+        <text x="70" y="46" text-anchor="end" font-size="8.5" fill="#8b94b3">1</text>
+        <text x="70" y="182" text-anchor="end" font-size="8.5" fill="#8b94b3">0</text>
+        <text x="340" y="200" text-anchor="middle" font-size="9" fill="#8b94b3">x (sample)</text>
+        <!-- CDF S-curve -->
+        <path d="M90,176 C220,170 280,150 345,110 C410,70 470,50 590,46" fill="none" stroke="#7c3aed" stroke-width="2.5"/>
+        <text x="560" y="62" font-size="9" fill="#6d28d9" font-weight="700">CDF F(x)</text>
+        <!-- uniform height u -->
+        <line x1="80" y1="110" x2="345" y2="110" stroke="#db2777" stroke-width="1.4" stroke-dasharray="5 4"/>
+        <text x="120" y="104" font-size="9" fill="#db2777" font-weight="800">U ~ Uniform</text>
+        <line x1="345" y1="110" x2="345" y2="180" stroke="#db2777" stroke-width="1.4" stroke-dasharray="5 4"/>
+        <text x="345" y="196" text-anchor="middle" font-size="9" fill="#db2777" font-weight="800">X = F&#8315;&#185;(U)</text>
+      </svg>
+    </figure>
+
+    <p>In the notebook, plain uniforms pushed through the exponential's inverse CDF, X = &#8722;ln(1 &#8722; U), become
+       exponential samples whose mean (0.997) matches the target. This is how a computer's single uniform generator is
+       turned into a sampler for any distribution with an invertible CDF.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Transformations in Machine Learning &amp; AI</h2></div>
+    <p>Transforming distributions is not a sideshow in modern AI, it is the main event for generative models. Two ideas
+       in particular, normalizing flows and the reparameterization trick, are change-of-variables made practical.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Idea (this chapter)</th><th>In ML / AI it appears as</th><th>Concrete example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Change of variables / Jacobian</td><td>Normalizing flows</td><td>chain invertible transforms to model complex densities</td></tr>
+          <tr><td class="nm">Differentiable transform of noise</td><td>The reparameterization trick</td><td>z = &#956; + &#963;&#949; lets gradients flow through sampling (VAEs)</td></tr>
+          <tr><td class="nm">Inverse-transform sampling</td><td>Random-variate generation</td><td>turning a uniform RNG into any distribution</td></tr>
+          <tr><td class="nm">Nonlinear transforms</td><td>Activation &amp; link functions</td><td>sigmoid, softplus, log transforms of skewed features</td></tr>
+          <tr><td class="nm">Log transform</td><td>Feature engineering</td><td>taming skewed inputs (income, counts) before modeling</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>Generative AI is, to a large degree, applied change-of-variables. <strong>Normalizing flows</strong> build a
+           rich data distribution by chaining many invertible transforms, tracking the Jacobian at each step exactly as in
+           section 3, so they can both sample data and score its exact likelihood. The <strong>reparameterization
+           trick</strong> writes a random sample as z = &#956; + &#963;&#949; (a transform of fixed noise &#949;), which
+           moves the randomness out of the way so gradients can pass through the sampling step, the insight that makes
+           <strong>variational autoencoders</strong> trainable. <strong>Inverse-transform sampling</strong> underlies the
+           random generators every simulation relies on, and humble <strong>log transforms</strong> are the most common
+           fix for skewed features. Knowing how a function reshapes a distribution is what lets researchers design models
+           that create, rather than merely classify.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Reshape distributions in Python</h3>
+          <p>The companion notebook applies a linear transform (a normal stays normal), exponentiates a normal into a
+             lognormal, verifies the change-of-variables Jacobian against SciPy to 16 digits, generates exponential
+             samples by inverting the CDF, and demonstrates the reparameterization trick that lets gradients flow through
+             a sampling step.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch43_transformations.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch43_transformations.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch43_transformations.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>scipy</code>, and
+      <code>matplotlib</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Linear transforms</strong> Y = aX + b shift and scale but keep the shape; a linear function of a normal is normal.</span></li>
+        <li><span class="ck">✓</span><span><strong>Nonlinear transforms</strong> reshape entirely: exponentiating a normal gives the skewed lognormal.</span></li>
+        <li><span class="ck">✓</span><span><strong>Change of variables</strong>: f<sub>Y</sub>(y) = f<sub>X</sub>(x)/|g&#8242;(x)|; the Jacobian conserves probability under stretching.</span></li>
+        <li><span class="ck">✓</span><span><strong>Inverse-transform sampling</strong>: X = F<sup>&#8722;1</sup>(U) turns uniforms into samples from any distribution.</span></li>
+        <li><span class="ck">✓</span><span><strong>In ML/AI</strong>: normalizing flows track the Jacobian, the reparameterization trick transforms noise for VAEs, and log transforms tame skewed features.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them with NumPy/SciPy before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Linear transform</h4>
+        <p>Celsius temperatures are Normal(20, 5). Fahrenheit is F = 1.8C + 32. Find the mean and standard deviation of
+           F.</p>
+        <div class="chint">Hint: mean = 1.8&#956; + 32; sd = 1.8&#963;.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Make a lognormal</h4>
+        <p>Let X ~ Normal(0, 1) and Y = e<sup>X</sup>. Simulate and confirm Y is right-skewed with median 1.</p>
+        <div class="chint">Hint: the median maps as e<sup>0</sup> = 1.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Apply the Jacobian</h4>
+        <p>For Y = X&#178; with X ~ Uniform(0, 1), the CDF of Y is &#8730;y. Verify P(Y &lt; 0.25) = 0.5 by simulation.</p>
+        <div class="chint">Hint: density piles up near 0 because squaring compresses there.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Build a sampler</h4>
+        <p>Use inverse-transform sampling to generate Exponential(rate = 2) variates from uniforms; check the mean is
+           0.5.</p>
+        <div class="chint">Hint: X = &#8722;ln(1 &#8722; U)/rate.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Reparameterize</h4>
+        <p>Write a sample from Normal(10, 3) as a transform of standard-normal noise and confirm the statistics.</p>
+        <div class="chint">Hint: z = &#956; + &#963;&#949;, with &#949; ~ N(0, 1).</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code.
+           Try them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/ch43_challenges_solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch43_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch43_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on transformations of random variables. Answer them, hit <strong>Check Answers</strong>, and
+       keep refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch42.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 42 · Previous</span><br><span class="cn-title">Joint, Marginal &amp; Conditional Densities</span></span>
+    </a>
+    <div class="cn-btn next" style="cursor:default;opacity:0.6" title="Coming soon">
+      <span><span class="cn-dir">Chapter 44 · Coming soon</span><br><span class="cn-title">Conditional Expectation &amp; the Tower Property</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </div>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 43 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch43";
+  window.QUIZ_DATA = [
+    {
+      q: "For a linear transform Y = aX + b, the standard deviation of Y is…",
+      options: ["aσ + b", "|a|σ", "σ", "a²σ"],
+      answer: 1,
+      explain: "The shift b does not affect spread; only the multiplier scales it, so SD(Y) = |a|σ. A linear function of a normal stays normal."
+    },
+    {
+      q: "Exponentiating a normal random variable, Y = e^X, produces a…",
+      options: ["Uniform distribution", "Lognormal distribution (right-skewed)", "Another normal", "Binomial"],
+      answer: 1,
+      explain: "Y = e^X is lognormal: positive and right-skewed, the standard model for incomes and prices."
+    },
+    {
+      q: "The change-of-variables formula for a one-to-one Y = g(X) is f_Y(y) = …",
+      options: ["f_X(x) × |g'(x)|", "f_X(x) / |g'(x)|", "f_X(x) + g'(x)", "g'(x)"],
+      answer: 1,
+      explain: "f_Y(y) = f_X(x)/|g'(x)|. The Jacobian |g'(x)| corrects for how the transform stretches or compresses the axis."
+    },
+    {
+      q: "Why does the Jacobian factor appear in the change-of-variables formula?",
+      options: ["To normalize the mean", "To conserve probability as the transform stretches/compresses intervals", "To make the variance 1", "It is optional"],
+      answer: 1,
+      explain: "Mass in a small dx spreads over dy = |g'|dx, so the density must divide by |g'| to keep total probability at 1."
+    },
+    {
+      q: "Inverse-transform sampling generates X with CDF F by computing…",
+      options: ["X = F(U)", "X = F⁻¹(U) with U uniform on [0,1]", "X = U²", "X = mean of U"],
+      answer: 1,
+      explain: "If U is uniform, X = F⁻¹(U) has CDF F. This turns a uniform generator into a sampler for any distribution."
+    },
+    {
+      q: "The reparameterization trick writes a sample as z = μ + σε (ε ~ N(0,1)) so that…",
+      options: ["The sample is always zero", "Gradients can flow through the sampling step (it is a differentiable transform)", "No randomness is used", "σ disappears"],
+      answer: 1,
+      explain: "Expressing z as a differentiable transform of fixed noise lets backpropagation pass through sampling, which makes VAEs trainable."
+    },
+    {
+      q: "A normalizing flow models a complex distribution by…",
+      options: ["Averaging many samples", "Chaining invertible transforms and tracking each Jacobian", "Ignoring the density", "Sorting the data"],
+      answer: 1,
+      explain: "Normalizing flows compose invertible transforms, using the change-of-variables Jacobian at each step to compute exact likelihoods."
+    },
+    {
+      q: "Applying a log transform to a skewed feature (like income) before modeling is an example of…",
+      options: ["Inverse-transform sampling", "A nonlinear transformation to reshape a distribution", "A linear shift", "Computing a marginal"],
+      answer: 1,
+      explain: "The log is a nonlinear transform that compresses a long right tail, making skewed features more symmetric and easier to model."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
