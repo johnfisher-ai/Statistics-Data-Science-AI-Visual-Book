@@ -180,6 +180,26 @@ MAP = {
         ("../../ch41.html#notebook", "Back to the book", "Chapter 41 · Distributions for Inference"),
     "ch41_challenges_solutions.html":
         ("../../ch41.html#quiz", "Back to the book", "Chapter 41 · Take the quiz &amp; aim for 100%"),
+    "ch42_joint_densities.html":
+        ("../../ch42.html#notebook", "Back to the book", "Chapter 42 · Joint, Marginal &amp; Conditional Densities"),
+    "ch42_challenges_solutions.html":
+        ("../../ch42.html#quiz", "Back to the book", "Chapter 42 · Take the quiz &amp; aim for 100%"),
+    "ch43_transformations.html":
+        ("../../ch43.html#notebook", "Back to the book", "Chapter 43 · Transformations of Random Variables"),
+    "ch43_challenges_solutions.html":
+        ("../../ch43.html#quiz", "Back to the book", "Chapter 43 · Take the quiz &amp; aim for 100%"),
+    "ch44_conditional_expectation.html":
+        ("../../ch44.html#notebook", "Back to the book", "Chapter 44 · Conditional Expectation &amp; the Tower Property"),
+    "ch44_challenges_solutions.html":
+        ("../../ch44.html#quiz", "Back to the book", "Chapter 44 · Take the quiz &amp; aim for 100%"),
+    "ch45_moments_mgfs.html":
+        ("../../ch45.html#notebook", "Back to the book", "Chapter 45 · Moments, MGFs &amp; Inequalities"),
+    "ch45_challenges_solutions.html":
+        ("../../ch45.html#quiz", "Back to the book", "Chapter 45 · Take the quiz &amp; aim for 100%"),
+    "ch46_estimation_theory.html":
+        ("../../ch46.html#notebook", "Back to the book", "Chapter 46 · Estimation Theory"),
+    "ch46_challenges_solutions.html":
+        ("../../ch46.html#quiz", "Back to the book", "Chapter 46 · Take the quiz &amp; aim for 100%"),
 }
 
 def card(href, kicker, title):

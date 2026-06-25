@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 42 · Joint, Marginal &amp; Conditional Densities — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .disp-table code { font-size:0.82em; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch42_joint_densities.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part VIII · Mathematical Statistics</span><span class="sep">/</span>
+      <span>Chapter 42</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part VIII · Mathematical Statistics</span> Two variables at once</div>
+    <h1>Joint, Marginal &amp; <span class="accent">Conditional Densities</span></h1>
+    <p class="dek">Real data has many variables that move together. This chapter builds the joint distribution, the master
+       object describing two variables at once, then derives its marginals and conditionals, the lens through which most
+       of machine learning views the world.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~17 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 42</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Until now a random variable lived alone. But weather affects your commute, height tracks weight, one
+       word predicts the next. To capture how two variables behave <em>together</em>, we need the
+       <span class="term">joint distribution</span>, and from it, everything else follows.</p>
+
+    <div class="def-card">
+      <div class="sigma">f<tspan style="font-size:0.7em">XY</tspan></div>
+      <div class="def-body">
+        The <span class="def-kw">joint distribution</span> gives the probability of each combination of values,
+        f(x, y). Summing or integrating out one variable yields a <span class="def-kw">marginal</span>; dividing the
+        joint by a marginal yields a <span class="def-kw">conditional</span>, f(y | x) = f(x, y) / f(x).
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🎓</div>
+      <div><div class="ctitle">Welcome to Part VIII</div>
+        <p>This Part is the advanced, mathematical-statistics track. It is optional for a first read, but it is where the
+           machinery underneath estimation, regression, and modern generative AI is built. We start with the most
+           fundamental object of multivariate probability: the joint distribution.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: joint ===== -->
+  <section id="joint">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Joint Distribution</h2></div>
+    <p>A joint distribution assigns a probability to every <em>pair</em> of outcomes. For two discrete variables it is a
+       table; for two continuous variables it is a surface, and probability becomes volume under that surface.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 220" width="100%" font-family="Inter, sans-serif" aria-label="A 2 by 2 joint probability table for weather and commute">
+        <text x="340" y="22" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Joint PMF: P(weather, commute), four cells summing to 1</text>
+        <!-- column headers -->
+        <text x="330" y="58" text-anchor="middle" font-size="10" fill="#6d28d9" font-weight="800">late</text>
+        <text x="470" y="58" text-anchor="middle" font-size="10" fill="#6d28d9" font-weight="800">on-time</text>
+        <!-- row headers -->
+        <text x="180" y="98" text-anchor="end" font-size="10" fill="#6d28d9" font-weight="800">rain</text>
+        <text x="180" y="158" text-anchor="end" font-size="10" fill="#6d28d9" font-weight="800">clear</text>
+        <!-- cells -->
+        <rect x="200" y="70" width="140" height="50" fill="#ede9fe" stroke="#7c3aed"/><text x="270" y="100" text-anchor="middle" font-size="15" fill="#1a2138" font-weight="800">0.20</text>
+        <rect x="340" y="70" width="140" height="50" fill="#f5f3ff" stroke="#7c3aed"/><text x="410" y="100" text-anchor="middle" font-size="15" fill="#1a2138" font-weight="800">0.10</text>
+        <rect x="200" y="120" width="140" height="50" fill="#f5f3ff" stroke="#7c3aed"/><text x="270" y="150" text-anchor="middle" font-size="15" fill="#1a2138" font-weight="800">0.15</text>
+        <rect x="340" y="120" width="140" height="50" fill="#ddd6fe" stroke="#7c3aed"/><text x="410" y="150" text-anchor="middle" font-size="15" fill="#1a2138" font-weight="800">0.55</text>
+        <text x="540" y="120" font-size="9.5" fill="#8b94b3">each cell =</text>
+        <text x="540" y="134" font-size="9.5" fill="#8b94b3">P(one pair);</text>
+        <text x="540" y="148" font-size="9.5" fill="#8b94b3">all four sum to 1</text>
+      </svg>
+    </figure>
+
+    <p>The joint table captures everything about how the two variables behave together: here P(rain and late) = 0.20.
+       The four cells sum to 1, and from this single object we can recover every marginal and conditional in the rest of
+       the chapter.</p>
+  </section>
+
+  <!-- ===== Section 2: marginal ===== -->
+  <section id="marginal">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Marginal Distributions</h2></div>
+    <p>To describe one variable on its own, ignore the other by <strong>summing it out</strong> (integrating, for
+       densities). The result, written in the margin of the table, is the <span class="term">marginal distribution</span>.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 220" width="100%" font-family="Inter, sans-serif" aria-label="The joint table with row sums and column sums forming the marginals">
+        <text x="340" y="22" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Sum across a row (or down a column) to get a marginal</text>
+        <!-- cells -->
+        <rect x="170" y="60" width="120" height="46" fill="#f5f3ff" stroke="#7c3aed"/><text x="230" y="88" text-anchor="middle" font-size="13" fill="#1a2138" font-weight="700">0.20</text>
+        <rect x="290" y="60" width="120" height="46" fill="#f5f3ff" stroke="#7c3aed"/><text x="350" y="88" text-anchor="middle" font-size="13" fill="#1a2138" font-weight="700">0.10</text>
+        <rect x="170" y="106" width="120" height="46" fill="#f5f3ff" stroke="#7c3aed"/><text x="230" y="134" text-anchor="middle" font-size="13" fill="#1a2138" font-weight="700">0.15</text>
+        <rect x="290" y="106" width="120" height="46" fill="#f5f3ff" stroke="#7c3aed"/><text x="350" y="134" text-anchor="middle" font-size="13" fill="#1a2138" font-weight="700">0.55</text>
+        <!-- row marginals -->
+        <rect x="430" y="60" width="110" height="46" fill="#ede9fe" stroke="#6d28d9"/><text x="485" y="83" text-anchor="middle" font-size="12" fill="#6d28d9" font-weight="800">0.30</text><text x="485" y="98" text-anchor="middle" font-size="8" fill="#8b94b3">P(rain)</text>
+        <rect x="430" y="106" width="110" height="46" fill="#ede9fe" stroke="#6d28d9"/><text x="485" y="129" text-anchor="middle" font-size="12" fill="#6d28d9" font-weight="800">0.70</text><text x="485" y="144" text-anchor="middle" font-size="8" fill="#8b94b3">P(clear)</text>
+        <!-- column marginals -->
+        <rect x="170" y="166" width="120" height="40" fill="#ede9fe" stroke="#6d28d9"/><text x="230" y="186" text-anchor="middle" font-size="12" fill="#6d28d9" font-weight="800">0.35</text><text x="230" y="199" text-anchor="middle" font-size="8" fill="#8b94b3">P(late)</text>
+        <rect x="290" y="166" width="120" height="40" fill="#ede9fe" stroke="#6d28d9"/><text x="350" y="186" text-anchor="middle" font-size="12" fill="#6d28d9" font-weight="800">0.65</text><text x="350" y="199" text-anchor="middle" font-size="8" fill="#8b94b3">P(on-time)</text>
+        <text x="556" y="86" font-size="14" fill="#6d28d9">&#8594;</text><text x="556" y="132" font-size="14" fill="#6d28d9">&#8594;</text>
+      </svg>
+    </figure>
+
+    <p>Summing each row gives the marginal for weather (30% rain, 70% clear); summing each column gives the marginal for
+       commute (35% late, 65% on-time). The marginal is simply each variable considered alone, with the other averaged
+       away.</p>
+  </section>
+
+  <!-- ===== Section 3: conditional ===== -->
+  <section id="conditional">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Conditional Distributions and Independence</h2></div>
+    <p>To find the distribution of one variable <em>given</em> a fixed value of the other, take that row of the joint and
+       <strong>re-normalize</strong> it to sum to 1: <strong>f(y | x) = f(x, y) / f(x)</strong>.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 200" width="100%" font-family="Inter, sans-serif" aria-label="Re-normalizing the rain row of the joint into the conditional distribution of commute given rain">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Conditioning on rain: divide the rain row by P(rain) = 0.30</text>
+        <!-- joint rain row -->
+        <text x="120" y="70" font-size="9.5" fill="#8b94b3">joint (rain row)</text>
+        <rect x="120" y="78" width="90" height="34" fill="#f5f3ff" stroke="#7c3aed"/><text x="165" y="100" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="700">0.20</text>
+        <rect x="212" y="78" width="90" height="34" fill="#f5f3ff" stroke="#7c3aed"/><text x="257" y="100" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="700">0.10</text>
+        <text x="330" y="100" font-size="16" fill="#6d28d9" font-weight="800">&#247; 0.30 &#8594;</text>
+        <!-- conditional -->
+        <text x="470" y="70" font-size="9.5" fill="#6d28d9" font-weight="700">P(commute | rain)</text>
+        <rect x="470" y="78" width="90" height="34" fill="#ddd6fe" stroke="#6d28d9"/><text x="515" y="100" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">0.67</text>
+        <rect x="562" y="78" width="90" height="34" fill="#ede9fe" stroke="#6d28d9"/><text x="607" y="100" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">0.33</text>
+        <text x="165" y="128" text-anchor="middle" font-size="8" fill="#8b94b3">late</text><text x="257" y="128" text-anchor="middle" font-size="8" fill="#8b94b3">on-time</text>
+        <text x="515" y="128" text-anchor="middle" font-size="8" fill="#8b94b3">late</text><text x="607" y="128" text-anchor="middle" font-size="8" fill="#8b94b3">on-time</text>
+        <text x="340" y="168" text-anchor="middle" font-size="9.5" fill="#4a5578">given rain, P(late) jumps from the marginal 0.35 to 0.67: weather and commute are DEPENDENT</text>
+      </svg>
+    </figure>
+
+    <p>Given rain, the chance of being late leaps from the unconditional 35% to <strong>67%</strong>. Because
+       conditioning changed the distribution, the variables are <span class="hl">dependent</span>. The formal test for
+       <span class="term">independence</span> is whether the joint factors into the product of the marginals,
+       f(x, y) = f(x) &#215; f(y); here it does not.</p>
+
+    <div class="callout note">
+      <div class="cico">🔗</div>
+      <div><div class="ctitle">Independence = factorization</div>
+        <p>Two variables are independent exactly when their joint distribution is the product of their marginals. This is
+           the multivariate version of P(A and B) = P(A)P(B) from Chapter 31, and it is the assumption that makes naive
+           Bayes "naive" and that lets many models treat features as separable.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 4: bivariate normal ===== -->
+  <section id="bivariate">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Covariance and the Bivariate Normal</h2></div>
+    <p>For continuous variables, the most important joint distribution is the <span class="term">bivariate normal</span>:
+       two correlated Gaussians whose shape is set by a <span class="term">covariance matrix</span>. The correlation
+       &#961; tilts the cloud.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 230" width="100%" font-family="Inter, sans-serif" aria-label="A tilted elliptical cloud of bivariate normal points with the conditional-mean line through it">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Bivariate normal (&#961; = 0.75): the conditional mean E[Y|X] is a straight line</text>
+        <line x1="120" y1="200" x2="560" y2="200" stroke="#8b94b3" stroke-width="1"/>
+        <line x1="120" y1="40" x2="120" y2="200" stroke="#8b94b3" stroke-width="1"/>
+        <text x="340" y="218" text-anchor="middle" font-size="9" fill="#8b94b3">X</text>
+        <text x="108" y="120" text-anchor="middle" font-size="9" fill="#8b94b3" transform="rotate(-90 108 120)">Y</text>
+        <!-- tilted ellipse cloud -->
+        <ellipse cx="340" cy="120" rx="150" ry="55" fill="#ddd6fe" fill-opacity="0.55" stroke="#7c3aed" stroke-width="1.5" transform="rotate(-27 340 120)"/>
+        <ellipse cx="340" cy="120" rx="95" ry="32" fill="#c4b5fd" fill-opacity="0.6" stroke="none" transform="rotate(-27 340 120)"/>
+        <!-- conditional mean line -->
+        <line x1="160" y1="178" x2="520" y2="62" stroke="#db2777" stroke-width="2.5"/>
+        <text x="500" y="56" text-anchor="end" font-size="9.5" fill="#db2777" font-weight="800">E[Y | X = x] = &#961;x</text>
+      </svg>
+    </figure>
+
+    <p>The cloud tilts because X and Y are correlated. The pink line is the <span class="hl">conditional mean</span>
+       E[Y | X = x], and for a bivariate normal it is exactly a <strong>straight line</strong>. That fact, the conditional
+       mean of jointly-normal data is linear, is the theoretical seed of linear regression (Part XII).
+       <span class="term">Covariance</span> measures how the two vary together; dividing by the standard deviations gives
+       the unitless correlation &#961;.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Joint Densities in Machine Learning &amp; AI</h2></div>
+    <p>The joint-versus-conditional distinction is one of the deepest divides in machine learning, separating whole
+       families of models, and covariance matrices sit at the heart of many algorithms.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Idea (this chapter)</th><th>In ML / AI it appears as</th><th>Concrete example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Conditional P(y | x)</td><td>Discriminative models</td><td>logistic regression; an LLM's P(next token | context)</td></tr>
+          <tr><td class="nm">Joint P(x, y)</td><td>Generative models</td><td>naive Bayes, VAEs, diffusion models sample the joint</td></tr>
+          <tr><td class="nm">Independence / factorization</td><td>Simplifying assumptions</td><td>the "naive" in naive Bayes</td></tr>
+          <tr><td class="nm">Covariance matrix</td><td>Structure of the data</td><td>PCA, Gaussian models, Mahalanobis distance</td></tr>
+          <tr><td class="nm">Linear conditional mean</td><td>Why linear regression works</td><td>E[Y | X] is a line for jointly-normal data</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>The single most important taxonomy in machine learning falls straight out of this chapter.
+           <strong>Discriminative</strong> models, logistic regression, most classifiers, and the language models that
+           predict P(next token | context), learn only the <strong>conditional</strong> P(y | x). <strong>Generative</strong>
+           models, naive Bayes, variational autoencoders, and diffusion models, learn the full <strong>joint</strong>
+           P(x, y) and can therefore sample new data. The <strong>covariance matrix</strong> of a joint distribution is
+           what PCA diagonalizes to find principal directions, what a Gaussian model stores, and what Mahalanobis distance
+           uses to measure "unusual". And the fact that a bivariate normal's conditional mean is <em>linear</em> is the
+           deep reason linear regression is so natural. Understand the joint distribution and you understand the shape of
+           the entire modeling landscape.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Build joint distributions in Python</h3>
+          <p>The companion notebook builds a joint PMF and visualizes it as a heatmap, recovers the marginals by summing,
+             conditions to get one variable given another (and tests independence by factorization), simulates a
+             bivariate normal to recover its covariance and correlation, and shows the joint-versus-conditional split
+             that separates generative from discriminative models.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch42_joint_densities.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch42_joint_densities.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch42_joint_densities.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code> and <code>matplotlib</code> and launch
+      <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>The joint distribution</strong> f(x, y) is the master object: the probability of every combination of values.</span></li>
+        <li><span class="ck">✓</span><span><strong>Marginals</strong> come from summing (integrating) out the other variable: each variable considered alone.</span></li>
+        <li><span class="ck">✓</span><span><strong>Conditionals</strong> f(y | x) = f(x, y)/f(x) re-normalize a slice of the joint; independence means the joint factors into the marginals.</span></li>
+        <li><span class="ck">✓</span><span><strong>The bivariate normal</strong> is set by a covariance matrix; its conditional mean E[Y | X] is a straight line, the seed of regression.</span></li>
+        <li><span class="ck">✓</span><span><strong>In ML/AI</strong>: discriminative models learn P(y | x), generative models learn the joint P(x, y); covariance powers PCA and Gaussian methods.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them with NumPy before checking the solutions. All use the
+       3&#215;3 joint of X, Y &#8712; {0, 1, 2} given in the solutions notebook.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Read the joint</h4>
+        <p>Using a 3&#215;3 joint PMF, find P(X=2, Y=2) and P(X=Y).</p>
+        <div class="chint">Hint: one cell, and the diagonal sum.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Marginals</h4>
+        <p>Find the marginal distributions of X and Y from the joint.</p>
+        <div class="chint">Hint: sum over rows for P(X), over columns for P(Y).</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Conditional</h4>
+        <p>Find the conditional distribution P(Y | X=2).</p>
+        <div class="chint">Hint: take the X=2 row and divide by P(X=2).</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Independent?</h4>
+        <p>Decide whether X and Y are independent by comparing the joint to the product of the marginals.</p>
+        <div class="chint">Hint: check whether joint = outer(P(X), P(Y)).</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Recover correlation</h4>
+        <p>Simulate 5,000 draws from a bivariate normal with correlation 0.6 and recover it from the sample.</p>
+        <div class="chint">Hint: <code>np.corrcoef</code> on the simulated columns.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code.
+           Try them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/ch42_challenges_solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch42_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch42_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on joint, marginal, and conditional distributions. Answer them, hit <strong>Check
+       Answers</strong>, and keep refining until you score 100%. Your progress is saved, so you can hop back to the
+       chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch41.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 41 · Previous</span><br><span class="cn-title">Distributions for Inference</span></span>
+    </a>
+    <div class="cn-btn next" style="cursor:default;opacity:0.6" title="Coming soon">
+      <span><span class="cn-dir">Chapter 43 · Coming soon</span><br><span class="cn-title">Transformations of Random Variables</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </div>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 42 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch42";
+  window.QUIZ_DATA = [
+    {
+      q: "A joint distribution f(x, y) gives…",
+      options: ["The probability of x alone", "The probability of each combination of x and y", "Only the average of x and y", "The correlation"],
+      answer: 1,
+      explain: "The joint distribution assigns a probability to every pair (x, y). All other distributions in the chapter are derived from it."
+    },
+    {
+      q: "A marginal distribution is obtained from the joint by…",
+      options: ["Dividing by a constant", "Summing (or integrating) out the other variable", "Squaring it", "Taking the maximum"],
+      answer: 1,
+      explain: "Summing the joint over the other variable collapses it to one variable alone, the marginal written in the table's margin."
+    },
+    {
+      q: "The conditional distribution f(y | x) equals…",
+      options: ["f(x, y) × f(x)", "f(x, y) / f(x)", "f(x) / f(y)", "f(x) + f(y)"],
+      answer: 1,
+      explain: "f(y | x) = f(x, y) / f(x): take the slice of the joint at the given x and re-normalize it to sum to 1."
+    },
+    {
+      q: "Two variables are independent if and only if…",
+      options: ["Their means are equal", "The joint equals the product of the marginals", "Their correlation is 1", "They have the same variance"],
+      answer: 1,
+      explain: "Independence means f(x, y) = f(x) × f(y) for all x, y, the multivariate version of P(A and B) = P(A)P(B)."
+    },
+    {
+      q: "If conditioning on X changes the distribution of Y, then X and Y are…",
+      options: ["Independent", "Dependent", "Always normal", "Uncorrelated"],
+      answer: 1,
+      explain: "If knowing X changes Y's distribution, the variables are dependent. Independence would mean conditioning changes nothing."
+    },
+    {
+      q: "For a bivariate normal, the conditional mean E[Y | X = x] is…",
+      options: ["A constant", "A straight line in x", "Always zero", "A parabola"],
+      answer: 1,
+      explain: "The conditional mean of jointly-normal data is linear in x, the theoretical foundation of linear regression."
+    },
+    {
+      q: "A discriminative model (like logistic regression or an LLM) learns…",
+      options: ["The joint P(x, y)", "The conditional P(y | x)", "Only the marginal P(x)", "Nothing"],
+      answer: 1,
+      explain: "Discriminative models learn P(y | x) directly, for example P(label | features) or P(next token | context)."
+    },
+    {
+      q: "A generative model (like a VAE or naive Bayes) is distinguished by learning…",
+      options: ["The conditional only", "The full joint distribution P(x, y), so it can sample new data", "The correlation only", "The learning rate"],
+      answer: 1,
+      explain: "Generative models learn the joint distribution and can sample new examples from it, unlike discriminative models that learn only P(y | x)."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
