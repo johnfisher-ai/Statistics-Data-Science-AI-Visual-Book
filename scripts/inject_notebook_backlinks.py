@@ -204,6 +204,30 @@ MAP = {
         ("../../ch47.html#notebook", "Back to the book", "Chapter 47 · The Probability Distribution Framework"),
     "ch48_ecommerce_bernoulli.html":
         ("../../ch48.html#notebook", "Back to the book", "Chapter 48 · E-commerce Conversions (Bernoulli)"),
+    "ch49_manufacturing_binomial.html":
+        ("../../ch49.html#notebook", "Back to the book", "Chapter 49 · Manufacturing Defects (Binomial)"),
+    "ch50_server_poisson.html":
+        ("../../ch50.html#notebook", "Back to the book", "Chapter 50 · Server Traffic Spikes (Poisson)"),
+    "ch51_telemarketing_geometric.html":
+        ("../../ch51.html#notebook", "Back to the book", "Chapter 51 · Sales Calls to First Win (Geometric)"),
+    "ch52_wildlife_hypergeometric.html":
+        ("../../ch52.html#notebook", "Back to the book", "Chapter 52 · Capture-Recapture (Hypergeometric)"),
+    "ch53_software_negbinomial.html":
+        ("../../ch53.html#notebook", "Back to the book", "Chapter 53 · Software Reliability (Negative Binomial)"),
+    "ch54_exam_normal.html":
+        ("../../ch54.html#notebook", "Back to the book", "Chapter 54 · Exam Scores (Normal)"),
+    "ch55_hardware_exponential.html":
+        ("../../ch55.html#notebook", "Back to the book", "Chapter 55 · Hardware Lifespans (Exponential)"),
+    "ch56_rainfall_gamma.html":
+        ("../../ch56.html#notebook", "Back to the book", "Chapter 56 · Regional Rainfall (Gamma)"),
+    "ch57_freight_clt.html":
+        ("../../ch57.html#notebook", "Back to the book", "Chapter 57 · Freight Weights & the CLT"),
+    "ch58_clinical_t.html":
+        ("../../ch58.html#notebook", "Back to the book", "Chapter 58 · Clinical Trial Efficacy (Student's t)"),
+    "ch59_survey_chisquare.html":
+        ("../../ch59.html#notebook", "Back to the book", "Chapter 59 · Survey Demographics (Chi-Square)"),
+    "ch60_crop_anova.html":
+        ("../../ch60.html#notebook", "Back to the book", "Chapter 60 · Crop Yield by Fertilizer (F / ANOVA)"),
 }
 
 def card(href, kicker, title):
