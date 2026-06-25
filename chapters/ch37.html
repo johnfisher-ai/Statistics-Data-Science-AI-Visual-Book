@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 37 · Discrete Distributions — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .disp-table code { font-size:0.82em; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch37_discrete_distributions.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part VII · Probability Distributions</span><span class="sep">/</span>
+      <span>Chapter 37</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part VII · Probability Distributions</span> Recipes for counting</div>
+    <h1>Discrete <span class="accent">Distributions</span></h1>
+    <p class="dek">A surprisingly small set of named distributions describes almost every counting problem in statistics and
+       machine learning. This chapter introduces the workhorses, Bernoulli, binomial, geometric, Poisson, and
+       hypergeometric, and shows when to reach for each.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~17 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 37</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Chapter 35 built random variables from scratch, an outcome, a value, a probability for each. But you
+       rarely start from scratch. Most real counts follow one of a few standard patterns, and statisticians long ago
+       catalogued them as <span class="term">named distributions</span>: ready-made recipes, each with a formula, a mean,
+       and a variance.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#931;</div>
+      <div class="def-body">
+        A <span class="def-kw">discrete probability distribution</span> assigns a probability to each value a
+        count can take, through its <span class="def-kw">probability mass function</span> (PMF). A
+        <span class="def-kw">named distribution</span> is a family of PMFs sharing one formula, picked out by a few
+        <em>parameters</em> such as n and p.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🧰</div>
+      <div><div class="ctitle">Why memorize a handful of distributions</div>
+        <p>Recognizing that "this is a binomial" or "this is a Poisson" hands you the mean, the variance, and the exact
+           probabilities for free, no derivation required. The hard part of a counting problem is almost never the
+           algebra; it is spotting which recipe applies. This chapter is about building that recognition.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: families ===== -->
+  <section id="families">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Distributions as Families</h2></div>
+    <p>Each named distribution is a <em>family</em>: one formula, with knobs. Turn the knobs (the parameters) and you get
+       a specific PMF with its own shape, center, and spread. A few have shapes worth knowing on sight.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 200" width="100%" font-family="Inter, sans-serif" aria-label="Four discrete distributions shown as small PMF shapes">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Four shapes worth knowing on sight</text>
+        <!-- Bernoulli -->
+        <g fill="#0d9488">
+          <rect x="40" y="70" width="34" height="80" rx="2"/><rect x="92" y="115" width="34" height="35" rx="2"/>
+        </g>
+        <line x1="30" y1="150" x2="140" y2="150" stroke="#cdd3e6"/>
+        <text x="85" y="168" text-anchor="middle" font-size="10" fill="#1a2138" font-weight="700">Bernoulli</text>
+        <text x="85" y="182" text-anchor="middle" font-size="8" fill="#8b94b3">one yes/no trial</text>
+        <!-- Binomial -->
+        <g fill="#0d9488">
+          <rect x="185" y="128" width="13" height="22" rx="1"/><rect x="201" y="100" width="13" height="50" rx="1"/>
+          <rect x="217" y="78" width="13" height="72" rx="1"/><rect x="233" y="86" width="13" height="64" rx="1"/>
+          <rect x="249" y="112" width="13" height="38" rx="1"/><rect x="265" y="134" width="13" height="16" rx="1"/>
+        </g>
+        <line x1="178" y1="150" x2="288" y2="150" stroke="#cdd3e6"/>
+        <text x="233" y="168" text-anchor="middle" font-size="10" fill="#1a2138" font-weight="700">Binomial</text>
+        <text x="233" y="182" text-anchor="middle" font-size="8" fill="#8b94b3"># successes in n</text>
+        <!-- Geometric -->
+        <g fill="#0d9488">
+          <rect x="330" y="74" width="13" height="76" rx="1"/><rect x="346" y="92" width="13" height="58" rx="1"/>
+          <rect x="362" y="106" width="13" height="44" rx="1"/><rect x="378" y="117" width="13" height="33" rx="1"/>
+          <rect x="394" y="125" width="13" height="25" rx="1"/><rect x="410" y="131" width="13" height="19" rx="1"/>
+        </g>
+        <line x1="323" y1="150" x2="433" y2="150" stroke="#cdd3e6"/>
+        <text x="378" y="168" text-anchor="middle" font-size="10" fill="#1a2138" font-weight="700">Geometric</text>
+        <text x="378" y="182" text-anchor="middle" font-size="8" fill="#8b94b3">trials to 1st success</text>
+        <!-- Poisson -->
+        <g fill="#0d9488">
+          <rect x="475" y="120" width="13" height="30" rx="1"/><rect x="491" y="92" width="13" height="58" rx="1"/>
+          <rect x="507" y="80" width="13" height="70" rx="1"/><rect x="523" y="92" width="13" height="58" rx="1"/>
+          <rect x="539" y="112" width="13" height="38" rx="1"/><rect x="555" y="130" width="13" height="20" rx="1"/>
+          <rect x="571" y="140" width="13" height="10" rx="1"/>
+        </g>
+        <line x1="468" y1="150" x2="592" y2="150" stroke="#cdd3e6"/>
+        <text x="530" y="168" text-anchor="middle" font-size="10" fill="#1a2138" font-weight="700">Poisson</text>
+        <text x="530" y="182" text-anchor="middle" font-size="8" fill="#8b94b3"># rare events</text>
+      </svg>
+    </figure>
+
+    <p>Every one is summarized by two numbers from Chapter 35: its <strong>mean</strong> (where it centers) and its
+       <strong>variance</strong> (how it spreads). The rest of this chapter is really just five recipes, each with its
+       formula and those two summaries.</p>
+  </section>
+
+  <!-- ===== Section 2: Bernoulli & Binomial ===== -->
+  <section id="binomial">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Bernoulli and Binomial</h2></div>
+    <p>The <span class="term">Bernoulli</span> distribution is the atom: a single trial that succeeds with probability p
+       and fails with 1 &#8722; p. Stack n independent Bernoulli trials and count the successes, and you have the
+       <span class="term">binomial</span> distribution, the most important discrete distribution there is.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 240" width="100%" font-family="Inter, sans-serif" aria-label="The binomial PMF for n equals 10 and p equals 0.3, with its formula and summaries">
+        <text x="240" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Binomial(n = 10, p = 0.3)</text>
+        <!-- bars k=0..10, pmf*600 -->
+        <g fill="#0d9488">
+          <rect x="40"  y="173" width="26" height="17"  rx="2"/>
+          <rect x="74"  y="117" width="26" height="73"  rx="2"/>
+          <rect x="108" y="50"  width="26" height="140" rx="2" fill="#0f766e"/>
+          <rect x="142" y="30"  width="26" height="160" rx="2" fill="#0f766e"/>
+          <rect x="176" y="70"  width="26" height="120" rx="2"/>
+          <rect x="210" y="128" width="26" height="62"  rx="2"/>
+          <rect x="244" y="168" width="26" height="22"  rx="2"/>
+          <rect x="278" y="185" width="26" height="5"   rx="2"/>
+          <rect x="312" y="189" width="26" height="1"   rx="2"/>
+        </g>
+        <line x1="34" y1="190" x2="360" y2="190" stroke="#1a2138" stroke-width="1.3"/>
+        <g font-size="8.5" fill="#8b94b3" text-anchor="middle">
+          <text x="53" y="203">0</text><text x="87" y="203">1</text><text x="121" y="203">2</text><text x="155" y="203">3</text>
+          <text x="189" y="203">4</text><text x="223" y="203">5</text><text x="257" y="203">6</text><text x="291" y="203">7</text><text x="325" y="203">8</text>
+        </g>
+        <path d="M155,28 L155,16" stroke="#db2777" stroke-width="1.4"/><text x="155" y="12" text-anchor="middle" font-size="8.5" fill="#db2777" font-weight="800">mean np = 3</text>
+        <!-- formula box -->
+        <rect x="395" y="40" width="260" height="150" rx="10" fill="#ecfdf5" stroke="#0d9488"/>
+        <text x="412" y="64" font-size="11" fill="#0f766e" font-weight="800">Binomial</text>
+        <text x="412" y="90" font-size="11" fill="#1a2138">P(X=k) = C(n,k) p&#8311; (1&#8722;p)&#8319;&#8315;&#8311;</text>
+        <text x="412" y="118" font-size="10.5" fill="#4a5578">mean = np = 3</text>
+        <text x="412" y="140" font-size="10.5" fill="#4a5578">variance = np(1&#8722;p) = 2.1</text>
+        <text x="412" y="168" font-size="9" fill="#8b94b3">count successes in n fixed,</text>
+        <text x="412" y="181" font-size="9" fill="#8b94b3">independent trials</text>
+      </svg>
+    </figure>
+
+    <p>The formula reads naturally: <strong>C(n, k)</strong> counts the ways to arrange k successes among n trials (the
+       combinatorics of Chapter 32), and <strong>p&#8311;(1&#8722;p)&#8319;&#8315;&#8311;</strong> is the probability of any one
+       such arrangement. For n = 10 and p = 0.3 the distribution centers on np = 3, with variance np(1 &#8722; p) = 2.1.</p>
+  </section>
+
+  <!-- ===== Section 3: geometric & friends ===== -->
+  <section id="waiting">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Waiting Games: Geometric, Negative Binomial, Hypergeometric</h2></div>
+    <p>The binomial fixes the number of trials and counts successes. Flip the question, fix the number of successes and
+       count the <em>trials</em>, and you get a different family.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 210" width="100%" font-family="Inter, sans-serif" aria-label="The geometric PMF showing a long right tail with mean 1 over p">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Geometric(p = 0.2): trials until the first success</text>
+        <!-- bars k=1..12, pmf*700 -->
+        <g fill="#0d9488">
+          <rect x="56"  y="35"  width="32" height="140" rx="2"/>
+          <rect x="100" y="63"  width="32" height="112" rx="2"/>
+          <rect x="144" y="85"  width="32" height="90"  rx="2"/>
+          <rect x="188" y="103" width="32" height="72"  rx="2"/>
+          <rect x="232" y="118" width="32" height="57"  rx="2"/>
+          <rect x="276" y="129" width="32" height="46"  rx="2"/>
+          <rect x="320" y="138" width="32" height="37"  rx="2"/>
+          <rect x="364" y="146" width="32" height="29"  rx="2"/>
+          <rect x="408" y="151" width="32" height="24"  rx="2"/>
+          <rect x="452" y="156" width="32" height="19"  rx="2"/>
+          <rect x="496" y="160" width="32" height="15"  rx="2"/>
+          <rect x="540" y="163" width="32" height="12"  rx="2"/>
+        </g>
+        <line x1="50" y1="175" x2="590" y2="175" stroke="#1a2138" stroke-width="1.3"/>
+        <text x="345" y="195" text-anchor="middle" font-size="9" fill="#8b94b3">trial number k  &#8594;</text>
+        <path d="M232,33 L232,118" stroke="#db2777" stroke-width="1.4" stroke-dasharray="4 3"/>
+        <text x="232" y="30" text-anchor="middle" font-size="8.5" fill="#db2777" font-weight="800">mean 1/p = 5</text>
+      </svg>
+    </figure>
+
+    <p>The <span class="term">geometric</span> distribution counts the trials up to the first success: PMF
+       (1&#8722;p)<sup>k&#8722;1</sup>p, with mean 1/p. With p = 0.2 the most likely single outcome is success on the first
+       try, yet the long right tail drags the average wait to 5 trials. Two close relatives complete the picture:</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Distribution</th><th>Counts</th><th>Key fact</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Geometric</td><td>trials until the <em>first</em> success</td><td>mean 1/p; memoryless</td></tr>
+          <tr><td class="nm">Negative binomial</td><td>trials until the <em>r-th</em> success</td><td>generalizes the geometric (r = 1)</td></tr>
+          <tr><td class="nm">Hypergeometric</td><td>successes when drawing <em>without replacement</em></td><td>trials are dependent, so not binomial</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout note">
+      <div class="cico">🃏</div>
+      <div><div class="ctitle">With or without replacement?</div>
+        <p>The binomial assumes every trial has the same probability p, which holds only <strong>with</strong>
+           replacement. Draw without replacing (cards from a deck, defective parts from a box) and each draw shifts the
+           odds, so you need the <strong>hypergeometric</strong>. Drawing 10 parts from 50 with 5 defective gives
+           P(exactly 1 defective) = 0.431. When the population is large relative to the sample, the difference fades and
+           the binomial is a fine approximation.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 4: Poisson ===== -->
+  <section id="poisson">
+    <div class="section-eyebrow"><div class="num">4</div><h2>The Poisson Distribution</h2></div>
+    <p>The <span class="term">Poisson</span> distribution counts events in a fixed window when they occur at a steady
+       average rate &#955;: calls per hour, typos per page, mutations per genome. Its PMF is &#955;&#8311;e<sup>&#8722;&#955;</sup>/k!,
+       and it has a beautiful signature: <strong>mean = variance = &#955;</strong>.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 230" width="100%" font-family="Inter, sans-serif" aria-label="A binomial with large n and small p overlaid on a Poisson, showing they match">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">A binomial with large n and small p becomes Poisson(&#955; = np)</text>
+        <!-- paired bars k=0..9, pmf*500 -->
+        <g>
+          <!-- Poisson(3) teal, Binomial(1000,0.003) amber -->
+          <rect x="46"  y="165" width="14" height="25"  fill="#0d9488"/><rect x="61"  y="165" width="14" height="25"  fill="#d97706"/>
+          <rect x="106" y="115" width="14" height="75"  fill="#0d9488"/><rect x="121" y="115" width="14" height="75"  fill="#d97706"/>
+          <rect x="166" y="78"  width="14" height="112" fill="#0d9488"/><rect x="181" y="78"  width="14" height="112" fill="#d97706"/>
+          <rect x="226" y="78"  width="14" height="112" fill="#0d9488"/><rect x="241" y="78"  width="14" height="112" fill="#d97706"/>
+          <rect x="286" y="106" width="14" height="84"  fill="#0d9488"/><rect x="301" y="106" width="14" height="84"  fill="#d97706"/>
+          <rect x="346" y="140" width="14" height="50"  fill="#0d9488"/><rect x="361" y="140" width="14" height="50"  fill="#d97706"/>
+          <rect x="406" y="165" width="14" height="25"  fill="#0d9488"/><rect x="421" y="165" width="14" height="25"  fill="#d97706"/>
+          <rect x="466" y="179" width="14" height="11"  fill="#0d9488"/><rect x="481" y="179" width="14" height="11"  fill="#d97706"/>
+        </g>
+        <line x1="40" y1="190" x2="540" y2="190" stroke="#1a2138" stroke-width="1.3"/>
+        <g font-size="8.5" fill="#8b94b3" text-anchor="middle">
+          <text x="60" y="203">0</text><text x="120" y="203">1</text><text x="180" y="203">2</text><text x="240" y="203">3</text>
+          <text x="300" y="203">4</text><text x="360" y="203">5</text><text x="420" y="203">6</text><text x="480" y="203">7</text>
+        </g>
+        <rect x="560" y="70" width="13" height="13" fill="#0d9488"/><text x="578" y="81" font-size="9.5" fill="#4a5578">Poisson(3)</text>
+        <rect x="560" y="92" width="13" height="13" fill="#d97706"/><text x="578" y="103" font-size="9.5" fill="#4a5578">Binomial</text>
+        <text x="578" y="116" font-size="8.5" fill="#8b94b3">(1000, 0.003)</text>
+      </svg>
+    </figure>
+
+    <p>The Poisson is the limit of a binomial with many trials, each unlikely, holding np = &#955; fixed. That is exactly
+       the structure of "rare events, many chances", which is why it models so much of the world. Here Binomial(1000,
+       0.003) and Poisson(3) are visually identical; their PMFs differ by less than 0.0004.</p>
+  </section>
+
+  <!-- ===== Section 5: choosing + ML/AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Choosing a Distribution, and Where They Power AI</h2></div>
+    <p>The skill is matching a problem to its distribution. Once matched, mean, variance, and exact probabilities all
+       follow. Use this guide.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>If you are counting&hellip;</th><th>under these conditions</th><th>use</th></tr></thead>
+        <tbody>
+          <tr><td>a single yes/no result</td><td>one trial, probability p</td><td class="nm">Bernoulli</td></tr>
+          <tr><td>successes in n tries</td><td>n independent trials, fixed p</td><td class="nm">Binomial</td></tr>
+          <tr><td>tries until the first success</td><td>independent trials, probability p</td><td class="nm">Geometric</td></tr>
+          <tr><td>tries until the r-th success</td><td>independent trials, probability p</td><td class="nm">Negative binomial</td></tr>
+          <tr><td>successes drawn without replacement</td><td>finite population, K successes</td><td class="nm">Hypergeometric</td></tr>
+          <tr><td>rare events in a fixed window</td><td>steady average rate &#955;</td><td class="nm">Poisson</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>These distributions are not academic. In machine learning, choosing a distribution for your data <em>is</em>
+       choosing a model and a loss function.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Distribution</th><th>In ML / AI it becomes</th><th>Concrete example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Bernoulli / Binomial</td><td>The likelihood behind binary classification</td><td>logistic regression; cross-entropy = &#8722;log Bernoulli likelihood</td></tr>
+          <tr><td class="nm">Categorical / Multinomial</td><td>A softmax output layer</td><td>the next-token distribution in a language model</td></tr>
+          <tr><td class="nm">Poisson</td><td>Count regression</td><td>predicting clicks, arrivals, or defect counts</td></tr>
+          <tr><td class="nm">Geometric / neg. binomial</td><td>Waiting and overdispersed counts</td><td>sessions until a user converts</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>Every probabilistic model assumes a distribution for its output, and that choice silently fixes the
+           <strong>loss function</strong>. Assume Bernoulli outputs and maximizing the likelihood becomes
+           <strong>cross-entropy</strong>, the loss for classifiers and language models. Assume a Gaussian (the next
+           chapter) and it becomes <strong>mean squared error</strong>. Assume Poisson and you get Poisson regression for
+           counts. A neural network's softmax layer is literally a <strong>categorical distribution</strong> over classes,
+           and a generative model's whole job is to <em>learn a distribution</em> it can sample from. The distributions in
+           this chapter are the vocabulary in which models state what they believe about their data.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Build the distributions in Python</h3>
+          <p>The companion notebook constructs the binomial, geometric, Poisson, and hypergeometric PMFs with SciPy,
+             confirms each mean and variance by simulation, overlays Binomial(1000, 0.003) on Poisson(3) to watch them
+             merge, compares drawing with and without replacement, and maximizes a Bernoulli likelihood, the same
+             calculation that trains a logistic-regression classifier.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch37_discrete_distributions.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch37_discrete_distributions.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch37_discrete_distributions.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>scipy</code>, and
+      <code>matplotlib</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>A named distribution</strong> is a family of PMFs sharing one formula, selected by parameters; knowing it gives you the mean and variance for free.</span></li>
+        <li><span class="ck">✓</span><span><strong>Binomial</strong> counts successes in n fixed trials: mean np, variance np(1 &#8722; p). Its atom is the Bernoulli trial.</span></li>
+        <li><span class="ck">✓</span><span><strong>Geometric</strong> counts trials to the first success (mean 1/p); the negative binomial waits for r successes; the hypergeometric handles sampling without replacement.</span></li>
+        <li><span class="ck">✓</span><span><strong>Poisson</strong> counts rare events at rate &#955; (mean = variance = &#955;) and is the large-n, small-p limit of the binomial.</span></li>
+        <li><span class="ck">✓</span><span><strong>In ML/AI</strong>, the assumed distribution sets the loss: Bernoulli &#8594; cross-entropy, Poisson &#8594; count regression, categorical &#8594; the softmax layer.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them on paper or with SciPy before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Binomial</h4>
+        <p>Roll a fair die 5 times. Find P(exactly 3 sixes) and the expected number of sixes.</p>
+        <div class="chint">Hint: binomial with n = 5, p = 1/6; mean is np.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Geometric</h4>
+        <p>Each attempt succeeds with probability 0.25. Find the expected number of attempts to the first success and
+           P(first success on attempt 3).</p>
+        <div class="chint">Hint: mean 1/p; P(k) = (1 &#8722; p)<sup>k&#8722;1</sup>p.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Poisson</h4>
+        <p>A call center averages 4 calls per hour. Find P(exactly 2 calls in an hour) and P(no calls).</p>
+        <div class="chint">Hint: Poisson with &#955; = 4; P(k) = &#955;&#8311;e<sup>&#8722;&#955;</sup>/k!.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Hypergeometric</h4>
+        <p>A box has 50 parts, 5 defective. You draw 10 without replacement. Find P(exactly 1 defective).</p>
+        <div class="chint">Hint: hypergeometric, not binomial, because there is no replacement.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Maximum likelihood</h4>
+        <p>A classifier is correct on 8 of 20 cases. What is the maximum-likelihood estimate of its success
+           probability p?</p>
+        <div class="chint">Hint: for Bernoulli data, the MLE of p is the observed proportion.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code.
+           Try them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/ch37_challenges_solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch37_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch37_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on discrete distributions. Answer them, hit <strong>Check Answers</strong>, and keep
+       refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch36.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 36 · Previous</span><br><span class="cn-title">Probability by Simulation (Monte Carlo)</span></span>
+    </a>
+    <div class="cn-btn next" style="cursor:default;opacity:0.6" title="Coming soon">
+      <span><span class="cn-dir">Chapter 38 · Coming soon</span><br><span class="cn-title">Continuous Distributions</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </div>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 37 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch37";
+  window.QUIZ_DATA = [
+    {
+      q: "A 'named' discrete distribution is…",
+      options: ["A single fixed probability", "A family of PMFs sharing one formula, picked out by parameters", "Always the bell curve", "A list of raw data"],
+      answer: 1,
+      explain: "Each named distribution (binomial, Poisson, …) is a family defined by one formula; its parameters (like n and p) select a specific PMF."
+    },
+    {
+      q: "You count the number of successes in n independent trials with fixed probability p. The distribution is…",
+      options: ["Geometric", "Poisson", "Binomial", "Hypergeometric"],
+      answer: 2,
+      explain: "Counting successes in a fixed number of independent, equal-probability trials is the binomial distribution, with mean np."
+    },
+    {
+      q: "For a Binomial(n, p), the mean and variance are…",
+      options: ["np and np", "np and np(1 − p)", "1/p and 1/p²", "λ and λ"],
+      answer: 1,
+      explain: "The binomial mean is np and its variance is np(1 − p). For n = 10, p = 0.3 that is mean 3, variance 2.1."
+    },
+    {
+      q: "You count the number of trials until the FIRST success. The distribution is…",
+      options: ["Binomial", "Geometric", "Poisson", "Normal"],
+      answer: 1,
+      explain: "The geometric distribution counts trials up to the first success, with PMF (1 − p)^(k−1) p and mean 1/p."
+    },
+    {
+      q: "The Poisson distribution is special because…",
+      options: ["Its mean is always 1", "Its mean equals its variance (both λ)", "It has no variance", "It is only for two outcomes"],
+      answer: 1,
+      explain: "For a Poisson, mean = variance = λ. It models counts of rare events at a steady average rate."
+    },
+    {
+      q: "When should you use the hypergeometric instead of the binomial?",
+      options: ["When trials are independent", "When sampling WITHOUT replacement from a finite population", "When p is exactly 0.5", "Never"],
+      answer: 1,
+      explain: "Without replacement, each draw changes the remaining odds, so trials are dependent and the binomial does not apply, the hypergeometric does."
+    },
+    {
+      q: "A Binomial with very large n and very small p (with np = λ fixed) is well approximated by…",
+      options: ["A geometric distribution", "A Poisson distribution with that λ", "A Bernoulli distribution", "A uniform distribution"],
+      answer: 1,
+      explain: "The Poisson is the large-n, small-p limit of the binomial: 'many chances, each unlikely' gives Poisson(λ = np)."
+    },
+    {
+      q: "In machine learning, assuming Bernoulli outputs and maximizing the likelihood is equivalent to minimizing…",
+      options: ["Mean squared error", "Cross-entropy loss", "The variance", "The learning rate"],
+      answer: 1,
+      explain: "The negative log-likelihood of Bernoulli data is cross-entropy, the standard loss for classifiers and language models. The assumed distribution fixes the loss."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

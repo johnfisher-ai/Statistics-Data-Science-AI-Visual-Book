@@ -160,6 +160,10 @@ MAP = {
         ("../../ch36.html#notebook", "Back to the book", "Chapter 36 · Probability by Simulation (Monte Carlo)"),
     "ch36_challenges_solutions.html":
         ("../../ch36.html#quiz", "Back to the book", "Chapter 36 · Take the quiz &amp; aim for 100%"),
+    "ch37_discrete_distributions.html":
+        ("../../ch37.html#notebook", "Back to the book", "Chapter 37 · Discrete Distributions"),
+    "ch37_challenges_solutions.html":
+        ("../../ch37.html#quiz", "Back to the book", "Chapter 37 · Take the quiz &amp; aim for 100%"),
 }
 
 def card(href, kicker, title):
