@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 52 · Case Study: Capture-Recapture (Hypergeometric) — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch52_wildlife_hypergeometric.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part IX · Probability &amp; Distributions Case Studies</span><span class="sep">/</span>
+      <span>Chapter 52</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part IX · Case Study</span> Hypergeometric distribution</div>
+    <h1>Capture-Recapture: the <span class="accent">Hypergeometric</span></h1>
+    <p class="dek">Tag 100 fish, release them, net 30 more, and count the tags. Drawing without replacement is the
+       hypergeometric distribution, and inverting it lets ecologists estimate a population they can never fully count.
+       From 1,000 expeditions we fit the model and recover the lake's true size.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~13 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 52</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">The binomial assumes every trial has the same probability, which is only true <em>with</em> replacement.
+       Net a fish and keep it, and the odds shift for the next draw. Counting tagged fish in a catch from a finite lake is
+       the <span class="term">hypergeometric</span> distribution, and it underpins one of ecology's cleverest tricks.</p>
+
+    <div class="def-card">
+      <div class="sigma">H</div>
+      <div class="def-body">
+        The <span class="def-kw">hypergeometric</span> distribution counts the successes when drawing n items
+        <em>without replacement</em> from a population of N containing K successes. Its
+        <span class="def-kw">mean is n&middot;K/N</span>, and its variance carries a finite-population correction.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🐟</div>
+      <div><div class="ctitle">The dataset</div>
+        <p><code>wildlife_capture_recapture.csv</code> records 1,000 expeditions, each tagging K = 100 of N = 500 fish,
+           then catching n = 30 and counting the <code>tagged_fish_count</code>. We model the recaptures and then run the
+           model backward to estimate N.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: model ===== -->
+  <section id="model">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Drawing Without Replacement</h2></div>
+    <p>With 100 of 500 fish tagged, a fraction K/N = 0.2 of the lake carries a tag, so a catch of 30 should contain about
+       <strong>n&middot;K/N = 6</strong> tagged fish. The observed mean is 5.91, and the hypergeometric PMF lands neatly
+       on the data.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 200" width="100%" font-family="Inter, sans-serif" aria-label="The hypergeometric distribution of tagged fish in a catch, peaking near 6">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Tagged fish in a catch of 30: hypergeometric, mean n&#183;K/N = 6</text>
+        <line x1="60" y1="170" x2="630" y2="170" stroke="#1a2138" stroke-width="1.1"/>
+        <!-- hypergeometric(500,100,30) PMF, peak near 6 -->
+        <g fill="#d97706" fill-opacity="0.85">
+          <rect x="90" y="160" width="30" height="10"/><rect x="124" y="142" width="30" height="28"/><rect x="158" y="112" width="30" height="58"/>
+          <rect x="192" y="84" width="30" height="86"/><rect x="226" y="64" width="30" height="106"/><rect x="260" y="56" width="30" height="114"/>
+          <rect x="294" y="58" width="30" height="112"/><rect x="328" y="72" width="30" height="98"/><rect x="362" y="94" width="30" height="76"/>
+          <rect x="396" y="118" width="30" height="52"/><rect x="430" y="140" width="30" height="30"/><rect x="464" y="155" width="30" height="15"/>
+          <rect x="498" y="163" width="30" height="7"/>
+        </g>
+        <line x1="289" y1="46" x2="289" y2="170" stroke="#db2777" stroke-width="1.3" stroke-dasharray="4 3"/>
+        <text x="289" y="40" text-anchor="middle" font-size="9" fill="#db2777" font-weight="800">mean = 6</text>
+        <text x="345" y="190" text-anchor="middle" font-size="9" fill="#8b94b3">tagged fish in the catch &#8594;</text>
+      </svg>
+    </figure>
+
+    <p>Because the lake is finite and caught fish are not returned before the next draw, each catch slightly changes the
+       remaining proportion of tags, so this is hypergeometric, not binomial. The distinction is small here but exact.</p>
+  </section>
+
+  <!-- ===== Section 2: FPC ===== -->
+  <section id="fpc">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Without vs With Replacement</h2></div>
+    <p>Had the fish been tossed back (or the lake been effectively infinite), the count would be Binomial(30, 0.2). Both
+       models share the mean of 6, but the hypergeometric is <strong>tighter</strong>: drawing without replacement
+       carries a <span class="hl">finite-population correction</span> that shrinks the variance.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Model</th><th>mean</th><th>variance</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Hypergeometric (without replacement)</td><td>6.00</td><td>4.52</td></tr>
+          <tr><td class="nm">Binomial (with replacement)</td><td>6.00</td><td>4.80</td></tr>
+          <tr><td>correction factor (N&minus;n)/(N&minus;1)</td><td colspan="2">0.942 &times; 4.80 = 4.52</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The correction factor (N&minus;n)/(N&minus;1) = 0.94 is exactly the ratio of the two variances. When the sample is
+       tiny relative to the population, the factor approaches 1 and the binomial becomes an excellent approximation, which
+       is why the two distributions are so often used interchangeably.</p>
+  </section>
+
+  <!-- ===== Section 3: estimate ===== -->
+  <section id="estimate">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Estimating the Uncountable</h2></div>
+    <p>Here is the payoff. In a real survey N is <em>unknown</em>, that is the whole point. But if a fraction k/n of the
+       catch is tagged and K fish are tagged in total, you can solve for the population:
+       <strong>N&#770; = K&middot;n / k</strong>, the <span class="term">Lincoln-Petersen</span> estimator.</p>
+
+    <div class="callout note">
+      <div class="cico">🔁</div>
+      <div><div class="ctitle">A distribution, run backward, becomes a census</div>
+        <p>Averaged across expeditions, the simple Lincoln-Petersen estimate <em>overshoots</em> (mean &#8776; 609),
+           because dividing by a small recapture count k inflates it, a genuine bias. The
+           <strong>bias-corrected Chapman estimator</strong>, (K+1)(n+1)/(k+1) &minus; 1, fixes this and recovers the true
+           <strong>N &#8776; 500</strong> (mean &#8776; 513). This is the magic of capture-recapture: it measures a whole
+           no one could ever count, the method behind wildlife censuses, estimating undiscovered software bugs, and even
+           counting hidden human populations.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Run the recapture analysis</h3>
+          <p>The companion notebook fits the hypergeometric to the tagged counts, compares its variance to the binomial
+             via the finite-population correction, and inverts the model with both the Lincoln-Petersen and the
+             bias-corrected Chapman estimators to recover the unknown population, every number from code.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch52_wildlife_hypergeometric.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch52_wildlife_hypergeometric.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch52_wildlife_hypergeometric.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, <code>scipy</code>,
+      and <code>matplotlib</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Sampling without replacement is hypergeometric</strong>, not binomial; mean = n&middot;K/N = 6 tagged per catch.</span></li>
+        <li><span class="ck">✓</span><span><strong>The finite-population correction</strong> (N&minus;n)/(N&minus;1) = 0.94 shrinks the variance below the binomial's.</span></li>
+        <li><span class="ck">✓</span><span><strong>When n &laquo; N</strong>, the correction approaches 1 and the binomial is a fine approximation.</span></li>
+        <li><span class="ck">✓</span><span><strong>Lincoln-Petersen</strong> N&#770; = Kn/k estimates the unknown population, but overshoots; the <strong>Chapman</strong> estimator is bias-corrected.</span></li>
+        <li><span class="ck">✓</span><span><strong>Run a distribution backward</strong> and a sample becomes a census, the engine of capture-recapture across many fields.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on the hypergeometric case study. Answer them, hit <strong>Check Answers</strong>, and keep
+       refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch51.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 51 · Previous</span><br><span class="cn-title">Sales Calls to First Win (Geometric)</span></span>
+    </a>
+    <div class="cn-btn next" style="cursor:default;opacity:0.6" title="Coming soon">
+      <span><span class="cn-dir">Chapter 53 · Coming soon</span><br><span class="cn-title">Software Reliability (Negative Binomial)</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </div>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 52 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch52";
+  window.QUIZ_DATA = [
+    {
+      q: "The number of tagged fish in a catch (drawn without replacement) follows which distribution?",
+      options: ["Binomial", "Poisson", "Hypergeometric", "Geometric"],
+      answer: 2,
+      explain: "Drawing without replacement from a finite population with a known number of 'successes' (tags) is the hypergeometric distribution."
+    },
+    {
+      q: "The mean of the hypergeometric here is…",
+      options: ["K/N", "n·K/N = 6", "1/p", "N − K"],
+      answer: 1,
+      explain: "Expected successes = n × (K/N) = 30 × (100/500) = 6 tagged fish per catch, matched by the observed mean 5.9."
+    },
+    {
+      q: "What makes this hypergeometric rather than binomial?",
+      options: ["The data is continuous", "Sampling is without replacement, so the odds shift each draw", "There are two outcomes", "The population is infinite"],
+      answer: 1,
+      explain: "Without replacement, removing a fish changes the proportion tagged for the next draw, breaking the binomial's equal-probability assumption."
+    },
+    {
+      q: "Compared to the binomial, the hypergeometric variance is…",
+      options: ["Larger", "Smaller, by the finite-population correction", "The same", "Always zero"],
+      answer: 1,
+      explain: "The factor (N−n)/(N−1) = 0.94 shrinks the variance (4.52 vs 4.80): sampling without replacement is less variable."
+    },
+    {
+      q: "The finite-population correction (N−n)/(N−1) approaches 1 when…",
+      options: ["n is close to N", "the sample n is tiny relative to N", "K = 0", "p = 0.5"],
+      answer: 1,
+      explain: "When the sample is small relative to the population, removing items barely changes the odds, and the binomial approximates the hypergeometric well."
+    },
+    {
+      q: "The Lincoln-Petersen estimate of population size is…",
+      options: ["N̂ = k/n", "N̂ = K·n / k", "N̂ = n·K/N", "N̂ = K + n"],
+      answer: 1,
+      explain: "Setting the sample tagged fraction k/n equal to the population fraction K/N and solving gives N̂ = K·n/k."
+    },
+    {
+      q: "Why does the simple Lincoln-Petersen estimator overshoot the true N?",
+      options: ["It ignores K", "Dividing by a small recapture count k inflates the estimate (a bias)", "It uses the wrong mean", "The data is wrong"],
+      answer: 1,
+      explain: "When k is small, K·n/k blows up, biasing the average upward (≈609 vs true 500); the Chapman correction fixes this."
+    },
+    {
+      q: "Capture-recapture works by…",
+      options: ["Counting every animal", "Running a sampling distribution backward to estimate an uncountable whole", "Guessing", "Assuming the population is known"],
+      answer: 1,
+      explain: "It inverts the hypergeometric model: a small tagged sample, run backward, yields an estimate of the entire (unseen) population."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
