@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 60 · Case Study: Crop Yield by Fertilizer (F / ANOVA) — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:center; border-bottom:1px solid var(--line); }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .rh { font-weight:700; color:var(--ink); text-align:left; }
+    .disp-table .win { color:#b45309; font-weight:800; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch60_crop_anova.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part IX · Probability &amp; Distributions Case Studies</span><span class="sep">/</span>
+      <span>Chapter 60</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part IX · Case Study</span> F-distribution &amp; ANOVA</div>
+    <h1>Crop Yield by Fertilizer: <span class="accent">F &amp; ANOVA</span></h1>
+    <p class="dek">A t-test compares two means. To compare four fertilizers at once we need ANOVA, which splits the total
+       variance into between-group and within-group pieces and forms the F-ratio. Then Tukey reveals exactly which
+       fertilizers differ.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~14 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 60</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Running a t-test on every pair of four groups means six tests, and the chance of a false positive
+       balloons. <span class="term">Analysis of variance (ANOVA)</span> asks the question once: are these means all the
+       same? Its test statistic is the <span class="term">F-ratio</span>.</p>
+
+    <div class="def-card">
+      <div class="sigma">F</div>
+      <div class="def-body">
+        <span class="def-kw">ANOVA</span> partitions total variation into <span class="def-kw">between-group</span> (SSB)
+        and <span class="def-kw">within-group</span> (SSW) sums of squares. The
+        <span class="def-kw">F-statistic</span> = MSB / MSW = (SSB/df<sub>b</sub>) / (SSW/df<sub>w</sub>). Under
+        H<sub>0</sub> (all means equal) F &#8776; 1; a large F means the groups differ by more than chance.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🌾</div>
+      <div><div class="ctitle">The dataset</div>
+        <p><code>agricultural_yield_optimization.csv</code> records <code>crop_yield_bushels</code> for 1,000 plots, each
+           treated with one of four fertilizers (A, B, C, D). We ask whether fertilizer choice changes yield, and by how
+           much.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: four groups ===== -->
+  <section id="groups">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Four Groups, Four Means</h2></div>
+    <p>Start by looking, not testing. We group the plots by fertilizer and compare the average yields against the spread
+       inside each group.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>fertilizer</th><th>plots</th><th>mean yield (bu)</th><th>std dev</th></tr></thead>
+        <tbody>
+          <tr><td class="rh">A</td><td>257</td><td>49.62</td><td>5.03</td></tr>
+          <tr><td class="rh">B</td><td>250</td><td>52.50</td><td>5.44</td></tr>
+          <tr><td class="rh">C</td><td>266</td><td>48.34</td><td>4.72</td></tr>
+          <tr><td class="rh">D</td><td>227</td><td class="win">54.86</td><td>5.35</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The means span from <strong>48.3</strong> bushels (C) to <strong>54.9</strong> (D), a gap of over 6 bushels, while
+       each group's own scatter is about 5. The grand mean is <strong>51.2</strong>. The between-group gaps look larger
+       than the within-group noise, and ANOVA turns that visual hunch into a number.</p>
+  </section>
+
+  <!-- ===== Section 2: partition variance ===== -->
+  <section id="anova">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Partition the Variance</h2></div>
+    <p>ANOVA's core idea: total variation = <span class="hl">between-group</span> + <span class="hl">within-group</span>.
+       If fertilizer matters, the between-group piece dominates and the F-ratio climbs well above 1.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 150" width="100%" font-family="Inter, sans-serif" aria-label="The F ratio as between-group mean square over within-group mean square">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">F = MSB / MSW: signal over noise</text>
+        <!-- MSB box -->
+        <rect x="120" y="40" width="180" height="34" rx="6" fill="#d97706"/>
+        <text x="210" y="62" text-anchor="middle" font-size="12" fill="#fff" font-weight="800">MSB = 2088</text>
+        <text x="210" y="92" text-anchor="middle" font-size="9" fill="#8b94b3">between-group (df = 3)</text>
+        <!-- divider -->
+        <line x1="120" y1="84" x2="300" y2="84" stroke="#1a2138" stroke-width="2"/>
+        <!-- MSW box -->
+        <rect x="120" y="96" width="180" height="34" rx="6" fill="#fcd34d"/>
+        <text x="210" y="118" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">MSW = 26.3</text>
+        <!-- equals -->
+        <text x="340" y="92" text-anchor="middle" font-size="22" fill="#1a2138" font-weight="800">=</text>
+        <!-- F -->
+        <rect x="380" y="58" width="150" height="52" rx="10" fill="#0d9488"/>
+        <text x="455" y="84" text-anchor="middle" font-size="15" fill="#fff" font-weight="800">F = 79.4</text>
+        <text x="455" y="100" text-anchor="middle" font-size="9" fill="#d1fae5">p &#8776; 10&#8315;&#8308;&#8310;</text>
+        <text x="600" y="88" text-anchor="middle" font-size="9.5" fill="#b45309" font-weight="700">&#951;&#178; &#8776; 0.19</text>
+        <text x="600" y="102" text-anchor="middle" font-size="8" fill="#8b94b3">19% of variance</text>
+      </svg>
+    </figure>
+
+    <p>The between-group mean square (2088) dwarfs the within-group mean square (26), giving</p>
+
+    <p style="text-align:center;font-size:1.05rem;margin:1rem 0">
+      F = MSB / MSW = <strong>79.4</strong> &nbsp; on (3, 996) df, &nbsp; p &#8776; 10<sup>&#8722;46</sup>
+    </p>
+
+    <p>Under H<sub>0</sub> the F-ratio would hover near 1; a value of 79 is astronomically unlikely by chance, so at
+       least one fertilizer truly differs. The effect size <strong>&#951;&#178; &#8776; 0.19</strong> says fertilizer
+       choice explains about 19% of the variation in yield, the rest is plot-to-plot noise.</p>
+  </section>
+
+  <!-- ===== Section 3: Tukey ===== -->
+  <section id="tukey">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Which Ones Differ? Tukey HSD</h2></div>
+    <p>A significant F says only that the means are <em>not all equal</em>, not which differ. <span class="hl">Tukey's
+       Honest Significant Difference</span> compares every pair while holding the family-wide error rate at 5%, so the
+       ranking is trustworthy.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>comparison</th><th>mean diff (bu)</th><th>q</th><th>verdict (q &gt; 3.64)</th></tr></thead>
+        <tbody>
+          <tr><td class="rh">D vs C</td><td>+6.51</td><td>19.87</td><td class="win">significant</td></tr>
+          <tr><td class="rh">D vs A</td><td>+5.23</td><td>15.84</td><td class="win">significant</td></tr>
+          <tr><td class="rh">B vs C</td><td>+4.15</td><td>13.00</td><td class="win">significant</td></tr>
+          <tr><td class="rh">A vs B</td><td>&#8722;2.88</td><td>8.92</td><td class="win">significant</td></tr>
+          <tr><td class="rh">B vs D</td><td>&#8722;2.36</td><td>7.09</td><td class="win">significant</td></tr>
+          <tr><td class="rh">A vs C</td><td>+1.28</td><td>4.03</td><td class="win">significant</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Every one of the six comparisons clears the Tukey threshold, so the full ranking is real:
+       <strong>D (54.9) &gt; B (52.5) &gt; A (49.6) &gt; C (48.3)</strong>. Fertilizer <strong>D</strong> is the clear
+       winner, beating the worst performer C by more than 6 bushels per plot. Tukey is what keeps this honest, running
+       six naive t-tests would inflate the false-positive rate, while the studentized-range adjustment holds it at 5%.</p>
+
+    <div class="callout note">
+      <div class="cico">&#10003;</div>
+      <div><div class="ctitle">The pattern across this Part</div>
+        <p>t, chi-square, and F are all built on the same foundation, the Central Limit Theorem. ANOVA generalizes the
+           t-test from two groups to many; the F-ratio is to means what chi-square is to counts, a single number that
+           grows as the data depart from "no difference."</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Run the ANOVA</h3>
+          <p>The companion notebook computes the group means and boxplots, partitions the variance by hand (SSB, SSW,
+             MSB, MSW) and confirms it with <code>scipy.stats.f_oneway</code>, reports &#951;&#178;, then runs a Tukey
+             HSD over all six pairs.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch60_crop_anova.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch60_crop_anova.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch60_crop_anova.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, <code>scipy</code>,
+      and <code>matplotlib</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Part close ===== -->
+  <section id="partclose">
+    <div class="callout key" style="border-color:#d97706;background:#fffbeb">
+      <div class="cico">🏁</div>
+      <div><div class="ctitle">That completes Part IX</div>
+        <p>Across fourteen chapters we matched thirteen real datasets to thirteen distributions, from Bernoulli clicks and
+           binomial defects through Poisson arrivals, the geometric and negative-binomial wait, the hypergeometric catch,
+           and the normal, exponential, and gamma continua, then closed with the three great test statistics: Student's
+           t, chi-square, and the F-ratio. The thread tying them together is the Central Limit Theorem, which turns
+           skewed data into normal sample means and powers every inference that follows. Next we turn to
+           <strong>why and how we sample</strong> in the first place.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>ANOVA</strong> compares 3+ means at once, avoiding the inflated error of many pairwise t-tests.</span></li>
+        <li><span class="ck">✓</span><span><strong>It partitions variance</strong>: total = between-group (SSB) + within-group (SSW); F = MSB/MSW.</span></li>
+        <li><span class="ck">✓</span><span><strong>F = 79.4</strong> on (3, 996) df, p &#8776; 10<sup>&#8722;46</sup>: the fertilizers are not all equal (&#951;&#178; &#8776; 0.19).</span></li>
+        <li><span class="ck">✓</span><span><strong>Tukey HSD</strong> ranks them D &gt; B &gt; A &gt; C, every pair significant, with family-wide error held at 5%.</span></li>
+        <li><span class="ck">✓</span><span><strong>t, &#967;&#178;, and F</strong> all rest on the Central Limit Theorem, the bridge from this Part into inference.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on the ANOVA case study. Answer them, hit <strong>Check Answers</strong>, and keep refining
+       until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch59.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 59 · Previous</span><br><span class="cn-title">Survey Demographics (Chi-Square)</span></span>
+    </a>
+    <div class="cn-btn next" style="cursor:default;opacity:0.6" title="Coming soon">
+      <span><span class="cn-dir">Chapter 61 · Coming soon</span><br><span class="cn-title">Why We Sample</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </div>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 60 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch60";
+  window.QUIZ_DATA = [
+    {
+      q: "Why use ANOVA instead of running a t-test on every pair of groups?",
+      options: ["ANOVA is faster to type", "Many pairwise t-tests inflate the false-positive rate; ANOVA tests all means at once", "t-tests cannot compare means", "ANOVA needs no data"],
+      answer: 1,
+      explain: "With many pairs the chance of a spurious 'significant' result balloons; ANOVA asks 'are all means equal?' in a single test."
+    },
+    {
+      q: "ANOVA partitions the total variation into…",
+      options: ["Mean and median", "Between-group (SSB) and within-group (SSW) sums of squares", "Slope and intercept", "Observed and expected"],
+      answer: 1,
+      explain: "Total SS = SSB (group means vs grand mean) + SSW (scatter within each group)."
+    },
+    {
+      q: "The F-statistic is computed as…",
+      options: ["MSB / MSW", "SSB − SSW", "SSW / SSB", "MSW / MSB"],
+      answer: 0,
+      explain: "F = MSB/MSW = (SSB/df_between)/(SSW/df_within): between-group signal over within-group noise."
+    },
+    {
+      q: "Under the null hypothesis that all group means are equal, the F-ratio is about…",
+      options: ["0", "1", "100", "Infinite"],
+      answer: 1,
+      explain: "If groups differ no more than chance, between-group and within-group mean squares are similar, so F ≈ 1."
+    },
+    {
+      q: "The crop study gave F = 79.4 with p ≈ 10⁻⁴⁶. This means…",
+      options: ["All fertilizers are equal", "At least one fertilizer's mean yield differs from the others", "Fertilizer D is harmful", "The test is invalid"],
+      answer: 1,
+      explain: "A very large F and tiny p reject the null: the means are not all equal, so at least one fertilizer differs."
+    },
+    {
+      q: "A significant ANOVA F tells you…",
+      options: ["Exactly which groups differ", "Only that the means are not all equal; a post-hoc test shows which", "The effect size", "Nothing useful"],
+      answer: 1,
+      explain: "ANOVA is an omnibus test; you need a post-hoc procedure like Tukey HSD to identify which specific pairs differ."
+    },
+    {
+      q: "Tukey's HSD is used to…",
+      options: ["Replace the F-test", "Compare all pairs while controlling the family-wide error rate", "Increase the p-value", "Compute the grand mean"],
+      answer: 1,
+      explain: "Tukey HSD adjusts for multiple comparisons (via the studentized range) so all pairwise tests keep a 5% family-wide error."
+    },
+    {
+      q: "η² ≈ 0.19 in this study means…",
+      options: ["19% of plots used fertilizer D", "Fertilizer choice explains about 19% of the variation in yield", "The F-test is 19% reliable", "There are 19 groups"],
+      answer: 1,
+      explain: "η² (eta-squared) = SSB/(SSB+SSW) is the share of total variance explained by group membership, here about 19%."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
