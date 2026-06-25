@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 44 · Conditional Expectation &amp; the Tower Property — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .disp-table code { font-size:0.82em; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch44_conditional_expectation.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part VIII · Mathematical Statistics</span><span class="sep">/</span>
+      <span>Chapter 44</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part VIII · Mathematical Statistics</span> The best prediction</div>
+    <h1>Conditional Expectation &amp; the <span class="accent">Tower Property</span></h1>
+    <p class="dek">What is the best guess of one variable once you know another? The answer is the conditional expectation
+       E[Y | X], and it is, quite literally, what every regression model estimates. This chapter builds it, proves the
+       tower property, and decomposes variance.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~16 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 44</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Knowing something usually sharpens your guess. Tell me a customer's segment and I will predict their
+       spending better; tell me a house's size and I will predict its price better. The mathematical object that captures
+       "the best guess of Y given X" is the <span class="term">conditional expectation</span>.</p>
+
+    <div class="def-card">
+      <div class="sigma">E[Y|X]</div>
+      <div class="def-body">
+        The <span class="def-kw">conditional expectation</span> E[Y | X] is the mean of Y for each value of X. It is a
+        <em>function of X</em>, and it is the best predictor of Y in the mean-squared-error sense. The
+        <span class="def-kw">tower property</span> states E[E[Y | X]] = E[Y].
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🗼</div>
+      <div><div class="ctitle">Why this is the heart of prediction</div>
+        <p>Of all the abstract objects in mathematical statistics, the conditional expectation is the one that touches
+           machine learning most directly: regression, in every form, is an attempt to estimate E[Y | X]. Understand this
+           chapter and you understand what a predictive model is really computing.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: conditional expectation ===== -->
+  <section id="condexp">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Conditional Expectation: the Average Given X</h2></div>
+    <p>E[Y | X = x] is simply the mean of Y restricted to the cases where X = x. Unlike an ordinary expectation, it is not
+       one number but a <strong>function of x</strong>, a different average for each value of the conditioning variable.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 200" width="100%" font-family="Inter, sans-serif" aria-label="Bar chart of expected spending for three customer segments">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">E[spend | segment]: one average per segment</text>
+        <line x1="80" y1="170" x2="600" y2="170" stroke="#1a2138" stroke-width="1.1"/>
+        <!-- bars scaled: 20,50,90 over 90 -> heights *1.4 -->
+        <rect x="140" y="142" width="90" height="28" rx="3" fill="#ddd6fe"/><text x="185" y="134" text-anchor="middle" font-size="11" fill="#6d28d9" font-weight="800">20</text>
+        <rect x="300" y="100" width="90" height="70" rx="3" fill="#c4b5fd"/><text x="345" y="92" text-anchor="middle" font-size="11" fill="#6d28d9" font-weight="800">50</text>
+        <rect x="460" y="44" width="90" height="126" rx="3" fill="#7c3aed"/><text x="505" y="36" text-anchor="middle" font-size="11" fill="#6d28d9" font-weight="800">90</text>
+        <g font-size="9" fill="#8b94b3" text-anchor="middle">
+          <text x="185" y="186">segment 0</text><text x="345" y="186">segment 1</text><text x="505" y="186">segment 2</text>
+        </g>
+        <text x="630" y="120" text-anchor="end" font-size="8.5" fill="#8b94b3">E[Y|X] is a</text>
+        <text x="630" y="133" text-anchor="end" font-size="8.5" fill="#8b94b3">function of X</text>
+      </svg>
+    </figure>
+
+    <p>Given segment 0 expect about 20, segment 1 about 50, segment 2 about 90. The conditional expectation is a rule that
+       maps each value of X to the corresponding average of Y, the single best guess of Y once X is known.</p>
+  </section>
+
+  <!-- ===== Section 2: tower property ===== -->
+  <section id="tower">
+    <div class="section-eyebrow"><div class="num">2</div><h2>The Tower Property</h2></div>
+    <p>The <span class="term">tower property</span> (the law of total expectation) says
+       <strong>E[E[Y | X]] = E[Y]</strong>. Average the conditional means, weighted by how often each X occurs, and you
+       recover the overall mean of Y, the "average of averages".</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 200" width="100%" font-family="Inter, sans-serif" aria-label="Three weighted conditional means combining into the overall mean">
+        <text x="340" y="22" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Average the group means (by group size) to get the overall mean</text>
+        <!-- group means -->
+        <rect x="50" y="50" width="150" height="32" rx="8" fill="#ede9fe" stroke="#7c3aed"/><text x="125" y="71" text-anchor="middle" font-size="10" fill="#1a2138" font-weight="700">E[Y|X=0]=20  (w 0.33)</text>
+        <rect x="50" y="94" width="150" height="32" rx="8" fill="#ede9fe" stroke="#7c3aed"/><text x="125" y="115" text-anchor="middle" font-size="10" fill="#1a2138" font-weight="700">E[Y|X=1]=50  (w 0.33)</text>
+        <rect x="50" y="138" width="150" height="32" rx="8" fill="#ede9fe" stroke="#7c3aed"/><text x="125" y="159" text-anchor="middle" font-size="10" fill="#1a2138" font-weight="700">E[Y|X=2]=90  (w 0.33)</text>
+        <!-- arrows to combiner -->
+        <g stroke="#8b94b3" stroke-width="1.4" fill="none" marker-end="url(#a44)">
+          <path d="M205,66 C300,80 340,95 405,108"/><path d="M205,110 L405,110"/><path d="M205,154 C300,140 340,125 405,112"/>
+        </g>
+        <defs><marker id="a44" markerWidth="9" markerHeight="9" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8b94b3"/></marker></defs>
+        <text x="300" y="78" font-size="8.5" fill="#8b94b3">weighted</text>
+        <!-- overall -->
+        <rect x="410" y="92" width="220" height="40" rx="10" fill="#7c3aed"/>
+        <text x="520" y="111" text-anchor="middle" font-size="11" fill="#fff" font-weight="800">E[E[Y|X]] = E[Y] &#8776; 53.5</text>
+        <text x="520" y="126" text-anchor="middle" font-size="8.5" fill="#ddd6fe">the overall mean</text>
+      </svg>
+    </figure>
+
+    <p>Both routes, computing E[Y] directly or averaging the conditional means, give 53.5 in the notebook. The tower
+       property lets you break a hard expectation into stages: first average <em>within</em> each group, then average
+       <em>across</em> groups. It is one of the most-used identities in all of probability.</p>
+  </section>
+
+  <!-- ===== Section 3: best predictor ===== -->
+  <section id="best-predictor">
+    <div class="section-eyebrow"><div class="num">3</div><h2>E[Y | X] Is the Best Predictor</h2></div>
+    <p>Here is the result that connects this chapter to machine learning. Among <em>all</em> possible functions of X, the
+       conditional expectation E[Y | X] is the one that minimizes the <strong>mean squared error</strong> in predicting Y.
+       Nothing built from X can do better.</p>
+
+    <div class="callout key">
+      <div class="cico">🎯</div>
+      <div><div class="ctitle">The optimality statement</div>
+        <p>For any function g, the prediction error E[(Y &#8722; g(X))&#178;] is minimized by choosing
+           <strong>g(X) = E[Y | X]</strong>. In the notebook, predicting each segment's spending with its conditional
+           mean gives an MSE of 99 versus 925 for ignoring X and always guessing the global mean, a nearly tenfold
+           reduction. Using what you know about X pays off, and the conditional expectation is the optimal way to use it.</p></div>
+    </div>
+
+    <p>This is why regression "works": the population target it chases is precisely E[Y | X], the lowest-error predictor
+       that exists. Every method differs only in <em>how</em> it estimates that function from data.</p>
+  </section>
+
+  <!-- ===== Section 4: total variance ===== -->
+  <section id="total-variance">
+    <div class="section-eyebrow"><div class="num">4</div><h2>The Law of Total Variance</h2></div>
+    <p>Variance decomposes through conditioning too:
+       <strong>Var(Y) = E[Var(Y | X)] + Var(E[Y | X])</strong>. The total spread of Y splits into the average
+       <em>within-group</em> spread plus the spread <em>between</em> the group means.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 150" width="100%" font-family="Inter, sans-serif" aria-label="A stacked bar splitting total variance into within-group and between-group parts">
+        <text x="340" y="22" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Var(Y) = within-group variance + between-group variance</text>
+        <!-- total bar split -->
+        <rect x="60" y="55" width="93" height="40" fill="#c4b5fd"/><text x="106" y="80" text-anchor="middle" font-size="10" fill="#1a2138" font-weight="800">99</text>
+        <rect x="153" y="55" width="467" height="40" fill="#7c3aed"/><text x="386" y="80" text-anchor="middle" font-size="11" fill="#fff" font-weight="800">826</text>
+        <text x="106" y="115" text-anchor="middle" font-size="9" fill="#6d28d9" font-weight="700">within E[Var(Y|X)]</text>
+        <text x="386" y="115" text-anchor="middle" font-size="9" fill="#6d28d9" font-weight="700">between Var(E[Y|X])</text>
+        <text x="340" y="138" text-anchor="middle" font-size="9" fill="#8b94b3">99 + 826 = 925 = Var(Y) total</text>
+      </svg>
+    </figure>
+
+    <p>For the spending data, the noise around each segment mean (within, &#8776; 99) plus the spread of the segment means
+       themselves (between, &#8776; 826) sums exactly to the total variance of 925. This decomposition is the foundation of
+       <span class="hl">ANOVA</span> and a close cousin of the <span class="hl">bias-variance</span> trade-off in machine
+       learning.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Conditional Expectation in Machine Learning &amp; AI</h2></div>
+    <p>This chapter is not abstract preparation; it is the definition of what a predictive model does. Regression of
+       every kind is machinery for estimating E[Y | X].</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 210" width="100%" font-family="Inter, sans-serif" aria-label="A regression curve estimating the conditional mean through a cloud of noisy data">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Regression estimates E[Y|X]: the curve through the noise</text>
+        <line x1="60" y1="175" x2="620" y2="175" stroke="#1a2138" stroke-width="1"/>
+        <line x1="60" y1="35" x2="60" y2="175" stroke="#1a2138" stroke-width="1"/>
+        <!-- noisy dots around a sine -->
+        <g fill="#94a3b8">
+          <circle cx="110" cy="120" r="2.6"/><circle cx="140" cy="95" r="2.6"/><circle cx="175" cy="70" r="2.6"/><circle cx="210" cy="60" r="2.6"/>
+          <circle cx="250" cy="55" r="2.6"/><circle cx="150" cy="120" r="2.6"/><circle cx="200" cy="85" r="2.6"/><circle cx="280" cy="70" r="2.6"/>
+          <circle cx="320" cy="92" r="2.6"/><circle cx="360" cy="120" r="2.6"/><circle cx="400" cy="140" r="2.6"/><circle cx="350" cy="100" r="2.6"/>
+          <circle cx="440" cy="150" r="2.6"/><circle cx="480" cy="135" r="2.6"/><circle cx="520" cy="110" r="2.6"/><circle cx="560" cy="85" r="2.6"/>
+          <circle cx="300" cy="110" r="2.6"/><circle cx="420" cy="120" r="2.6"/><circle cx="500" cy="150" r="2.6"/><circle cx="540" cy="120" r="2.6"/>
+        </g>
+        <!-- E[Y|X] curve -->
+        <path d="M70,135 C160,55 230,55 320,105 C410,155 480,155 600,80" fill="none" stroke="#db2777" stroke-width="2.6"/>
+        <text x="120" y="50" font-size="9.5" fill="#db2777" font-weight="800">estimated E[Y | X]</text>
+      </svg>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Idea (this chapter)</th><th>In ML / AI it appears as</th><th>Concrete example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">E[Y | X]</td><td>The target of regression</td><td>linear models, trees, and neural nets all estimate it</td></tr>
+          <tr><td class="nm">Best MSE predictor</td><td>Why squared-error loss is used</td><td>minimizing MSE drives the model toward E[Y | X]</td></tr>
+          <tr><td class="nm">Tower property</td><td>Reward bootstrapping</td><td>the Bellman equation averages future value over next states</td></tr>
+          <tr><td class="nm">Law of total variance</td><td>Bias-variance decomposition</td><td>splitting error into reducible and irreducible parts</td></tr>
+          <tr><td class="nm">Conditioning</td><td>Conditional generation</td><td>class-conditional and text-conditioned diffusion models</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>"Predict Y from X" means, mathematically, "estimate E[Y | X]". Linear regression, gradient-boosted trees, and
+           deep networks are all estimators of this one conditional-expectation function, and the reason
+           <strong>squared-error loss</strong> is the default is precisely that minimizing it targets E[Y | X]. The
+           <strong>tower property</strong> reappears in reinforcement learning as the heart of the <strong>Bellman
+           equation</strong>, where a state's value is the expected value over next states. The <strong>law of total
+           variance</strong> is the probabilistic skeleton of the <strong>bias-variance decomposition</strong> that
+           explains overfitting and underfitting. And conditioning itself is what powers <strong>conditional
+           generation</strong>, the class- or text-conditioned outputs of modern diffusion models. Few ideas pay off as
+           broadly across AI as the humble conditional expectation.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Compute conditional expectations in Python</h3>
+          <p>The companion notebook computes E[Y | X] across customer segments, verifies the tower property numerically,
+             shows that the conditional mean beats the global mean on squared error, decomposes the variance into
+             within- and between-group parts, and recovers a sine curve as an estimated conditional mean, exactly what
+             regression does.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch44_conditional_expectation.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch44_conditional_expectation.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch44_conditional_expectation.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code> and <code>matplotlib</code> and launch
+      <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Conditional expectation</strong> E[Y | X] is the mean of Y for each value of X, a function of X, not a single number.</span></li>
+        <li><span class="ck">✓</span><span><strong>Tower property</strong>: E[E[Y | X]] = E[Y], the overall mean is the weighted average of the conditional means.</span></li>
+        <li><span class="ck">✓</span><span><strong>Best predictor</strong>: among all functions of X, E[Y | X] minimizes the mean squared error in predicting Y.</span></li>
+        <li><span class="ck">✓</span><span><strong>Law of total variance</strong>: Var(Y) = E[Var(Y | X)] + Var(E[Y | X]), within-group plus between-group.</span></li>
+        <li><span class="ck">✓</span><span><strong>In ML/AI</strong>: regression estimates E[Y | X], the tower property underlies the Bellman equation, and total variance is the bias-variance split.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them with NumPy before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Conditional mean</h4>
+        <p>Two machines make parts: A averages 100g (sd 5), B averages 110g (sd 5). Simulate and estimate
+           E[weight | machine].</p>
+        <div class="chint">Hint: take the mean of weights within each machine.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Tower property</h4>
+        <p>Using that data, verify E[E[weight | machine]] = E[weight] by weighting the conditional means by usage.</p>
+        <div class="chint">Hint: both should give about 105g.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Best predictor</h4>
+        <p>Show that predicting each part with its machine's mean gives a lower MSE than always predicting the overall
+           mean.</p>
+        <div class="chint">Hint: conditional MSE &#8776; within-group variance.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Total variance</h4>
+        <p>Decompose Var(weight) into within-machine and between-machine parts and check they sum to the total.</p>
+        <div class="chint">Hint: Var(Y) = E[Var(Y | X)] + Var(E[Y | X]).</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Regression as E[Y | X]</h4>
+        <p>Generate y = x&#178; + noise and estimate E[Y | X] by binning; confirm the value near x = 2 is about 4.</p>
+        <div class="chint">Hint: average y for x in a small window around 2.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code.
+           Try them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/ch44_challenges_solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch44_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch44_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on conditional expectation and the tower property. Answer them, hit <strong>Check
+       Answers</strong>, and keep refining until you score 100%. Your progress is saved, so you can hop back to the
+       chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch43.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 43 · Previous</span><br><span class="cn-title">Transformations of Random Variables</span></span>
+    </a>
+    <div class="cn-btn next" style="cursor:default;opacity:0.6" title="Coming soon">
+      <span><span class="cn-dir">Chapter 45 · Coming soon</span><br><span class="cn-title">Moments, MGFs &amp; Inequalities</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </div>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 44 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch44";
+  window.QUIZ_DATA = [
+    {
+      q: "The conditional expectation E[Y | X] is…",
+      options: ["A single number, the mean of Y", "A function of X giving the mean of Y for each value of X", "The variance of Y", "Always equal to E[Y]"],
+      answer: 1,
+      explain: "E[Y | X] gives a (possibly different) average of Y for each value of X, so it is a function of X, not one number."
+    },
+    {
+      q: "The tower property (law of total expectation) states…",
+      options: ["E[Y] = Var(Y)", "E[E[Y | X]] = E[Y]", "E[Y | X] = E[X | Y]", "E[Y | X] = 0"],
+      answer: 1,
+      explain: "Averaging the conditional means, weighted by how often each X occurs, recovers the overall mean E[Y]."
+    },
+    {
+      q: "Among all functions of X, which minimizes E[(Y − g(X))²]?",
+      options: ["The median of Y", "g(X) = E[Y | X]", "The global mean E[Y]", "g(X) = X"],
+      answer: 1,
+      explain: "The conditional expectation E[Y | X] is the minimum-mean-squared-error predictor of Y. No function of X beats it."
+    },
+    {
+      q: "Why is squared-error loss the natural choice for regression?",
+      options: ["It is easy to type", "Minimizing it drives the model toward E[Y | X], the best predictor", "It ignores the data", "It only works for classification"],
+      answer: 1,
+      explain: "The expected squared error is minimized at E[Y | X], so minimizing MSE on data targets that optimal predictor."
+    },
+    {
+      q: "The law of total variance decomposes Var(Y) into…",
+      options: ["Mean plus median", "E[Var(Y | X)] (within) + Var(E[Y | X]) (between)", "Var(X) + Var(Y)", "Just E[Var(Y | X)]"],
+      answer: 1,
+      explain: "Total variance = average within-group variance + variance of the group means. It underlies ANOVA and bias-variance analysis."
+    },
+    {
+      q: "In the notebook, predicting spending with E[Y | segment] gave MSE 99 vs 925 for the global mean. This shows…",
+      options: ["X is useless", "Conditioning on X dramatically reduces prediction error", "MSE is always 99", "The data is wrong"],
+      answer: 1,
+      explain: "Using the conditional mean cut error nearly tenfold, the concrete payoff of E[Y | X] being the best predictor."
+    },
+    {
+      q: "In reinforcement learning, the tower property appears as the core of…",
+      options: ["The learning rate", "The Bellman equation (value = expected value over next states)", "The softmax", "Data loading"],
+      answer: 1,
+      explain: "The Bellman equation expresses a state's value as an expectation over next states, an application of iterated/conditional expectation."
+    },
+    {
+      q: "When a regression model 'predicts Y from X', it is fundamentally estimating…",
+      options: ["The variance of X", "The conditional expectation E[Y | X]", "P(X)", "The maximum of Y"],
+      answer: 1,
+      explain: "Every regression method, linear, tree-based, or neural, is an estimator of the conditional-expectation function E[Y | X]."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
