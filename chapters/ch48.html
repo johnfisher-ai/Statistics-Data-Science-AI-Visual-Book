@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 48 · Case Study: E-commerce Conversions (Bernoulli) — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .disp-table code { font-size:0.82em; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch48_ecommerce_bernoulli.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part IX · Probability &amp; Distributions Case Studies</span><span class="sep">/</span>
+      <span>Chapter 48</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part IX · Case Study</span> Bernoulli distribution</div>
+    <h1>E-commerce Conversions: the <span class="accent">Bernoulli Trial</span></h1>
+    <p class="dek">Every web session is a single yes/no experiment: add to cart, or not. That is the Bernoulli distribution,
+       the atom of probability. From 1,000 real sessions we estimate the conversion rate, model it, split it by device,
+       and simulate when the next purchase will arrive.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~13 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 48</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">The simplest distribution describes the simplest experiment: one trial, two outcomes. A coin flip, a
+       medical test, and a web session all share the same skeleton. Here the trial is a visit and the success is a
+       cart addition, and the whole story rides on a single number, the conversion rate p.</p>
+
+    <div class="def-card">
+      <div class="sigma">p</div>
+      <div class="def-body">
+        A <span class="def-kw">Bernoulli trial</span> has two outcomes: success (1) with probability p, failure (0) with
+        probability 1 &#8722; p. Its <span class="def-kw">mean is p</span> and its <span class="def-kw">variance is
+        p(1 &#8722; p)</span>. Everything in this chapter is built from that one parameter.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🛒</div>
+      <div><div class="ctitle">The dataset</div>
+        <p><code>ecommerce_session_logs.csv</code> holds 1,000 sessions, each with a device type and a binary
+           <code>cart_addition</code> flag. We treat each session as an independent Bernoulli trial and ask: what is the
+           baseline rate, does it differ by device, and how long until the next conversion?</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: the model ===== -->
+  <section id="model">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Bernoulli Model: One Rate, p</h2></div>
+    <p>Estimating p is just counting: the conversion rate is the fraction of sessions that added to cart. Of 1,000
+       sessions, 148 converted, so <strong>p = 0.148</strong>. That single number is the entire distribution.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 200" width="100%" font-family="Inter, sans-serif" aria-label="The two-bar Bernoulli distribution of cart additions">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">The whole distribution is two bars: P(0) = 0.852, P(1) = 0.148</text>
+        <line x1="80" y1="170" x2="600" y2="170" stroke="#1a2138" stroke-width="1.2"/>
+        <rect x="150" y="42" width="130" height="128" rx="3" fill="#e6e9f2" stroke="#1a2138"/><text x="215" y="34" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">0.852</text>
+        <rect x="400" y="148" width="130" height="22" rx="3" fill="#d97706" stroke="#1a2138"/><text x="465" y="140" text-anchor="middle" font-size="12" fill="#b45309" font-weight="800">0.148</text>
+        <text x="215" y="188" text-anchor="middle" font-size="9" fill="#8b94b3">no cart addition (0)</text>
+        <text x="465" y="188" text-anchor="middle" font-size="9" fill="#8b94b3">add to cart (1)</text>
+        <text x="620" y="90" text-anchor="end" font-size="9" fill="#4a5578">mean = p = 0.148</text>
+        <text x="620" y="106" text-anchor="end" font-size="9" fill="#4a5578">var = p(1&#8722;p) = 0.126</text>
+      </svg>
+    </figure>
+
+    <p>Because conversions are rare (p well below 0.5), the variance p(1 &#8722; p) = 0.126 is modest: the outcome is
+       lopsided and fairly predictable. A Bernoulli's variance is largest at p = 0.5 (maximum uncertainty) and shrinks
+       toward 0 as p approaches 0 or 1.</p>
+  </section>
+
+  <!-- ===== Section 2: by device ===== -->
+  <section id="device">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Segmenting the Trial by Device</h2></div>
+    <p>A single rate can mask very different audiences. Splitting p by device type treats each segment as its own
+       Bernoulli process, the first move in turning a number into a decision.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 200" width="100%" font-family="Inter, sans-serif" aria-label="Conversion rate bars by device, with the overall rate marked">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Conversion rate by device (each its own p)</text>
+        <line x1="90" y1="170" x2="610" y2="170" stroke="#1a2138" stroke-width="1.2"/>
+        <!-- rates scaled *500: tablet .238->119, mobile .140->70, desktop .140->70 -->
+        <rect x="140" y="51" width="100" height="119" rx="3" fill="#d97706" stroke="#1a2138"/><text x="190" y="43" text-anchor="middle" font-size="11" fill="#b45309" font-weight="800">0.238</text>
+        <rect x="300" y="100" width="100" height="70" rx="3" fill="#fbbf24" stroke="#1a2138"/><text x="350" y="92" text-anchor="middle" font-size="11" fill="#b45309" font-weight="800">0.140</text>
+        <rect x="460" y="100" width="100" height="70" rx="3" fill="#fbbf24" stroke="#1a2138"/><text x="510" y="92" text-anchor="middle" font-size="11" fill="#b45309" font-weight="800">0.140</text>
+        <line x1="90" y1="96" x2="610" y2="96" stroke="#db2777" stroke-width="1.4" stroke-dasharray="5 4"/>
+        <text x="600" y="92" text-anchor="end" font-size="8.5" fill="#db2777" font-weight="800">overall 0.148</text>
+        <g font-size="9" fill="#8b94b3" text-anchor="middle">
+          <text x="190" y="188">Tablet (n=84)</text><text x="350" y="188">Mobile (n=608)</text><text x="510" y="188">Desktop (n=308)</text>
+        </g>
+      </svg>
+    </figure>
+
+    <p>Tablet visitors convert at <strong>23.8%</strong>, well above mobile and desktop (both about 14%). That gap is a
+       lever, but the tablet sample is small (84 sessions), so the estimate is noisy. Whether the difference is real, not
+       just sampling luck, is exactly the kind of question the chi-square test (Chapter 59) answers.</p>
+  </section>
+
+  <!-- ===== Section 3: when will the next purchase arrive ===== -->
+  <section id="waiting">
+    <div class="section-eyebrow"><div class="num">3</div><h2>When Will the Next Purchase Arrive?</h2></div>
+    <p>Stack Bernoulli trials in time, one session after another, and a new question appears: how many sessions until the
+       next conversion? That waiting time follows the <span class="term">geometric distribution</span>, with mean 1/p. We
+       answer it by <strong>simulation</strong>.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 200" width="100%" font-family="Inter, sans-serif" aria-label="The geometric distribution of sessions until the next conversion">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Sessions until the next add-to-cart: geometric, mean 1/p &#8776; 7</text>
+        <line x1="60" y1="170" x2="630" y2="170" stroke="#1a2138" stroke-width="1.1"/>
+        <!-- geometric decay bars p=0.148: pmf(k)=p(1-p)^(k-1), scale *650 -->
+        <g fill="#d97706">
+          <rect x="70" y="74" width="22" height="96" rx="1"/><rect x="98" y="89" width="22" height="81" rx="1"/>
+          <rect x="126" y="103" width="22" height="67" rx="1"/><rect x="154" y="113" width="22" height="57" rx="1"/>
+          <rect x="182" y="122" width="22" height="48" rx="1"/><rect x="210" y="129" width="22" height="41" rx="1"/>
+          <rect x="238" y="135" width="22" height="35" rx="1"/><rect x="266" y="140" width="22" height="30" rx="1"/>
+          <rect x="294" y="144" width="22" height="26" rx="1"/><rect x="322" y="147" width="22" height="23" rx="1"/>
+          <rect x="350" y="150" width="22" height="20" rx="1"/><rect x="378" y="153" width="22" height="17" rx="1"/>
+          <rect x="406" y="155" width="22" height="15" rx="1"/><rect x="434" y="156" width="22" height="14" rx="1"/>
+          <rect x="462" y="158" width="22" height="12" rx="1"/>
+        </g>
+        <line x1="245" y1="60" x2="245" y2="170" stroke="#db2777" stroke-width="1.4" stroke-dasharray="5 4"/>
+        <text x="245" y="54" text-anchor="middle" font-size="9" fill="#db2777" font-weight="800">mean &#8776; 7</text>
+        <text x="345" y="190" text-anchor="middle" font-size="9" fill="#8b94b3">sessions until next conversion &#8594;</text>
+      </svg>
+    </figure>
+
+    <p>Simulating two million sessions, the average gap is <strong>6.76 sessions</strong>, exactly 1/p, and the geometric
+       PMF fits the simulated waiting times perfectly. Now the funnel speaks in forecasts: there is a <strong>55%</strong>
+       chance of a conversion within the next 5 sessions and <strong>80%</strong> within 10. Scaled to a day of 200
+       sessions, the conversion count is binomial with an expected <strong>30 sales</strong>, and by the Central Limit
+       Theorem (Chapter 57) the daily total is approximately normal.</p>
+
+    <div class="callout note">
+      <div class="cico">🔮</div>
+      <div><div class="ctitle">One trial, three distributions</div>
+        <p>This is the chapter's quiet lesson: the humble Bernoulli trial is the seed of a whole family. <strong>One</strong>
+           session is Bernoulli; the <strong>wait</strong> to the next success is geometric; a <strong>fixed batch</strong>
+           of sessions is binomial; and a <strong>long run</strong> of daily totals is normal. Master p, and all four
+           follow.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Run the conversion analysis</h3>
+          <p>The companion notebook loads the 1,000 sessions, estimates p and its variance, breaks the rate down by
+             device, then simulates two million sessions to recover the geometric waiting time to the next purchase
+             (mean 6.76) and scales the trial up to a binomial daily total, every number reproduced in code.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch48_ecommerce_bernoulli.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch48_ecommerce_bernoulli.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch48_ecommerce_bernoulli.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, <code>scipy</code>,
+      and <code>matplotlib</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>A web session is a Bernoulli trial</strong>: success (cart addition) with probability p, failure with 1 &#8722; p.</span></li>
+        <li><span class="ck">✓</span><span><strong>One parameter</strong> p = 0.148 carries everything: mean = p, variance = p(1 &#8722; p) = 0.126.</span></li>
+        <li><span class="ck">✓</span><span><strong>Segmenting</strong> by device gives each group its own p; tablets convert highest (0.238) but on a small sample.</span></li>
+        <li><span class="ck">✓</span><span><strong>The wait to the next success is geometric</strong> with mean 1/p &#8776; 7 sessions, recovered exactly by simulation.</span></li>
+        <li><span class="ck">✓</span><span><strong>Bernoulli is the seed</strong>: it grows into the geometric (waiting), the binomial (batches), and the normal (daily totals).</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on the Bernoulli case study. Answer them, hit <strong>Check Answers</strong>, and keep
+       refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch47.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 47 · Previous</span><br><span class="cn-title">The Probability Distribution Framework</span></span>
+    </a>
+    <div class="cn-btn next" style="cursor:default;opacity:0.6" title="Coming soon">
+      <span><span class="cn-dir">Chapter 49 · Coming soon</span><br><span class="cn-title">Manufacturing Defects (Binomial)</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </div>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 48 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch48";
+  window.QUIZ_DATA = [
+    {
+      q: "A single web session (add to cart: yes/no) is modeled as…",
+      options: ["A normal distribution", "A Bernoulli trial", "A Poisson process", "A chi-square test"],
+      answer: 1,
+      explain: "One trial with two outcomes (success/failure) is the Bernoulli distribution, the building block of the binomial and geometric."
+    },
+    {
+      q: "The conversion rate p = 0.148 was estimated by…",
+      options: ["Fitting a curve", "Counting: the fraction of sessions that added to cart", "Taking the median", "A t-test"],
+      answer: 1,
+      explain: "For a Bernoulli, the maximum-likelihood estimate of p is simply the observed proportion of successes: 148/1000 = 0.148."
+    },
+    {
+      q: "The variance of this Bernoulli is…",
+      options: ["p = 0.148", "p(1 − p) = 0.126", "1/p = 6.76", "0.5"],
+      answer: 1,
+      explain: "A Bernoulli has mean p and variance p(1 − p) = 0.148 × 0.852 = 0.126. Variance is largest at p = 0.5."
+    },
+    {
+      q: "Bernoulli variance p(1 − p) is largest when…",
+      options: ["p = 0", "p = 1", "p = 0.5", "p = 0.148"],
+      answer: 2,
+      explain: "Uncertainty peaks at p = 0.5 (a fair coin). As p approaches 0 or 1, the outcome becomes predictable and the variance shrinks."
+    },
+    {
+      q: "Splitting the conversion rate by device treats each device as…",
+      options: ["The same trial", "Its own Bernoulli process with its own p", "A continuous variable", "An ANOVA group"],
+      answer: 1,
+      explain: "Each segment has its own success probability. Tablets converted at 0.238 vs ~0.14 for mobile and desktop."
+    },
+    {
+      q: "The number of sessions until the next conversion follows which distribution?",
+      options: ["Binomial", "Geometric, with mean 1/p", "Normal", "Uniform"],
+      answer: 1,
+      explain: "Counting trials until the first success in a stream of Bernoulli trials is the geometric distribution; here the mean wait is 1/p ≈ 6.76 sessions."
+    },
+    {
+      q: "The simulated average gap between conversions was 6.76 sessions, which equals…",
+      options: ["p", "1/p", "p(1 − p)", "n·p"],
+      answer: 1,
+      explain: "The geometric mean is 1/p = 1/0.148 ≈ 6.76, matched exactly by simulating two million sessions."
+    },
+    {
+      q: "Summing many independent Bernoulli sessions in a day gives a count that is…",
+      options: ["Always exactly n·p", "Binomial, and approximately normal by the CLT", "Geometric", "Uniform"],
+      answer: 1,
+      explain: "A fixed number of Bernoulli trials yields a binomial count (mean n·p ≈ 30 for 200 sessions), which the CLT makes approximately normal."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
