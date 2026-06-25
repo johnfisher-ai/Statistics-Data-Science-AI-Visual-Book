@@ -164,6 +164,14 @@ MAP = {
         ("../../ch37.html#notebook", "Back to the book", "Chapter 37 · Discrete Distributions"),
     "ch37_challenges_solutions.html":
         ("../../ch37.html#quiz", "Back to the book", "Chapter 37 · Take the quiz &amp; aim for 100%"),
+    "ch38_continuous_distributions.html":
+        ("../../ch38.html#notebook", "Back to the book", "Chapter 38 · Continuous Distributions"),
+    "ch38_challenges_solutions.html":
+        ("../../ch38.html#quiz", "Back to the book", "Chapter 38 · Take the quiz &amp; aim for 100%"),
+    "ch39_normal_in_depth.html":
+        ("../../ch39.html#notebook", "Back to the book", "Chapter 39 · The Normal Distribution in Depth"),
+    "ch39_challenges_solutions.html":
+        ("../../ch39.html#quiz", "Back to the book", "Chapter 39 · Take the quiz &amp; aim for 100%"),
 }
 
 def card(href, kicker, title):
