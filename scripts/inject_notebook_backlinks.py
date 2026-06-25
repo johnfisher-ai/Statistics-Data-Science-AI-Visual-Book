@@ -228,6 +228,30 @@ MAP = {
         ("../../ch59.html#notebook", "Back to the book", "Chapter 59 · Survey Demographics (Chi-Square)"),
     "ch60_crop_anova.html":
         ("../../ch60.html#notebook", "Back to the book", "Chapter 60 · Crop Yield by Fertilizer (F / ANOVA)"),
+    "ch61_why_sample.html":
+        ("../../ch61.html#notebook", "Back to the book", "Chapter 61 · Why We Sample"),
+    "ch61_challenges_solutions.html":
+        ("../../ch61.html#challenges", "Back to the book", "Chapter 61 · Why We Sample"),
+    "ch62_probability_sampling.html":
+        ("../../ch62.html#notebook", "Back to the book", "Chapter 62 · Probability Sampling Methods"),
+    "ch62_challenges_solutions.html":
+        ("../../ch62.html#challenges", "Back to the book", "Chapter 62 · Probability Sampling Methods"),
+    "ch63_nonprobability_sampling.html":
+        ("../../ch63.html#notebook", "Back to the book", "Chapter 63 · Non-Probability Sampling Methods"),
+    "ch63_challenges_solutions.html":
+        ("../../ch63.html#challenges", "Back to the book", "Chapter 63 · Non-Probability Sampling Methods"),
+    "ch64_sample_size.html":
+        ("../../ch64.html#notebook", "Back to the book", "Chapter 64 · Determining Sample Size"),
+    "ch64_challenges_solutions.html":
+        ("../../ch64.html#challenges", "Back to the book", "Chapter 64 · Determining Sample Size"),
+    "ch65_study_design.html":
+        ("../../ch65.html#notebook", "Back to the book", "Chapter 65 · Study Design & Data Quality"),
+    "ch65_challenges_solutions.html":
+        ("../../ch65.html#challenges", "Back to the book", "Chapter 65 · Study Design & Data Quality"),
+    "ch66_bias_collection.html":
+        ("../../ch66.html#notebook", "Back to the book", "Chapter 66 · Bias in Data Collection"),
+    "ch66_challenges_solutions.html":
+        ("../../ch66.html#challenges", "Back to the book", "Chapter 66 · Bias in Data Collection"),
 }
 
 def card(href, kicker, title):

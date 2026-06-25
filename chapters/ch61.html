@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 61 · Why We Sample — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch61_why_sample.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part X · Sampling &amp; Data Collection</span><span class="sep">/</span>
+      <span>Chapter 61</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part X · Sampling &amp; Data Collection</span> The case for the sample</div>
+    <h1>Why We <span class="accent">Sample</span></h1>
+    <p class="dek">Measuring everyone is slow, expensive, and often impossible. A well-drawn sample stands in for the whole
+       population, its error shrinks in a predictable way, and, remarkably, a small representative sample beats a huge
+       biased one. This is the foundation of all data collection.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~15 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 61</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Every analysis so far assumed you <em>had</em> data. This Part asks the prior question: where does
+       trustworthy data come from? It starts with a deceptively simple idea, <span class="term">sampling</span>, studying
+       a subset to learn about the whole.</p>
+
+    <div class="def-card">
+      <div class="sigma">n &#8810; N</div>
+      <div class="def-body">
+        A <span class="def-kw">sample</span> of size n is a subset drawn from a <span class="def-kw">population</span> of
+        size N. We compute a <span class="def-kw">statistic</span> (like the sample mean x&#772;) to estimate an unknown
+        <span class="def-kw">parameter</span> (like the population mean &#956;). Done well, n can be a tiny fraction of N
+        and still be remarkably accurate.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🎯</div>
+      <div><div class="ctitle">Welcome to Part X</div>
+        <p>Parts VI to IX gave you the mathematics of probability and distributions. Now we turn practical: how to
+           <strong>gather</strong> data worth analyzing. This chapter makes the case for sampling; the next ones cover how
+           to sample well, how much to collect, and the biases that ruin data.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: census problem ===== -->
+  <section id="census">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Census Problem</h2></div>
+    <p>A <span class="term">census</span> measures every unit in the population. It sounds ideal, and occasionally it is
+       worth it (a national population count). But for most questions it is impractical, and sometimes outright
+       impossible.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 200" width="100%" font-family="Inter, sans-serif" aria-label="A full census of many units versus a small sample drawn from it">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">A census measures everyone; a sample measures a representative few</text>
+        <!-- census grid -->
+        <text x="150" y="42" text-anchor="middle" font-size="9.5" fill="#be123c" font-weight="800">CENSUS &#183; all N units</text>
+        <g fill="#fda4af">
+          <!-- 8x5 grid of dots -->
+          <g>
+            <circle cx="40" cy="60" r="4"/><circle cx="68" cy="60" r="4"/><circle cx="96" cy="60" r="4"/><circle cx="124" cy="60" r="4"/><circle cx="152" cy="60" r="4"/><circle cx="180" cy="60" r="4"/><circle cx="208" cy="60" r="4"/><circle cx="236" cy="60" r="4"/>
+            <circle cx="40" cy="84" r="4"/><circle cx="68" cy="84" r="4"/><circle cx="96" cy="84" r="4"/><circle cx="124" cy="84" r="4"/><circle cx="152" cy="84" r="4"/><circle cx="180" cy="84" r="4"/><circle cx="208" cy="84" r="4"/><circle cx="236" cy="84" r="4"/>
+            <circle cx="40" cy="108" r="4"/><circle cx="68" cy="108" r="4"/><circle cx="96" cy="108" r="4"/><circle cx="124" cy="108" r="4"/><circle cx="152" cy="108" r="4"/><circle cx="180" cy="108" r="4"/><circle cx="208" cy="108" r="4"/><circle cx="236" cy="108" r="4"/>
+            <circle cx="40" cy="132" r="4"/><circle cx="68" cy="132" r="4"/><circle cx="96" cy="132" r="4"/><circle cx="124" cy="132" r="4"/><circle cx="152" cy="132" r="4"/><circle cx="180" cy="132" r="4"/><circle cx="208" cy="132" r="4"/><circle cx="236" cy="132" r="4"/>
+            <circle cx="40" cy="156" r="4"/><circle cx="68" cy="156" r="4"/><circle cx="96" cy="156" r="4"/><circle cx="124" cy="156" r="4"/><circle cx="152" cy="156" r="4"/><circle cx="180" cy="156" r="4"/><circle cx="208" cy="156" r="4"/><circle cx="236" cy="156" r="4"/>
+          </g>
+        </g>
+        <text x="150" y="182" text-anchor="middle" font-size="8.5" fill="#8b94b3">costly &#183; slow &#183; sometimes impossible</text>
+        <!-- arrow -->
+        <path d="M270,108 L320,108" stroke="#8b94b3" stroke-width="1.6" marker-end="url(#a1)"/>
+        <defs><marker id="a1" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8b94b3"/></marker></defs>
+        <text x="295" y="100" text-anchor="middle" font-size="8" fill="#8b94b3">sample</text>
+        <!-- sample box -->
+        <rect x="360" y="56" width="300" height="104" rx="10" fill="#fff1f2" stroke="#e11d48"/>
+        <text x="510" y="42" text-anchor="middle" font-size="9.5" fill="#e11d48" font-weight="800">SAMPLE &#183; a few units, n</text>
+        <g fill="#e11d48"><circle cx="410" cy="86" r="5"/><circle cx="470" cy="100" r="5"/><circle cx="540" cy="84" r="5"/><circle cx="600" cy="108" r="5"/><circle cx="450" cy="134" r="5"/><circle cx="560" cy="132" r="5"/></g>
+        <text x="510" y="182" text-anchor="middle" font-size="8.5" fill="#8b94b3">cheap &#183; fast &#183; good enough, if representative</text>
+      </svg>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Why a census fails</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Cost</td><td>interviewing all 330 million residents of a country</td></tr>
+          <tr><td class="nm">Time</td><td>the answer would be stale before the count finished</td></tr>
+          <tr><td class="nm">Destructive testing</td><td>you cannot crash-test every car or taste-test every batch</td></tr>
+          <tr><td class="nm">Inaccessibility</td><td>the population is infinite, hypothetical, or future (all possible users)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Sampling sidesteps all four. The catch is that a sample introduces uncertainty, and the rest of this chapter shows
+       that the uncertainty is small, measurable, and well worth the savings.</p>
+  </section>
+
+  <!-- ===== Section 2: a sample stands in ===== -->
+  <section id="standin">
+    <div class="section-eyebrow"><div class="num">2</div><h2>A Sample Stands In for the Population</h2></div>
+    <p>The magic of a <span class="term">representative</span> sample is that it mirrors the population in miniature, so a
+       statistic computed on the sample estimates the matching population parameter.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 170" width="100%" font-family="Inter, sans-serif" aria-label="A statistic from the sample estimates the matching population parameter">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Statistics estimate parameters</text>
+        <rect x="40" y="40" width="250" height="110" rx="12" fill="#eef6ff" stroke="#0e6a8f"/>
+        <text x="165" y="62" text-anchor="middle" font-size="10" fill="#0e6a8f" font-weight="800">POPULATION (size N)</text>
+        <text x="165" y="92" text-anchor="middle" font-size="11" fill="#1a2138" font-weight="700">&#956; &#183; &#963; &#183; p</text>
+        <text x="165" y="112" text-anchor="middle" font-size="8.5" fill="#4a5578">fixed but unknown</text>
+        <text x="165" y="132" text-anchor="middle" font-size="8" fill="#8b94b3">the parameters we want</text>
+        <rect x="390" y="40" width="250" height="110" rx="12" fill="#fff1f2" stroke="#e11d48"/>
+        <text x="515" y="62" text-anchor="middle" font-size="10" fill="#e11d48" font-weight="800">SAMPLE (size n)</text>
+        <text x="515" y="92" text-anchor="middle" font-size="11" fill="#1a2138" font-weight="700">x&#772; &#183; s &#183; p&#770;</text>
+        <text x="515" y="112" text-anchor="middle" font-size="8.5" fill="#4a5578">computed from data</text>
+        <text x="515" y="132" text-anchor="middle" font-size="8" fill="#8b94b3">the statistics we measure</text>
+        <path d="M290,80 C330,72 350,72 388,80" stroke="#059669" stroke-width="2" fill="none" marker-end="url(#s1)"/>
+        <text x="340" y="66" text-anchor="middle" font-size="8" fill="#059669" font-weight="700">draw</text>
+        <path d="M388,118 C350,126 330,126 292,118" stroke="#e11d48" stroke-width="2" fill="none" stroke-dasharray="5 4" marker-end="url(#s2)"/>
+        <text x="340" y="142" text-anchor="middle" font-size="8" fill="#e11d48" font-weight="700">estimate</text>
+        <defs>
+          <marker id="s1" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#059669"/></marker>
+          <marker id="s2" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#e11d48"/></marker>
+        </defs>
+      </svg>
+    </figure>
+
+    <p>In the notebook a population of <strong>1,000,000</strong> incomes has a true mean of about <strong>$58,700</strong>.
+       A single random sample of just <strong>1,000</strong> people, one-thousandth of the population, estimates it as
+       <strong>$58,000</strong>, off by only about <strong>1%</strong>. That is the promise: a sliver of the data carries
+       almost all the signal, <em>provided</em> the sample is drawn fairly so it represents everyone.</p>
+  </section>
+
+  <!-- ===== Section 3: sampling error ===== -->
+  <section id="error">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Sampling Error &amp; the Square-Root Payoff</h2></div>
+    <p>No sample is perfect. <span class="term">Sampling error</span> is the random gap between a sample statistic and the
+       true parameter. For the mean, its typical size is the <span class="hl">standard error</span>, SE = &#963;/&#8730;n,
+       and it shrinks in a very specific way as the sample grows.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 190" width="100%" font-family="Inter, sans-serif" aria-label="Sample means scatter widely at small n and tightly at large n around the true value">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">The square-root law: quadruple n to halve the error</text>
+        <line x1="60" y1="150" x2="640" y2="150" stroke="#8b94b3" stroke-width="1"/>
+        <line x1="350" y1="40" x2="350" y2="158" stroke="#0e6a8f" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <text x="350" y="172" text-anchor="middle" font-size="8.5" fill="#0e6a8f" font-weight="700">true &#956;</text>
+        <!-- three rows of scatter narrowing -->
+        <g fill="#fda4af"><circle cx="250" cy="60" r="3"/><circle cx="300" cy="60" r="3"/><circle cx="350" cy="60" r="3"/><circle cx="410" cy="60" r="3"/><circle cx="470" cy="60" r="3"/><circle cx="200" cy="60" r="3"/><circle cx="440" cy="60" r="3"/><circle cx="320" cy="60" r="3"/></g>
+        <text x="120" y="64" font-size="8.5" fill="#8b94b3">n = 10</text>
+        <g fill="#fb7185"><circle cx="310" cy="95" r="3"/><circle cx="340" cy="95" r="3"/><circle cx="350" cy="95" r="3"/><circle cx="375" cy="95" r="3"/><circle cx="390" cy="95" r="3"/><circle cx="325" cy="95" r="3"/></g>
+        <text x="120" y="99" font-size="8.5" fill="#8b94b3">n = 100</text>
+        <g fill="#e11d48"><circle cx="338" cy="128" r="3"/><circle cx="350" cy="128" r="3"/><circle cx="358" cy="128" r="3"/><circle cx="345" cy="128" r="3"/><circle cx="362" cy="128" r="3"/></g>
+        <text x="120" y="132" font-size="8.5" fill="#8b94b3">n = 2000</text>
+      </svg>
+    </figure>
+
+    <p>The notebook confirms it precisely: the observed spread of sample means tracks &#963;/&#8730;n almost exactly (at
+       n = 2,000, the observed SE is about $849 against a predicted $862). Crucially, the standard error depends on
+       <strong>n, not on the fraction n/N</strong>. Sampling 1,000 people gives the same precision whether the population
+       is 10,000 or 1,000,000:</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Population N</th><th>Fraction sampled (n = 1,000)</th><th>Standard error</th></tr></thead>
+        <tbody>
+          <tr><td>10,000</td><td>10%</td><td class="nm">~$1,166</td></tr>
+          <tr><td>100,000</td><td>1%</td><td class="nm">~$1,188</td></tr>
+          <tr><td>1,000,000</td><td>0.1%</td><td class="nm">~$1,208</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>This is why a national poll of a few thousand can speak for an entire country. Precision rides on the
+       <em>absolute</em> sample size, and the cost is quadratic, so returns diminish quickly.</p>
+  </section>
+
+  <!-- ===== Section 4: representativeness beats size ===== -->
+  <section id="represent">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Representativeness Beats Size</h2></div>
+    <p>If a sample is drawn unfairly, no amount of data saves it. The classic cautionary tale is the
+       <span class="term">1936 Literary Digest poll</span>: it mailed 10 million ballots and tallied 2.4 million,
+       predicting Landon would crush Roosevelt. Roosevelt won in a landslide. George Gallup, polling just 50,000 people
+       representatively, called it correctly.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 200" width="100%" font-family="Inter, sans-serif" aria-label="A huge biased sample misses the truth while a small random sample hits it">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">A biased frame fails no matter how large (true support 55%)</text>
+        <line x1="60" y1="160" x2="640" y2="160" stroke="#8b94b3" stroke-width="1"/>
+        <line x1="60" y1="62" x2="640" y2="62" stroke="#0e6a8f" stroke-width="1" stroke-dasharray="5 4"/>
+        <text x="648" y="64" font-size="8" fill="#0e6a8f" font-weight="700">55%</text>
+        <!-- biased big bar at 46 -->
+        <rect x="150" y="113" width="120" height="47" fill="#fda4af" stroke="#e11d48"/>
+        <text x="210" y="105" text-anchor="middle" font-size="10" fill="#be123c" font-weight="800">46%</text>
+        <text x="210" y="176" text-anchor="middle" font-size="8.5" fill="#1a2138">Biased frame</text>
+        <text x="210" y="188" text-anchor="middle" font-size="7.5" fill="#8b94b3">n = 240,000 &#183; WRONG</text>
+        <!-- random small bar at 54 -->
+        <rect x="410" y="70" width="120" height="90" fill="#0d9488" stroke="#0f766e"/>
+        <text x="470" y="62" text-anchor="middle" font-size="10" fill="#0f766e" font-weight="800">54%</text>
+        <text x="470" y="176" text-anchor="middle" font-size="8.5" fill="#1a2138">Random sample</text>
+        <text x="470" y="188" text-anchor="middle" font-size="7.5" fill="#8b94b3">n = 2,000 &#183; right</text>
+      </svg>
+    </figure>
+
+    <p>The notebook reproduces the effect: with true support at 55%, a biased frame of <strong>240,000</strong> people
+       estimates <strong>46%</strong> (wrong), while a simple random sample of just <strong>2,000</strong> gets
+       <strong>54%</strong> (right). The biased sample's error is <em>systematic</em>, so 120 times more data only sharpens
+       a wrong answer. And because precision shows diminishing returns, doubling a sample from 2,000 to 4,000 raises
+       precision by only about <strong>41%</strong>. The lesson that drives the rest of this Part:
+       <strong>how</strong> you sample matters far more than how much.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Sampling in Machine Learning &amp; AI</h2></div>
+    <p>Sampling is not just for surveys. Modern machine learning is built on it, every model is trained on a sample and
+       evaluated on another, and the same lessons, error shrinks like 1/&#8730;n and bias cannot be outvoted, apply
+       directly.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Idea (this chapter)</th><th>In ML / AI it becomes</th><th>Concrete example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Sample estimates population</td><td>Train / test split</td><td>a held-out test set estimates real-world accuracy</td></tr>
+          <tr><td class="nm">Random subsampling</td><td>Mini-batch gradient descent</td><td>each batch is a random sample; gradient noise &#8733; 1/&#8730;batch</td></tr>
+          <tr><td class="nm">Resampling</td><td>The bootstrap</td><td>resample the data to estimate uncertainty and build ensembles</td></tr>
+          <tr><td class="nm">Representativeness beats size</td><td>Data quality over data quantity</td><td>a biased web scrape misleads no matter how big</td></tr>
+          <tr><td class="nm">Smart sampling</td><td>Active learning</td><td>label the most informative points, not the most</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>A test set is a <strong>sample</strong> used to estimate a model's true performance, so its accuracy has a
+           standard error of its own, report it, and a test set of 100 examples cannot certify a 1% improvement.
+           <strong>Mini-batch</strong> training is sampling in a loop: gradient noise falls like 1/&#8730;(batch size),
+           the same square-root law. Most importantly, the Literary Digest lesson is the modern crisis of
+           <strong>biased training data</strong>: a model learns whatever sample it is fed, and a huge but unrepresentative
+           dataset bakes in a confident, systematic error. In AI as in surveys, a smaller representative dataset beats a
+           massive skewed one.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>See sampling work in Python</h3>
+          <p>The companion notebook builds a million-person population, estimates its mean from a sample of 1,000, traces
+             the standard error down the square-root law, proves the sample fraction barely matters, recreates the
+             Literary Digest bias, and plots the diminishing returns of ever-larger samples.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch61_why_sample.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch61_why_sample.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch61_why_sample.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code> and <code>matplotlib</code> and launch
+      <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>A census</strong> (measuring everyone) is often too costly, slow, or impossible; a <strong>sample</strong> estimates the whole from a part.</span></li>
+        <li><span class="ck">✓</span><span><strong>A statistic estimates a parameter</strong>: x&#772; for &#956;, p&#770; for p; a sample of 1,000 pinned a million-person mean to within ~1%.</span></li>
+        <li><span class="ck">✓</span><span><strong>Standard error = &#963;/&#8730;n</strong>: quadruple the sample to halve the error, and it depends on n, not the fraction sampled.</span></li>
+        <li><span class="ck">✓</span><span><strong>Representativeness beats size</strong>: a biased frame is wrong no matter how large, because its error is systematic.</span></li>
+        <li><span class="ck">✓</span><span><strong>In ML/AI</strong>: test sets, mini-batches, and the bootstrap are all sampling; biased training data is the Literary Digest of our era.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them with NumPy before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>The sampling-error law</h4>
+        <p>Draw 2,000 samples of size 50 from Normal(100, 20) and check the observed standard error against
+           &#963;/&#8730;n.</p>
+        <div class="chint">Hint: collect the sample means, take their <code>std()</code>, compare to 20/&#8730;50.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>The fraction myth</h4>
+        <p>Draw n = 200 from a population of 2,000 and from one of 200,000. Show the standard error is essentially the
+           same.</p>
+        <div class="chint">Hint: it is n that matters, not n/N.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Bias cannot be outvoted</h4>
+        <p>A convenience method reaches only group A (mean 60) when the population is half A, half B (mean 40). Show the
+           estimate stays wrong as n grows.</p>
+        <div class="chint">Hint: sample only from A at n = 100, 1,000, 50,000.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Quadruple for half</h4>
+        <p>Show the standard error at n = 400 is about half the standard error at n = 100.</p>
+        <div class="chint">Hint: the ratio should be near 0.5.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Precision per dollar</h4>
+        <p>If measuring one unit costs $1, compare the precision (1/SE) of a census of 1,000,000 to a sample of 2,000.</p>
+        <div class="chint">Hint: 500&#215; the cost buys only a modest multiple of the precision.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code. Try
+           them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/ch61_challenges_solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch61_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch61_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on why we sample. Answer them, hit <strong>Check Answers</strong>, and keep refining until you
+       score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">🧭</div>
+    <div><div class="ctitle">Up next</div>
+      <p>We have made the case for sampling and seen that representativeness is everything. <strong>Chapter 62</strong>
+         shows the <strong>probability sampling methods</strong>, simple random, stratified, cluster, and systematic, that
+         actually deliver a representative sample.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch60.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 60 · Previous</span><br><span class="cn-title">Crop Yield by Fertilizer (F / ANOVA)</span></span>
+    </a>
+    <div class="cn-btn next" style="cursor:default;opacity:0.6" title="Coming soon">
+      <span><span class="cn-dir">Chapter 62 · Coming soon</span><br><span class="cn-title">Probability Sampling Methods</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </div>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 61 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch61";
+  window.QUIZ_DATA = [
+    {
+      q: "Why do we usually sample instead of taking a census?",
+      options: ["Samples are always more accurate", "A census is often too costly, slow, or impossible", "Sampling removes all error", "The population is always infinite"],
+      answer: 1,
+      explain: "Measuring everyone can be prohibitively expensive, too slow, destructive, or simply impossible; a sample trades a little uncertainty for huge savings."
+    },
+    {
+      q: "A sample statistic such as x̄ is used to…",
+      options: ["Replace the population", "Estimate the matching population parameter (μ)", "Eliminate variance", "Prove causation"],
+      answer: 1,
+      explain: "We compute a statistic (x̄, s, p̂) on the sample to estimate the unknown population parameter (μ, σ, p)."
+    },
+    {
+      q: "The standard error of the sample mean equals…",
+      options: ["σ × n", "σ/√n", "σ/n", "n/σ"],
+      answer: 1,
+      explain: "SE = σ/√n. It is the typical size of the random gap between the sample mean and the true mean."
+    },
+    {
+      q: "To halve the standard error, you must…",
+      options: ["Double the sample size", "Quadruple the sample size", "Halve the population", "Sample a larger fraction"],
+      answer: 1,
+      explain: "Because SE ∝ 1/√n, cutting the error in half requires four times the data, the square-root law."
+    },
+    {
+      q: "The standard error depends mainly on…",
+      options: ["The fraction n/N of the population sampled", "The absolute sample size n, not the fraction", "The population size N alone", "The number of variables"],
+      answer: 1,
+      explain: "Precision rides on the absolute n. A sample of 1,000 is about as precise for a population of 10,000 as for 1,000,000."
+    },
+    {
+      q: "The 1936 Literary Digest poll was wrong despite 2.4 million responses because…",
+      options: ["The sample was too small", "Its sampling frame was biased and unrepresentative", "It used the wrong formula", "Roosevelt cheated"],
+      answer: 1,
+      explain: "The frame (car and phone owners) over-represented the wealthy. A biased frame produces systematic error that more data cannot fix."
+    },
+    {
+      q: "Why can't a huge biased sample be fixed by collecting even more data?",
+      options: ["It can, with enough data", "Its error is systematic (bias), not random, so more data just sharpens the wrong answer", "Bigger samples are always biased", "The mean stops existing"],
+      answer: 1,
+      explain: "Random error shrinks with n, but bias is a constant offset; adding biased data makes a wrong estimate more confident, not more correct."
+    },
+    {
+      q: "In machine learning, a held-out test set is best understood as…",
+      options: ["The whole population", "A sample used to estimate true performance, with its own standard error", "A way to remove bias", "Always 50% of the data"],
+      answer: 1,
+      explain: "A test set is a sample of unseen data; its measured accuracy estimates real-world accuracy and carries sampling uncertainty of its own."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
