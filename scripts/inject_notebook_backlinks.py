@@ -252,6 +252,26 @@ MAP = {
         ("../../ch66.html#notebook", "Back to the book", "Chapter 66 · Bias in Data Collection"),
     "ch66_challenges_solutions.html":
         ("../../ch66.html#challenges", "Back to the book", "Chapter 66 · Bias in Data Collection"),
+    "ch69_point_interval.html":
+        ("../../ch69.html#notebook", "Back to the book", "Chapter 69 · Point vs. Interval Estimation"),
+    "ch69_challenges_solutions.html":
+        ("../../ch69.html#challenges", "Back to the book", "Chapter 69 · Point vs. Interval Estimation"),
+    "ch70_ci_mean.html":
+        ("../../ch70.html#notebook", "Back to the book", "Chapter 70 · Confidence Intervals for a Mean"),
+    "ch70_challenges_solutions.html":
+        ("../../ch70.html#challenges", "Back to the book", "Chapter 70 · Confidence Intervals for a Mean"),
+    "ch71_ci_proportions.html":
+        ("../../ch71.html#notebook", "Back to the book", "Chapter 71 · Confidence Intervals for Proportions & Differences"),
+    "ch71_challenges_solutions.html":
+        ("../../ch71.html#challenges", "Back to the book", "Chapter 71 · Confidence Intervals for Proportions & Differences"),
+    "ch72_margin_of_error.html":
+        ("../../ch72.html#notebook", "Back to the book", "Chapter 72 · Margin of Error"),
+    "ch72_challenges_solutions.html":
+        ("../../ch72.html#challenges", "Back to the book", "Chapter 72 · Margin of Error"),
+    "ch73_resampling.html":
+        ("../../ch73.html#notebook", "Back to the book", "Chapter 73 · Resampling & Simulation"),
+    "ch73_challenges_solutions.html":
+        ("../../ch73.html#challenges", "Back to the book", "Chapter 73 · Resampling & Simulation"),
 }
 
 def card(href, kicker, title):
