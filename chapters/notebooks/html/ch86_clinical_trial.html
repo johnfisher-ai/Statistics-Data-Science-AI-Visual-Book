@@ -7807,7 +7807,7 @@ a.anchor-link {
 <div style="background:linear-gradient(135deg,#083344 0%,#0e7490 55%,#06b6d4 100%);border-radius:18px;padding:34px 30px;color:#fff;font-family:Inter,Segoe UI,sans-serif">
 <div style="font-size:12px;letter-spacing:3px;color:#a5f3fc;font-weight:700;text-transform:uppercase">Chapter 86 · Case Study · Inference</div>
 <div style="font-size:33px;font-weight:900;line-height:1.1;margin:10px 0 6px">Case Study: A Clinical Trial 🩺</div>
-<div style="font-size:15px;color:#ecfeff;max-width:760px;line-height:1.6">One randomized trial, three questions: did cholesterol fall on the drug, did it fall more than placebo, and were more patients responders? Each needs a different test, paired, two-sample, and proportion, on the same patients.</div>
+<div style="font-size:15px;color:#ecfeff;max-width:760px;line-height:1.6">One randomized trial, three questions: did cholesterol fall on the drug, did it fall more than placebo, and were more patients responders? We check baseline balance first, then use scipy and statsmodels for the three tests and their intervals.</div>
 <div style="margin-top:16px;font-size:13px;color:#a5f3fc">Statistics, Data Science and AI: A Visual Handbook · John Fisher · 2026</div>
 </div>
 </div>
@@ -7834,10 +7834,19 @@ a.anchor-link {
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span><span class="o">,</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span><span class="o">,</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">stats</span>
+<span class="c1"># statsmodels = the R/SAS-style stats library (pre-installed on Colab): it does the standard errors,</span>
+<span class="c1"># test statistics, intervals, and post-hoc comparisons for us, so we write far less by-hand code.</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">statsmodels.api</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">statsmodels.formula.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">ols</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">statsmodels.stats.proportion</span><span class="w"> </span><span class="kn">import</span> <span class="n">proportions_ztest</span><span class="p">,</span> <span class="n">confint_proportions_2indep</span><span class="p">,</span> <span class="n">proportion_confint</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">statsmodels.stats.multicomp</span><span class="w"> </span><span class="kn">import</span> <span class="n">pairwise_tukeyhsd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">statsmodels.stats.weightstats</span><span class="w"> </span><span class="kn">import</span> <span class="n">DescrStatsW</span><span class="p">,</span> <span class="n">CompareMeans</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats.contingency</span><span class="w"> </span><span class="kn">import</span> <span class="n">association</span>   <span class="c1"># Cramer's V in one call</span>
 <span class="n">CY</span><span class="o">=</span><span class="s2">"#0891b2"</span><span class="p">;</span> <span class="n">DEEP</span><span class="o">=</span><span class="s2">"#0e7490"</span><span class="p">;</span> <span class="n">LIGHT</span><span class="o">=</span><span class="s2">"#67e8f9"</span><span class="p">;</span> <span class="n">INK</span><span class="o">=</span><span class="s2">"#1a2138"</span><span class="p">;</span> <span class="n">GRID</span><span class="o">=</span><span class="s2">"#e6e9f2"</span><span class="p">;</span> <span class="n">GREEN</span><span class="o">=</span><span class="s2">"#059669"</span><span class="p">;</span> <span class="n">RED</span><span class="o">=</span><span class="s2">"#ef4444"</span><span class="p">;</span> <span class="n">AMBER</span><span class="o">=</span><span class="s2">"#d97706"</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">"figure.facecolor"</span><span class="p">:</span><span class="s2">"white"</span><span class="p">,</span><span class="s2">"axes.facecolor"</span><span class="p">:</span><span class="s2">"white"</span><span class="p">,</span><span class="s2">"figure.dpi"</span><span class="p">:</span><span class="mi">110</span><span class="p">,</span><span class="s2">"font.size"</span><span class="p">:</span><span class="mi">11</span><span class="p">,</span>
    <span class="s2">"axes.edgecolor"</span><span class="p">:</span><span class="n">GRID</span><span class="p">,</span><span class="s2">"axes.grid"</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s2">"grid.color"</span><span class="p">:</span><span class="n">GRID</span><span class="p">,</span><span class="s2">"axes.axisbelow"</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s2">"axes.spines.top"</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span>
    <span class="s2">"axes.spines.right"</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span><span class="s2">"axes.titlesize"</span><span class="p">:</span><span class="mi">12</span><span class="p">,</span><span class="s2">"axes.titleweight"</span><span class="p">:</span><span class="s2">"bold"</span><span class="p">,</span><span class="s2">"legend.frameon"</span><span class="p">:</span><span class="kc">False</span><span class="p">})</span>
+<span class="n">pd</span><span class="o">.</span><span class="n">set_option</span><span class="p">(</span><span class="s2">"display.width"</span><span class="p">,</span><span class="mi">120</span><span class="p">)</span>
 <span class="n">BASE</span><span class="o">=</span><span class="s2">"https://raw.githubusercontent.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/main/data/"</span>
 <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">86</span><span class="p">)</span>
 </pre></div>
@@ -7853,9 +7862,9 @@ a.anchor-link {
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <div style="background:#ecfeff;border-left:5px solid #0891b2;border-radius:10px;padding:16px 20px;font-family:Inter,sans-serif">
-<span style="font-size:13px;font-weight:800;color:#0e7490;letter-spacing:1px">STEP 1 · THE QUESTION &amp; THE DATA</span>
-<div style="font-size:21px;font-weight:800;color:#1a2138;margin-top:4px">Does the new LDL-lowering drug actually work?</div>
-<div style="color:#4a5578;margin-top:6px">A randomized controlled trial gave patients either the treatment or a placebo, and measured LDL cholesterol at baseline and again at 12 weeks. One trial, three questions: did LDL fall on treatment? did it fall MORE than placebo? and were more patients 'responders'?</div>
+<span style="font-size:13px;font-weight:800;color:#0e7490;letter-spacing:1px">STEP 1 · EXPLORE THE DATA</span>
+<div style="font-size:21px;font-weight:800;color:#1a2138;margin-top:4px">Summaries, and a baseline-balance check</div>
+<div style="color:#4a5578;margin-top:6px">The first thing a trial statistician checks is whether randomization balanced the arms at BASELINE: if the treatment group started healthier (lower LDL or younger), any 'effect' could be that head start. We summarize the data and compare the arms before treatment.</div>
 </div>
 </div>
 </div>
@@ -7870,9 +7879,9 @@ a.anchor-link {
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="k">try</span><span class="p">:</span>    <span class="n">d</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="s2">"../../data/ch86_clinical_trial.xlsx"</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="s2">"Patients"</span><span class="p">)</span>
 <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span> <span class="n">d</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">BASE</span><span class="o">+</span><span class="s2">"ch86_clinical_trial.xlsx"</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="s2">"Patients"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"loaded:"</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-<span class="n">d</span><span class="p">[</span><span class="s2">"change"</span><span class="p">]</span><span class="o">=</span><span class="n">d</span><span class="o">.</span><span class="n">ldl_before</span><span class="o">-</span><span class="n">d</span><span class="o">.</span><span class="n">ldl_after</span>   <span class="c1"># positive = LDL dropped</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"arm"</span><span class="p">)[[</span><span class="s2">"ldl_before"</span><span class="p">,</span><span class="s2">"ldl_after"</span><span class="p">,</span><span class="s2">"change"</span><span class="p">,</span><span class="s2">"responder"</span><span class="p">]]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<span class="n">d</span><span class="p">[</span><span class="s2">"change"</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">ldl_before</span> <span class="o">-</span> <span class="n">d</span><span class="o">.</span><span class="n">ldl_after</span>   <span class="c1"># positive = LDL dropped</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"shape:"</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="s2">"| missing:"</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"arm"</span><span class="p">)[[</span><span class="s2">"age"</span><span class="p">,</span><span class="s2">"ldl_before"</span><span class="p">,</span><span class="s2">"ldl_after"</span><span class="p">,</span><span class="s2">"change"</span><span class="p">,</span><span class="s2">"responder"</span><span class="p">]]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -7885,24 +7894,46 @@ a.anchor-link {
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>loaded: (170, 6)
-           ldl_before  ldl_after  change  responder
-arm                                                
-placebo         170.1      159.8    10.3        0.2
-treatment       170.9      142.2    28.6        0.5
+<pre>shape: (170, 7) | missing: 0
+            age  ldl_before  ldl_after  change  responder
+arm                                                      
+placebo    58.4       170.1      159.8    10.3        0.2
+treatment  57.1       170.9      142.2    28.6        0.5
 </pre>
 </div>
 </div>
 </div>
 </div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ch86-cell-06">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=ch86-cell-06">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>The treatment arm appears to drop more (a bigger average <code>change</code>) and have more responders, but a trial proves nothing until each claim is tested against the right null. The randomized design lets us attribute differences to the drug.</p>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># baseline balance: arms should match on age and starting LDL (a quick t-test on baselines)</span>
+<span class="n">tr0</span><span class="o">=</span><span class="n">d</span><span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">arm</span><span class="o">==</span><span class="s2">"treatment"</span><span class="p">];</span> <span class="n">pl0</span><span class="o">=</span><span class="n">d</span><span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">arm</span><span class="o">==</span><span class="s2">"placebo"</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"baseline age:  treat </span><span class="si">{</span><span class="n">tr0</span><span class="o">.</span><span class="n">age</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> vs placebo </span><span class="si">{</span><span class="n">pl0</span><span class="o">.</span><span class="n">age</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">  (t-test p=</span><span class="si">{</span><span class="n">stats</span><span class="o">.</span><span class="n">ttest_ind</span><span class="p">(</span><span class="n">tr0</span><span class="o">.</span><span class="n">age</span><span class="p">,</span><span class="n">pl0</span><span class="o">.</span><span class="n">age</span><span class="p">)</span><span class="o">.</span><span class="n">pvalue</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"baseline LDL:  treat </span><span class="si">{</span><span class="n">tr0</span><span class="o">.</span><span class="n">ldl_before</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> vs placebo </span><span class="si">{</span><span class="n">pl0</span><span class="o">.</span><span class="n">ldl_before</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">  (t-test p=</span><span class="si">{</span><span class="n">stats</span><span class="o">.</span><span class="n">ttest_ind</span><span class="p">(</span><span class="n">tr0</span><span class="o">.</span><span class="n">ldl_before</span><span class="p">,</span><span class="n">pl0</span><span class="o">.</span><span class="n">ldl_before</span><span class="p">)</span><span class="o">.</span><span class="n">pvalue</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"-&gt; baselines are balanced (large p-values), so randomization worked; differences at week 12 are about the drug"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>baseline age:  treat 57.1 vs placebo 58.4  (t-test p=0.43)
+baseline LDL:  treat 170.9 vs placebo 170.1  (t-test p=0.81)
+-&gt; baselines are balanced (large p-values), so randomization worked; differences at week 12 are about the drug
+</pre>
+</div>
 </div>
 </div>
 </div>
@@ -7913,28 +7944,36 @@ treatment       170.9      142.2    28.6        0.5
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p>No missing data, and the arms start out the same on age and baseline LDL (balance confirmed), so we can trust that week-12 differences reflect the treatment, not a head start. Now the three questions.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ch86-cell-08">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <div style="background:#ecfeff;border-left:5px solid #0891b2;border-radius:10px;padding:16px 20px;font-family:Inter,sans-serif">
 <span style="font-size:13px;font-weight:800;color:#0e7490;letter-spacing:1px">STEP 2 · THREE QUESTIONS, THREE TESTS</span>
 <div style="font-size:21px;font-weight:800;color:#1a2138;margin-top:4px">Match each question to its design</div>
-<div style="color:#4a5578;margin-top:6px">Q1 is PAIRED (same patient, before vs after) -&gt; paired t-test. Q2 compares the CHANGE between two independent arms -&gt; two-sample (Welch) t-test. Q3 compares a RESPONDER RATE (yes/no) between arms -&gt; two-proportion z-test. The trial answers all three.</div>
+<div style="color:#4a5578;margin-top:6px">Q1 is PAIRED (same patient, before vs after) -&gt; paired t-test. Q2 compares the CHANGE between two independent arms -&gt; two-sample (Welch) t-test. Q3 compares a RESPONDER RATE (yes/no) -&gt; two-proportion z-test.</div>
 </div>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=ch86-cell-08">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=ch86-cell-09">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">"Q1 within treatment, before vs after  -&gt; PAIRED t-test"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"   H0: mean LDL unchanged       H1: LDL decreased"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"Q2 LDL change, treatment vs placebo    -&gt; TWO-SAMPLE (Welch) t-test"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"   H0: equal change             H1: treatment change is larger"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"Q3 responder rate, treatment vs placebo-&gt; TWO-PROPORTION z-test"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"   H0: pT = pP                  H1: pT &gt; pP"</span><span class="p">)</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">"Q1 within treatment, before vs after  -&gt; PAIRED t-test     | H0: no change   H1: LDL decreased"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Q2 LDL change, treatment vs placebo    -&gt; TWO-SAMPLE Welch t | H0: equal change H1: treatment larger"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Q3 responder rate, treatment vs placebo-&gt; TWO-PROPORTION z   | H0: pT = pP      H1: pT &gt; pP"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -7947,25 +7986,11 @@ treatment       170.9      142.2    28.6        0.5
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Q1 within treatment, before vs after  -&gt; PAIRED t-test
-   H0: mean LDL unchanged       H1: LDL decreased
-Q2 LDL change, treatment vs placebo    -&gt; TWO-SAMPLE (Welch) t-test
-   H0: equal change             H1: treatment change is larger
-Q3 responder rate, treatment vs placebo-&gt; TWO-PROPORTION z-test
-   H0: pT = pP                  H1: pT &gt; pP
+<pre>Q1 within treatment, before vs after  -&gt; PAIRED t-test     | H0: no change   H1: LDL decreased
+Q2 LDL change, treatment vs placebo    -&gt; TWO-SAMPLE Welch t | H0: equal change H1: treatment larger
+Q3 responder rate, treatment vs placebo-&gt; TWO-PROPORTION z   | H0: pT = pP      H1: pT &gt; pP
 </pre>
 </div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ch86-cell-09">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>Notice all three use the same patients but different structure. Treating the paired before/after as two independent samples (a common error) would waste the design and weaken Q1.</p>
 </div>
 </div>
 </div>
@@ -7978,8 +8003,8 @@ Q3 responder rate, treatment vs placebo-&gt; TWO-PROPORTION z-test
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <div style="background:#ecfeff;border-left:5px solid #0891b2;border-radius:10px;padding:16px 20px;font-family:Inter,sans-serif">
 <span style="font-size:13px;font-weight:800;color:#0e7490;letter-spacing:1px">STEP 3 · RUN THE ANALYSIS</span>
-<div style="font-size:21px;font-weight:800;color:#1a2138;margin-top:4px">All three tests, with effect sizes and intervals</div>
-<div style="color:#4a5578;margin-top:6px">We run each test, report an effect size and a confidence interval, and visualize the LDL change by arm and the responder rates.</div>
+<div style="font-size:21px;font-weight:800;color:#1a2138;margin-top:4px">statsmodels for the intervals and the proportion test</div>
+<div style="color:#4a5578;margin-top:6px">scipy gives the paired and two-sample t one-liners; statsmodels supplies the matching confidence intervals (CompareMeans, DescrStatsW) and the whole two-proportion test + interval, so we never hand-roll a standard error.</div>
 </div>
 </div>
 </div>
@@ -7989,19 +8014,20 @@ Q3 responder rate, treatment vs placebo-&gt; TWO-PROPORTION z-test
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">tr</span><span class="o">=</span><span class="n">d</span><span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">arm</span><span class="o">==</span><span class="s2">"treatment"</span><span class="p">];</span> <span class="n">pl</span><span class="o">=</span><span class="n">d</span><span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">arm</span><span class="o">==</span><span class="s2">"placebo"</span><span class="p">]</span>
-<span class="c1"># Q1 paired</span>
+<span class="c1"># Q1 paired t-test, with the CI on the mean drop from statsmodels</span>
 <span class="n">q1</span><span class="o">=</span><span class="n">stats</span><span class="o">.</span><span class="n">ttest_rel</span><span class="p">(</span><span class="n">tr</span><span class="o">.</span><span class="n">ldl_after</span><span class="p">,</span> <span class="n">tr</span><span class="o">.</span><span class="n">ldl_before</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Q1 PAIRED (treatment): mean drop = </span><span class="si">{</span><span class="n">tr</span><span class="o">.</span><span class="n">change</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> mg/dL, t=</span><span class="si">{</span><span class="n">q1</span><span class="o">.</span><span class="n">statistic</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, p=</span><span class="si">{</span><span class="n">q1</span><span class="o">.</span><span class="n">pvalue</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="c1"># Q2 two-sample on the change</span>
+<span class="n">ci1</span><span class="o">=</span><span class="n">DescrStatsW</span><span class="p">(</span><span class="n">tr</span><span class="o">.</span><span class="n">change</span><span class="o">.</span><span class="n">values</span><span class="p">)</span><span class="o">.</span><span class="n">tconfint_mean</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Q1 PAIRED drop = </span><span class="si">{</span><span class="n">tr</span><span class="o">.</span><span class="n">change</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> mg/dL, t=</span><span class="si">{</span><span class="n">q1</span><span class="o">.</span><span class="n">statistic</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, p=</span><span class="si">{</span><span class="n">q1</span><span class="o">.</span><span class="n">pvalue</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">, 95% CI </span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">),</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">v</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">ci1</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="c1"># Q2 two-sample Welch t, with CI for the difference from statsmodels CompareMeans</span>
+<span class="n">cm</span><span class="o">=</span><span class="n">CompareMeans</span><span class="p">(</span><span class="n">DescrStatsW</span><span class="p">(</span><span class="n">tr</span><span class="o">.</span><span class="n">change</span><span class="o">.</span><span class="n">values</span><span class="p">),</span> <span class="n">DescrStatsW</span><span class="p">(</span><span class="n">pl</span><span class="o">.</span><span class="n">change</span><span class="o">.</span><span class="n">values</span><span class="p">))</span>
 <span class="n">q2</span><span class="o">=</span><span class="n">stats</span><span class="o">.</span><span class="n">ttest_ind</span><span class="p">(</span><span class="n">tr</span><span class="o">.</span><span class="n">change</span><span class="p">,</span> <span class="n">pl</span><span class="o">.</span><span class="n">change</span><span class="p">,</span> <span class="n">equal_var</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="n">dlo</span><span class="p">,</span><span class="n">dhi</span><span class="o">=</span><span class="n">stats</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">interval</span><span class="p">(</span><span class="mf">0.95</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">tr</span><span class="p">)</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="n">pl</span><span class="p">)</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="n">tr</span><span class="o">.</span><span class="n">change</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">-</span><span class="n">pl</span><span class="o">.</span><span class="n">change</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span>
-   <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">tr</span><span class="o">.</span><span class="n">change</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">tr</span><span class="p">)</span><span class="o">+</span><span class="n">pl</span><span class="o">.</span><span class="n">change</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">pl</span><span class="p">)))</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Q2 TWO-ARM: treat drop </span><span class="si">{</span><span class="n">tr</span><span class="o">.</span><span class="n">change</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> vs placebo </span><span class="si">{</span><span class="n">pl</span><span class="o">.</span><span class="n">change</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">; extra = </span><span class="si">{</span><span class="n">tr</span><span class="o">.</span><span class="n">change</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">-</span><span class="n">pl</span><span class="o">.</span><span class="n">change</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> mg/dL"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"   Welch t=</span><span class="si">{</span><span class="n">q2</span><span class="o">.</span><span class="n">statistic</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, p=</span><span class="si">{</span><span class="n">q2</span><span class="o">.</span><span class="n">pvalue</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">, 95% CI for extra drop [</span><span class="si">{</span><span class="n">dlo</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">dhi</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">]"</span><span class="p">)</span>
+<span class="n">ci2</span><span class="o">=</span><span class="n">cm</span><span class="o">.</span><span class="n">tconfint_diff</span><span class="p">(</span><span class="n">usevar</span><span class="o">=</span><span class="s2">"unequal"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Q2 extra drop = </span><span class="si">{</span><span class="n">tr</span><span class="o">.</span><span class="n">change</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">-</span><span class="n">pl</span><span class="o">.</span><span class="n">change</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> mg/dL (treat </span><span class="si">{</span><span class="n">tr</span><span class="o">.</span><span class="n">change</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> vs placebo </span><span class="si">{</span><span class="n">pl</span><span class="o">.</span><span class="n">change</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"   Welch t=</span><span class="si">{</span><span class="n">q2</span><span class="o">.</span><span class="n">statistic</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, p=</span><span class="si">{</span><span class="n">q2</span><span class="o">.</span><span class="n">pvalue</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">, 95% CI for extra drop </span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">),</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">v</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">ci2</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -8014,9 +8040,9 @@ Q3 responder rate, treatment vs placebo-&gt; TWO-PROPORTION z-test
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Q1 PAIRED (treatment): mean drop = 28.6 mg/dL, t=-19.65, p=9.42e-34
-Q2 TWO-ARM: treat drop 28.6 vs placebo 10.3; extra = 18.3 mg/dL
-   Welch t=8.45, p=1.45e-14, 95% CI for extra drop [14.0, 22.6]
+<pre>Q1 PAIRED drop = 28.6 mg/dL, t=-19.65, p=9.42e-34, 95% CI (25.7, 31.5)
+Q2 extra drop = 18.3 mg/dL (treat 28.6 vs placebo 10.3)
+   Welch t=8.45, p=1.45e-14, 95% CI for extra drop (14.0, 22.6)
 </pre>
 </div>
 </div>
@@ -8027,22 +8053,20 @@ Q2 TWO-ARM: treat drop 28.6 vs placebo 10.3; extra = 18.3 mg/dL
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Q3 two-proportion responder rate</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Q3 responder rate: statsmodels two-proportion test + interval</span>
 <span class="n">sT</span><span class="p">,</span><span class="n">nT</span><span class="o">=</span><span class="n">tr</span><span class="o">.</span><span class="n">responder</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span><span class="nb">len</span><span class="p">(</span><span class="n">tr</span><span class="p">);</span> <span class="n">sP</span><span class="p">,</span><span class="n">nP</span><span class="o">=</span><span class="n">pl</span><span class="o">.</span><span class="n">responder</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span><span class="nb">len</span><span class="p">(</span><span class="n">pl</span><span class="p">)</span>
-<span class="n">pT</span><span class="p">,</span><span class="n">pP</span><span class="o">=</span><span class="n">sT</span><span class="o">/</span><span class="n">nT</span><span class="p">,</span><span class="n">sP</span><span class="o">/</span><span class="n">nP</span><span class="p">;</span> <span class="n">pool</span><span class="o">=</span><span class="p">(</span><span class="n">sT</span><span class="o">+</span><span class="n">sP</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">nT</span><span class="o">+</span><span class="n">nP</span><span class="p">)</span>
-<span class="n">z</span><span class="o">=</span><span class="p">(</span><span class="n">pT</span><span class="o">-</span><span class="n">pP</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">pool</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">pool</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">nT</span><span class="o">+</span><span class="mi">1</span><span class="o">/</span><span class="n">nP</span><span class="p">));</span> <span class="n">pz</span><span class="o">=</span><span class="mi">1</span><span class="o">-</span><span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
-<span class="n">se</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">pT</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">pT</span><span class="p">)</span><span class="o">/</span><span class="n">nT</span><span class="o">+</span><span class="n">pP</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">pP</span><span class="p">)</span><span class="o">/</span><span class="n">nP</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Q3 RESPONDERS: treatment </span><span class="si">{</span><span class="n">pT</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2"> vs placebo </span><span class="si">{</span><span class="n">pP</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">; z=</span><span class="si">{</span><span class="n">z</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, one-sided p=</span><span class="si">{</span><span class="n">pz</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"   95% CI for the gap: [</span><span class="si">{</span><span class="p">(</span><span class="n">pT</span><span class="o">-</span><span class="n">pP</span><span class="o">-</span><span class="mf">1.96</span><span class="o">*</span><span class="n">se</span><span class="p">)</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">+.1f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="p">(</span><span class="n">pT</span><span class="o">-</span><span class="n">pP</span><span class="o">+</span><span class="mf">1.96</span><span class="o">*</span><span class="n">se</span><span class="p">)</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">+.1f</span><span class="si">}</span><span class="s2">] pts"</span><span class="p">)</span>
+<span class="n">z</span><span class="p">,</span><span class="n">p3</span><span class="o">=</span><span class="n">proportions_ztest</span><span class="p">([</span><span class="n">sT</span><span class="p">,</span><span class="n">sP</span><span class="p">],[</span><span class="n">nT</span><span class="p">,</span><span class="n">nP</span><span class="p">],</span><span class="n">alternative</span><span class="o">=</span><span class="s2">"larger"</span><span class="p">)</span>
+<span class="n">lo</span><span class="p">,</span><span class="n">hi</span><span class="o">=</span><span class="n">confint_proportions_2indep</span><span class="p">(</span><span class="n">sT</span><span class="p">,</span><span class="n">nT</span><span class="p">,</span><span class="n">sP</span><span class="p">,</span><span class="n">nP</span><span class="p">,</span><span class="n">method</span><span class="o">=</span><span class="s2">"wald"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Q3 responders: treatment </span><span class="si">{</span><span class="n">sT</span><span class="o">/</span><span class="n">nT</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2"> vs placebo </span><span class="si">{</span><span class="n">sP</span><span class="o">/</span><span class="n">nP</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">; z=</span><span class="si">{</span><span class="n">z</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, one-sided p=</span><span class="si">{</span><span class="n">p3</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"   95% CI for the gap: [</span><span class="si">{</span><span class="n">lo</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">+.1f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">hi</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">+.1f</span><span class="si">}</span><span class="s2">] pts"</span><span class="p">)</span>
 <span class="n">fig</span><span class="p">,</span><span class="n">ax</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span><span class="mf">3.5</span><span class="p">))</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">boxplot</span><span class="p">([</span><span class="n">pl</span><span class="o">.</span><span class="n">change</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">tr</span><span class="o">.</span><span class="n">change</span><span class="o">.</span><span class="n">values</span><span class="p">],</span> <span class="n">tick_labels</span><span class="o">=</span><span class="p">[</span><span class="s2">"placebo"</span><span class="p">,</span><span class="s2">"treatment"</span><span class="p">],</span> <span class="n">patch_artist</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-   <span class="n">boxprops</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">facecolor</span><span class="o">=</span><span class="n">LIGHT</span><span class="p">,</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">))</span>
+<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">boxplot</span><span class="p">([</span><span class="n">pl</span><span class="o">.</span><span class="n">change</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">tr</span><span class="o">.</span><span class="n">change</span><span class="o">.</span><span class="n">values</span><span class="p">],</span> <span class="n">tick_labels</span><span class="o">=</span><span class="p">[</span><span class="s2">"placebo"</span><span class="p">,</span><span class="s2">"treatment"</span><span class="p">],</span> <span class="n">patch_artist</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">boxprops</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">facecolor</span><span class="o">=</span><span class="n">LIGHT</span><span class="p">,</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">))</span>
 <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">color</span><span class="o">=</span><span class="n">INK</span><span class="p">,</span><span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">ls</span><span class="o">=</span><span class="s2">":"</span><span class="p">);</span> <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"LDL drop (mg/dL)"</span><span class="p">);</span> <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"LDL reduction by arm"</span><span class="p">)</span>
-<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">bar</span><span class="p">([</span><span class="s2">"placebo"</span><span class="p">,</span><span class="s2">"treatment"</span><span class="p">],[</span><span class="n">pP</span><span class="p">,</span><span class="n">pT</span><span class="p">],</span><span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="n">LIGHT</span><span class="p">,</span><span class="n">CY</span><span class="p">],</span><span class="n">width</span><span class="o">=</span><span class="mf">0.55</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">([</span><span class="n">pP</span><span class="p">,</span><span class="n">pT</span><span class="p">]):</span> <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">v</span><span class="o">+</span><span class="mf">0.02</span><span class="p">,</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">v</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span><span class="n">ha</span><span class="o">=</span><span class="s2">"center"</span><span class="p">,</span><span class="n">fontweight</span><span class="o">=</span><span class="s2">"bold"</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">bar</span><span class="p">([</span><span class="s2">"placebo"</span><span class="p">,</span><span class="s2">"treatment"</span><span class="p">],[</span><span class="n">sP</span><span class="o">/</span><span class="n">nP</span><span class="p">,</span><span class="n">sT</span><span class="o">/</span><span class="n">nT</span><span class="p">],</span><span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="n">LIGHT</span><span class="p">,</span><span class="n">CY</span><span class="p">],</span><span class="n">width</span><span class="o">=</span><span class="mf">0.55</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">([</span><span class="n">sP</span><span class="o">/</span><span class="n">nP</span><span class="p">,</span><span class="n">sT</span><span class="o">/</span><span class="n">nT</span><span class="p">]):</span> <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">v</span><span class="o">+</span><span class="mf">0.02</span><span class="p">,</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">v</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span><span class="n">ha</span><span class="o">=</span><span class="s2">"center"</span><span class="p">,</span><span class="n">fontweight</span><span class="o">=</span><span class="s2">"bold"</span><span class="p">)</span>
 <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mf">0.75</span><span class="p">);</span> <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"responder rate"</span><span class="p">);</span> <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"Responders (LDL down &gt;= 15%)"</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">();</span> <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
@@ -8057,7 +8081,7 @@ Q2 TWO-ARM: treat drop 28.6 vs placebo 10.3; extra = 18.3 mg/dL
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Q3 RESPONDERS: treatment 52.3% vs placebo 17.1%; z=4.80, one-sided p=7.98e-07
+<pre>Q3 responders: treatment 52.3% vs placebo 17.1%; z=4.80, one-sided p=7.98e-07
    95% CI for the gap: [+22.0, +48.4] pts
 </pre>
 </div>
@@ -8077,7 +8101,7 @@ Q2 TWO-ARM: treat drop 28.6 vs placebo 10.3; extra = 18.3 mg/dL
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>All three answers point the same way. LDL fell about <strong>29 mg/dL</strong> on treatment (paired t, p tiny). That drop is about <strong>18 mg/dL larger</strong> than placebo's (two-sample p ≈ 10⁻¹⁴), so it is the drug, not regression-to-the-mean or trial effects. And the responder rate is <strong>52%</strong> on treatment versus <strong>17%</strong> on placebo (z ≈ 4.8). The placebo arm's own ~10 mg/dL drop is exactly why a controlled comparison matters: without it, the full 29 mg/dL would look like the drug's effect.</p>
+<p>All three agree. LDL fell about <strong>29 mg/dL</strong> on treatment (paired, p tiny). That is about <strong>18 mg/dL more</strong> than placebo (95% CI roughly 14 to 23), so it is the drug, not regression to the mean. And the responder rate is <strong>52% vs 17%</strong> (z ≈ 4.8). The placebo arm's own ~10 mg/dL drop is exactly why a controlled comparison matters.</p>
 </div>
 </div>
 </div>
@@ -8091,7 +8115,7 @@ Q2 TWO-ARM: treat drop 28.6 vs placebo 10.3; extra = 18.3 mg/dL
 <div style="background:#ffffff;border:1px solid #cffafe;border-left:5px solid #0e7490;border-radius:12px;padding:18px 22px;font-family:Inter,sans-serif">
 <div style="font-size:12px;font-weight:800;color:#0e7490;letter-spacing:1px">📋 STATISTICIAN’S REPORT</div>
 <div style="font-size:18px;font-weight:800;color:#1a2138;margin:4px 0 8px">Conclusion: the treatment works, on all three measures</div>
-<div style="color:#3f4a63;line-height:1.75"><strong>What we found.</strong> Patients on the <strong>treatment</strong> lowered their LDL cholesterol by about <strong>29 mg/dL</strong> over 12 weeks. Crucially, that is roughly <strong>18 mg/dL more</strong> than patients on placebo dropped on their own, the part we can credit to the drug. And <strong>52%</strong> of treated patients were 'responders' (a 15%+ LDL reduction) versus only <strong>17%</strong> on placebo. <br/><br/><strong>How confident are we?</strong> Extremely. Every comparison is far beyond the usual threshold for chance (p-values from one-in-a-million to far smaller). The 95% range for the drug's extra benefit is about <strong>14 to 22 mg/dL</strong>, a clinically meaningful reduction even at the low end. <br/><br/><strong>Why the placebo arm mattered.</strong> Placebo patients also improved by ~10 mg/dL (diet changes, measurement timing, the act of being in a trial). Comparing only before-vs-after on treatment would have over-credited the drug by that amount, the controlled, randomized comparison is what isolates the true effect. <br/><br/><strong>Caveats.</strong> This is a 12-week surrogate marker (LDL), not long-term cardiovascular outcomes; safety, durability, and side effects are separate questions a full trial program must answer.</div>
+<div style="color:#3f4a63;line-height:1.75"><strong>What we found.</strong> Patients on the treatment lowered their LDL by about <strong>29 mg/dL</strong> over 12 weeks. The part we can credit to the drug, beyond what placebo patients dropped on their own, is about <strong>18 mg/dL</strong>. And <strong>52%</strong> of treated patients were responders (a 15%+ reduction) versus only <strong>17%</strong> on placebo. <br/><br/><strong>How confident are we?</strong> Extremely; every comparison is far beyond the threshold for chance, and we confirmed the arms started balanced. The 95% range for the drug's extra benefit is about <strong>14 to 22 mg/dL</strong>, meaningful even at the low end. <br/><br/><strong>Why the placebo arm mattered.</strong> Placebo patients also improved by ~10 mg/dL; comparing only before-versus-after on treatment would have over-credited the drug by that amount. The randomized, controlled comparison isolates the true effect. <br/><br/><strong>Caveats.</strong> This is a 12-week surrogate marker (LDL), not long-term cardiovascular outcomes; safety and durability are separate questions.</div>
 </div>
 </div>
 </div>
