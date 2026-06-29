@@ -308,6 +308,18 @@ MAP = {
         ("../../ch82.html#notebook", "Back to the book", "Chapter 82 · A/B Testing &amp; Online Experiments"),
     "ch82_challenges_solutions.html":
         ("../../ch82.html#challenges", "Back to the book", "Chapter 82 · A/B Testing &amp; Online Experiments"),
+    "ch83_review_choosing.html":
+        ("../../ch83.html#notebook", "Back to the book", "Chapter 83 · Review &amp; Choosing the Right Test"),
+    "ch84_web_abtest.html":
+        ("../../ch84.html#notebook", "Back to the book", "Chapter 84 · Case Study: A Web A/B Test"),
+    "ch85_marketing_channels.html":
+        ("../../ch85.html#notebook", "Back to the book", "Chapter 85 · Case Study: Comparing Marketing Channels"),
+    "ch86_clinical_trial.html":
+        ("../../ch86.html#notebook", "Back to the book", "Chapter 86 · Case Study: A Clinical Trial"),
+    "ch87_satisfaction_survey.html":
+        ("../../ch87.html#notebook", "Back to the book", "Chapter 87 · Case Study: A Customer Satisfaction Survey"),
+    "ch88_manufacturing_quality.html":
+        ("../../ch88.html#notebook", "Back to the book", "Chapter 88 · Case Study: Manufacturing Quality"),
 }
 
 def card(href, kicker, title):

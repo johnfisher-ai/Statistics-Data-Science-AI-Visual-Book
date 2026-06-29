@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 84 · Case Study: A Web A/B Test — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#ecfeff; border:1px solid #a5f3fc; border-left:4px solid #0891b2; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#0e7490; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+    .report-card { background:#fff; border:1px solid #cffafe; border-left:5px solid #0e7490; border-radius:14px;
+                   padding:1.3rem 1.5rem; margin:1.3rem 0; box-shadow:0 6px 18px rgba(8,51,68,0.06); }
+    .report-card .rep-tag { font-size:0.7rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#0e7490; }
+    .report-card h3 { margin:0.25rem 0 0.7rem; font-size:1.12rem; color:var(--ink); }
+    .report-card p { color:var(--ink-soft); line-height:1.75; margin:0.55rem 0; }
+    .hyp-box { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1rem 0; }
+    .hyp { flex:1; min-width:240px; border:1px solid var(--line); border-radius:11px; padding:0.8rem 1rem; }
+    .hyp.h0 { border-left:4px solid #64748b; } .hyp.h1 { border-left:4px solid #0891b2; }
+    .hyp .hk { font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-faint); }
+    .hyp .hv { font-weight:600; color:var(--ink); margin-top:2px; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch84_web_abtest.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XIII · Inference Case Studies</span><span class="sep">/</span>
+      <span>Chapter 84</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XIII · Case Study</span> A redesign, an experiment, a decision</div>
+    <h1>Case Study: A <span class="accent">Web A/B Test</span></h1>
+    <p class="dek">A team redesigned a landing page and ran a randomized experiment. One clean question: did it convert
+       better? We walk the whole analysis, the hypotheses, the choice of test, the assumption checks, the numbers, and a
+       plain-English recommendation, the way a statistician would brief a product manager.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~14 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 84</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">This is the first of five case studies that put the whole inference toolkit to work. Each takes one
+       real dataset from a fuzzy business question to a confident recommendation. We start where most data teams spend
+       their days: an <span class="term">A/B test</span>.</p>
+
+    <div class="def-card">
+      <div class="sigma">A|B</div>
+      <div class="def-body">
+        <span class="def-kw">The scenario.</span> Visitors were randomly shown either the current landing page (control,
+        A) or a redesign (variant, B). For each session we recorded whether it
+        <span class="def-kw">converted</span>. The business wants to know: should we ship the redesign?
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🎯</div>
+      <div><div class="ctitle">The question</div>
+        <p>Did the redesign (B) convert at a higher rate than the control (A), by more than random chance can explain?
+           And if so, how big is the gain, and is it worth shipping?</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1 ===== -->
+  <section id="data">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Data &amp; The Question</h2></div>
+    <p>The export has one row per session: which <code>variant</code> the visitor saw and whether they
+       <code>converted</code>. Because assignment was random, the two groups are comparable on everything else, so any
+       real difference in conversion is caused by the page.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · ch84_web_abtest.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per session with <code>variant</code> (A/B), <code>converted</code> (0/1),
+        <code>device</code>, and <code>seconds_on_page</code>.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/ch84_web_abtest.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 3,600 sessions</small></a>
+      </div>
+    </div>
+
+    <p>The raw rates: about <strong>1,830</strong> sessions saw A and converted at <strong>9.9%</strong>; about
+       <strong>1,770</strong> saw B and converted at <strong>13.4%</strong>. B is ahead, but a raw gap is a starting
+       point, not a verdict, random noise alone produces some difference even when nothing changed. That is exactly what a
+       hypothesis test settles.</p>
+  </section>
+
+  <!-- ===== Section 2 ===== -->
+  <section id="choose">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Choosing the Test &amp; the Hypotheses</h2></div>
+    <p>Run the decision map. The outcome, <em>converted</em>, is a yes/no <span class="hl">proportion</span>. There are
+       <span class="hl">two independent groups</span> (A and B). That points squarely at the
+       <span class="term">two-proportion z-test</span>. Because we specifically expect B to be <em>better</em>, the
+       alternative is one-sided.</p>
+
+    <div class="hyp-box">
+      <div class="hyp h0"><div class="hk">H&#8320; · Null</div><div class="hv">p&#8330; = p&#8320; &nbsp;&mdash;&nbsp; the redesign does not change the conversion rate</div></div>
+      <div class="hyp h1"><div class="hk">H&#8321; · Alternative</div><div class="hv">p&#8330; &gt; p&#8320; &nbsp;&mdash;&nbsp; the redesign converts better (one-sided)</div></div>
+    </div>
+
+    <p><strong>Assumption checks.</strong> The z-test for proportions needs at least ~10 conversions and ~10
+       non-conversions per arm; here we have hundreds of each, so the normal approximation is rock solid. A quick power
+       sanity-check confirms that with ~1,800 sessions per arm and a ~10% baseline, a lift of a few points is easily
+       detectable, so even a null result would have meant something.</p>
+  </section>
+
+  <!-- ===== Section 3 ===== -->
+  <section id="analysis">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The Analysis &amp; Results</h2></div>
+    <p>We compute the z statistic with the pooled standard error, its p-value, and a 95% confidence interval for the lift
+       (the unpooled SE). The interval is what makes the result actionable.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 170" width="100%" font-family="Inter, sans-serif" aria-label="Conversion rate bars for A and B with confidence whiskers; B sits clearly above A">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Conversion rate by variant (95% CI)</text>
+        <line x1="90" y1="140" x2="600" y2="140" stroke="#94a3b8" stroke-width="1"/>
+        <rect x="190" y="86" width="90" height="54" fill="#67e8f9"/>
+        <line x1="235" y1="74" x2="235" y2="98" stroke="#1a2138" stroke-width="1.5"/>
+        <text x="235" y="66" text-anchor="middle" font-size="10" fill="#0e7490" font-weight="800">9.9%</text>
+        <text x="235" y="156" text-anchor="middle" font-size="9" fill="#475569">A (control)</text>
+        <rect x="410" y="68" width="90" height="72" fill="#0891b2"/>
+        <line x1="455" y1="56" x2="455" y2="80" stroke="#1a2138" stroke-width="1.5"/>
+        <text x="455" y="48" text-anchor="middle" font-size="10" fill="#0e7490" font-weight="800">13.4%</text>
+        <text x="455" y="156" text-anchor="middle" font-size="9" fill="#475569">B (redesign)</text>
+        <text x="345" y="104" text-anchor="middle" font-size="9" fill="#0e7490" font-weight="700">+3.5 pts</text>
+      </svg>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Quantity</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Conversion A / B</td><td>9.9% &nbsp;/&nbsp; 13.4%</td></tr>
+          <tr><td class="nm">Absolute lift (B &#8722; A)</td><td>+3.5 percentage points</td></tr>
+          <tr><td class="nm">Relative lift</td><td>+35%</td></tr>
+          <tr><td class="nm">Test statistic</td><td>z = 3.28</td></tr>
+          <tr><td class="nm">p-value (one-sided)</td><td>&#8776; 0.0005</td></tr>
+          <tr><td class="nm">95% CI for the lift</td><td>[+1.4, +5.6] pts &#8212; excludes 0</td></tr>
+          <tr><td class="nm">Decision</td><td><strong>reject H&#8320;</strong>: B converts significantly better</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The lift is about <strong>+3.5 points</strong> (a ~35% relative gain), the one-sided p-value is around
+       <strong>0.0005</strong>, and the 95% interval for the lift, roughly +1.4 to +5.6 points, lies entirely above zero.
+       Even the cautious end of that interval is a meaningful improvement.</p>
+  </section>
+
+  <!-- ===== Section 4: Report ===== -->
+  <section id="report">
+    <div class="section-eyebrow"><div class="num">4</div><h2>The Statistician's Report</h2></div>
+    <p>Here is how you would write this up for a product manager who does not care about z-scores, only about the
+       decision.</p>
+
+    <div class="report-card">
+      <div class="rep-tag">📋 Statistician's report &#183; to the product team</div>
+      <h3>Recommendation: ship the redesign</h3>
+      <p><strong>What we found.</strong> The redesigned page converted at <strong>13.4%</strong> versus
+        <strong>9.9%</strong> for the current page, a gain of about <strong>3.5 percentage points</strong>, or roughly a
+        <strong>35% relative increase</strong> in conversions.</p>
+      <p><strong>How confident are we?</strong> Very. If the redesign truly made no difference, a gap this large would
+        appear by chance only about <strong>1 in 2,000</strong> times (p &#8776; 0.0005). Our best estimate of the true
+        gain is a range of <strong>+1.4 to +5.6 points</strong> (95% confidence), so even the pessimistic end is a clear
+        win.</p>
+      <p><strong>What to do.</strong> Roll the redesign out to all traffic. Because visitors were randomly assigned, the
+        improvement is caused by the page itself, not by who happened to see it.</p>
+      <p><strong>One caveat.</strong> This measures conversion during the test window only. After launch, keep an eye on
+        revenue per order and any longer-term behavior to confirm the gain holds and is not just pulling conversions
+        forward.</p>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">In the field</div>
+        <p>This is exactly what experimentation platforms (at Netflix, Booking, Microsoft, and countless startups)
+           automate at scale, with pre-registered sample sizes, guardrail metrics, and sometimes sequential or bandit
+           methods. The statistics underneath are the two-proportion test and the lift interval you just ran.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Work the whole A/B test in Python</h3>
+          <p>The companion notebook loads <code>ch84_web_abtest.xlsx</code>, states the hypotheses, checks the
+             success-failure condition, runs the two-proportion z-test, builds the 95% lift interval, and plots the two
+             rates with confidence whiskers, ending in the recommendation.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch84_web_abtest.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch84_web_abtest.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch84_web_abtest.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, <code>scipy</code>,
+      <code>matplotlib</code>, and <code>openpyxl</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Outcome + groups</strong>: a yes/no rate across two independent groups &#8594; the two-proportion z-test.</span></li>
+        <li><span class="ck">✓</span><span><strong>One-sided H&#8321;</strong> because we predicted the direction (B better), decided before seeing the data.</span></li>
+        <li><span class="ck">✓</span><span><strong>Result</strong>: +3.5 pt lift (z = 3.28, one-sided p &#8776; 0.0005), 95% CI [+1.4, +5.6] pts, excludes 0.</span></li>
+        <li><span class="ck">✓</span><span><strong>Report the interval</strong>, not just the p, so the decision rests on the plausible size of the gain.</span></li>
+        <li><span class="ck">✓</span><span><strong>Recommendation</strong>: ship B, then monitor revenue and longer-term metrics as a guardrail.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on this case study. Answer them, hit <strong>Check Answers</strong>, and keep refining until
+       you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>Two groups was the easy case. <strong>Chapter 85 &middot; Comparing Marketing Channels</strong> tackles
+         <em>four</em> groups at once, where a single ANOVA replaces a thicket of t-tests and Tukey HSD names the
+         winner.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch83.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 83 · Previous</span><br><span class="cn-title">Review &amp; Choosing the Right Test</span></span>
+    </a>
+    <a class="cn-btn next" href="ch85.html">
+      <span><span class="cn-dir">Chapter 85 · Next</span><br><span class="cn-title">Case Study: Comparing Marketing Channels</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 84 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch84";
+  window.QUIZ_DATA = [
+    {
+      q: "The outcome 'converted (yes/no)' across two groups makes this a…",
+      options: ["Paired t-test", "Two-proportion z-test", "One-way ANOVA", "Chi-square goodness-of-fit"],
+      answer: 1,
+      explain: "A yes/no rate compared between two independent groups is the two-proportion z-test."
+    },
+    {
+      q: "Why was the alternative hypothesis one-sided (pB > pA)?",
+      options: ["To get a smaller p-value", "Because the team specifically predicted the redesign would be better, decided before the data", "Because two-sided tests are invalid", "By accident"],
+      answer: 1,
+      explain: "A directional prediction made in advance justifies a one-sided test; choosing the side after seeing data would not."
+    },
+    {
+      q: "Random assignment of visitors matters because…",
+      options: ["It speeds up the test", "It makes the groups comparable, so the conversion difference is caused by the page", "It increases conversions", "It avoids needing statistics"],
+      answer: 1,
+      explain: "Randomization balances other factors, so any rate difference is attributable to the variant."
+    },
+    {
+      q: "The 95% confidence interval for the lift was about [+1.4, +5.6] points. This tells us…",
+      options: ["The lift is exactly 3.5 points", "The true lift is plausibly between +1.4 and +5.6 points, and is clearly above zero", "There is no real effect", "The test failed"],
+      answer: 1,
+      explain: "The CI gives the plausible range for the true lift; excluding zero confirms a real, positive effect."
+    },
+    {
+      q: "The one-sided p-value was about 0.0005. It means…",
+      options: ["There's a 0.05% chance the redesign works", "If the redesign truly made no difference, a gap this large would occur ~1 in 2,000 times by chance", "The redesign is 99.95% better", "Nothing"],
+      answer: 1,
+      explain: "The p-value is the chance of data this extreme under H₀; 0.0005 is tiny, so we reject H₀."
+    },
+    {
+      q: "The success-failure check (≥10 conversions and ≥10 non-conversions per arm) is there to…",
+      options: ["Confirm the sample is random", "Justify the normal approximation behind the z-test", "Measure the effect size", "Set the significance level"],
+      answer: 1,
+      explain: "With enough of each outcome, the sampling distribution of the proportion is approximately normal."
+    },
+    {
+      q: "Reporting the lift as a confidence interval (not just 'significant') is valuable because…",
+      options: ["It hides the p-value", "It shows how big the gain plausibly is, so the team can judge if it's worth shipping", "It's required by law", "It removes uncertainty"],
+      answer: 1,
+      explain: "The interval communicates the plausible size of the effect, which drives the business decision."
+    },
+    {
+      q: "What guardrail did the report recommend after shipping?",
+      options: ["Nothing further", "Watch revenue per order and longer-term metrics to confirm the gain holds", "Re-run the same test forever", "Delete the control page immediately"],
+      answer: 1,
+      explain: "A conversion win should be checked against revenue and durability, in case it merely shifts behavior."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

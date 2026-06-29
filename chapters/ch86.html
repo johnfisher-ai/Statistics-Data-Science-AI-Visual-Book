@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 86 · Case Study: A Clinical Trial — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#ecfeff; border:1px solid #a5f3fc; border-left:4px solid #0891b2; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#0e7490; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+    .report-card { background:#fff; border:1px solid #cffafe; border-left:5px solid #0e7490; border-radius:14px;
+                   padding:1.3rem 1.5rem; margin:1.3rem 0; box-shadow:0 6px 18px rgba(8,51,68,0.06); }
+    .report-card .rep-tag { font-size:0.7rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#0e7490; }
+    .report-card h3 { margin:0.25rem 0 0.7rem; font-size:1.12rem; color:var(--ink); }
+    .report-card p { color:var(--ink-soft); line-height:1.75; margin:0.55rem 0; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch86_clinical_trial.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XIII · Inference Case Studies</span><span class="sep">/</span>
+      <span>Chapter 86</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XIII · Case Study</span> One trial, three questions</div>
+    <h1>Case Study: A <span class="accent">Clinical Trial</span></h1>
+    <p class="dek">A randomized trial of a cholesterol drug raises three distinct questions, each needing a different
+       test on the same patients: did LDL fall on the drug, did it fall more than placebo, and were more patients
+       responders? We answer all three, and show why the placebo arm is what makes the verdict trustworthy.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~15 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 86</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Medicine is where careful inference matters most. A randomized controlled trial is the gold standard
+       precisely because it pins an effect on the treatment and nothing else. This case study takes one trial and shows
+       how a single dataset answers <span class="term">three different questions</span>, each with the right tool.</p>
+
+    <div class="def-card">
+      <div class="sigma">Rx</div>
+      <div class="def-body">
+        <span class="def-kw">The scenario.</span> Patients were randomly assigned to a new LDL-lowering
+        <span class="def-kw">treatment</span> or a <span class="def-kw">placebo</span>. LDL cholesterol was measured at
+        baseline and again at 12 weeks. A patient is a <span class="def-kw">responder</span> if their LDL dropped by at
+        least 15%.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🎯</div>
+      <div><div class="ctitle">The three questions</div>
+        <p>(1) Within the treatment arm, did LDL fall from baseline to week 12? (2) Did LDL fall <em>more</em> on
+           treatment than on placebo? (3) Was the <em>responder rate</em> higher on treatment than placebo?</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1 ===== -->
+  <section id="data">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Data &amp; The Questions</h2></div>
+    <p>One row per patient: trial <code>arm</code>, <code>ldl_before</code>, <code>ldl_after</code>, and a
+       <code>responder</code> flag. The within-patient <em>change</em> (before &#8722; after) is positive when LDL drops.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · ch86_clinical_trial.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per patient with <code>arm</code> (treatment/placebo), <code>age</code>,
+        <code>ldl_before</code>, <code>ldl_after</code> (mg/dL), and <code>responder</code> (0/1).</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/ch86_clinical_trial.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 170 patients</small></a>
+      </div>
+    </div>
+
+    <p>At a glance, treatment patients dropped about <strong>29 mg/dL</strong> on average versus about
+       <strong>10 mg/dL</strong> on placebo, and more of them were responders. But a trial proves nothing until each claim
+       is tested against the right null, and crucially, the placebo arm is what separates the drug&#39;s effect from
+       everything else that makes numbers move in a trial.</p>
+  </section>
+
+  <!-- ===== Section 2 ===== -->
+  <section id="choose">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Three Questions, Three Tests</h2></div>
+    <p>The design of each question dictates its test. The same patients, structured three different ways.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Question</th><th>Structure</th><th>Test</th><th>H&#8320; / H&#8321;</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Did LDL fall on treatment?</td><td>paired (same patient, before vs after)</td><td>paired t-test</td><td>no change / LDL decreased</td></tr>
+          <tr><td class="nm">More than placebo?</td><td>2 independent arms, numeric change</td><td>two-sample (Welch) t</td><td>equal change / treatment change larger</td></tr>
+          <tr><td class="nm">Higher responder rate?</td><td>2 independent arms, yes/no</td><td>two-proportion z</td><td>p&#8348; = p&#8346; / p&#8348; &gt; p&#8346;</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The first question is <span class="hl">paired</span>, each post value has a matching baseline on the same person,
+       so a paired test isolates the within-patient change. Treating those columns as two independent samples (a classic
+       mistake) would throw away the pairing and weaken the test. The second and third questions compare the two
+       <em>independent</em> arms, one on a numeric change, one on a yes/no outcome.</p>
+  </section>
+
+  <!-- ===== Section 3 ===== -->
+  <section id="analysis">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The Analysis &amp; Results</h2></div>
+    <p>Each test comes with an effect size and a confidence interval, and the placebo comparison reveals how much of the
+       raw drop is really the drug.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 176" width="100%" font-family="Inter, sans-serif" aria-label="LDL drop on placebo versus treatment, with the extra drop attributable to the drug highlighted">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Average LDL drop: placebo vs treatment</text>
+        <line x1="120" y1="150" x2="600" y2="150" stroke="#94a3b8" stroke-width="1"/>
+        <rect x="170" y="118" width="110" height="32" fill="#a5f3fc"/>
+        <text x="225" y="110" text-anchor="middle" font-size="10" fill="#0e7490" font-weight="700">10 mg/dL</text>
+        <text x="225" y="166" text-anchor="middle" font-size="9" fill="#475569">placebo</text>
+        <rect x="410" y="64" width="110" height="86" fill="#0891b2"/>
+        <text x="465" y="56" text-anchor="middle" font-size="10" fill="#0e7490" font-weight="800">29 mg/dL</text>
+        <text x="465" y="166" text-anchor="middle" font-size="9" fill="#475569">treatment</text>
+        <line x1="410" y1="118" x2="520" y2="118" stroke="#0e7490" stroke-width="1.4" stroke-dasharray="4 3"/>
+        <text x="540" y="98" font-size="8.5" fill="#0e7490" font-weight="700">+18 from the drug</text>
+        <text x="540" y="135" font-size="8.5" fill="#64748b">~10 happens anyway</text>
+      </svg>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Question</th><th>Result</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Q1 paired (treatment)</td><td>drop &#8776; 29 mg/dL, t = &#8722;19.7, p &#8776; 10&#8315;&#179;&#8308;</td><td>LDL fell, decisively</td></tr>
+          <tr><td class="nm">Q2 two-arm change</td><td>extra drop &#8776; 18 mg/dL, t = 8.45, p &#8776; 10&#8315;&#185;&#8308;, CI [14, 23]</td><td>more than placebo</td></tr>
+          <tr><td class="nm">Q3 responder rate</td><td>52% vs 17%, z = 4.80, p &#8776; 10&#8315;&#8326;, gap CI [+22, +48] pts</td><td>far more responders</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>All three agree, and the placebo arm is the hero of the story. Treatment patients dropped 29 mg/dL, but placebo
+       patients dropped about 10 mg/dL on their own (diet, measurement timing, the trial effect). So only the
+       <strong>~18 mg/dL difference</strong> can be credited to the drug. Without the control arm, the full 29 would have
+       looked like the treatment&#39;s effect, a textbook reminder of why randomized comparisons matter.</p>
+  </section>
+
+  <!-- ===== Section 4: Report ===== -->
+  <section id="report">
+    <div class="section-eyebrow"><div class="num">4</div><h2>The Statistician's Report</h2></div>
+    <p>How to summarize for a clinical team or a non-statistician reviewer.</p>
+
+    <div class="report-card">
+      <div class="rep-tag">📋 Statistician's report &#183; to the clinical team</div>
+      <h3>Conclusion: the treatment works, on all three measures</h3>
+      <p><strong>What we found.</strong> Patients on the treatment lowered their LDL cholesterol by about
+        <strong>29 mg/dL</strong> over 12 weeks. The part we can credit to the drug, beyond what placebo patients dropped
+        on their own, is about <strong>18 mg/dL</strong>. And <strong>52%</strong> of treated patients were responders
+        (a 15%+ reduction) versus only <strong>17%</strong> on placebo.</p>
+      <p><strong>How confident are we?</strong> Extremely. Every comparison is far beyond the threshold for chance. Our
+        95% range for the drug&#39;s extra benefit is about <strong>14 to 22 mg/dL</strong>, a clinically meaningful
+        reduction even at the low end.</p>
+      <p><strong>Why the placebo arm mattered.</strong> Placebo patients also improved by about 10 mg/dL. Comparing only
+        before-versus-after on the treatment would have over-credited the drug by that amount. The randomized, controlled
+        comparison is exactly what isolates the true effect, this is why single-arm before/after studies can be
+        misleading.</p>
+      <p><strong>Caveats.</strong> This measures a 12-week surrogate marker (LDL), not long-term cardiovascular outcomes.
+        Safety, side effects, and durability are separate questions that a full trial program must answer before any
+        clinical claim.</p>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">In the field</div>
+        <p>The paired-design lesson carries straight into machine learning: comparing two models on the
+           <em>same</em> test cases is paired, and a paired test on the per-case differences is far more sensitive than
+           treating the two score lists as independent, just as the paired before/after test is here.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Run all three trial tests in Python</h3>
+          <p>The companion notebook loads <code>ch86_clinical_trial.xlsx</code>, computes the within-patient change,
+             states the three hypotheses, and runs the paired t-test, the two-sample Welch t-test, and the two-proportion
+             z-test, each with an effect size and interval, plus plots of LDL reduction and responder rates by arm.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch86_clinical_trial.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch86_clinical_trial.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch86_clinical_trial.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, <code>scipy</code>,
+      <code>matplotlib</code>, and <code>openpyxl</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>One dataset, three designs</strong>: paired (within patient), two-sample (between arms), and a proportion (responder rate).</span></li>
+        <li><span class="ck">✓</span><span><strong>Paired before/after</strong> needs a paired test; treating it as independent wastes the design.</span></li>
+        <li><span class="ck">✓</span><span><strong>The placebo arm</strong> isolates the drug: 29 mg/dL total, but only ~18 mg/dL beyond placebo is the treatment effect.</span></li>
+        <li><span class="ck">✓</span><span><strong>Results</strong>: all three highly significant; responders 52% vs 17%; 95% CI for extra LDL drop [14, 22] mg/dL.</span></li>
+        <li><span class="ck">✓</span><span><strong>Caveat</strong>: a 12-week surrogate marker, not long-term outcomes; safety and durability are separate questions.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on this case study. Answer them, hit <strong>Check Answers</strong>, and keep refining until
+       you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>Numbers were the easy part. <strong>Chapter 87 &middot; A Customer Satisfaction Survey</strong> handles messier
+         data, categories, ratings, and a top-box rate, with chi-square, a margin of error, and an ordinal test on one
+         survey.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch85.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 85 · Previous</span><br><span class="cn-title">Case Study: Comparing Marketing Channels</span></span>
+    </a>
+    <a class="cn-btn next" href="ch87.html">
+      <span><span class="cn-dir">Chapter 87 · Next</span><br><span class="cn-title">Case Study: A Customer Satisfaction Survey</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 86 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch86";
+  window.QUIZ_DATA = [
+    {
+      q: "Comparing each patient's LDL before vs after (same person) is a…",
+      options: ["Two-sample t-test", "Paired t-test", "Two-proportion z-test", "Chi-square test"],
+      answer: 1,
+      explain: "Before/after on the same patient is paired data; the paired t-test analyzes the within-patient change."
+    },
+    {
+      q: "Comparing the LDL change between the treatment and placebo arms uses a…",
+      options: ["Paired t-test", "Two-sample (Welch) t-test", "One-proportion z-test", "Goodness-of-fit test"],
+      answer: 1,
+      explain: "Two independent arms compared on a numeric change is the two-sample t-test."
+    },
+    {
+      q: "Comparing the responder RATE (yes/no) between arms uses a…",
+      options: ["Paired t-test", "Two-proportion z-test", "ANOVA", "Wilcoxon test"],
+      answer: 1,
+      explain: "A yes/no outcome compared across two groups is the two-proportion z-test."
+    },
+    {
+      q: "Treatment patients dropped 29 mg/dL but placebo dropped 10. The drug's true effect is best estimated as…",
+      options: ["29 mg/dL", "About 18 mg/dL (the difference between arms)", "10 mg/dL", "0"],
+      answer: 1,
+      explain: "Only the drop beyond placebo (~18 mg/dL) can be credited to the drug; the rest happens anyway."
+    },
+    {
+      q: "Why does the placebo arm matter so much?",
+      options: ["It doubles the sample size", "It captures the improvement that happens without the drug, so the comparison isolates the true effect", "It makes the test one-sided", "It isn't important"],
+      answer: 1,
+      explain: "Without a control, the placebo-level improvement would be wrongly attributed to the treatment."
+    },
+    {
+      q: "Treating the paired before/after values as two independent samples would…",
+      options: ["Improve the test", "Waste the pairing and weaken the analysis", "Change nothing", "Be required"],
+      answer: 1,
+      explain: "Pairing removes between-patient variation; ignoring it discards that advantage."
+    },
+    {
+      q: "The 95% CI for the drug's extra benefit was about [14, 22] mg/dL. This means…",
+      options: ["The effect is exactly 18", "The true extra reduction is plausibly between 14 and 22 mg/dL, clinically meaningful even at the low end", "There is no effect", "The trial failed"],
+      answer: 1,
+      explain: "The interval gives the plausible range; both ends are meaningful reductions."
+    },
+    {
+      q: "A stated caveat was that…",
+      options: ["The drug is unsafe", "LDL is a 12-week surrogate marker, not long-term cardiovascular outcomes, and safety/durability are separate questions", "The placebo worked better", "The test was wrong"],
+      answer: 1,
+      explain: "A surrogate marker over 12 weeks does not establish long-term clinical benefit or safety on its own."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
