@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 75 · Significance, p-values &amp; Errors — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#eef2ff; border:1px solid #c7d2fe; border-left:4px solid #4f46e5; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#4338ca; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch75_significance_errors.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XII · Hypothesis Testing &amp; Inference</span><span class="sep">/</span>
+      <span>Chapter 75</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XII · Hypothesis Testing &amp; Inference</span> What the p-value really promises</div>
+    <h1>Significance, p-values &amp; <span class="accent">Errors</span></h1>
+    <p class="dek">A p-value is the most used, and most abused, number in statistics. This chapter pins down what
+       "significant" actually means, the two ways a test can be wrong, the power to catch real effects, and the traps
+       that turn p-values into bad decisions, ending on a battery test that barely passes.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~17 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 75</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">You ran a test and got p = 0.03. You declare victory. But what did you actually promise, and how often
+       will that promise betray you? Understanding <span class="term">significance</span>, the two
+       <span class="term">error types</span>, and <span class="term">power</span> is what separates careful inference
+       from p-value theater.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#945;</div>
+      <div class="def-body">
+        The <span class="def-kw">significance level</span> &#945; is the false-alarm rate you agree to: if H&#8320; is
+        true, you will wrongly reject it a fraction &#945; of the time (a <span class="def-kw">Type I error</span>).
+        Missing a real effect is a <span class="def-kw">Type II error</span> (rate &#946;), and
+        <span class="def-kw">power</span> = 1 &#8722; &#946; is the chance of catching an effect that is truly there.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🎯</div>
+      <div><div class="ctitle">The chapter in one line</div>
+        <p>&#945; controls false alarms; power controls misses. A p-value is the chance of data this extreme
+           <em>if H&#8320; is true</em>, never the probability that H&#8320; is true, and never a measure of how big or
+           important the effect is.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1 ===== -->
+  <section id="significance">
+    <div class="section-eyebrow"><div class="num">1</div><h2>What "Statistically Significant" Means</h2></div>
+    <p>Calling a result <span class="term">significant at &#945; = 0.05</span> is a statement about a procedure, not a
+       single study: <em>over the long run</em>, if the null is true, this rule rejects it only 5% of the time. That 5%
+       is a budget for false alarms you decide to tolerate, before seeing the data.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 168" width="100%" font-family="Inter, sans-serif" aria-label="Under the null hypothesis, p-values are uniformly distributed, so exactly five percent fall below 0.05">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Under H&#8320;, p-values are uniform &#8212; 5% land below 0.05 by chance</text>
+        <g>
+          <rect x="70" y="60" width="27" height="80" fill="#c7d2fe"/>
+          <rect x="70" y="60" width="27" height="80" fill="#ef4444" fill-opacity="0.85"/>
+        </g>
+        <g fill="#a5b4fc">
+          <rect x="100" y="60" width="27" height="80"/><rect x="130" y="60" width="27" height="80"/>
+          <rect x="160" y="60" width="27" height="80"/><rect x="190" y="60" width="27" height="80"/>
+          <rect x="220" y="60" width="27" height="80"/><rect x="250" y="60" width="27" height="80"/>
+          <rect x="280" y="60" width="27" height="80"/><rect x="310" y="60" width="27" height="80"/>
+          <rect x="340" y="60" width="27" height="80"/><rect x="370" y="60" width="27" height="80"/>
+          <rect x="400" y="60" width="27" height="80"/><rect x="430" y="60" width="27" height="80"/>
+          <rect x="460" y="60" width="27" height="80"/><rect x="490" y="60" width="27" height="80"/>
+          <rect x="520" y="60" width="27" height="80"/><rect x="550" y="60" width="27" height="80"/>
+          <rect x="580" y="60" width="27" height="80"/>
+        </g>
+        <line x1="70" y1="140" x2="615" y2="140" stroke="#94a3b8" stroke-width="1"/>
+        <text x="83" y="153" text-anchor="middle" font-size="8" fill="#ef4444" font-weight="700">p&lt;.05</text>
+        <text x="340" y="153" text-anchor="middle" font-size="8.5" fill="#64748b">p-value &#8594;</text>
+        <text x="610" y="153" text-anchor="middle" font-size="8" fill="#64748b">1.0</text>
+      </svg>
+    </figure>
+
+    <p>The notebook confirms it: across 20,000 tests where H&#8320; is true, exactly <strong>5.0%</strong> come out
+       "significant", and the p-values are perfectly uniform. Those rejections are not discoveries, they are the
+       false-alarm tax you knowingly pay. Lowering &#945; (say to 0.01) buys fewer false alarms, at the cost of more
+       misses.</p>
+  </section>
+
+  <!-- ===== Section 2 ===== -->
+  <section id="errors">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Two Ways to Be Wrong, and Power</h2></div>
+    <p>Reality is binary (an effect exists or it does not) and so is our verdict (reject or not), giving four outcomes.
+       Two are correct; two are errors. A <span class="term">Type I error</span> rejects a true null (false alarm); a
+       <span class="term">Type II error</span> keeps a false null (a miss).</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Reality &#8595; / Verdict &#8594;</th><th>Reject H&#8320;</th><th>Fail to reject H&#8320;</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">H&#8320; true (no effect)</td><td>Type I error &#8212; rate &#945;</td><td>correct (true negative)</td></tr>
+          <tr><td class="nm">H&#8320; false (real effect)</td><td>correct &#8212; <strong>power</strong> = 1 &#8722; &#946;</td><td>Type II error &#8212; rate &#946;</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 188" width="100%" font-family="Inter, sans-serif" aria-label="Two overlapping bell curves, one for the null and one for a true effect; the cutoff splits them into alpha, beta, and power regions">
+        <text x="340" y="16" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Power is the shaded share of the 'real effect' curve past the cutoff</text>
+        <path d="M50,150 C150,148 185,55 270,55 C355,55 390,150 490,150" fill="#e0e7ff" stroke="#4338ca" stroke-width="1.5"/>
+        <path d="M190,150 C290,148 325,62 410,62 C495,62 530,150 630,150" fill="#d1fae5" fill-opacity="0.7" stroke="#059669" stroke-width="1.5"/>
+        <line x1="360" y1="40" x2="360" y2="158" stroke="#1a2138" stroke-width="1.6" stroke-dasharray="4 3"/>
+        <text x="360" y="172" text-anchor="middle" font-size="8.5" fill="#1a2138" font-weight="700">cutoff (decided by &#945;)</text>
+        <text x="250" y="120" text-anchor="middle" font-size="9" fill="#4338ca" font-weight="700">H&#8320; (no effect)</text>
+        <text x="470" y="120" text-anchor="middle" font-size="9" fill="#047857" font-weight="700">H&#8321; (real effect)</text>
+        <path d="M360,150 C380,150 392,120 400,100 L360,150 Z" fill="#ef4444" fill-opacity="0.55"/>
+        <text x="392" y="92" text-anchor="middle" font-size="8" fill="#b91c1c" font-weight="700">&#945;</text>
+        <path d="M300,150 C330,150 348,95 360,80 L360,150 Z" fill="#94a3b8" fill-opacity="0.5"/>
+        <text x="318" y="120" text-anchor="middle" font-size="8" fill="#475569" font-weight="700">&#946;</text>
+      </svg>
+    </figure>
+
+    <p>In the notebook, a true effect of 0.5 is caught only <strong>30%</strong> of the time at n = 10 but
+       <strong>99%</strong> at n = 80, power rises with sample size and with effect size. The takeaway: "no significant
+       difference" from a small, underpowered study is nearly uninformative. You may simply have lacked the power to see
+       a real effect.</p>
+  </section>
+
+  <!-- ===== Section 3 ===== -->
+  <section id="traps">
+    <div class="section-eyebrow"><div class="num">3</div><h2>What a p-value Is <em>Not</em></h2></div>
+    <p>Most p-value disasters come from three misreadings. Naming them is the cure.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Myth</th><th>Reality</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">"p is the probability H&#8320; is true"</td><td>p is P(data this extreme | H&#8320; true), a statement about the data, not the hypothesis</td></tr>
+          <tr><td class="nm">"a small p means a big effect"</td><td>with enough data, a trivial effect gets a tiny p, report an effect size too</td></tr>
+          <tr><td class="nm">"one significant result among many counts"</td><td>test 20 noise variables and ~1 is "significant" by luck, correct for multiplicity</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 150" width="100%" font-family="Inter, sans-serif" aria-label="Twenty tests on pure noise; about one lights up as significant purely by chance">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">20 tests on pure noise &#8594; about 1 'significant' by luck</text>
+        <g>
+          <!-- 20 cells, one red -->
+          <g fill="#c7d2fe" stroke="#a5b4fc">
+            <rect x="60" y="50" width="44" height="32" rx="5"/><rect x="114" y="50" width="44" height="32" rx="5"/>
+            <rect x="168" y="50" width="44" height="32" rx="5"/><rect x="222" y="50" width="44" height="32" rx="5"/>
+            <rect x="276" y="50" width="44" height="32" rx="5"/><rect x="330" y="50" width="44" height="32" rx="5"/>
+            <rect x="384" y="50" width="44" height="32" rx="5"/><rect x="438" y="50" width="44" height="32" rx="5"/>
+            <rect x="492" y="50" width="44" height="32" rx="5"/><rect x="546" y="50" width="44" height="32" rx="5"/>
+            <rect x="60" y="92" width="44" height="32" rx="5"/><rect x="114" y="92" width="44" height="32" rx="5"/>
+            <rect x="168" y="92" width="44" height="32" rx="5"/><rect x="222" y="92" width="44" height="32" rx="5"/>
+            <rect x="330" y="92" width="44" height="32" rx="5"/>
+            <rect x="384" y="92" width="44" height="32" rx="5"/><rect x="438" y="92" width="44" height="32" rx="5"/>
+            <rect x="492" y="92" width="44" height="32" rx="5"/><rect x="546" y="92" width="44" height="32" rx="5"/>
+          </g>
+          <rect x="276" y="92" width="44" height="32" rx="5" fill="#ef4444" stroke="#b91c1c"/>
+          <text x="298" y="112" text-anchor="middle" font-size="9" fill="#fff" font-weight="800">p&lt;.05</text>
+        </g>
+      </svg>
+    </figure>
+
+    <p>The fix for multiplicity is a correction (Bonferroni divides &#945; by the number of tests; false-discovery-rate
+       control is gentler). The fix for "significant but tiny" is to always report an <span class="hl">effect size</span>
+       and a confidence interval. In the notebook a true effect of 0.02 at n = 100,000 gives p &#8776; 10&#8315;&#185;&#8304;,
+       overwhelmingly "significant" and utterly unimportant.</p>
+  </section>
+
+  <!-- ===== Section 4: REAL-WORLD ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: A Battery That Barely Fails</h2></div>
+    <p>A battery is rated at <strong>10.0 hours</strong>. An engineer tests 50 units and suspects they run short. The
+       test is one-sided: H&#8320;: &#956; = 10 vs H&#8321;: &#956; &lt; 10. The verdict is "significant", but the more
+       important question is whether a test this size could be trusted to find a real shortfall at all.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · ch75_battery_life.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per tested unit with <code>life_hours</code>, plus the <code>model</code> and
+        <code>factory</code>.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/ch75_battery_life.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 50 units</small></a>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Quantity</th><th>Value</th><th>Reading</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Sample mean</td><td>9.82 h (sd 0.77, n = 50)</td><td>a touch under 10</td></tr>
+          <tr><td class="nm">t statistic</td><td>&#8722;1.70 (df = 49)</td><td>just past the cutoff</td></tr>
+          <tr><td class="nm">One-sided p-value</td><td>&#8776; 0.048</td><td>barely &lt; 0.05: reject H&#8320;</td></tr>
+          <tr><td class="nm">Effect size (d)</td><td>&#8776; &#8722;0.24</td><td>small</td></tr>
+          <tr><td class="nm">Power at this effect</td><td>&#8776; 0.51</td><td>would miss it ~half the time</td></tr>
+          <tr><td class="nm">n for 90% power</td><td>&#8776; 150 units</td><td>need a bigger sample</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>This is a textbook <span class="hl">fragile result</span>. The p-value (&#8776; 0.048) clears 0.05 by a whisker, but
+       the power is only about <strong>0.51</strong>, meaning a test of this size would fail to detect a shortfall this
+       small nearly half the time. The honest report is not "the battery fails" but "the data suggest a small shortfall
+       (d &#8776; &#8722;0.24); a confirmatory test with about 150 units is needed to be sure." A low p with low power is a
+       prompt for more data, not a press release.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Significance &amp; Power in Machine Learning &amp; AI</h2></div>
+    <p>Error rates and power are everywhere in ML evaluation, from leaderboard claims to monitoring dashboards.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Idea (this chapter)</th><th>In ML / AI it becomes</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Type I error (&#945;)</td><td>False-positive alerts</td><td>a drift monitor crying wolf</td></tr>
+          <tr><td class="nm">Type II error (&#946;)</td><td>Missed regressions</td><td>shipping a model that quietly got worse</td></tr>
+          <tr><td class="nm">Power / sample size</td><td>Experiment design</td><td>how many users an A/B test needs</td></tr>
+          <tr><td class="nm">Multiple comparisons</td><td>Many-metric dashboards</td><td>20 metrics &#8594; ~1 "significant" by luck</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>Benchmark leaderboards are multiple-comparison machines: with dozens of models and tasks, some gaps are
+           significant by chance, which is why reproducibility and held-out test sets matter so much. Production ML adds
+           the cost asymmetry, a <strong>Type II error</strong> (failing to notice a model has degraded) is often far more
+           expensive than a <strong>Type I</strong> (a false drift alert), so teams set &#945; and target power
+           deliberately. And every A/B test needs a <strong>power analysis</strong> up front: launching with too few users
+           guarantees you will miss the very improvements you are hunting for.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>See significance, errors, and power in code</h3>
+          <p>The companion notebook verifies the 5% false-alarm rate, simulates power as a function of sample size and
+             effect size, demonstrates the multiple-comparisons and significance-vs-importance traps, and loads
+             <code>ch75_battery_life.xlsx</code> to test the 10-hour claim and compute its power.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch75_significance_errors.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch75_significance_errors.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch75_significance_errors.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, <code>scipy</code>,
+      <code>matplotlib</code>, and <code>openpyxl</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>&#945;</strong> is the false-alarm (Type I) rate you accept; under H&#8320;, p-values are uniform, so 5% are "significant" by chance.</span></li>
+        <li><span class="ck">✓</span><span><strong>Type II error (&#946;)</strong> is missing a real effect; <strong>power</strong> = 1 &#8722; &#946; rises with sample size and effect size.</span></li>
+        <li><span class="ck">✓</span><span><strong>A p-value is not</strong> P(H&#8320; true), not an effect size, and not safe to cherry-pick from many tests.</span></li>
+        <li><span class="ck">✓</span><span><strong>Real data</strong>: the battery test is barely significant (p &#8776; 0.048) with only ~51% power, fragile evidence needing more units.</span></li>
+        <li><span class="ck">✓</span><span><strong>In ML/AI</strong>: balance false alerts vs missed regressions, correct for many-metric dashboards, and power your A/B tests.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Verify the false-positive rate</h4>
+        <p>Run 10,000 two-sample t-tests on pure noise (both groups N(0,1), n = 30) and confirm ~5% are significant.</p>
+        <div class="chint">Hint: count <code>pvalue &lt; 0.05</code> over many simulated pairs.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Estimate power</h4>
+        <p>For a true mean of 0.4 (sd 1) and n = 50, estimate the power of a one-sample t-test at &#945; = 0.05.</p>
+        <div class="chint">Hint: power = fraction of simulated samples that reject H&#8320;.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Power vs sample size</h4>
+        <p>Show power rising with n (effect 0.4) for n in {20, 50, 100, 200}.</p>
+        <div class="chint">Hint: loop the simulation over n.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Significance is not importance</h4>
+        <p>With n = 50,000 and a true effect of 0.01, show the test is significant yet the effect size is negligible.</p>
+        <div class="chint">Hint: compare the p-value to <code>mean/std</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Real data: power of the battery test</h4>
+        <p>Load <code>ch75_battery_life.xlsx</code>, run the one-sided t-test of H&#8320;: &#956; = 10, and report the power at the observed effect.</p>
+        <div class="chint">Hint: noncentral t, <code>nct.cdf(t.ppf(0.05, n&#8722;1), n&#8722;1, d&#8730;n)</code>.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code. Try
+           them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/ch75_challenges_solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch75_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch75_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on significance, errors, and power. Answer them, hit <strong>Check Answers</strong>, and keep
+       refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>You can now read a p-value honestly and weigh both error types. <strong>Chapter 76 &middot; z-Tests</strong> puts
+         the machinery to work on means and proportions when the sample is large, the workhorse tests behind polls and
+         conversion rates.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch74.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 74 · Previous</span><br><span class="cn-title">The Logic of Hypothesis Testing</span></span>
+    </a>
+    <a class="cn-btn next" href="ch76.html">
+      <span><span class="cn-dir">Chapter 76 · Next</span><br><span class="cn-title">z-Tests</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 75 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch75";
+  window.QUIZ_DATA = [
+    {
+      q: "The significance level α = 0.05 means…",
+      options: ["5% of results are correct", "If H₀ is true, we wrongly reject it 5% of the time", "There's a 5% chance H₀ is true", "The effect is 5% large"],
+      answer: 1,
+      explain: "α is the Type I (false-alarm) rate: the long-run fraction of true nulls that get rejected."
+    },
+    {
+      q: "Under H₀, the distribution of the p-value is…",
+      options: ["Normal", "Uniform on [0,1]", "Always near 0", "Always near 1"],
+      answer: 1,
+      explain: "When H₀ holds, p is uniform, so exactly α of the time it falls below α, the false-alarm rate."
+    },
+    {
+      q: "A Type II error is…",
+      options: ["Rejecting a true H₀", "Failing to detect a real effect", "Using the wrong α", "A coding bug"],
+      answer: 1,
+      explain: "Type II (rate β) is a miss: H₀ is false but we fail to reject it. Power = 1 − β."
+    },
+    {
+      q: "Statistical power is…",
+      options: ["The probability H₀ is true", "The probability of detecting an effect that truly exists", "The sample size", "1 − α"],
+      answer: 1,
+      explain: "Power = 1 − β is the chance of correctly rejecting H₀ when there really is an effect."
+    },
+    {
+      q: "Power increases when…",
+      options: ["The sample size shrinks", "The sample size and/or the true effect grows", "α is lowered", "The data are noisier"],
+      answer: 1,
+      explain: "Bigger samples and bigger effects make a real effect easier to detect; lowering α actually reduces power."
+    },
+    {
+      q: "A very small p-value with a huge sample tells you…",
+      options: ["The effect is large and important", "The effect is unlikely to be exactly zero, but may still be tiny", "H₀ is certainly true", "The test is broken"],
+      answer: 1,
+      explain: "Large n makes even trivial effects significant; significance is not importance. Report an effect size."
+    },
+    {
+      q: "You test 20 unrelated variables, all with no real effect. About how many come out 'significant' at 0.05?",
+      options: ["0", "About 1", "About 10", "All 20"],
+      answer: 1,
+      explain: "Each true null has a 5% false-alarm chance, so ~1 of 20 lights up. This is the multiple-comparisons problem."
+    },
+    {
+      q: "The battery test gave p ≈ 0.048 with power ≈ 0.51. The right conclusion is…",
+      options: ["Definitely ship the verdict, the battery fails", "Fragile evidence of a small shortfall; collect a larger confirmatory sample", "The battery is fine", "Power doesn't matter once p < 0.05"],
+      answer: 1,
+      explain: "Barely significant plus low power is weak evidence; a bigger sample is needed before a firm conclusion."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

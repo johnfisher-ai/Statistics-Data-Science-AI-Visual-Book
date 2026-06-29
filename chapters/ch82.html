@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 82 · A/B Testing &amp; Online Experiments — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#eef2ff; border:1px solid #c7d2fe; border-left:4px solid #4f46e5; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#4338ca; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch82_ab_testing.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XII · Hypothesis Testing &amp; Inference</span><span class="sep">/</span>
+      <span>Chapter 82</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XII · Hypothesis Testing &amp; Inference</span> The whole Part, in one workflow</div>
+    <h1>A/B Testing &amp; <span class="accent">Online Experiments</span></h1>
+    <p class="dek">A/B testing is hypothesis testing put to work: randomize users, power the test in advance, analyze the
+       primary rate with a two-proportion z and a lift interval, watch the guardrail metrics, and never peek. We run a
+       real landing-page experiment from design to ship decision, and close Part XII.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~17 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 82</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Every "we shipped the new design and conversion went up" decision at a modern company is, underneath,
+       a hypothesis test. The <span class="term">A/B test</span> is the controlled experiment of Chapter 65 run online at
+       scale, and getting it right means combining nearly everything in this Part: randomization, power, the
+       two-proportion z-test, confidence intervals, and the discipline not to fool yourself.</p>
+
+    <div class="def-card">
+      <div class="sigma">A|B</div>
+      <div class="def-body">
+        An <span class="def-kw">A/B test</span> randomly assigns users to a control (A) or a variant (B), then compares a
+        <span class="def-kw">primary metric</span> (usually a conversion rate) with a two-proportion z-test and a
+        <span class="def-kw">confidence interval for the lift</span>. The sample size is fixed in advance by a
+        <span class="def-kw">power analysis</span>, and the experiment is analyzed once.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🧪</div>
+      <div><div class="ctitle">The chapter in one line</div>
+        <p>Randomize, power it first, analyze the lift with a CI (not just a p-value), guard your secondary metrics, and
+           do not peek. Significance plus a meaningful effect size equals ship.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1 ===== -->
+  <section id="anatomy">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Anatomy of an A/B Test</h2></div>
+    <p>Randomization is the heart of it: assigning each user to A or B by a coin flip makes the two groups statistically
+       identical on everything except the change you are testing, so any difference in the metric is caused by the change
+       (Chapter 65's logic, online). Before launch you fix one <span class="term">primary metric</span> and a decision
+       rule.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 168" width="100%" font-family="Inter, sans-serif" aria-label="Traffic is randomly split into control A and variant B; each converts at some rate, and the lift is tested">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Randomly split traffic, compare the primary metric</text>
+        <rect x="270" y="34" width="140" height="30" rx="8" fill="#1e1b4b"/>
+        <text x="340" y="53" text-anchor="middle" font-size="10" fill="#fff" font-weight="700">incoming users</text>
+        <path d="M300,64 L180,92" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ab1)"/>
+        <path d="M380,64 L500,92" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#ab1)"/>
+        <defs><marker id="ab1" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#94a3b8"/></marker></defs>
+        <rect x="100" y="92" width="160" height="54" rx="10" fill="#eef2ff" stroke="#818cf8"/>
+        <text x="180" y="114" text-anchor="middle" font-size="10" fill="#4338ca" font-weight="800">A &#183; control</text>
+        <text x="180" y="132" text-anchor="middle" font-size="9" fill="#4a5578">converts at p&#8320;</text>
+        <rect x="420" y="92" width="160" height="54" rx="10" fill="#e0e7ff" stroke="#4f46e5"/>
+        <text x="500" y="114" text-anchor="middle" font-size="10" fill="#4338ca" font-weight="800">B &#183; variant</text>
+        <text x="500" y="132" text-anchor="middle" font-size="9" fill="#4a5578">converts at p&#8330;</text>
+        <text x="340" y="126" text-anchor="middle" font-size="11" fill="#6d28d9" font-weight="800">lift = p&#8330; &#8722; p&#8320;</text>
+      </svg>
+    </figure>
+
+    <p>The hypotheses write themselves: H&#8320; is "no difference" (p&#8330; = p&#8320;), H&#8321; is "B differs"
+       (usually "B is better"). The decision rule is set in advance, ship B if the lift's confidence interval clears zero
+       (and the effect is large enough to be worth it). Everything else is execution.</p>
+  </section>
+
+  <!-- ===== Section 2 ===== -->
+  <section id="power">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Powering the Test: Decide n First</h2></div>
+    <p>The single most important discipline: choose the sample size <em>before</em> launch from a
+       <span class="term">power analysis</span>. You specify the baseline rate, the minimum lift worth detecting (the
+       <span class="term">MDE</span>), &#945;, and the target power (usually 80%), and solve for n per arm.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 156" width="100%" font-family="Inter, sans-serif" aria-label="Required sample size grows steeply as the minimum detectable effect shrinks, roughly as one over the squared effect">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Smaller detectable lift &#8594; much larger sample (n &#8733; 1/MDE&#178;)</text>
+        <path d="M70,135 L70,40 M70,135 L620,135" stroke="#94a3b8" stroke-width="1.2"/>
+        <path d="M95,52 C150,70 230,118 360,128 C460,133 540,134 615,134" fill="none" stroke="#4f46e5" stroke-width="2.4"/>
+        <circle cx="120" cy="62" r="3.5" fill="#4338ca"/><text x="150" y="58" font-size="8.5" fill="#4338ca">+1pt &#8594; ~17,000/arm</text>
+        <circle cx="200" cy="100" r="3.5" fill="#4338ca"/><text x="230" y="96" font-size="8.5" fill="#4338ca">+2pt &#8594; ~4,400/arm</text>
+        <circle cx="320" cy="125" r="3.5" fill="#4338ca"/><text x="350" y="121" font-size="8.5" fill="#4338ca">+3pt &#8594; ~2,000/arm</text>
+        <text x="345" y="150" text-anchor="middle" font-size="8.5" fill="#64748b">minimum detectable effect (percentage points) &#8594;</text>
+      </svg>
+    </figure>
+
+    <p>The notebook computes these directly: to catch a +1-point lift off a 12% baseline you need about
+       <strong>17,000</strong> users per arm, but a +3-point lift needs only about <strong>2,000</strong>. Because n grows
+       like 1/MDE&#178;, halving the lift you want to detect roughly quadruples the sample. Fixing n in advance is exactly
+       what makes the 5% false-positive rate and the 80% power <em>real</em>.</p>
+  </section>
+
+  <!-- ===== Section 3 ===== -->
+  <section id="analyze">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Analyzing the Result, and the Peeking Trap</h2></div>
+    <p>The analysis is the two-proportion z-test from Chapter 76, reported with a <span class="term">confidence interval
+       for the lift</span>. The CI does double duty: if it excludes 0 the effect is real, and its width shows how big the
+       lift plausibly is, so you can judge whether it is worth shipping.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 150" width="100%" font-family="Inter, sans-serif" aria-label="Peeking repeatedly at an A/A test inflates the false positive rate far above five percent">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Peeking inflates false positives far past 5%</text>
+        <rect x="120" y="50" width="90" height="70" rx="6" fill="#d1fae5" stroke="#059669"/>
+        <text x="165" y="90" text-anchor="middle" font-size="16" fill="#047857" font-weight="800">5%</text>
+        <text x="165" y="136" text-anchor="middle" font-size="9" fill="#475569">analyze once</text>
+        <rect x="470" y="50" width="90" height="70" rx="6" fill="#fee2e2" stroke="#ef4444"/>
+        <text x="515" y="90" text-anchor="middle" font-size="16" fill="#b91c1c" font-weight="800">~25%</text>
+        <text x="515" y="136" text-anchor="middle" font-size="9" fill="#475569">peek 20 times</text>
+        <path d="M220,85 L460,85" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#pk)"/>
+        <defs><marker id="pk" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#94a3b8"/></marker></defs>
+        <text x="340" y="78" text-anchor="middle" font-size="8.5" fill="#64748b">stopping early on a fluke</text>
+      </svg>
+    </figure>
+
+    <p>The cardinal sin is <span class="term">peeking</span>: checking the results repeatedly and stopping the instant
+       p &lt; 0.05. The notebook shows it turns a 5% test into roughly a <strong>25%</strong> false-positive rate on an
+       A/A test with no real difference, you simply give chance many shots at the threshold. The fixes are to analyze
+       once at the pre-set n, or to use proper <span class="hl">sequential methods</span> (alpha-spending, always-valid
+       p-values) built for continuous monitoring.</p>
+  </section>
+
+  <!-- ===== Section 4: REAL-WORLD ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: A Landing-Page Experiment</h2></div>
+    <p>A team ran a randomized A/B test on a redesigned landing page, 4,200 sessions split between control (A) and the new
+       design (B). We analyze the primary metric (conversion) and a secondary metric (revenue per session), then make the
+       ship decision.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · ch82_online_experiment.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per session with <code>variant</code> (A/B), <code>converted</code> (0/1),
+        <code>revenue</code>, and <code>device</code>.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/ch82_online_experiment.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 4,200 sessions</small></a>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Metric</th><th>A (control)</th><th>B (new design)</th><th>Test</th><th>Result</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Conversion (primary)</td><td>11.0%</td><td>13.3%</td><td>two-proportion z</td><td>lift +2.25 pts, 95% CI [+0.3, +4.2], p &#8776; 0.026</td></tr>
+          <tr><td class="nm">Revenue / session (guardrail)</td><td>$5.95</td><td>$7.34</td><td>Welch t</td><td>p &#8776; 0.017 (also up)</td></tr>
+          <tr><td class="nm">Decision</td><td colspan="3"><strong>Ship B</strong>, both metrics improved, lift CI clears zero, n fixed in advance</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The verdict is to <strong>ship B</strong>. Conversion rises from 11.0% to 13.3%, a lift of about <strong>+2.25
+       points</strong> whose 95% interval (roughly +0.3 to +4.2 points) sits entirely above zero (z = 2.23, p &#8776;
+       0.026). The guardrail metric agrees, revenue per session climbs from about $5.95 to $7.34 (Welch p &#8776; 0.017),
+       so the conversion win is not cannibalizing order value. Both metrics point the same way, and because the sample
+       size was fixed in advance, the 5% guarantee is intact. This is a clean, defensible, shippable result, the entire
+       Part working together.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>A/B Testing in Machine Learning &amp; AI</h2></div>
+    <p>Online experimentation is how ML systems are actually shipped and trusted in production.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Idea (this chapter)</th><th>In ML / AI it becomes</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">A/B test of a change</td><td>Shipping a model online</td><td>new ranking model vs the incumbent</td></tr>
+          <tr><td class="nm">Power / sample size</td><td>How long to run an experiment</td><td>days of traffic for a detectable lift</td></tr>
+          <tr><td class="nm">Guardrail metrics</td><td>Don't win one metric, hurt another</td><td>clicks up but dwell-time down?</td></tr>
+          <tr><td class="nm">Sequential / no-peeking</td><td>Multi-armed bandits, always-valid tests</td><td>adaptive traffic with valid inference</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>Offline metrics rarely tell the whole story, so the gold standard for deploying a model, a recommender, a
+           ranker, a generative feature, is an <strong>online A/B test</strong> against the current system. The same
+           machinery applies: power the experiment for the lift you care about, analyze the primary metric with a
+           proportion test and a CI, and protect <strong>guardrail metrics</strong> so a click-through win does not
+           secretly tank user satisfaction. <strong>Multi-armed bandits</strong> push further, adaptively shifting
+           traffic to better variants, but they demand sequential, always-valid inference precisely because they "peek"
+           by design. The discipline of this chapter is what keeps "the new model is better" a claim you can stand
+           behind.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Run an A/B test end to end in Python</h3>
+          <p>The companion notebook computes the required sample size from a power analysis, analyzes the primary metric
+             with a two-proportion z-test and a lift CI, demonstrates how peeking inflates false positives, and loads
+             <code>ch82_online_experiment.xlsx</code> to reach a ship decision on conversion and revenue.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch82_ab_testing.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch82_ab_testing.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch82_ab_testing.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, <code>scipy</code>,
+      <code>matplotlib</code>, and <code>openpyxl</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>An A/B test</strong> randomizes users, then compares the primary rate with a two-proportion z-test and a lift CI.</span></li>
+        <li><span class="ck">✓</span><span><strong>Power first</strong>: fix n in advance from baseline, MDE, &#945;, and power; n grows like 1/MDE&#178;.</span></li>
+        <li><span class="ck">✓</span><span><strong>Report the lift CI</strong>, not just a p-value, and protect guardrail (secondary) metrics.</span></li>
+        <li><span class="ck">✓</span><span><strong>Don't peek</strong>: repeated looks inflate false positives (~25% in the demo); analyze once or use sequential methods.</span></li>
+        <li><span class="ck">✓</span><span><strong>Real data</strong>: B lifts conversion +2.25 pts (95% CI +0.3 to +4.2, p &#8776; 0.026) and revenue too, so ship B.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Sample size for an A/B test</h4>
+        <p>Baseline 12%, detect a +2-point lift at 80% power, &#945; = 0.05. How many users per arm?</p>
+        <div class="chint">Hint: use the two-proportion sample-size formula.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Two-proportion lift CI</h4>
+        <p>A: 472/4000, B: 572/4000. Test the lift and give its 95% confidence interval.</p>
+        <div class="chint">Hint: pooled SE for the test, unpooled SE for the CI.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>The peeking trap</h4>
+        <p>Simulate an A/A test (true rate 0.12 in both) checked 10 times; report the false-positive rate.</p>
+        <div class="chint">Hint: stop early if any check gives p &lt; 0.05.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Secondary metric</h4>
+        <p>Compare revenue per session between two simulated arms with a Welch t-test.</p>
+        <div class="chint">Hint: revenue is 0 for non-converters.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Real data: the experiment</h4>
+        <p>Load <code>ch82_online_experiment.xlsx</code>; run the two-proportion z-test on conversion and report the lift CI.</p>
+        <div class="chint">Hint: group <code>converted</code> by <code>variant</code>.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code. Try
+           them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/ch82_challenges_solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch82_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch82_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on A/B testing. Answer them, hit <strong>Check Answers</strong>, and keep refining until you
+       score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">🏁</div>
+    <div><div class="ctitle">That completes Part XII</div>
+      <p>You can now state a hypothesis, choose the right test, weigh both error types, and turn data into a defensible
+         decision, from a single t-test to a full online experiment. <strong>Chapter 83 &middot; Review &amp; Choosing
+         the Right Test</strong> consolidates the whole Part into one reference, before inference moves on to relationships
+         between variables.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch81.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 81 · Previous</span><br><span class="cn-title">Choosing the Right Test</span></span>
+    </a>
+    <div class="cn-btn next" style="cursor:default;opacity:0.6" title="Coming soon">
+      <span><span class="cn-dir">Chapter 83 · Coming soon</span><br><span class="cn-title">Review &amp; Choosing the Right Test</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </div>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 82 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch82";
+  window.QUIZ_DATA = [
+    {
+      q: "Randomly assigning users to A or B is important because…",
+      options: ["It's faster to compute", "It makes the groups statistically identical except for the change, so differences are caused by it", "It increases the sample size", "It avoids needing a hypothesis"],
+      answer: 1,
+      explain: "Randomization balances all other factors, so any metric difference can be attributed to the variant."
+    },
+    {
+      q: "The sample size for an A/B test should be decided…",
+      options: ["After the test looks promising", "Before launch, via a power analysis", "Never, just run until p < 0.05", "By the marketing team"],
+      answer: 1,
+      explain: "Fixing n in advance from a power analysis is what keeps the false-positive rate and power valid."
+    },
+    {
+      q: "Required sample size grows as the minimum detectable effect shrinks, roughly like…",
+      options: ["1/MDE", "1/MDE²", "MDE", "log(MDE)"],
+      answer: 1,
+      explain: "n ∝ 1/MDE², so halving the lift you want to detect roughly quadruples the needed sample."
+    },
+    {
+      q: "The primary metric of an A/B test (a conversion rate) is analyzed with a…",
+      options: ["Paired t-test", "Two-proportion z-test", "Chi-square goodness-of-fit", "One-sample t-test"],
+      answer: 1,
+      explain: "Two yes/no rates from two groups is the two-proportion z-test, reported with a lift CI."
+    },
+    {
+      q: "Reporting a confidence interval for the lift (not just a p-value) matters because…",
+      options: ["It's required by law", "It shows both that the effect is real and how big it plausibly is", "It avoids randomization", "It removes the need for power"],
+      answer: 1,
+      explain: "The CI tells you the effect's likely size, so you can judge whether a significant lift is worth shipping."
+    },
+    {
+      q: "'Peeking' (repeatedly checking and stopping when p < 0.05) causes…",
+      options: ["No problem at all", "A badly inflated false-positive rate", "A lower false-positive rate", "A larger required sample"],
+      answer: 1,
+      explain: "Many looks give chance many shots at the threshold; the demo's A/A test hit ~25% instead of 5%."
+    },
+    {
+      q: "A guardrail (secondary) metric is used to…",
+      options: ["Replace the primary metric", "Make sure winning the primary metric didn't harm something else", "Increase power", "Avoid randomization"],
+      answer: 1,
+      explain: "Guardrails catch cases where, say, clicks rise but revenue or satisfaction falls."
+    },
+    {
+      q: "In the landing-page experiment, the decision to ship B rested on…",
+      options: ["A single look that hit p < 0.05", "A pre-powered test where the lift CI excluded zero and revenue also rose", "Marketing preference", "The larger sample alone"],
+      answer: 1,
+      explain: "Conversion lift CI cleared zero (p ≈ 0.026), revenue also rose, and n was fixed in advance, a clean ship."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 80 · Nonparametric Tests — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#eef2ff; border:1px solid #c7d2fe; border-left:4px solid #4f46e5; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#4338ca; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch80_nonparametric.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XII · Hypothesis Testing &amp; Inference</span><span class="sep">/</span>
+      <span>Chapter 80</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XII · Hypothesis Testing &amp; Inference</span> Tests that trust ranks, not normality</div>
+    <h1>Nonparametric <span class="accent">Tests</span></h1>
+    <p class="dek">Real data is often skewed, spiked with outliers, or merely ordinal, exactly where mean-based tests get
+       shaky. Nonparametric tests work on ranks instead of raw values, staying robust when assumptions fail. We build
+       Mann-Whitney, Kruskal-Wallis, and Wilcoxon, then apply them to skewed support-ticket times.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~16 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 80</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Resolution times, incomes, and wait times are rarely bell-shaped, they pile up near zero with a long
+       tail of slow cases. The mean is then a poor summary and the t-test rests on shaky ground.
+       <span class="term">Nonparametric tests</span> sidestep the problem by ranking the data and testing the ranks.</p>
+
+    <div class="def-card">
+      <div class="sigma">R</div>
+      <div class="def-body">
+        <span class="def-kw">Nonparametric tests</span> make no assumption about the shape of the distribution. They
+        replace raw values with their <span class="def-kw">ranks</span> and ask whether one group's ranks tend to be
+        higher. This makes them <span class="def-kw">robust</span> to skew and outliers and able to handle
+        <span class="def-kw">ordinal</span> data.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🔢</div>
+      <div><div class="ctitle">The chapter in one line</div>
+        <p>Rank the data, then test the ranks. Mann-Whitney replaces the two-sample t-test, Kruskal-Wallis replaces
+           one-way ANOVA, and Wilcoxon signed-rank replaces the paired t-test.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1 ===== -->
+  <section id="break">
+    <div class="section-eyebrow"><div class="num">1</div><h2>When Parametric Tests Break</h2></div>
+    <p>The z, t, F, and (to a degree) chi-square tests assume roughly normal data and revolve around
+       <span class="term">means</span>, which a single outlier or a long tail can distort badly. Rank-based tests inherit
+       the median's robustness: replacing values with ranks caps the influence of any one extreme point.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 160" width="100%" font-family="Inter, sans-serif" aria-label="A right-skewed distribution with a long tail; the mean is dragged right by the tail while the median stays in the bulk">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Right-skewed data: the mean chases the tail, ranks do not</text>
+        <path d="M70,140 C120,40 170,40 210,70 C280,118 420,138 620,140 L620,140 L70,140 Z" fill="#e0e7ff" stroke="#4f46e5" stroke-width="1.6"/>
+        <line x1="150" y1="50" x2="150" y2="140" stroke="#047857" stroke-width="2"/>
+        <text x="150" y="44" text-anchor="middle" font-size="9" fill="#047857" font-weight="700">median</text>
+        <line x1="300" y1="70" x2="300" y2="140" stroke="#ef4444" stroke-width="2" stroke-dasharray="4 3"/>
+        <text x="300" y="64" text-anchor="middle" font-size="9" fill="#b91c1c" font-weight="700">mean (pulled right)</text>
+        <text x="500" y="120" font-size="8.5" fill="#8b94b3">long tail of slow / large cases</text>
+      </svg>
+    </figure>
+
+    <p>In the notebook, one fat-fingered outlier shifts the mean from 50 to 59 but leaves the median essentially
+       unchanged. Any test built on the mean inherits that fragility; a rank-based test treats the outlier as merely "the
+       largest value" and is barely moved. Reach for nonparametric methods when data are skewed, heavy-tailed, or
+       ordinal.</p>
+  </section>
+
+  <!-- ===== Section 2 ===== -->
+  <section id="mannwhitney">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Mann-Whitney U</h2></div>
+    <p>The <span class="term">Mann-Whitney U</span> test (also called the Wilcoxon rank-sum test) is the nonparametric
+       answer to the two-sample t-test. Pool both groups, rank everything, and ask whether one group's values tend to
+       outrank the other's, no normality required.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 150" width="100%" font-family="Inter, sans-serif" aria-label="Two groups' values are pooled and ranked from one to ten; the test asks whether one group holds the higher ranks">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Pool, rank, then compare rank totals</text>
+        <g font-size="10" font-weight="800" text-anchor="middle">
+          <circle cx="90" cy="70" r="15" fill="#818cf8"/><text x="90" y="74" fill="#fff">2</text>
+          <circle cx="160" cy="70" r="15" fill="#c7d2fe"/><text x="160" y="74" fill="#3730a3">1</text>
+          <circle cx="230" cy="70" r="15" fill="#818cf8"/><text x="230" y="74" fill="#fff">4</text>
+          <circle cx="300" cy="70" r="15" fill="#818cf8"/><text x="300" y="74" fill="#fff">3</text>
+          <circle cx="370" cy="70" r="15" fill="#c7d2fe"/><text x="370" y="74" fill="#3730a3">6</text>
+          <circle cx="440" cy="70" r="15" fill="#c7d2fe"/><text x="440" y="74" fill="#3730a3">5</text>
+          <circle cx="510" cy="70" r="15" fill="#c7d2fe"/><text x="510" y="74" fill="#3730a3">8</text>
+          <circle cx="580" cy="70" r="15" fill="#818cf8"/><text x="580" y="74" fill="#fff">7</text>
+        </g>
+        <text x="120" y="112" font-size="9" fill="#4338ca" font-weight="700">group A (dark): low ranks</text>
+        <text x="460" y="112" font-size="9" fill="#6366f1" font-weight="700">group B (light): high ranks</text>
+        <text x="340" y="138" text-anchor="middle" font-size="8.5" fill="#8b94b3">if one color holds the high ranks, the groups differ</text>
+      </svg>
+    </figure>
+
+    <p>U counts how often a value from one group exceeds a value from the other. In the notebook, two skewed groups give
+       a clean Mann-Whitney verdict where a t-test would be on thin ice. The test detects a <span class="hl">shift</span>
+       between the distributions, typically reported alongside the two medians.</p>
+  </section>
+
+  <!-- ===== Section 3 ===== -->
+  <section id="kruskal">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Kruskal-Wallis &amp; Wilcoxon</h2></div>
+    <p>Each parametric test has a rank-based twin. <span class="term">Kruskal-Wallis</span> extends Mann-Whitney to three
+       or more groups (the nonparametric one-way ANOVA). <span class="term">Wilcoxon signed-rank</span> is the paired
+       version, ranking the within-pair differences in place of the paired t-test.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Parametric test</th><th>Nonparametric twin</th><th>Use when</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Two-sample t-test</td><td>Mann-Whitney U (rank-sum)</td><td>two independent groups, skewed/ordinal</td></tr>
+          <tr><td class="nm">Paired t-test</td><td>Wilcoxon signed-rank</td><td>paired data, skewed differences</td></tr>
+          <tr><td class="nm">One-way ANOVA</td><td>Kruskal-Wallis</td><td>3+ groups, non-normal</td></tr>
+          <tr><td class="nm">Pearson correlation</td><td>Spearman correlation</td><td>monotonic but non-linear / ordinal</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The trade-off is power: when the data really are normal, the parametric test is a little more sensitive. But when
+       assumptions fail, the rank-based test is both valid and only modestly less powerful, a safe default for messy
+       real-world data.</p>
+  </section>
+
+  <!-- ===== Section 4: REAL-WORLD ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: Ticket Resolution Times</h2></div>
+    <p>A support organization logs how long each ticket takes to resolve. The distribution is heavily right-skewed, most
+       tickets close quickly, a few drag on, so the mean misleads and the t-test is shaky. We compare two teams
+       (Mann-Whitney) and three priority levels (Kruskal-Wallis) on ranks.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · ch80_ticket_times.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per ticket with <code>team</code>, <code>priority</code>,
+        <code>resolution_hours</code> (strongly right-skewed), and a 1-5 <code>csat</code> rating.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/ch80_ticket_times.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 240 tickets</small></a>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Question</th><th>Test</th><th>Result</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Alpha vs Bravo speed?</td><td>Mann-Whitney U</td><td>medians 9.6 vs 7.8 h, p &#8776; 0.047</td><td>Bravo faster</td></tr>
+          <tr><td class="nm">Differ by priority?</td><td>Kruskal-Wallis</td><td>H &#8776; 29.6, p &#8776; 10&#8315;&#8311;</td><td>yes, strongly</td></tr>
+          <tr><td class="nm">Shape of the data</td><td>skewness</td><td>&#8776; 2.5 (long right tail)</td><td>ranks safer than means</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Both rank tests are decisive. Bravo resolves tickets faster than Alpha by median (7.8 vs 9.6 h; Mann-Whitney p
+       &#8776; 0.047), and resolution time differs sharply across priority levels (Kruskal-Wallis H &#8776; 29.6, p &#8776;
+       10&#8315;&#8311;), with High-priority tickets clearing fastest. Because the data are so right-skewed (skewness &#8776;
+       2.5), these rank-based conclusions are far more trustworthy than a mean-based t-test or ANOVA, which the long tail
+       would distort.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Nonparametric Methods in Machine Learning &amp; AI</h2></div>
+    <p>Ranks are deeper in ML than they look, including the most common classifier metric of all.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Idea (this chapter)</th><th>In ML / AI it becomes</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Mann-Whitney U</td><td>The AUC of a classifier</td><td>ROC-AUC equals the normalized U statistic</td></tr>
+          <tr><td class="nm">Rank-based comparison</td><td>Robust model evaluation</td><td>compare skewed latency / loss distributions</td></tr>
+          <tr><td class="nm">Spearman correlation</td><td>Monotonic feature relationships</td><td>rank-correlation feature screening</td></tr>
+          <tr><td class="nm">Wilcoxon signed-rank</td><td>Paired model comparison (non-normal)</td><td>per-example score differences, robustly</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>The single most reported classifier metric, <strong>ROC-AUC</strong>, is exactly a rescaled Mann-Whitney U
+           statistic: it is the probability that a random positive example is scored above a random negative one, a pure
+           rank comparison. That is why AUC is invariant to any monotonic rescaling of the scores. Rank-based tests also
+           give <strong>robust model comparisons</strong> when metrics like latency or per-example loss are heavy-tailed,
+           and <strong>Spearman correlation</strong> is the go-to when a relationship is monotonic but not linear. When in
+           doubt about distributional assumptions, ranks are the safe currency.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Run the rank-based tests in Python</h3>
+          <p>The companion notebook shows how one outlier wrecks the mean but not the ranks, runs Mann-Whitney,
+             Kruskal-Wallis, and Wilcoxon signed-rank, and loads <code>ch80_ticket_times.xlsx</code> to compare teams and
+             priorities on heavily skewed resolution times.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch80_nonparametric.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch80_nonparametric.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch80_nonparametric.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, <code>scipy</code>,
+      <code>matplotlib</code>, and <code>openpyxl</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Nonparametric tests</strong> work on ranks, so they tolerate skew, outliers, and ordinal data.</span></li>
+        <li><span class="ck">✓</span><span><strong>Mann-Whitney U</strong> &#8594; two-sample t; <strong>Kruskal-Wallis</strong> &#8594; one-way ANOVA; <strong>Wilcoxon signed-rank</strong> &#8594; paired t.</span></li>
+        <li><span class="ck">✓</span><span><strong>Trade-off</strong>: slightly less power than a parametric test when normality truly holds, but valid when it does not.</span></li>
+        <li><span class="ck">✓</span><span><strong>Real data</strong>: on skewed ticket times, Bravo beats Alpha (p &#8776; 0.047) and priorities differ (p &#8776; 10&#8315;&#8311;).</span></li>
+        <li><span class="ck">✓</span><span><strong>In ML/AI</strong>: ROC-AUC is a rescaled Mann-Whitney U; ranks power robust evaluation and Spearman correlation.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Mann-Whitney U</h4>
+        <p>Compare lognormal(1.0, 0.6, n = 50) and lognormal(0.6, 0.6, n = 50) with the rank-sum test.</p>
+        <div class="chint">Hint: <code>stats.mannwhitneyu</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Outlier robustness</h4>
+        <p>Add an outlier of 500 to a clean N(50, 8, 40) sample; compare how the t-test and Mann-Whitney p-values react.</p>
+        <div class="chint">Hint: ranks cap the outlier's influence.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Kruskal-Wallis</h4>
+        <p>Compare three skewed groups (lognormal &#956; = 1.0, 1.2, 1.5, n = 40 each).</p>
+        <div class="chint">Hint: <code>stats.kruskal(g1, g2, g3)</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Wilcoxon signed-rank</h4>
+        <p>Paired before/after where after = before &#215; Uniform(0.7, 0.95). Test the paired drop.</p>
+        <div class="chint">Hint: <code>stats.wilcoxon(after, before)</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Real data: ticket times</h4>
+        <p>Load <code>ch80_ticket_times.xlsx</code>; run Mann-Whitney (Alpha vs Bravo) and Kruskal-Wallis (by priority).</p>
+        <div class="chint">Hint: group <code>resolution_hours</code> appropriately.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code. Try
+           them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/ch80_challenges_solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch80_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch80_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on nonparametric tests. Answer them, hit <strong>Check Answers</strong>, and keep refining
+       until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>You now have a whole toolbox: z, t, ANOVA, chi-square, and the rank-based tests. <strong>Chapter 81 &middot;
+         Choosing the Right Test</strong> turns it into a decision map, match the question and data type to the test.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch79.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 79 · Previous</span><br><span class="cn-title">Chi-Square Tests</span></span>
+    </a>
+    <a class="cn-btn next" href="ch81.html">
+      <span><span class="cn-dir">Chapter 81 · Next</span><br><span class="cn-title">Choosing the Right Test</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 80 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch80";
+  window.QUIZ_DATA = [
+    {
+      q: "Nonparametric tests are preferred when…",
+      options: ["The sample is large and normal", "The data are skewed, have outliers, or are ordinal", "You want maximum power on normal data", "You only have proportions"],
+      answer: 1,
+      explain: "Rank-based tests don't assume normality, so they shine on skewed, outlier-ridden, or ordinal data."
+    },
+    {
+      q: "Nonparametric tests gain their robustness by…",
+      options: ["Using larger samples", "Working on the ranks of the data instead of raw values", "Removing all outliers", "Assuming a normal distribution"],
+      answer: 1,
+      explain: "Replacing values with ranks caps the influence of extreme observations, like the median does."
+    },
+    {
+      q: "The Mann-Whitney U test is the nonparametric counterpart of the…",
+      options: ["Paired t-test", "Two-sample t-test", "One-way ANOVA", "Chi-square test"],
+      answer: 1,
+      explain: "Mann-Whitney U (rank-sum) compares two independent groups, like the two-sample t-test but on ranks."
+    },
+    {
+      q: "Kruskal-Wallis is used for…",
+      options: ["Two paired groups", "Three or more independent groups (nonparametric ANOVA)", "A single proportion", "Correlation"],
+      answer: 1,
+      explain: "Kruskal-Wallis extends Mann-Whitney to 3+ groups, the rank-based analog of one-way ANOVA."
+    },
+    {
+      q: "For PAIRED, skewed data, the right nonparametric test is…",
+      options: ["Mann-Whitney U", "Wilcoxon signed-rank", "Kruskal-Wallis", "Chi-square"],
+      answer: 1,
+      explain: "Wilcoxon signed-rank ranks the within-pair differences, replacing the paired t-test."
+    },
+    {
+      q: "The main cost of using a nonparametric test when the data ARE normal is…",
+      options: ["It gives wrong answers", "Slightly less statistical power", "It needs proportions", "It can't be computed"],
+      answer: 1,
+      explain: "When normality holds, the parametric test is a bit more powerful; otherwise the rank test is safer."
+    },
+    {
+      q: "For the skewed ticket data, comparing two teams used the…",
+      options: ["Paired t-test", "Mann-Whitney U test", "Chi-square test", "F-test"],
+      answer: 1,
+      explain: "Two independent teams on a heavily right-skewed metric calls for the Mann-Whitney U test."
+    },
+    {
+      q: "A classifier's ROC-AUC is mathematically equivalent to…",
+      options: ["A chi-square statistic", "A rescaled Mann-Whitney U statistic", "A paired t-test", "Pearson correlation"],
+      answer: 1,
+      explain: "AUC equals the probability a random positive outranks a random negative, a normalized Mann-Whitney U."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

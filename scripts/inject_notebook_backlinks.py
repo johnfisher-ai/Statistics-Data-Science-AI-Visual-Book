@@ -272,6 +272,42 @@ MAP = {
         ("../../ch73.html#notebook", "Back to the book", "Chapter 73 · Resampling & Simulation"),
     "ch73_challenges_solutions.html":
         ("../../ch73.html#challenges", "Back to the book", "Chapter 73 · Resampling & Simulation"),
+    "ch74_logic_testing.html":
+        ("../../ch74.html#notebook", "Back to the book", "Chapter 74 · The Logic of Hypothesis Testing"),
+    "ch74_challenges_solutions.html":
+        ("../../ch74.html#challenges", "Back to the book", "Chapter 74 · The Logic of Hypothesis Testing"),
+    "ch75_significance_errors.html":
+        ("../../ch75.html#notebook", "Back to the book", "Chapter 75 · Significance, p-values &amp; Errors"),
+    "ch75_challenges_solutions.html":
+        ("../../ch75.html#challenges", "Back to the book", "Chapter 75 · Significance, p-values &amp; Errors"),
+    "ch76_z_tests.html":
+        ("../../ch76.html#notebook", "Back to the book", "Chapter 76 · z-Tests"),
+    "ch76_challenges_solutions.html":
+        ("../../ch76.html#challenges", "Back to the book", "Chapter 76 · z-Tests"),
+    "ch77_t_tests.html":
+        ("../../ch77.html#notebook", "Back to the book", "Chapter 77 · t-Tests"),
+    "ch77_challenges_solutions.html":
+        ("../../ch77.html#challenges", "Back to the book", "Chapter 77 · t-Tests"),
+    "ch78_anova.html":
+        ("../../ch78.html#notebook", "Back to the book", "Chapter 78 · ANOVA"),
+    "ch78_challenges_solutions.html":
+        ("../../ch78.html#challenges", "Back to the book", "Chapter 78 · ANOVA"),
+    "ch79_chi_square.html":
+        ("../../ch79.html#notebook", "Back to the book", "Chapter 79 · Chi-Square Tests"),
+    "ch79_challenges_solutions.html":
+        ("../../ch79.html#challenges", "Back to the book", "Chapter 79 · Chi-Square Tests"),
+    "ch80_nonparametric.html":
+        ("../../ch80.html#notebook", "Back to the book", "Chapter 80 · Nonparametric Tests"),
+    "ch80_challenges_solutions.html":
+        ("../../ch80.html#challenges", "Back to the book", "Chapter 80 · Nonparametric Tests"),
+    "ch81_choosing_test.html":
+        ("../../ch81.html#notebook", "Back to the book", "Chapter 81 · Choosing the Right Test"),
+    "ch81_challenges_solutions.html":
+        ("../../ch81.html#challenges", "Back to the book", "Chapter 81 · Choosing the Right Test"),
+    "ch82_ab_testing.html":
+        ("../../ch82.html#notebook", "Back to the book", "Chapter 82 · A/B Testing &amp; Online Experiments"),
+    "ch82_challenges_solutions.html":
+        ("../../ch82.html#challenges", "Back to the book", "Chapter 82 · A/B Testing &amp; Online Experiments"),
 }
 
 def card(href, kicker, title):
