@@ -7833,7 +7833,9 @@ a.anchor-link {
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span><span class="o">,</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">stats</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">studentized_range</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">statsmodels.api</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">statsmodels.formula.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">ols</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">statsmodels.stats.multicomp</span><span class="w"> </span><span class="kn">import</span> <span class="n">pairwise_tukeyhsd</span>
 <span class="n">BASE</span><span class="o">=</span><span class="s2">"https://raw.githubusercontent.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/main/data/"</span>
 <span class="n">rng</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">780</span><span class="p">)</span>
 </pre></div>
@@ -7981,8 +7983,8 @@ a.anchor-link {
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <div style="background:#eef2ff;border-left:5px solid #4f46e5;border-radius:10px;padding:14px 18px;font-family:Inter,sans-serif">
 <span style="font-size:12px;font-weight:800;color:#4338ca;letter-spacing:1px">CHALLENGE 4</span>
-<div style="font-size:18px;font-weight:800;color:#1a2138;margin-top:3px">Tukey HSD by hand</div>
-<div style="color:#4a5578;margin-top:5px">For the three groups in #1, find which pairs differ (alpha=0.05).</div>
+<div style="font-size:18px;font-weight:800;color:#1a2138;margin-top:3px">Tukey HSD with statsmodels</div>
+<div style="color:#4a5578;margin-top:5px">For the three groups in #1, find which pairs differ (alpha=0.05) using pairwise_tukeyhsd.</div>
 </div>
 </div>
 </div>
@@ -7995,12 +7997,8 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">k</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="p">);</span> <span class="n">N</span><span class="o">=</span><span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">g</span><span class="p">);</span> <span class="n">dfw</span><span class="o">=</span><span class="n">N</span><span class="o">-</span><span class="n">k</span>
-<span class="n">msw</span><span class="o">=</span><span class="nb">sum</span><span class="p">(((</span><span class="n">x</span><span class="o">-</span><span class="n">x</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">g</span><span class="p">)</span><span class="o">/</span><span class="n">dfw</span><span class="p">;</span> <span class="n">q</span><span class="o">=</span><span class="n">studentized_range</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="mf">0.95</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">dfw</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
-    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">k</span><span class="p">):</span>
-        <span class="n">diff</span><span class="o">=</span><span class="n">g</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">-</span><span class="n">g</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">();</span> <span class="n">hsd</span><span class="o">=</span><span class="n">q</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">msw</span><span class="o">/</span><span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">+</span><span class="mi">1</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="p">[</span><span class="n">j</span><span class="p">])))</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> vs </span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">: diff=</span><span class="si">{</span><span class="n">diff</span><span class="si">:</span><span class="s2">+.2f</span><span class="si">}</span><span class="s2">, sig=</span><span class="si">{</span><span class="nb">abs</span><span class="p">(</span><span class="n">diff</span><span class="p">)</span><span class="o">&gt;</span><span class="n">hsd</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">vals</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">g</span><span class="p">);</span> <span class="n">labels</span><span class="o">=</span><span class="nb">sum</span><span class="p">([[</span><span class="n">n</span><span class="p">]</span><span class="o">*</span><span class="mi">30</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"G1"</span><span class="p">,</span><span class="s2">"G2"</span><span class="p">,</span><span class="s2">"G3"</span><span class="p">]],</span> <span class="p">[])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">pairwise_tukeyhsd</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span><span class="o">.</span><span class="n">summary</span><span class="p">())</span>
 </pre></div>
 </div>
 </div>
@@ -8013,9 +8011,14 @@ a.anchor-link {
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  0 vs 1: diff=-1.16, sig=False
-  0 vs 2: diff=-5.10, sig=True
-  1 vs 2: diff=-3.94, sig=True
+<pre>Multiple Comparison of Means - Tukey HSD, FWER=0.05
+===================================================
+group1 group2 meandiff p-adj   lower  upper  reject
+---------------------------------------------------
+    G1     G2   1.1616 0.6725 -2.0933 4.4165  False
+    G1     G3    5.097  0.001  1.8421 8.3519   True
+    G2     G3   3.9355 0.0136  0.6806 7.1904   True
+---------------------------------------------------
 </pre>
 </div>
 </div>
@@ -8031,7 +8034,7 @@ a.anchor-link {
 <div style="background:#eef2ff;border-left:5px solid #4f46e5;border-radius:10px;padding:14px 18px;font-family:Inter,sans-serif">
 <span style="font-size:12px;font-weight:800;color:#4338ca;letter-spacing:1px">CHALLENGE 5</span>
 <div style="font-size:18px;font-weight:800;color:#1a2138;margin-top:3px">Real data: carriers</div>
-<div style="color:#4a5578;margin-top:5px">Load ch78_carrier_delivery.xlsx and run the one-way ANOVA across carriers.</div>
+<div style="color:#4a5578;margin-top:5px">Load ch78_carrier_delivery.xlsx; run the ANOVA (ols + anova_lm) and Tukey across carriers.</div>
 </div>
 </div>
 </div>
@@ -8046,8 +8049,8 @@ a.anchor-link {
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="k">try</span><span class="p">:</span>    <span class="n">d</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="s2">"../../data/ch78_carrier_delivery.xlsx"</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="s2">"Shipments"</span><span class="p">)</span>
 <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span> <span class="n">d</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">BASE</span><span class="o">+</span><span class="s2">"ch78_carrier_delivery.xlsx"</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="s2">"Shipments"</span><span class="p">)</span>
-<span class="n">groups</span><span class="o">=</span><span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">delivery_hours</span><span class="o">.</span><span class="n">values</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span><span class="n">x</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"carrier"</span><span class="p">)]</span>
-<span class="n">F</span><span class="p">,</span><span class="n">p</span><span class="o">=</span><span class="n">stats</span><span class="o">.</span><span class="n">f_oneway</span><span class="p">(</span><span class="o">*</span><span class="n">groups</span><span class="p">);</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"F=</span><span class="si">{</span><span class="n">F</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, p=</span><span class="si">{</span><span class="n">p</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sm</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">anova_lm</span><span class="p">(</span><span class="n">ols</span><span class="p">(</span><span class="s2">"delivery_hours ~ C(carrier)"</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">d</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(),</span> <span class="n">typ</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">pairwise_tukeyhsd</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">delivery_hours</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">carrier</span><span class="p">)</span><span class="o">.</span><span class="n">summary</span><span class="p">())</span>
 </pre></div>
 </div>
 </div>
@@ -8060,7 +8063,29 @@ a.anchor-link {
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>F=22.91, p=7.99e-10
+<pre>               sum_sq     df       F  PR(&gt;F)
+C(carrier)   2173.764    2.0  22.914     0.0
+Residual    11241.803  237.0     NaN     NaN
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>    Multiple Comparison of Means - Tukey HSD, FWER=0.05    
+===========================================================
+   group1     group2   meandiff p-adj  lower  upper  reject
+-----------------------------------------------------------
+FastFreight GroundLink   5.4793    0.0 2.9109 8.0476   True
+FastFreight RegionalCo   7.0106    0.0 4.4423  9.579   True
+ GroundLink RegionalCo   1.5314 0.3393 -1.037 4.0997  False
+-----------------------------------------------------------</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>
 </pre>
 </div>
 </div>

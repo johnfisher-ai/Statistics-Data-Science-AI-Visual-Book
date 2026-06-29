@@ -7807,7 +7807,7 @@ a.anchor-link {
 <div style="background:linear-gradient(135deg,#1e1b4b 0%,#4338ca 55%,#6366f1 100%);border-radius:18px;padding:34px 30px;color:#fff;font-family:Inter,Segoe UI,sans-serif">
 <div style="font-size:12px;letter-spacing:3px;color:#c7d2fe;font-weight:700;text-transform:uppercase">Chapter 78 · Hypothesis Testing &amp; Inference</div>
 <div style="font-size:34px;font-weight:900;line-height:1.1;margin:10px 0 6px">ANOVA 📊</div>
-<div style="font-size:15px;color:#eef2ff;max-width:740px;line-height:1.6">When you have three or more groups, running every pairwise t-test inflates the error rate. ANOVA tests them all at once with the F statistic, and Tukey HSD pinpoints which differ. We apply both to three shipping carriers.</div>
+<div style="font-size:15px;color:#eef2ff;max-width:740px;line-height:1.6">When you have three or more groups, running every pairwise t-test inflates the error rate. ANOVA tests them all at once with the F statistic, and statsmodels' pairwise_tukeyhsd pinpoints which differ. We apply both to three shipping carriers.</div>
 <div style="margin-top:16px;font-size:13px;color:#c7d2fe">Statistics, Data Science and AI: A Visual Handbook · John Fisher · 2026</div>
 </div>
 </div>
@@ -7834,6 +7834,14 @@ a.anchor-link {
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span><span class="o">,</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span><span class="o">,</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">stats</span>
+<span class="c1"># statsmodels = the R/SAS-style stats library (pre-installed on Colab): it computes the</span>
+<span class="c1"># standard errors, test statistics, intervals, and post-hoc comparisons, so we write less by hand.</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">statsmodels.api</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">statsmodels.formula.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">ols</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">statsmodels.stats.proportion</span><span class="w"> </span><span class="kn">import</span> <span class="n">proportions_ztest</span><span class="p">,</span> <span class="n">confint_proportions_2indep</span><span class="p">,</span> <span class="n">proportion_confint</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">statsmodels.stats.multicomp</span><span class="w"> </span><span class="kn">import</span> <span class="n">pairwise_tukeyhsd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">statsmodels.stats.weightstats</span><span class="w"> </span><span class="kn">import</span> <span class="n">DescrStatsW</span><span class="p">,</span> <span class="n">CompareMeans</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats.contingency</span><span class="w"> </span><span class="kn">import</span> <span class="n">association</span>   <span class="c1"># Cramer's V in one call</span>
 <span class="n">IND</span><span class="o">=</span><span class="s2">"#4f46e5"</span><span class="p">;</span> <span class="n">DEEP</span><span class="o">=</span><span class="s2">"#4338ca"</span><span class="p">;</span> <span class="n">LIGHT</span><span class="o">=</span><span class="s2">"#818cf8"</span><span class="p">;</span> <span class="n">INK</span><span class="o">=</span><span class="s2">"#1a2138"</span><span class="p">;</span> <span class="n">GRID</span><span class="o">=</span><span class="s2">"#e6e9f2"</span><span class="p">;</span> <span class="n">GREEN</span><span class="o">=</span><span class="s2">"#059669"</span><span class="p">;</span> <span class="n">RED</span><span class="o">=</span><span class="s2">"#ef4444"</span><span class="p">;</span> <span class="n">AMBER</span><span class="o">=</span><span class="s2">"#d97706"</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">"figure.facecolor"</span><span class="p">:</span><span class="s2">"white"</span><span class="p">,</span><span class="s2">"axes.facecolor"</span><span class="p">:</span><span class="s2">"white"</span><span class="p">,</span><span class="s2">"figure.dpi"</span><span class="p">:</span><span class="mi">110</span><span class="p">,</span><span class="s2">"font.size"</span><span class="p">:</span><span class="mi">11</span><span class="p">,</span>
    <span class="s2">"axes.edgecolor"</span><span class="p">:</span><span class="n">GRID</span><span class="p">,</span><span class="s2">"axes.grid"</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s2">"grid.color"</span><span class="p">:</span><span class="n">GRID</span><span class="p">,</span><span class="s2">"axes.axisbelow"</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s2">"axes.spines.top"</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span>
@@ -7978,12 +7986,12 @@ identical groups: F=1.09, p=0.34  -&gt; fail to reject (as expected)
 <div style="background:#eef2ff;border-left:5px solid #4f46e5;border-radius:10px;padding:16px 20px;font-family:Inter,sans-serif">
 <span style="font-size:13px;font-weight:800;color:#4338ca;letter-spacing:1px">DEMO 3 · POST-HOC: TUKEY HSD</span>
 <div style="font-size:21px;font-weight:800;color:#1a2138;margin-top:4px">A significant F says 'someone differs', but who?</div>
-<div style="color:#4a5578;margin-top:6px">ANOVA's F is an omnibus test: it flags that SOME pair differs, not which. Tukey's Honest Significant Difference compares every pair while controlling the family-wise error rate, so you can read off exactly which groups separate.</div>
+<div style="color:#4a5578;margin-top:6px">ANOVA's F is an omnibus test: it flags that SOME pair differs, not which. Tukey's Honest Significant Difference compares every pair while controlling the family-wise error rate. We do NOT code it by hand, statsmodels' pairwise_tukeyhsd does it in one call and prints a tidy table.</div>
 </div>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=ch78-cell-11">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=ch78-cell-11">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7991,38 +7999,11 @@ identical groups: F=1.09, p=0.34  -&gt; fail to reject (as expected)
 <div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">tukey_hsd</span><span class="p">(</span><span class="n">groups</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.05</span><span class="p">):</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">studentized_range</span>
-    <span class="n">k</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">groups</span><span class="p">);</span> <span class="n">N</span><span class="o">=</span><span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">);</span> <span class="n">dfw</span><span class="o">=</span><span class="n">N</span><span class="o">-</span><span class="n">k</span>
-    <span class="n">grand</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">groups</span><span class="p">)</span>
-    <span class="n">ssw</span><span class="o">=</span><span class="nb">sum</span><span class="p">(((</span><span class="n">g</span><span class="o">-</span><span class="n">g</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">);</span> <span class="n">msw</span><span class="o">=</span><span class="n">ssw</span><span class="o">/</span><span class="n">dfw</span>
-    <span class="n">qcrit</span><span class="o">=</span><span class="n">studentized_range</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">alpha</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">dfw</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"MSW=</span><span class="si">{</span><span class="n">msw</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, df_within=</span><span class="si">{</span><span class="n">dfw</span><span class="si">}</span><span class="s2">, q*(</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">dfw</span><span class="si">}</span><span class="s2">)=</span><span class="si">{</span><span class="n">qcrit</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-    <span class="n">out</span><span class="o">=</span><span class="p">[]</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">k</span><span class="p">):</span>
-            <span class="n">diff</span><span class="o">=</span><span class="n">groups</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">-</span><span class="n">groups</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
-            <span class="n">se</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">msw</span><span class="o">/</span><span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">groups</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">+</span><span class="mi">1</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">groups</span><span class="p">[</span><span class="n">j</span><span class="p">])))</span>
-            <span class="n">hsd</span><span class="o">=</span><span class="n">qcrit</span><span class="o">*</span><span class="n">se</span><span class="p">;</span> <span class="n">sig</span><span class="o">=</span><span class="s2">"YES"</span> <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">diff</span><span class="p">)</span><span class="o">&gt;</span><span class="n">hsd</span> <span class="k">else</span> <span class="s2">"no"</span>
-            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">names</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="n">names</span><span class="p">[</span><span class="n">j</span><span class="p">],</span><span class="n">diff</span><span class="p">,</span><span class="n">diff</span><span class="o">-</span><span class="n">hsd</span><span class="p">,</span><span class="n">diff</span><span class="o">+</span><span class="n">hsd</span><span class="p">,</span><span class="n">sig</span><span class="p">))</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">names</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">:</span><span class="s2">&gt;12</span><span class="si">}</span><span class="s2"> vs </span><span class="si">{</span><span class="n">names</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="si">:</span><span class="s2">&lt;12</span><span class="si">}</span><span class="s2">: diff=</span><span class="si">{</span><span class="n">diff</span><span class="si">:</span><span class="s2">+6.2f</span><span class="si">}</span><span class="s2">  95% CI [</span><span class="si">{</span><span class="n">diff</span><span class="o">-</span><span class="n">hsd</span><span class="si">:</span><span class="s2">+6.2f</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">diff</span><span class="o">+</span><span class="n">hsd</span><span class="si">:</span><span class="s2">+6.2f</span><span class="si">}</span><span class="s2">]  sig=</span><span class="si">{</span><span class="n">sig</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">out</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=ch78-cell-12">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">g1</span><span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">50</span><span class="p">);</span> <span class="n">g2</span><span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">52</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">50</span><span class="p">);</span> <span class="n">g3</span><span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">60</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">50</span><span class="p">)</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># pairwise_tukeyhsd was imported in the setup cell; one call replaces a whole loop</span>
+<span class="n">g1</span><span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">50</span><span class="p">);</span> <span class="n">g2</span><span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">52</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">50</span><span class="p">);</span> <span class="n">g3</span><span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">60</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">50</span><span class="p">)</span>
+<span class="n">vals</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">g1</span><span class="p">,</span><span class="n">g2</span><span class="p">,</span><span class="n">g3</span><span class="p">]);</span> <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s2">"A"</span><span class="p">]</span><span class="o">*</span><span class="mi">50</span><span class="o">+</span><span class="p">[</span><span class="s2">"B"</span><span class="p">]</span><span class="o">*</span><span class="mi">50</span><span class="o">+</span><span class="p">[</span><span class="s2">"C"</span><span class="p">]</span><span class="o">*</span><span class="mi">50</span>
 <span class="n">F</span><span class="p">,</span><span class="n">p</span><span class="o">=</span><span class="n">stats</span><span class="o">.</span><span class="n">f_oneway</span><span class="p">(</span><span class="n">g1</span><span class="p">,</span><span class="n">g2</span><span class="p">,</span><span class="n">g3</span><span class="p">);</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"ANOVA F=</span><span class="si">{</span><span class="n">F</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, p=</span><span class="si">{</span><span class="n">p</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
-<span class="n">_</span><span class="o">=</span><span class="n">tukey_hsd</span><span class="p">([</span><span class="n">g1</span><span class="p">,</span><span class="n">g2</span><span class="p">,</span><span class="n">g3</span><span class="p">],</span> <span class="p">[</span><span class="s2">"A"</span><span class="p">,</span><span class="s2">"B"</span><span class="p">,</span><span class="s2">"C"</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">pairwise_tukeyhsd</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span><span class="o">.</span><span class="n">summary</span><span class="p">())</span>
 </pre></div>
 </div>
 </div>
@@ -8037,28 +8018,32 @@ identical groups: F=1.09, p=0.34  -&gt; fail to reject (as expected)
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>ANOVA F=18.24, p=8.37e-08
 
-MSW=62.224, df_within=147, q*(3,147)=3.348
-             A vs B           : diff= +0.80  95% CI [ -2.94, +4.54]  sig=no
-             A vs C           : diff= -7.82  95% CI [-11.56, -4.09]  sig=YES
-             B vs C           : diff= -8.62  95% CI [-12.36, -4.89]  sig=YES
+Multiple Comparison of Means - Tukey HSD, FWER=0.05 
+====================================================
+group1 group2 meandiff p-adj   lower   upper  reject
+----------------------------------------------------
+     A      B  -0.7997 0.8681 -4.5351  2.9357  False
+     A      C   7.8242    0.0  4.0888 11.5595   True
+     B      C   8.6238    0.0  4.8885 12.3592   True
+----------------------------------------------------
 </pre>
 </div>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ch78-cell-13">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ch78-cell-12">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>Tukey widens each comparison just enough to keep the <em>overall</em> error at 5% across all pairs. A pair is significant when its confidence interval excludes 0. This is the disciplined way to follow up a significant ANOVA, never a flurry of uncorrected t-tests.</p>
+<p>One function call, no hand-coded loops. Each row compares a pair: <code>reject=True</code> means that pair differs (its confidence interval excludes 0). Tukey widens each comparison just enough to keep the <em>overall</em> error at 5%, the disciplined way to follow up a significant ANOVA.</p>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ch78-cell-14">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ch78-cell-13">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8073,34 +8058,29 @@ MSW=62.224, df_within=147, q*(3,147)=3.348
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ch78-cell-15">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ch78-cell-14">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>A shipper compares <strong>three carriers</strong> on door-to-door delivery time (<code>ch78_carrier_delivery.xlsx</code>), 80 shipments each. Are the average times genuinely different, or is it noise? One-way ANOVA answers the global question; Tukey HSD finds the culprits.</p>
+<p>A shipper compares <strong>three carriers</strong> on door-to-door delivery time (<code>ch78_carrier_delivery.xlsx</code>), 80 shipments each. Are the average times genuinely different, or is it noise? We explore first, then run ANOVA and Tukey, both from statsmodels.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=ch78-cell-16">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=ch78-cell-15">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="k">try</span><span class="p">:</span>    <span class="n">d</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="s2">"../../data/ch78_carrier_delivery.xlsx"</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="s2">"Shipments"</span><span class="p">)</span>
 <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span> <span class="n">d</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">BASE</span><span class="o">+</span><span class="s2">"ch78_carrier_delivery.xlsx"</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="s2">"Shipments"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"loaded:"</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-<span class="n">groups</span><span class="o">=</span><span class="p">[</span><span class="n">g</span><span class="p">[</span><span class="s2">"delivery_hours"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span><span class="n">g</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"carrier"</span><span class="p">)]</span>
-<span class="n">names</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"carrier"</span><span class="p">)</span><span class="o">.</span><span class="n">groups</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"mean hours:"</span><span class="p">,</span> <span class="p">{</span><span class="n">n</span><span class="p">:</span><span class="nb">round</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span><span class="mi">2</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span><span class="p">,</span><span class="n">g</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">names</span><span class="p">,</span><span class="n">groups</span><span class="p">)})</span>
-<span class="n">F</span><span class="p">,</span><span class="n">p</span><span class="o">=</span><span class="n">stats</span><span class="o">.</span><span class="n">f_oneway</span><span class="p">(</span><span class="o">*</span><span class="n">groups</span><span class="p">)</span>
-<span class="n">grand</span><span class="o">=</span><span class="n">d</span><span class="o">.</span><span class="n">delivery_hours</span><span class="o">.</span><span class="n">mean</span><span class="p">();</span> <span class="n">ssb</span><span class="o">=</span><span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">-</span><span class="n">grand</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">);</span> <span class="n">sst</span><span class="o">=</span><span class="p">((</span><span class="n">d</span><span class="o">.</span><span class="n">delivery_hours</span><span class="o">-</span><span class="n">grand</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"ANOVA: F=</span><span class="si">{</span><span class="n">F</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, p=</span><span class="si">{</span><span class="n">p</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">, eta^2=</span><span class="si">{</span><span class="n">ssb</span><span class="o">/</span><span class="n">sst</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> (share of variance explained by carrier)"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">'-&gt; reject H0: the carriers do NOT all have the same mean delivery time'</span><span class="p">)</span>
+<span class="c1"># EXPLORE FIRST: size, missing values, and a per-carrier summary</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"shape:"</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="s2">"| missing:"</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"carrier"</span><span class="p">)</span><span class="o">.</span><span class="n">delivery_hours</span><span class="o">.</span><span class="n">agg</span><span class="p">([</span><span class="s2">"size"</span><span class="p">,</span><span class="s2">"mean"</span><span class="p">,</span><span class="s2">"std"</span><span class="p">,</span><span class="s2">"median"</span><span class="p">])</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -8113,27 +8093,35 @@ MSW=62.224, df_within=147, q*(3,147)=3.348
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>loaded: (240, 4)
-mean hours: {'FastFreight': np.float64(30.39), 'GroundLink': np.float64(35.87), 'RegionalCo': np.float64(37.4)}
-ANOVA: F=22.91, p=7.99e-10, eta^2=0.162 (share of variance explained by carrier)
--&gt; reject H0: the carriers do NOT all have the same mean delivery time
+<pre>shape: (240, 4) | missing: 0
+             size   mean   std  median
+carrier                               
+FastFreight    80  30.39  7.05   31.30
+GroundLink     80  35.87  5.92   35.94
+RegionalCo     80  37.40  7.59   36.31
 </pre>
 </div>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=ch78-cell-17">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=ch78-cell-16">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">"Tukey HSD (which carriers differ?):"</span><span class="p">)</span>
-<span class="n">_</span><span class="o">=</span><span class="n">tukey_hsd</span><span class="p">(</span><span class="n">groups</span><span class="p">,</span> <span class="n">names</span><span class="p">)</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># ANOVA via a formula (like R: hours ~ carrier), then read the table from statsmodels</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">ols</span><span class="p">(</span><span class="s2">"delivery_hours ~ C(carrier)"</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">d</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+<span class="n">aov</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">anova_lm</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">typ</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">eta2</span> <span class="o">=</span> <span class="n">aov</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">"C(carrier)"</span><span class="p">,</span><span class="s2">"sum_sq"</span><span class="p">]</span> <span class="o">/</span> <span class="n">aov</span><span class="p">[</span><span class="s2">"sum_sq"</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">aov</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">eta^2 = </span><span class="si">{</span><span class="n">eta2</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> (carrier explains ~</span><span class="si">{</span><span class="n">eta2</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">% of the variation in delivery time)"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Tukey HSD (which carriers differ?):"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">pairwise_tukeyhsd</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">delivery_hours</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">carrier</span><span class="p">)</span><span class="o">.</span><span class="n">summary</span><span class="p">())</span>
 <span class="n">fig</span><span class="p">,</span><span class="n">ax</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="mf">3.3</span><span class="p">))</span>
-<span class="n">ax</span><span class="o">.</span><span class="n">boxplot</span><span class="p">(</span><span class="n">groups</span><span class="p">,</span> <span class="n">tick_labels</span><span class="o">=</span><span class="n">names</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">boxplot</span><span class="p">([</span><span class="n">g</span><span class="o">.</span><span class="n">delivery_hours</span><span class="o">.</span><span class="n">values</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span><span class="n">g</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"carrier"</span><span class="p">)],</span> <span class="n">tick_labels</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"carrier"</span><span class="p">)</span><span class="o">.</span><span class="n">groups</span><span class="p">))</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"delivery hours"</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"Delivery time by carrier (one-way ANOVA)"</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">();</span> <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
@@ -8148,11 +8136,21 @@ ANOVA: F=22.91, p=7.99e-10, eta^2=0.162 (share of variance explained by carrier)
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Tukey HSD (which carriers differ?):
-MSW=47.434, df_within=237, q*(3,237)=3.335
-   FastFreight vs GroundLink  : diff= -5.48  95% CI [ -8.05, -2.91]  sig=YES
-   FastFreight vs RegionalCo  : diff= -7.01  95% CI [ -9.58, -4.44]  sig=YES
-    GroundLink vs RegionalCo  : diff= -1.53  95% CI [ -4.10, +1.04]  sig=no
+<pre>               sum_sq     df       F  PR(&gt;F)
+C(carrier)   2173.764    2.0  22.914     0.0
+Residual    11241.803  237.0     NaN     NaN
+
+eta^2 = 0.162 (carrier explains ~16% of the variation in delivery time)
+
+Tukey HSD (which carriers differ?):
+    Multiple Comparison of Means - Tukey HSD, FWER=0.05    
+===========================================================
+   group1     group2   meandiff p-adj  lower  upper  reject
+-----------------------------------------------------------
+FastFreight GroundLink   5.4793    0.0 2.9109 8.0476   True
+FastFreight RegionalCo   7.0106    0.0 4.4423  9.579   True
+ GroundLink RegionalCo   1.5314 0.3393 -1.037 4.0997  False
+-----------------------------------------------------------
 </pre>
 </div>
 </div>
@@ -8165,18 +8163,18 @@ MSW=47.434, df_within=237, q*(3,237)=3.335
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ch78-cell-18">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ch78-cell-17">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>The F statistic is about <strong>22.9</strong> with a p-value near 10⁻⁹, so we reject the hypothesis that all three carriers deliver equally fast; carrier explains about <strong>16%</strong> of the variation (η² ≈ 0.16). Tukey HSD then shows FastFreight (≈ 30.4 h) is significantly faster than both GroundLink (≈ 35.9 h) and RegionalCo (≈ 37.4 h), while GroundLink and RegionalCo are not clearly distinguishable. The omnibus test plus the post-hoc gives the full picture: there is a difference, and it is FastFreight pulling ahead.</p>
+<p>The F statistic is about <strong>22.9</strong> with a p-value near 10⁻⁹, so we reject the hypothesis that all three carriers deliver equally fast; carrier explains about <strong>16%</strong> of the variation (η² ≈ 0.16). The Tukey table shows FastFreight (≈ 30.4 h) is significantly faster than both GroundLink (≈ 35.9 h) and RegionalCo (≈ 37.4 h), while GroundLink and RegionalCo are not clearly distinguishable. The omnibus test plus the post-hoc gives the full picture: there is a difference, and it is FastFreight pulling ahead.</p>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ch78-cell-19">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ch78-cell-18">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8184,12 +8182,12 @@ MSW=47.434, df_within=237, q*(3,237)=3.335
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <div style="background:#ffffff;border:1px solid #e6e9f2;border-radius:16px;padding:22px 26px;font-family:Inter,sans-serif">
 <div style="font-size:19px;font-weight:800;color:#1a2138">✅ ANOVA</div>
-<div style="color:#4a5578;line-height:1.8;margin-top:8px">ANOVA compares 3+ group means in one test, avoiding the error inflation of many t-tests. The F statistic is between-group variance over within-group variance; large F (small p) rejects "all means equal". A significant F is an omnibus result, so follow it with Tukey HSD to see WHICH pairs differ. On real data, carriers differ (F=22.9, p≈10⁻⁹, η²≈0.16) with FastFreight the standout. Next: chi-square tests for categorical data.</div></div>
+<div style="color:#4a5578;line-height:1.8;margin-top:8px">ANOVA compares 3+ group means in one test, avoiding the error inflation of many t-tests. The F statistic is between-group variance over within-group variance; large F (small p) rejects "all means equal". A significant F is an omnibus result, so follow it with Tukey HSD (statsmodels' pairwise_tukeyhsd) to see WHICH pairs differ. On real data, carriers differ (F=22.9, p≈10⁻⁹, η²≈0.16) with FastFreight the standout. Next: chi-square tests for categorical data.</div></div>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ch78-cell-20">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ch78-cell-19">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
