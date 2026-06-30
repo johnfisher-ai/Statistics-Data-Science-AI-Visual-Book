@@ -320,6 +320,18 @@ MAP = {
         ("../../ch87.html#notebook", "Back to the book", "Chapter 87 · Case Study: A Customer Satisfaction Survey"),
     "ch88_manufacturing_quality.html":
         ("../../ch88.html#notebook", "Back to the book", "Chapter 88 · Case Study: Manufacturing Quality"),
+    "ch89_covariance.html":
+        ("../../ch89.html#notebook", "Back to the book", "Chapter 89 · Covariance"),
+    "ch89_challenges_solutions.html":
+        ("../../ch89.html#challenges", "Back to the book", "Chapter 89 · Covariance"),
+    "ch90_correlation.html":
+        ("../../ch90.html#notebook", "Back to the book", "Chapter 90 · Correlation Coefficients"),
+    "ch90_challenges_solutions.html":
+        ("../../ch90.html#challenges", "Back to the book", "Chapter 90 · Correlation Coefficients"),
+    "ch91_causation.html":
+        ("../../ch91.html#notebook", "Back to the book", "Chapter 91 · Correlation vs. Causation"),
+    "ch91_challenges_solutions.html":
+        ("../../ch91.html#challenges", "Back to the book", "Chapter 91 · Correlation vs. Causation"),
 }
 
 def card(href, kicker, title):
