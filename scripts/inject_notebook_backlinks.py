@@ -360,6 +360,10 @@ MAP = {
         ("../../ch98.html#notebook", "Back to the book", "Chapter 98 · Generalized Linear Models"),
     "ch98_challenges_solutions.html":
         ("../../ch98.html#challenges", "Back to the book", "Chapter 98 · Generalized Linear Models"),
+    "ch99_econometrics.html":
+        ("../../ch99.html#notebook", "Back to the book", "Chapter 99 · Econometrics & Panel Data"),
+    "ch99_challenges_solutions.html":
+        ("../../ch99.html#challenges", "Back to the book", "Chapter 99 · Econometrics & Panel Data"),
 }
 
 def card(href, kicker, title):
