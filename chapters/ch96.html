@@ -387,9 +387,63 @@
       </div>
     </div>
 
-    <p><b>Fit and evaluate (steps 2&#8211;3).</b> The model ranks risk well, AUC = 0.82, McFadden pseudo-R&#178; = 0.24,
-       and its odds ratios tell a clear story: credit score is strongly protective, debt-to-income strongly raises risk.
-       <b>Interpret and decide (step 5).</b> The threshold is where the business trade-off lives:</p>
+    <p><b>Step 1, check the data.</b> Before fitting, confirm the outcome really tracks the predictors. The default rate
+       falls steadily as credit score rises:</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 250" width="100%" font-family="Inter, sans-serif" aria-label="A bar chart of default rate by credit-score band, falling steadily from low scores to high scores, showing credit score is a strong predictor and motivating the S-curve model">
+        <text x="340" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">Step 1: explore. Default rate falls steadily as credit score rises</text>
+        <text x="340" y="37" text-anchor="middle" font-size="9" fill="#4a5578">A clear, monotonic signal, credit score should be a strong predictor in the model</text>
+        <line x1="56" y1="58" x2="56" y2="192" stroke="#1a2138" stroke-width="1.1"/>
+        <line x1="56" y1="192" x2="654" y2="192" stroke="#1a2138" stroke-width="1.1"/>
+        <rect x="74.9" y="75.5" width="61.8" height="116.5" fill="#ea580c" opacity="0.8"/>
+        <text x="105.8" y="71.5" text-anchor="middle" font-size="8" fill="#c2410c" font-weight="700">65%</text>
+        <text x="105.8" y="207" text-anchor="middle" font-size="7.2" fill="#94a3b8">559-603</text>
+        <rect x="174.6" y="91.8" width="61.8" height="100.2" fill="#ea580c" opacity="0.8"/>
+        <text x="205.5" y="87.8" text-anchor="middle" font-size="8" fill="#c2410c" font-weight="700">56%</text>
+        <text x="205.5" y="207" text-anchor="middle" font-size="7.2" fill="#94a3b8">603-646</text>
+        <rect x="274.3" y="139.7" width="61.8" height="52.3" fill="#ea580c" opacity="0.8"/>
+        <text x="305.2" y="135.7" text-anchor="middle" font-size="8" fill="#c2410c" font-weight="700">29%</text>
+        <text x="305.2" y="207" text-anchor="middle" font-size="7.2" fill="#94a3b8">646-689</text>
+        <rect x="373.9" y="174.5" width="61.8" height="17.5" fill="#ea580c" opacity="0.8"/>
+        <text x="404.8" y="170.5" text-anchor="middle" font-size="8" fill="#c2410c" font-weight="700">10%</text>
+        <text x="404.8" y="207" text-anchor="middle" font-size="7.2" fill="#94a3b8">689-732</text>
+        <rect x="473.6" y="169.5" width="61.8" height="22.5" fill="#ea580c" opacity="0.8"/>
+        <text x="504.5" y="165.5" text-anchor="middle" font-size="8" fill="#c2410c" font-weight="700">12%</text>
+        <text x="504.5" y="207" text-anchor="middle" font-size="7.2" fill="#94a3b8">732-775</text>
+        <rect x="573.3" y="178.1" width="61.8" height="13.9" fill="#ea580c" opacity="0.8"/>
+        <text x="604.2" y="174.1" text-anchor="middle" font-size="8" fill="#c2410c" font-weight="700">8%</text>
+        <text x="604.2" y="207" text-anchor="middle" font-size="7.2" fill="#94a3b8">775-819</text>
+        <text x="355" y="240" text-anchor="middle" font-size="9" fill="#4a5578">credit-score band &#8594;</text>
+        <text x="18" y="125" text-anchor="middle" font-size="9" fill="#4a5578" transform="rotate(-90 18 125)">default rate &#8594;</text>
+      </svg>
+    </figure>
+
+    <p>The relationship is strong and monotonic, so credit score should be a powerful predictor. Note also that the
+       classes are <em>imbalanced</em>, only 29% of loans default, which will matter when we choose a decision threshold.</p>
+
+    <p><b>Step 2, fit.</b> We fit <code>logit("default ~ credit_score + dti + loan_amount", loans)</code> by maximum
+       likelihood.</p>
+
+    <p><b>Step 3, evaluate.</b> The model ranks risk well, AUC = 0.82 and McFadden pseudo-R&#178; = 0.24, and its odds
+       ratios tell a clear story: credit score is strongly protective (each +50 points multiplies the odds of default by
+       0.40), while debt-to-income strongly raises risk.</p>
+
+    <p><b>Step 4, check the conditions.</b> Logistic regression has its own hazards: <em>perfect separation</em> (no
+       predictor here splits the classes cleanly, so the fit converges) and <em>class imbalance</em> (the 29% default
+       rate means plain accuracy will mislead). Both are handled at the threshold, next.</p>
+
+    <p><b>Step 5, interpret, predict, and decide.</b> A logistic model outputs a probability; <em>you</em> choose the
+       threshold that turns it into a yes/no call. First, how the probability is computed, plug a profile into the linear
+       predictor, then the sigmoid:</p>
+
+    <div style="background:var(--panel);border:1px solid var(--line);border-left:4px solid #ea580c;border-radius:10px;padding:0.8rem 1rem;margin:1rem 0;text-align:center;color:var(--ink);font-size:0.98rem">
+      p&#770; = 1 / (1 + e<sup>&#8722;(9.39 &#8722; 0.0183 &#215; credit + 5.03 &#215; dti + &#8230;)</sup>)
+    </div>
+
+    <p>For a 650 credit score, 0.30 debt-to-income, and a $20k loan, the linear part works out to &#8722;0.83, so
+       p&#770; = 1 / (1 + e<sup>0.83</sup>) &#8776; <strong>0.30</strong>, a 30% default risk. The threshold then turns that
+       number into approve-or-decline, trading two errors against each other:</p>
 
     <div style="overflow-x:auto">
       <table class="disp-table">
@@ -401,15 +455,8 @@
       </table>
     </div>
 
-    <p><b>How a probability becomes a decision.</b> Plug a profile into the linear predictor, then the sigmoid:</p>
-
-    <div style="background:var(--panel);border:1px solid var(--line);border-left:4px solid #ea580c;border-radius:10px;padding:0.8rem 1rem;margin:1rem 0;text-align:center;color:var(--ink);font-size:0.98rem">
-      p&#770; = 1 / (1 + e<sup>&#8722;(9.39 &#8722; 0.0183 &#215; credit + 5.03 &#215; dti + &#8230;)</sup>)
-    </div>
-
-    <p>For a 650 credit score, 0.30 debt-to-income, and a $20k loan, the linear part works out to &#8722;0.83, so
-       p&#770; = 1 / (1 + e<sup>0.83</sup>) &#8776; <strong>0.30</strong>, a 30% default risk. The threshold then turns that
-       number into approve-or-decline, and lowering it from 0.5 to 0.3 is the imbalance remedy in action:</p>
+    <p>Lowering the threshold from 0.5 to 0.3 is the imbalance remedy in action, catching more defaults at the cost of
+       more false alarms:</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
       <svg viewBox="0 0 680 262" width="100%" font-family="Inter, sans-serif" aria-label="Two confusion matrices for the loan model: at a 0.5 threshold the model catches only 56 percent of defaults, and at a 0.3 threshold it catches 75 percent, the imbalance remedy of lowering the threshold">
