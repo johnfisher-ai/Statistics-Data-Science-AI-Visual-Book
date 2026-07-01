@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 95 · Regression Assumptions &amp; Diagnostics — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#fff7ed; border:1px solid #fed7aa; border-left:4px solid #ea580c; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#c2410c; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch95_diagnostics.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XV · Regression Analysis</span><span class="sep">/</span>
+      <span>Chapter 95</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XV · Regression Analysis</span> Steps 1 and 4, up close</div>
+    <h1>Regression Assumptions &amp; <span class="accent">Diagnostics</span></h1>
+    <p class="dek">A regression will always return numbers. Whether you can trust them depends on four assumptions, and a
+       handful of plots and tests that check them. This is the chapter that turns "the model ran" into "the model is
+       sound," and shows what to do when it is not.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~19 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 95</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Two models can share an R&#178; of 0.70. One is trustworthy; the other systematically under-predicts
+       half your cases and has confidence intervals that are quietly wrong. The only way to tell them apart is to look at
+       the <span class="hl">residuals</span>, what the model got wrong. Diagnostics are that look.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#949;</div>
+      <div class="def-body">
+        Regression's guarantees rest on the <span class="def-kw">LINE</span> assumptions:
+        <span class="def-kw">L</span>inearity, <span class="def-kw">I</span>ndependence of errors,
+        <span class="def-kw">N</span>ormality of residuals, and <span class="def-kw">E</span>qual variance
+        (homoscedasticity). <span class="def-kw">Diagnostics</span> are the residual plots and tests that check each one,
+        plus the tools that find <span class="def-kw">influential points</span> capable of bending the whole fit.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🧭</div>
+      <div><div class="ctitle">This is the workflow's conscience</div>
+        <p>Steps 1 and 4, check the data, then re-check the residuals, live here. A model that fails them is not ready to
+           interpret, no matter how high its R&#178;. Diagnose, remedy, re-fit.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: LINE + vocab ===== -->
+  <section id="assumptions">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The LINE Assumptions and Their Diagnostics</h2></div>
+    <p>Each assumption has a plot that reveals it and a formal test that confirms it. Learn the <em>shapes</em> first, one
+       residual-versus-fitted plot and one Q-Q plot catch most problems at a glance.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 246" width="100%" font-family="Inter, sans-serif" aria-label="Four mini residual plots showing what a healthy fit and three assumption violations look like: a random band (healthy), a curve (nonlinearity), a funnel (unequal variance), and a bent Q-Q plot (non-normal residuals)">
+        <text x="340" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">Reading residual plots: the four patterns to know</text>
+        <rect x="20" y="44" width="152" height="116" rx="8" fill="#ecfdf5" stroke="#86efac"/>
+        <text x="96.0" y="38" text-anchor="middle" font-size="9.5" fill="#15803d" font-weight="800">Healthy</text>
+        <line x1="34" y1="102.0" x2="160" y2="102.0" stroke="#4a5578" stroke-width="1" stroke-dasharray="4 3"/>
+        <circle cx="38" cy="109" r="2.3" fill="#15803d" opacity="0.72"/>
+        <circle cx="43" cy="113" r="2.3" fill="#15803d" opacity="0.72"/>
+        <circle cx="47" cy="104" r="2.3" fill="#15803d" opacity="0.72"/>
+        <circle cx="52" cy="99" r="2.3" fill="#15803d" opacity="0.72"/>
+        <circle cx="57" cy="93" r="2.3" fill="#15803d" opacity="0.72"/>
+        <circle cx="62" cy="101" r="2.3" fill="#15803d" opacity="0.72"/>
+        <circle cx="66" cy="107" r="2.3" fill="#15803d" opacity="0.72"/>
+        <circle cx="71" cy="108" r="2.3" fill="#15803d" opacity="0.72"/>
+        <circle cx="76" cy="96" r="2.3" fill="#15803d" opacity="0.72"/>
+        <circle cx="80" cy="89" r="2.3" fill="#15803d" opacity="0.72"/>
+        <circle cx="85" cy="100" r="2.3" fill="#15803d" opacity="0.72"/>
+        <circle cx="90" cy="112" r="2.3" fill="#15803d" opacity="0.72"/>
+        <circle cx="95" cy="110" r="2.3" fill="#15803d" opacity="0.72"/>
+        <circle cx="99" cy="89" r="2.3" fill="#15803d" opacity="0.72"/>
+        <circle cx="104" cy="100" r="2.3" fill="#15803d" opacity="0.72"/>
+        <circle cx="109" cy="116" r="2.3" fill="#15803d" opacity="0.72"/>
+        <circle cx="114" cy="103" r="2.3" fill="#15803d" opacity="0.72"/>
+        <circle cx="118" cy="112" r="2.3" fill="#15803d" opacity="0.72"/>
+        <circle cx="123" cy="107" r="2.3" fill="#15803d" opacity="0.72"/>
+        <circle cx="128" cy="106" r="2.3" fill="#15803d" opacity="0.72"/>
+        <circle cx="132" cy="108" r="2.3" fill="#15803d" opacity="0.72"/>
+        <circle cx="137" cy="97" r="2.3" fill="#15803d" opacity="0.72"/>
+        <circle cx="142" cy="103" r="2.3" fill="#15803d" opacity="0.72"/>
+        <circle cx="147" cy="107" r="2.3" fill="#15803d" opacity="0.72"/>
+        <circle cx="151" cy="99" r="2.3" fill="#15803d" opacity="0.72"/>
+        <circle cx="156" cy="95" r="2.3" fill="#15803d" opacity="0.72"/>
+        <text x="96.0" y="176" text-anchor="middle" font-size="8.4" fill="#1a2138" font-weight="700">random band</text>
+        <text x="96.0" y="189" text-anchor="middle" font-size="7.8" fill="#4a5578">fix: all LINE ok</text>
+        <rect x="180" y="44" width="152" height="116" rx="8" fill="#fef2f2" stroke="#fecaca"/>
+        <text x="256.0" y="38" text-anchor="middle" font-size="9.5" fill="#dc2626" font-weight="800">Curve</text>
+        <line x1="194" y1="102.0" x2="320" y2="102.0" stroke="#4a5578" stroke-width="1" stroke-dasharray="4 3"/>
+        <circle cx="198" cy="103" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="203" cy="100" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="207" cy="106" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="212" cy="105" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="217" cy="112" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="222" cy="108" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="226" cy="110" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="231" cy="113" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="236" cy="118" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="240" cy="116" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="245" cy="120" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="250" cy="121" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="255" cy="114" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="259" cy="120" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="264" cy="110" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="269" cy="111" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="274" cy="123" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="278" cy="112" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="283" cy="117" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="288" cy="110" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="292" cy="108" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="297" cy="115" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="302" cy="105" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="307" cy="103" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="311" cy="94" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="316" cy="101" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <text x="256.0" y="176" text-anchor="middle" font-size="8.4" fill="#1a2138" font-weight="700">Linearity &#10007;</text>
+        <text x="256.0" y="189" text-anchor="middle" font-size="7.8" fill="#4a5578">fix: add term / transform</text>
+        <rect x="340" y="44" width="152" height="116" rx="8" fill="#fef2f2" stroke="#fecaca"/>
+        <text x="416.0" y="38" text-anchor="middle" font-size="9.5" fill="#dc2626" font-weight="800">Funnel</text>
+        <line x1="354" y1="102.0" x2="480" y2="102.0" stroke="#4a5578" stroke-width="1" stroke-dasharray="4 3"/>
+        <circle cx="358" cy="100" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="363" cy="106" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="367" cy="104" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="372" cy="107" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="377" cy="92" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="382" cy="97" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="386" cy="79" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="391" cy="95" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="396" cy="92" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="400" cy="91" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="405" cy="110" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="410" cy="103" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="415" cy="80" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="419" cy="109" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="424" cy="99" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="429" cy="102" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="434" cy="89" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="438" cy="110" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="443" cy="106" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="448" cy="96" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="452" cy="99" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="457" cy="125" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="462" cy="77" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="467" cy="139" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="471" cy="138" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <circle cx="476" cy="142" r="2.3" fill="#dc2626" opacity="0.72"/>
+        <text x="416.0" y="176" text-anchor="middle" font-size="8.4" fill="#1a2138" font-weight="700">Equal variance &#10007;</text>
+        <text x="416.0" y="189" text-anchor="middle" font-size="7.8" fill="#4a5578">fix: log / WLS / robust SE</text>
+        <rect x="500" y="44" width="152" height="116" rx="8" fill="#fef2f2" stroke="#fecaca"/>
+        <text x="576.0" y="38" text-anchor="middle" font-size="9.5" fill="#dc2626" font-weight="800">Q-Q bend</text>
+        <line x1="514" y1="146" x2="640" y2="58" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3 2"/>
+        <circle cx="514" cy="139" r="2.3" fill="#dc2626" opacity="0.75"/>
+        <circle cx="522" cy="131" r="2.3" fill="#dc2626" opacity="0.75"/>
+        <circle cx="531" cy="123" r="2.3" fill="#dc2626" opacity="0.75"/>
+        <circle cx="539" cy="118" r="2.3" fill="#dc2626" opacity="0.75"/>
+        <circle cx="548" cy="113" r="2.3" fill="#dc2626" opacity="0.75"/>
+        <circle cx="556" cy="109" r="2.3" fill="#dc2626" opacity="0.75"/>
+        <circle cx="564" cy="106" r="2.3" fill="#dc2626" opacity="0.75"/>
+        <circle cx="573" cy="103" r="2.3" fill="#dc2626" opacity="0.75"/>
+        <circle cx="581" cy="101" r="2.3" fill="#dc2626" opacity="0.75"/>
+        <circle cx="590" cy="98" r="2.3" fill="#dc2626" opacity="0.75"/>
+        <circle cx="598" cy="95" r="2.3" fill="#dc2626" opacity="0.75"/>
+        <circle cx="606" cy="91" r="2.3" fill="#dc2626" opacity="0.75"/>
+        <circle cx="615" cy="86" r="2.3" fill="#dc2626" opacity="0.75"/>
+        <circle cx="623" cy="81" r="2.3" fill="#dc2626" opacity="0.75"/>
+        <circle cx="632" cy="73" r="2.3" fill="#dc2626" opacity="0.75"/>
+        <circle cx="640" cy="65" r="2.3" fill="#dc2626" opacity="0.75"/>
+        <text x="576.0" y="176" text-anchor="middle" font-size="8.4" fill="#1a2138" font-weight="700">Normality &#10007;</text>
+        <text x="576.0" y="189" text-anchor="middle" font-size="7.8" fill="#4a5578">fix: transform y</text>
+      </svg>
+    </figure>
+
+    <p>A healthy fit shows a shapeless band; every other panel is a specific alarm. Here is the full reference:</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Assumption</th><th>Diagnostic plot</th><th>Formal test</th><th>If violated</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Linearity</td><td>residuals vs fitted (want no curve)</td><td>rainbow / RESET test</td><td>add a squared term, transform, or a curved model</td></tr>
+          <tr><td class="nm">Independence</td><td>residuals vs order / time</td><td>Durbin-Watson (&#8776; 2 is good)</td><td>time-series or panel methods (Ch 99)</td></tr>
+          <tr><td class="nm">Normality</td><td>Q-Q plot of residuals (want a straight line)</td><td>Shapiro-Wilk, Jarque-Bera</td><td>transform y; large n is fairly forgiving</td></tr>
+          <tr><td class="nm">Equal variance</td><td>scale-location / residuals vs fitted (want no funnel)</td><td>Breusch-Pagan, White</td><td>log y, weighted least squares, robust SEs</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>One habit worth building: <span class="hl">always plot before you test</span>. A test gives a yes or no; the plot
+       tells you <em>how</em> the assumption fails, which is what points you to the right fix.</p>
+  </section>
+
+  <!-- ===== Section 2: leverage & influence ===== -->
+  <section id="influence">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Outliers, Leverage, and Influence</h2></div>
+    <p>Not every unusual point is a problem. Three ideas keep them straight. An <span class="term">outlier</span> has a
+       surprising y (a large residual). A <span class="term">high-leverage</span> point has an extreme x, far from the
+       others. Only when a point is <em>both</em> does it have <span class="term">influence</span>, the power to move the
+       fitted line.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 286" width="100%" font-family="Inter, sans-serif" aria-label="A scatterplot showing that a single high-leverage point far out in x pulls the fitted line toward it, while an outlier near the center of x barely moves it; leverage times discrepancy equals influence, measured by Cook distance">
+        <text x="340" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">Leverage, outliers, and influence: not every unusual point matters</text>
+        <text x="340" y="37" text-anchor="middle" font-size="9" fill="#4a5578">Influence = leverage (unusual x) &#215; discrepancy (unusual y). Cook&#8217;s distance combines them.</text>
+        <line x1="50" y1="54" x2="50" y2="234" stroke="#1a2138" stroke-width="1.1"/>
+        <line x1="50" y1="234" x2="654" y2="234" stroke="#1a2138" stroke-width="1.1"/>
+        <text x="352" y="274" text-anchor="middle" font-size="9" fill="#4a5578">x &#8594;</text>
+        <text x="16" y="144" text-anchor="middle" font-size="9" fill="#4a5578" transform="rotate(-90 16 144)">y &#8594;</text>
+        <circle cx="109.7" cy="187.7" r="3" fill="#1a2138" opacity="0.55"/>
+        <circle cx="112.6" cy="197.6" r="3" fill="#1a2138" opacity="0.55"/>
+        <circle cx="119.3" cy="194.4" r="3" fill="#1a2138" opacity="0.55"/>
+        <circle cx="135.2" cy="177.9" r="3" fill="#1a2138" opacity="0.55"/>
+        <circle cx="161.7" cy="182.1" r="3" fill="#1a2138" opacity="0.55"/>
+        <circle cx="178.0" cy="188.7" r="3" fill="#1a2138" opacity="0.55"/>
+        <circle cx="214.9" cy="179.2" r="3" fill="#1a2138" opacity="0.55"/>
+        <circle cx="228.5" cy="170.2" r="3" fill="#1a2138" opacity="0.55"/>
+        <circle cx="229.3" cy="157.5" r="3" fill="#1a2138" opacity="0.55"/>
+        <circle cx="245.1" cy="174.5" r="3" fill="#1a2138" opacity="0.55"/>
+        <circle cx="258.1" cy="172.0" r="3" fill="#1a2138" opacity="0.55"/>
+        <circle cx="280.6" cy="156.7" r="3" fill="#1a2138" opacity="0.55"/>
+        <circle cx="282.2" cy="173.5" r="3" fill="#1a2138" opacity="0.55"/>
+        <circle cx="303.5" cy="164.3" r="3" fill="#1a2138" opacity="0.55"/>
+        <circle cx="333.1" cy="148.4" r="3" fill="#1a2138" opacity="0.55"/>
+        <circle cx="334.2" cy="151.0" r="3" fill="#1a2138" opacity="0.55"/>
+        <circle cx="356.1" cy="151.4" r="3" fill="#1a2138" opacity="0.55"/>
+        <circle cx="409.4" cy="136.7" r="3" fill="#1a2138" opacity="0.55"/>
+        <circle cx="255.4" cy="104.4" r="5" fill="#d97706" stroke="#fff"/>
+        <text x="255" y="95" text-anchor="middle" font-size="8" fill="#d97706" font-weight="700">outlier, low leverage</text>
+        <text x="255" y="122" text-anchor="middle" font-size="7.4" fill="#4a5578">barely moves the line</text>
+        <circle cx="611.7" cy="172.8" r="5.5" fill="#dc2626" stroke="#fff"/>
+        <text x="612" y="191" text-anchor="middle" font-size="8" fill="#dc2626" font-weight="700">high leverage + influential</text>
+        <line x1="50.0" y1="207.0" x2="654.0" y2="99.0" stroke="#c2410c" stroke-width="2.4"/>
+        <text x="650" y="93" text-anchor="end" font-size="8" fill="#c2410c" font-weight="700">fit without red</text>
+        <line x1="50.0" y1="198.0" x2="654.0" y2="135.0" stroke="#dc2626" stroke-width="2" stroke-dasharray="6 4"/>
+        <text x="650" y="148" text-anchor="end" font-size="8" fill="#dc2626" font-weight="700">fit with red (tilted)</text>
+      </svg>
+    </figure>
+
+    <p>The amber point is a clear outlier but sits in the middle of the x-range, so it barely tilts the line. The red
+       point sits far out in x <em>and</em> off the trend, so it drags the whole fit toward itself. The standard summary
+       is <span class="term">Cook's distance</span>, which multiplies leverage by discrepancy, one number per
+       observation flagging the points worth investigating. When you find one, <span class="hl">investigate, do not just
+       delete</span>: a genuine data-entry error can be removed, but a real extreme value may be the most important row
+       you have. Fitting the model with and without it, and reporting both, is the honest move.</p>
+  </section>
+
+  <!-- ===== Section 3: fixing violations ===== -->
+  <section id="remedies">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Fixing Violations: the Remedy Catalog</h2></div>
+    <p>Diagnosis is only useful if you know the cure. Match the symptom to the fix:</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Symptom</th><th>Likely cause</th><th>Remedy</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Curve in residuals</td><td>missing nonlinearity</td><td>add x&#178; or interaction, transform x, splines (Ch 97)</td></tr>
+          <tr><td class="nm">Funnel (growing spread)</td><td>variance scales with the mean</td><td>model log(y); weighted least squares; robust (HC) SEs</td></tr>
+          <tr><td class="nm">Skewed / heavy-tailed residuals</td><td>skewed response</td><td>log or Box-Cox transform of y</td></tr>
+          <tr><td class="nm">Residuals track over time</td><td>autocorrelation</td><td>Newey-West SEs, add lags, time-series models (Ch 99)</td></tr>
+          <tr><td class="nm">A few points dominate</td><td>influential outliers</td><td>investigate; robust regression; report with and without</td></tr>
+          <tr><td class="nm">Coefficients unstable</td><td>multicollinearity</td><td>drop/combine predictors; ridge (Ch 97)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The single most common and most effective remedy is the <span class="hl">log transform of a skewed, positive
+       response</span>. It routinely fixes curvature, funnel, and skew in one move, as the next section shows on real
+       data.</p>
+  </section>
+
+  <!-- ===== Section 4: REAL-WORLD ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: Diagnosing an Insurance Model</h2></div>
+    <p>We model annual medical <code>charges</code> from age, BMI, and smoking. The naive fit looks fine on R&#178;, then
+       the diagnostics expose two violations, and one transform fixes both.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · ch95_insurance.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per policyholder with <code>age</code>, <code>bmi</code>,
+        <code>smoker</code> (yes / no), and annual <code>charges</code> (dollars).</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/ch95_insurance.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 300 policies</small></a>
+      </div>
+    </div>
+
+    <p><b>Fit, then diagnose (steps 2&#8211;4).</b> The model of <code>charges</code> in raw dollars posts a respectable
+       R&#178; = 0.70, but its residuals fail two checks; modeling <code>log(charges)</code> instead repairs them, and
+       even fits better:</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Check</th><th>charges (levels)</th><th>log(charges)</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Equal variance (Breusch-Pagan p)</td><td>&lt;0.001 &#10007; funnel</td><td>0.88 &#10003; flat</td></tr>
+          <tr><td class="nm">Normality (Jarque-Bera p)</td><td>&lt;0.001 &#10007; right-skewed</td><td>0.50 &#10003; straight Q-Q</td></tr>
+          <tr><td class="nm">Independence (Durbin-Watson)</td><td>2.17 &#10003;</td><td>1.94 &#10003;</td></tr>
+          <tr><td class="nm">R&#178;</td><td>0.70</td><td><strong>0.78</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><b>Interpret (step 5).</b> On the log scale the coefficients read as percentages: each year of age adds about
+       <strong>3.2%</strong> to charges, each BMI point about <strong>3.1%</strong>, and being a smoker multiplies
+       charges by <strong>e<sup>1.47</sup> &#8776; 4.3&#215;</strong>, the single biggest driver. Cook's distance flags a
+       handful of high-charge policyholders (max &#8776; 0.26) worth a look, but none overturns the story. The naive
+       levels model would have reported the same smoker effect with <em>untrustworthy</em> standard errors;
+       <span class="hl">the diagnostics are what let you believe the p-values.</span></p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Diagnostics in Machine Learning &amp; AI</h2></div>
+    <p>Model checking does not disappear in ML; it changes name and grows more important as models grow more opaque.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Idea (this chapter)</th><th>In ML / AI it becomes</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Residual analysis</td><td>Error analysis on held-out data</td><td>plotting where predictions fail, by segment</td></tr>
+          <tr><td class="nm">Heteroscedastic errors</td><td>Non-uniform uncertainty</td><td>quantile regression, heteroscedastic likelihoods</td></tr>
+          <tr><td class="nm">Influential points</td><td>Influence functions &amp; data valuation</td><td>which training points most change the model</td></tr>
+          <tr><td class="nm">Normality of errors</td><td>Calibration of predicted distributions</td><td>calibration plots, proper scoring rules</td></tr>
+          <tr><td class="nm">Assumption checks</td><td>Subgroup / fairness audits</td><td>catching systematic error on a subpopulation</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>A single validation score is the machine-learning equivalent of reporting R&#178; and stopping, it can be high
+           while the model is systematically wrong on a subgroup that the aggregate number averages away. The discipline
+           of this chapter, <strong>look at the residuals, by segment, not just the summary</strong>, is exactly what
+           modern <em>error analysis</em> and <em>fairness auditing</em> formalize. <strong>Influence functions</strong>,
+           now used to trace a model's behavior back to individual training examples, are Cook's distance grown up. And
+           because deep models rarely emit honest error bars by default, the heteroscedasticity and normality checks here
+           reappear as <em>calibration</em>: does the model's stated confidence match its real accuracy? The habits scale;
+           the summary statistic never tells the whole story.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Run the full diagnostic suite</h3>
+          <p>The companion notebook builds the classic four-plot diagnostic dashboard with <code>statsmodels</code>,
+             runs Breusch-Pagan, Jarque-Bera, and Durbin-Watson, computes leverage and <strong>Cook's distance</strong>,
+             then applies the log transform to <code>ch95_insurance.xlsx</code> and watches every violation clear, before
+             and after, side by side.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch95_diagnostics.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch95_diagnostics.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch95_diagnostics.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, <code>scipy</code>,
+      <code>matplotlib</code>, <code>seaborn</code>, <code>statsmodels</code>, and <code>openpyxl</code> and launch
+      <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Trust rests on the LINE assumptions</strong>: Linearity, Independence, Normality, Equal variance, checked with residual and Q-Q plots plus formal tests.</span></li>
+        <li><span class="ck">✓</span><span><strong>Learn the shapes</strong>: a random band is healthy; a curve, a funnel, or a bent Q-Q plot each name a specific violation and its fix.</span></li>
+        <li><span class="ck">✓</span><span><strong>Influence = leverage &#215; discrepancy</strong>: use Cook's distance to flag points that bend the fit, then investigate rather than delete.</span></li>
+        <li><span class="ck">✓</span><span><strong>Most violations have a simple cure</strong>, and a log transform of a skewed positive response fixes curvature, funnel, and skew at once.</span></li>
+        <li><span class="ck">✓</span><span><strong>Real data</strong>: the insurance model failed Breusch-Pagan and Jarque-Bera in dollars but passed both in log(charges), which even raised R&#178; from 0.70 to 0.78.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges using the statsmodels diagnostic tools.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Build the diagnostic dashboard</h4>
+        <p>Fit <code>charges ~ age + bmi + C(smoker)</code> and produce residual-vs-fitted, Q-Q, and scale-location plots.</p>
+        <div class="chint">Hint: <code>model.resid</code>, <code>model.fittedvalues</code>, <code>sm.qqplot</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Test every assumption</h4>
+        <p>Run Breusch-Pagan, Jarque-Bera, and Durbin-Watson; state which LINE conditions hold.</p>
+        <div class="chint">Hint: <code>het_breuschpagan</code>, <code>jarque_bera</code>, <code>durbin_watson</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Fix it with a log</h4>
+        <p>Refit on <code>log(charges)</code> and show the funnel and skew are gone.</p>
+        <div class="chint">Hint: compare the two residual-vs-fitted plots and the two Breusch-Pagan p-values.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Find influential points</h4>
+        <p>Compute leverage, studentized residuals, and Cook's distance; flag the top few observations.</p>
+        <div class="chint">Hint: <code>model.get_influence()</code> gives <code>cooks_distance</code> and <code>hat_matrix_diag</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Refit without the influencers</h4>
+        <p>Drop the highest-Cook's-distance points, refit, and compare the coefficients, are the conclusions stable?</p>
+        <div class="chint">Hint: robustness check, big changes mean the result leans on a few rows.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code. Try
+           them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/ch95_challenges_solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch95_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch95_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on assumptions and diagnostics. Answer them, hit <strong>Check Answers</strong>, and keep
+       refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">🏁</div>
+    <div><div class="ctitle">Onward</div>
+      <p>You can now certify a linear model as sound, or diagnose and repair it. <strong>Chapter 96 &middot; Logistic
+         Regression</strong> carries the whole workflow to a new kind of outcome, a yes/no response, where the line
+         becomes an S-curve.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch94.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 94 · Previous</span><br><span class="cn-title">Multiple Linear Regression</span></span>
+    </a>
+    <div class="cn-btn next" style="cursor:default;opacity:0.6" title="Coming soon">
+      <span><span class="cn-dir">Chapter 96 · Coming soon</span><br><span class="cn-title">Logistic Regression</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </div>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 95 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch95";
+  window.QUIZ_DATA = [
+    {
+      q: "The LINE assumptions of linear regression are…",
+      options: ["Linear, Independent, Numeric, Even", "Linearity, Independence, Normality, Equal variance", "Least, Inverse, Normal, Exact", "Location, Interval, Null, Error"],
+      answer: 1,
+      explain: "Linearity, Independence of errors, Normality of residuals, and Equal variance (homoscedasticity)."
+    },
+    {
+      q: "The single most useful diagnostic plot is…",
+      options: ["A histogram of y", "Residuals vs fitted values", "A bar chart of x", "The correlation matrix"],
+      answer: 1,
+      explain: "Residuals vs fitted reveals nonlinearity (curve) and unequal variance (funnel) at a glance."
+    },
+    {
+      q: "A funnel shape in residuals vs fitted indicates a violation of…",
+      options: ["Linearity", "Normality", "Equal variance (homoscedasticity)", "Independence"],
+      answer: 2,
+      explain: "Growing spread is heteroscedasticity; test with Breusch-Pagan and fix with a log, WLS, or robust SEs."
+    },
+    {
+      q: "A Q-Q plot of the residuals checks…",
+      options: ["Linearity", "Normality of the residuals", "Independence", "Multicollinearity"],
+      answer: 1,
+      explain: "Points on the straight reference line mean approximately Normal residuals; systematic bending means non-normal."
+    },
+    {
+      q: "A point with an extreme x value (far from the others) has high…",
+      options: ["Leverage", "Normality", "R&#178;", "Correlation"],
+      answer: 0,
+      explain: "Leverage measures how unusual a point's predictor values are; extreme x = high leverage."
+    },
+    {
+      q: "Influence (e.g., Cook's distance) combines…",
+      options: ["Mean and variance", "Leverage (unusual x) and discrepancy (unusual y)", "R&#178; and adjusted R&#178;", "Slope and intercept"],
+      answer: 1,
+      explain: "A point moves the fit only if it is both high-leverage and off-trend; Cook's distance captures both."
+    },
+    {
+      q: "You find one point with a very large Cook's distance. Best first step?",
+      options: ["Delete it immediately", "Investigate it, and report the fit with and without it", "Ignore it", "Increase the sample size"],
+      answer: 1,
+      explain: "Investigate rather than delete; a genuine extreme value may matter. Reporting both fits is the honest move."
+    },
+    {
+      q: "For a right-skewed, strictly positive response with fanning residuals, the go-to fix is…",
+      options: ["Delete the large values", "Model log(y)", "Add more predictors", "Use a bigger significance level"],
+      answer: 1,
+      explain: "A log transform of a skewed positive response commonly fixes curvature, funnel, and skew together."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
