@@ -316,9 +316,20 @@
       </div>
     </div>
 
-    <p><b>Fit and interpret (steps 2, 5).</b> A Poisson GLM with a log(exposure) offset gives clean rate ratios: younger
-       drivers and urban policies file more claims. <b>Check the conditions (step 4).</b> The counts are badly
-       overdispersed, so we refit as negative binomial:</p>
+    <p><b>Step 1, check the data.</b> The outcome is a count, mostly small with a long right tail. The claims average
+       about 2.8 per policy but their variance is roughly 20, and about a third of policies have zero claims. That
+       variance-far-above-the-mean is already a hint that a plain Poisson model (which assumes they are equal) may not
+       fit.</p>
+
+    <p><b>Step 2, fit.</b> We fit a Poisson GLM with a <code>log(exposure_years)</code> offset, so we model a claim
+       <em>rate</em> per year rather than a raw count:
+       <code>glm("claims ~ driver_age + car_age + C(region)", family=Poisson(), offset=log(exposure))</code>.</p>
+
+    <p><b>Step 3, evaluate.</b> The rate ratios tell a clean story: younger drivers and urban policies file more claims
+       (each +10 years of age carries a rate ratio of 0.79, and urban policies file at about 2.4&#215; the rural rate).</p>
+
+    <p><b>Step 4, check the conditions.</b> The key count-model condition is that the variance equals the mean. Here it is
+       badly violated, the counts are overdispersed, so we refit as negative binomial:</p>
 
     <div style="overflow-x:auto">
       <table class="disp-table">
@@ -332,7 +343,8 @@
       </table>
     </div>
 
-    <p><b>Predict a rate.</b> The model predicts an expected claim count through the log link:</p>
+    <p><b>Step 5, interpret and predict.</b> The negative binomial keeps the same rate ratios but reports honest,
+       roughly-doubled standard errors. To predict, the model gives an expected count through the log link:</p>
 
     <div style="background:var(--panel);border:1px solid var(--line);border-left:4px solid #ea580c;border-radius:10px;padding:0.8rem 1rem;margin:1rem 0;text-align:center;color:var(--ink);font-size:1.0rem">
       claims&#770; per year = exp(1.61 &#8722; 0.024 &#215; age + 0.028 &#215; car_age + region)

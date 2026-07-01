@@ -8105,6 +8105,17 @@ Urban vs rural: rate ratio = 2.37
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p><strong>Reading rate ratios and the offset.</strong> Poisson regression models the <em>log</em> of the expected count, so a raw coefficient is a change in log-rate. Exponentiate it (e^coef) and you get a <strong>rate ratio</strong>: the factor by which the expected number of claims multiplies per one-unit rise in the predictor. Below 1 lowers the rate (older drivers), above 1 raises it (urban). The <strong>offset</strong> log(exposure_years) is what turns a raw count into a rate: because it enters with a fixed coefficient of 1, the model compares claims <em>per year insured</em>, so a policy observed for half a year is not unfairly credited with fewer claims.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ch98-cell-12">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <div style="background:#fff7ed;border-left:5px solid #ea580c;border-radius:10px;padding:16px 20px;font-family:Inter,sans-serif">
 <span style="font-size:13px;font-weight:800;color:#c2410c;letter-spacing:1px">DEMO 3 · STEP 4</span>
 <div style="font-size:21px;font-weight:800;color:#1a2138;margin-top:4px">Detect overdispersion</div>
@@ -8113,7 +8124,7 @@ Urban vs rural: rate ratio = 2.37
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=ch98-cell-12">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=ch98-cell-13">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8157,7 +8168,7 @@ Pearson chi2 / df = 4.83   (near 1 if Poisson holds)
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ch98-cell-13">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ch98-cell-14">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8171,7 +8182,7 @@ Pearson chi2 / df = 4.83   (near 1 if Poisson holds)
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=ch98-cell-14">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=ch98-cell-15">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8215,18 +8226,35 @@ Rate ratios barely move; the standard errors roughly double. Poisson was over-co
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ch98-cell-15">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ch98-cell-16">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p><strong>The workflow, count edition:</strong> we chose a family and link to match a count outcome (step 1), fit by maximum likelihood, checked the key count-model condition, overdispersion, in step 4, and switched to the negative binomial remedy, leaving the rate ratios intact but the standard errors honest.</p>
+<p><strong>Why the negative binomial matters.</strong> Poisson and negative binomial give almost the <em>same</em> rate ratios, so the story about which factors matter is unchanged. What changes is certainty. Poisson assumes variance = mean; when the data are overdispersed, that makes the standard errors too small, so every p-value and confidence interval looks more significant than it should. The negative binomial adds a dispersion parameter that lets variance exceed the mean, which roughly doubles the standard errors here and slashes the AIC from 2881 to 2068. Same coefficients, honest error bars.</p>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ch98-cell-16">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ch98-cell-17">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Putting-it-all-together:-the-count-model-workflow">Putting it all together: the count-model workflow<a class="anchor-link" href="#Putting-it-all-together:-the-count-model-workflow">¶</a></h2><p>The GLM framework let us fit a count outcome with the same recipe as linear and logistic regression, just a different family and link.</p>
+<p><strong>Step 1, explore.</strong> The claim counts were small and right-skewed (mean about 2.8, variance about 20, a third of policies at zero). Variance far above the mean was an early warning that plain Poisson might not fit.</p>
+<p><strong>Step 2, fit.</strong> We chose the <strong>Poisson family with a log link</strong> for counts, and added a <strong>log(exposure) offset</strong> so the model predicts a rate per year insured rather than a raw count.</p>
+<p><strong>Step 3, evaluate, and rate ratios.</strong> Exponentiating the coefficients gave rate ratios: each +10 years of driver age multiplies the claim rate by 0.79, and urban policies file at about 2.4 times the rural rate.</p>
+<p><strong>Step 4, check the conditions (overdispersion).</strong> The count-model condition is variance = mean. We tested it with the <strong>Pearson chi-square / df</strong> (4.8, far above the ideal 1) and by binning the data (variance sat well above the mean). Both said the counts are overdispersed, so Poisson's standard errors cannot be trusted.</p>
+<p><strong>The remedy.</strong> We refit as a <strong>negative binomial</strong>, which adds a dispersion parameter so variance can exceed the mean. The rate ratios barely moved, but the standard errors roughly doubled (honest now) and the AIC fell from 2881 to 2068, a much better fit.</p>
+<p><strong>Takeaway.</strong> Every regression in this Part is one GLM with a different family and link: identity/Normal for numbers, logit/Binomial for yes-no, log/Poisson for counts. Overdispersion is to Poisson what heteroscedasticity is to linear regression, the diagnostic that keeps your p-values believable.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ch98-cell-18">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
