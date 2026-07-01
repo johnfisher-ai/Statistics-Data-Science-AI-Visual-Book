@@ -325,9 +325,55 @@
       </div>
     </div>
 
-    <p><b>Fit, then diagnose (steps 2&#8211;4).</b> The model of <code>charges</code> in raw dollars posts a respectable
-       R&#178; = 0.70, but its residuals fail two checks; modeling <code>log(charges)</code> instead repairs them, and
-       even fits better:</p>
+    <p><b>Step 1, check the data.</b> Before modeling, look at the response. Annual charges are heavily right-skewed, a
+       few very expensive policies stretch out a long tail:</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 250" width="100%" font-family="Inter, sans-serif" aria-label="A histogram of annual insurance charges that is heavily right-skewed, with most policies low and a long tail of expensive ones, the shape that will break the equal-variance and normality assumptions">
+        <text x="340" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">Step 1: explore. Charges are heavily right-skewed</text>
+        <text x="340" y="37" text-anchor="middle" font-size="9" fill="#4a5578">A long tail of expensive policies, exactly the shape that fans out the residuals of a raw-dollar model</text>
+        <line x1="56" y1="54" x2="56" y2="200" stroke="#1a2138" stroke-width="1.1"/>
+        <line x1="56" y1="200" x2="654" y2="200" stroke="#1a2138" stroke-width="1.1"/>
+        <rect x="57.0" y="120.7" width="26.5" height="79.3" fill="#fdba74" opacity="0.75" stroke="#ea580c" stroke-width="0.5"/>
+        <rect x="85.5" y="67.3" width="26.5" height="132.7" fill="#fdba74" opacity="0.75" stroke="#ea580c" stroke-width="0.5"/>
+        <rect x="114.0" y="123.5" width="26.5" height="76.5" fill="#fdba74" opacity="0.75" stroke="#ea580c" stroke-width="0.5"/>
+        <rect x="142.4" y="148.1" width="26.5" height="51.9" fill="#fdba74" opacity="0.75" stroke="#ea580c" stroke-width="0.5"/>
+        <rect x="170.9" y="178.4" width="26.5" height="21.6" fill="#fdba74" opacity="0.75" stroke="#ea580c" stroke-width="0.5"/>
+        <rect x="199.4" y="182.7" width="26.5" height="17.3" fill="#fdba74" opacity="0.75" stroke="#ea580c" stroke-width="0.5"/>
+        <rect x="227.9" y="185.6" width="26.5" height="14.4" fill="#fdba74" opacity="0.75" stroke="#ea580c" stroke-width="0.5"/>
+        <rect x="256.3" y="195.7" width="26.5" height="4.3" fill="#fdba74" opacity="0.75" stroke="#ea580c" stroke-width="0.5"/>
+        <rect x="284.8" y="195.7" width="26.5" height="4.3" fill="#fdba74" opacity="0.75" stroke="#ea580c" stroke-width="0.5"/>
+        <rect x="313.3" y="197.1" width="26.5" height="2.9" fill="#fdba74" opacity="0.75" stroke="#ea580c" stroke-width="0.5"/>
+        <rect x="341.8" y="194.2" width="26.5" height="5.8" fill="#fdba74" opacity="0.75" stroke="#ea580c" stroke-width="0.5"/>
+        <rect x="370.2" y="194.2" width="26.5" height="5.8" fill="#fdba74" opacity="0.75" stroke="#ea580c" stroke-width="0.5"/>
+        <rect x="398.7" y="194.2" width="26.5" height="5.8" fill="#fdba74" opacity="0.75" stroke="#ea580c" stroke-width="0.5"/>
+        <rect x="427.2" y="198.6" width="26.5" height="1.4" fill="#fdba74" opacity="0.75" stroke="#ea580c" stroke-width="0.5"/>
+        <rect x="455.7" y="197.1" width="26.5" height="2.9" fill="#fdba74" opacity="0.75" stroke="#ea580c" stroke-width="0.5"/>
+        <rect x="484.1" y="200.0" width="26.5" height="0.0" fill="#fdba74" opacity="0.75" stroke="#ea580c" stroke-width="0.5"/>
+        <rect x="512.6" y="197.1" width="26.5" height="2.9" fill="#fdba74" opacity="0.75" stroke="#ea580c" stroke-width="0.5"/>
+        <rect x="541.1" y="198.6" width="26.5" height="1.4" fill="#fdba74" opacity="0.75" stroke="#ea580c" stroke-width="0.5"/>
+        <rect x="569.6" y="200.0" width="26.5" height="0.0" fill="#fdba74" opacity="0.75" stroke="#ea580c" stroke-width="0.5"/>
+        <rect x="598.0" y="200.0" width="26.5" height="0.0" fill="#fdba74" opacity="0.75" stroke="#ea580c" stroke-width="0.5"/>
+        <rect x="626.5" y="198.6" width="26.5" height="1.4" fill="#fdba74" opacity="0.75" stroke="#ea580c" stroke-width="0.5"/>
+        <line x1="113.7" y1="54" x2="113.7" y2="200" stroke="#c2410c" stroke-width="1.3" stroke-dasharray="4 3"/>
+        <text x="114" y="64" text-anchor="middle" font-size="8" fill="#c2410c" font-weight="700">median $9k</text>
+        <text x="121" y="216" text-anchor="middle" font-size="7.6" fill="#94a3b8">$10k</text>
+        <text x="251" y="216" text-anchor="middle" font-size="7.6" fill="#94a3b8">$30k</text>
+        <text x="380" y="216" text-anchor="middle" font-size="7.6" fill="#94a3b8">$50k</text>
+        <text x="355" y="238" text-anchor="middle" font-size="9" fill="#4a5578">annual charges &#8594;</text>
+        <text x="18" y="127" text-anchor="middle" font-size="9" fill="#4a5578" transform="rotate(-90 18 127)">number of policies &#8594;</text>
+      </svg>
+    </figure>
+
+    <p>That shape is a warning. A right-skewed, strictly positive response whose spread grows with its level is exactly
+       what makes a raw-dollar model's residuals fan out, so we should not be surprised if the equal-variance and
+       normality checks fail below.</p>
+
+    <p><b>Steps 2&#8211;3, fit and evaluate.</b> We fit <code>charges ~ age + bmi + C(smoker)</code>. In raw dollars it
+       posts a respectable R&#178; = 0.70, which <em>looks</em> fine on its own.</p>
+
+    <p><b>Step 4, check the conditions.</b> Now the residuals tell the truth. They fail two of the LINE checks, and
+       modeling <code>log(charges)</code> instead repairs both while even fitting better:</p>
 
     <div style="overflow-x:auto">
       <table class="disp-table">
@@ -962,7 +1008,7 @@
        <code>log(charges)</code> (right) they settle into a flat, healthy band that passes. The remedy from the summary
        table above, applied to real data.</p>
 
-    <p><b>Interpret (step 5).</b> On the log scale the coefficients read as percentages: each year of age adds about
+    <p><b>Step 5, interpret and predict.</b> On the log scale the coefficients read as percentages: each year of age adds about
        <strong>3.2%</strong> to charges, each BMI point about <strong>3.1%</strong>, and being a smoker multiplies
        charges by <strong>e<sup>1.47</sup> &#8776; 4.3&#215;</strong>, the single biggest driver. Cook's distance flags a
        handful of high-charge policyholders (max &#8776; 0.26) worth a look, but none overturns the story. The naive
