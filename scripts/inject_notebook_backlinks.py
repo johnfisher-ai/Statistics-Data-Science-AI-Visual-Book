@@ -352,6 +352,10 @@ MAP = {
         ("../../ch96.html#notebook", "Back to the book", "Chapter 96 · Logistic Regression"),
     "ch96_challenges_solutions.html":
         ("../../ch96.html#challenges", "Back to the book", "Chapter 96 · Logistic Regression"),
+    "ch97_regularization.html":
+        ("../../ch97.html#notebook", "Back to the book", "Chapter 97 · Regularization & Flexible Models"),
+    "ch97_challenges_solutions.html":
+        ("../../ch97.html#challenges", "Back to the book", "Chapter 97 · Regularization & Flexible Models"),
 }
 
 def card(href, kicker, title):
