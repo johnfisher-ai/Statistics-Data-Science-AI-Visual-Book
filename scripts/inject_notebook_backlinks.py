@@ -356,6 +356,10 @@ MAP = {
         ("../../ch97.html#notebook", "Back to the book", "Chapter 97 · Regularization & Flexible Models"),
     "ch97_challenges_solutions.html":
         ("../../ch97.html#challenges", "Back to the book", "Chapter 97 · Regularization & Flexible Models"),
+    "ch98_glm.html":
+        ("../../ch98.html#notebook", "Back to the book", "Chapter 98 · Generalized Linear Models"),
+    "ch98_challenges_solutions.html":
+        ("../../ch98.html#challenges", "Back to the book", "Chapter 98 · Generalized Linear Models"),
 }
 
 def card(href, kicker, title):

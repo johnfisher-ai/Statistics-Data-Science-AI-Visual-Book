@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 98 · Generalized Linear Models — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#fff7ed; border:1px solid #fed7aa; border-left:4px solid #ea580c; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#c2410c; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+    .fmla { background:var(--panel); border:1px solid var(--line); border-left:4px solid #ea580c; border-radius:10px;
+            padding:0.7rem 1rem; margin:1rem 0; font-size:0.98rem; color:var(--ink); text-align:center; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch98_glm.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XV · Regression Analysis</span><span class="sep">/</span>
+      <span>Chapter 98</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XV · Regression Analysis</span> The unifying framework</div>
+    <h1>Generalized Linear <span class="accent">Models</span></h1>
+    <p class="dek">Linear regression, logistic regression, and count regression look like three different tools. They are
+       one. The generalized linear model reveals them as a single recipe with three interchangeable parts, and adds a
+       new member for counts, Poisson regression, along with the pitfall to watch: overdispersion.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~19 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 98</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">You have already met three regressions in this Part: a straight line for numbers, an S-curve for
+       probabilities, and now a log-scale model for counts. The <span class="hl">generalized linear model</span> shows
+       they are the same machine with two dials swapped, a choice of distribution and a choice of link.</p>
+
+    <div class="def-card">
+      <div class="sigma">g</div>
+      <div class="def-body">
+        A <span class="def-kw">generalized linear model (GLM)</span> has three parts: a
+        <span class="def-kw">random component</span> (the distribution of y, from the exponential family), a
+        <span class="def-kw">linear predictor</span> &#951; = X&#946;, and a <span class="def-kw">link function</span>
+        g connecting them, g(&#956;) = &#951;. Pick <em>Normal + identity</em> and you have linear regression;
+        <em>Binomial + logit</em> gives logistic; <em>Poisson + log</em> gives count regression.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🧭</div>
+      <div><div class="ctitle">The workflow, generalized</div>
+        <p>Step 1 gains one decision, <strong>choose the family and link</strong> to match the outcome (number,
+           probability, count). Step 4 gains one check for counts, <strong>overdispersion</strong>. Everything else, fit
+           by maximum likelihood, evaluate, interpret, carries straight over.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: the umbrella ===== -->
+  <section id="umbrella">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The GLM Umbrella</h2></div>
+    <p>The genius of the GLM is separating <em>what you are predicting</em> from <em>how the predictors combine</em>. The
+       predictors always combine linearly into &#951; = X&#946;. The link function then bends &#951; onto the right scale
+       for the outcome, and the random component says how the outcome scatters around its mean.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 300" width="100%" font-family="Inter, sans-serif" aria-label="The generalized linear model umbrella: a random component, a linear predictor, and a link function combine to give linear regression (Normal, identity), logistic regression (Binomial, logit), and Poisson regression (Poisson, log)">
+        <text x="340" y="22" text-anchor="middle" font-size="13" fill="#1a2138" font-weight="800">One framework, many models: the GLM umbrella</text>
+        <rect x="12" y="42" width="204" height="62" rx="10" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="114.0" y="62" text-anchor="middle" font-size="10.5" fill="#c2410c" font-weight="800">Random component</text>
+        <text x="114.0" y="79" text-anchor="middle" font-size="9.5" fill="#1a2138">a distribution for y</text>
+        <text x="114.0" y="94" text-anchor="middle" font-size="8" fill="#4a5578">Normal, Binomial, Poisson, &#8230;</text>
+        <text x="223" y="79" text-anchor="middle" font-size="15" fill="#94a3b8" font-weight="800">+</text>
+        <rect x="230" y="42" width="204" height="62" rx="10" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="332.0" y="62" text-anchor="middle" font-size="10.5" fill="#c2410c" font-weight="800">Linear predictor</text>
+        <text x="332.0" y="79" text-anchor="middle" font-size="9.5" fill="#1a2138">&#951; = b&#8320; + b&#8321;x&#8321; + &#8230;</text>
+        <text x="332.0" y="94" text-anchor="middle" font-size="8" fill="#4a5578">the familiar X&#946;</text>
+        <text x="441" y="79" text-anchor="middle" font-size="15" fill="#94a3b8" font-weight="800">+</text>
+        <rect x="448" y="42" width="204" height="62" rx="10" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="550.0" y="62" text-anchor="middle" font-size="10.5" fill="#c2410c" font-weight="800">Link function</text>
+        <text x="550.0" y="79" text-anchor="middle" font-size="9.5" fill="#1a2138">g(&#956;) = &#951;</text>
+        <text x="550.0" y="94" text-anchor="middle" font-size="8" fill="#4a5578">identity, logit, log, &#8230;</text>
+        <text x="340" y="140" text-anchor="middle" font-size="9.5" fill="#4a5578">choose the distribution and link, and you get&#8230;</text>
+        <rect x="12" y="156" width="204" height="112" rx="10" fill="#fff" stroke="#ea580c" stroke-width="1.6"/>
+        <rect x="12" y="156" width="204" height="26" rx="10" fill="#ea580c"/>
+        <rect x="12" y="170" width="204" height="12" fill="#ea580c"/>
+        <text x="114.0" y="174" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">Linear regression</text>
+        <text x="26" y="200" font-size="8.5" fill="#4a5578">family</text>
+        <text x="202" y="200" text-anchor="end" font-size="8.8" fill="#1a2138" font-weight="700">Normal</text>
+        <text x="26" y="220" font-size="8.5" fill="#4a5578">link</text>
+        <text x="202" y="220" text-anchor="end" font-size="8.8" fill="#1a2138" font-weight="700">identity</text>
+        <text x="26" y="240" font-size="8.5" fill="#4a5578">predicts</text>
+        <text x="202" y="240" text-anchor="end" font-size="8.8" fill="#1a2138" font-weight="700">predicts a number</text>
+        <text x="114.0" y="260" text-anchor="middle" font-size="8" fill="#ea580c" font-weight="700">Ch 92</text>
+        <rect x="230" y="156" width="204" height="112" rx="10" fill="#fff" stroke="#2563eb" stroke-width="1.6"/>
+        <rect x="230" y="156" width="204" height="26" rx="10" fill="#2563eb"/>
+        <rect x="230" y="170" width="204" height="12" fill="#2563eb"/>
+        <text x="332.0" y="174" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">Logistic regression</text>
+        <text x="244" y="200" font-size="8.5" fill="#4a5578">family</text>
+        <text x="420" y="200" text-anchor="end" font-size="8.8" fill="#1a2138" font-weight="700">Binomial</text>
+        <text x="244" y="220" font-size="8.5" fill="#4a5578">link</text>
+        <text x="420" y="220" text-anchor="end" font-size="8.8" fill="#1a2138" font-weight="700">logit</text>
+        <text x="244" y="240" font-size="8.5" fill="#4a5578">predicts</text>
+        <text x="420" y="240" text-anchor="end" font-size="8.8" fill="#1a2138" font-weight="700">predicts a probability</text>
+        <text x="332.0" y="260" text-anchor="middle" font-size="8" fill="#2563eb" font-weight="700">Ch 96</text>
+        <rect x="448" y="156" width="204" height="112" rx="10" fill="#fff" stroke="#15803d" stroke-width="1.6"/>
+        <rect x="448" y="156" width="204" height="26" rx="10" fill="#15803d"/>
+        <rect x="448" y="170" width="204" height="12" fill="#15803d"/>
+        <text x="550.0" y="174" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">Poisson regression</text>
+        <text x="462" y="200" font-size="8.5" fill="#4a5578">family</text>
+        <text x="638" y="200" text-anchor="end" font-size="8.8" fill="#1a2138" font-weight="700">Poisson</text>
+        <text x="462" y="220" font-size="8.5" fill="#4a5578">link</text>
+        <text x="638" y="220" text-anchor="end" font-size="8.8" fill="#1a2138" font-weight="700">log</text>
+        <text x="462" y="240" font-size="8.5" fill="#4a5578">predicts</text>
+        <text x="638" y="240" text-anchor="end" font-size="8.8" fill="#1a2138" font-weight="700">predicts a count / rate</text>
+        <text x="550.0" y="260" text-anchor="middle" font-size="8" fill="#15803d" font-weight="700">this chapter</text>
+      </svg>
+    </figure>
+
+    <p>This is why everything in Part XV is really one idea. Swapping the family and link is all it takes to move between
+       a house price, a default probability, and a claim count, and the same <code>statsmodels</code> call,
+       <code>glm(formula, family=&#8230;)</code>, fits them all. The most common families:</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Outcome</th><th>Family</th><th>Link</th><th>Model</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Continuous number</td><td>Gaussian (Normal)</td><td>identity</td><td>linear regression (Ch 92)</td></tr>
+          <tr><td class="nm">Yes / no</td><td>Binomial</td><td>logit</td><td>logistic regression (Ch 96)</td></tr>
+          <tr><td class="nm">Count / rate</td><td>Poisson</td><td>log</td><td>Poisson regression (this chapter)</td></tr>
+          <tr><td class="nm">Overdispersed count</td><td>Negative Binomial</td><td>log</td><td>the overdispersion fix (Section 3)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== Section 2: Poisson ===== -->
+  <section id="poisson">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Poisson Regression for Counts</h2></div>
+    <p>When the outcome is a count, how many claims, visits, defects, linear regression is wrong: it can predict negative
+       counts and assumes constant variance. <span class="term">Poisson regression</span> models the log of the expected
+       count, so predictions stay positive and multiply rather than add.</p>
+
+    <div class="fmla">log(&#956;) = b&#8320; + b&#8321;x&#8321; + &#8230; &nbsp;&#8658;&nbsp; a one-unit rise in x multiplies the expected count by e<sup>b&#8321;</sup> (a <strong>rate ratio</strong>)</div>
+
+    <p>Just as logistic coefficients exponentiate to odds ratios, Poisson coefficients exponentiate to
+       <span class="term">rate ratios</span>. Two practical notes. First, when observations are exposed for different
+       lengths of time (or area, or population), add an <span class="term">offset</span>, log(exposure), so you model a
+       <em>rate</em> rather than a raw count. Second, the model is still fit by maximum likelihood and reads out like any
+       other GLM. In the claims data, each extra 10 years of driver age carries a rate ratio of about <strong>0.79</strong>
+       (a 21% lower claim rate), and urban drivers file claims at about <strong>2.4&#215;</strong> the rural rate.</p>
+  </section>
+
+  <!-- ===== Section 3: overdispersion ===== -->
+  <section id="overdispersion">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Overdispersion: the Count-Model Pitfall</h2></div>
+    <p>Poisson regression makes one strong, easily-violated assumption: the variance of the count equals its mean. Real
+       counts are usually <span class="term">overdispersed</span>, more variable than that, because of unmeasured
+       heterogeneity (some drivers are simply riskier). When you ignore it, the coefficients stay roughly right but the
+       standard errors come out <span class="hl">far too small</span>, making everything look more significant than it is.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 286" width="100%" font-family="Inter, sans-serif" aria-label="A plot of variance against mean for binned claim counts: the points lie well above the dashed line where variance equals the mean, showing overdispersion that a Poisson model cannot capture but a negative binomial can">
+        <text x="340" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">Overdispersion: real counts vary more than Poisson allows</text>
+        <text x="340" y="37" text-anchor="middle" font-size="9" fill="#4a5578">Poisson assumes variance = mean (the line); here the variance is far larger</text>
+        <line x1="56" y1="52" x2="56" y2="236" stroke="#1a2138" stroke-width="1.1"/>
+        <line x1="56" y1="236" x2="654" y2="236" stroke="#1a2138" stroke-width="1.1"/>
+        <line x1="56.0" y1="236.0" x2="654.0" y2="213.7" stroke="#94a3b8" stroke-width="1.6" stroke-dasharray="5 4"/>
+        <text x="650" y="208" text-anchor="end" font-size="8.5" fill="#94a3b8">Poisson: variance = mean</text>
+        <polyline points="56.0,236.0 66.1,235.6 76.3,235.0 86.4,234.4 96.5,233.6 106.7,232.8 116.8,231.8 126.9,230.8 137.1,229.6 147.2,228.3 157.4,227.0 167.5,225.5 177.6,223.9 187.8,222.2 197.9,220.4 208.0,218.5 218.2,216.5 228.3,214.4 238.4,212.2 248.6,209.9 258.7,207.4 268.8,204.9 279.0,202.3 289.1,199.5 299.3,196.7 309.4,193.7 319.5,190.7 329.7,187.5 339.8,184.2 349.9,180.9 360.1,177.4 370.2,173.8 380.3,170.1 390.5,166.3 400.6,162.4 410.7,158.4 420.9,154.3 431.0,150.1 441.2,145.8 451.3,141.4 461.4,136.9 471.6,132.2 481.7,127.5 491.8,122.6 502.0,117.7 512.1,112.6 522.2,107.5 532.4,102.2 542.5,96.9 552.6,91.4 562.8,85.8 572.9,80.1 583.1,74.3 593.2,68.4 603.3,62.4 613.5,56.3" fill="none" stroke="#c2410c" stroke-width="2" stroke-dasharray="2 2"/>
+        <text x="385" y="70" font-size="8.5" fill="#c2410c" font-weight="700">negative binomial: variance &gt; mean</text>
+        <circle cx="114.3" cy="227.3" r="4.5" fill="#ea580c" stroke="#fff"/>
+        <circle cx="176.9" cy="225.2" r="4.5" fill="#ea580c" stroke="#fff"/>
+        <circle cx="168.2" cy="222.7" r="4.5" fill="#ea580c" stroke="#fff"/>
+        <circle cx="182.7" cy="224.0" r="4.5" fill="#ea580c" stroke="#fff"/>
+        <circle cx="171.1" cy="225.4" r="4.5" fill="#ea580c" stroke="#fff"/>
+        <circle cx="255.6" cy="187.5" r="4.5" fill="#ea580c" stroke="#fff"/>
+        <circle cx="208.9" cy="214.9" r="4.5" fill="#ea580c" stroke="#fff"/>
+        <circle cx="321.1" cy="171.8" r="4.5" fill="#ea580c" stroke="#fff"/>
+        <circle cx="433.3" cy="122.1" r="4.5" fill="#ea580c" stroke="#fff"/>
+        <circle cx="576.0" cy="68.7" r="4.5" fill="#ea580c" stroke="#fff"/>
+        <text x="355" y="274" text-anchor="middle" font-size="9" fill="#4a5578">mean claims in the bin &#8594;</text>
+        <text x="16" y="144" text-anchor="middle" font-size="9" fill="#4a5578" transform="rotate(-90 16 144)">variance in the bin &#8594;</text>
+      </svg>
+    </figure>
+
+    <p>The tell is simple: bin the data and the variance sits well above the mean, and the Pearson chi-square divided by
+       its degrees of freedom is much larger than 1 (here about 4.8, when 1 is ideal). The remedy is to swap the family
+       for one that lets variance exceed the mean, the <span class="term">negative binomial</span> (or a quasi-Poisson
+       correction). It fits the excess zeros and the long tail that Poisson misses:</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 284" width="100%" font-family="Inter, sans-serif" aria-label="A histogram of observed claim counts with a Poisson fitted distribution that misses the excess zeros and heavy tail, and a negative binomial fit that matches them">
+        <text x="340" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">The fix: negative binomial matches the zeros and the long tail</text>
+        <line x1="52" y1="54" x2="52" y2="234" stroke="#1a2138" stroke-width="1.1"/>
+        <line x1="52" y1="234" x2="560" y2="234" stroke="#1a2138" stroke-width="1.1"/>
+        <rect x="57.1" y="73.3" width="23.7" height="160.7" fill="#fdba74" opacity="0.7"/>
+        <text x="68.9" y="248" text-anchor="middle" font-size="7.5" fill="#94a3b8">0</text>
+        <rect x="90.9" y="135.0" width="23.7" height="99.0" fill="#fdba74" opacity="0.7"/>
+        <rect x="124.8" y="162.5" width="23.7" height="71.5" fill="#fdba74" opacity="0.7"/>
+        <text x="136.7" y="248" text-anchor="middle" font-size="7.5" fill="#94a3b8">2</text>
+        <rect x="158.7" y="196.8" width="23.7" height="37.2" fill="#fdba74" opacity="0.7"/>
+        <rect x="192.5" y="197.7" width="23.7" height="36.3" fill="#fdba74" opacity="0.7"/>
+        <text x="204.4" y="248" text-anchor="middle" font-size="7.5" fill="#94a3b8">4</text>
+        <rect x="226.4" y="214.4" width="23.7" height="19.6" fill="#fdba74" opacity="0.7"/>
+        <rect x="260.3" y="230.1" width="23.7" height="3.9" fill="#fdba74" opacity="0.7"/>
+        <text x="272.1" y="248" text-anchor="middle" font-size="7.5" fill="#94a3b8">6</text>
+        <rect x="294.1" y="223.2" width="23.7" height="10.8" fill="#fdba74" opacity="0.7"/>
+        <rect x="328.0" y="221.3" width="23.7" height="12.7" fill="#fdba74" opacity="0.7"/>
+        <text x="339.9" y="248" text-anchor="middle" font-size="7.5" fill="#94a3b8">8</text>
+        <rect x="361.9" y="226.2" width="23.7" height="7.8" fill="#fdba74" opacity="0.7"/>
+        <rect x="395.7" y="228.1" width="23.7" height="5.9" fill="#fdba74" opacity="0.7"/>
+        <text x="407.6" y="248" text-anchor="middle" font-size="7.5" fill="#94a3b8">10</text>
+        <rect x="429.6" y="232.0" width="23.7" height="2.0" fill="#fdba74" opacity="0.7"/>
+        <rect x="463.5" y="232.0" width="23.7" height="2.0" fill="#fdba74" opacity="0.7"/>
+        <text x="475.3" y="248" text-anchor="middle" font-size="7.5" fill="#94a3b8">12</text>
+        <rect x="497.3" y="228.1" width="23.7" height="5.9" fill="#fdba74" opacity="0.7"/>
+        <rect x="531.2" y="231.1" width="23.7" height="2.9" fill="#fdba74" opacity="0.7"/>
+        <text x="543.1" y="248" text-anchor="middle" font-size="7.5" fill="#94a3b8">14</text>
+        <polyline points="68.9,204.6 102.8,151.2 136.7,117.6 170.5,124.9 204.4,157.3 238.3,190.9 272.1,213.8 306.0,225.9 339.9,231.1 373.7,233.1 407.6,233.7 441.5,233.9 475.3,234.0 509.2,234.0 543.1,234.0" fill="none" stroke="#2563eb" stroke-width="2.2"/>
+        <circle cx="68.9" cy="204.6" r="2.4" fill="#2563eb"/>
+        <circle cx="102.8" cy="151.2" r="2.4" fill="#2563eb"/>
+        <circle cx="136.7" cy="117.6" r="2.4" fill="#2563eb"/>
+        <circle cx="170.5" cy="124.9" r="2.4" fill="#2563eb"/>
+        <circle cx="204.4" cy="157.3" r="2.4" fill="#2563eb"/>
+        <circle cx="238.3" cy="190.9" r="2.4" fill="#2563eb"/>
+        <circle cx="272.1" cy="213.8" r="2.4" fill="#2563eb"/>
+        <circle cx="306.0" cy="225.9" r="2.4" fill="#2563eb"/>
+        <circle cx="339.9" cy="231.1" r="2.4" fill="#2563eb"/>
+        <circle cx="373.7" cy="233.1" r="2.4" fill="#2563eb"/>
+        <circle cx="407.6" cy="233.7" r="2.4" fill="#2563eb"/>
+        <circle cx="441.5" cy="233.9" r="2.4" fill="#2563eb"/>
+        <circle cx="475.3" cy="234.0" r="2.4" fill="#2563eb"/>
+        <circle cx="509.2" cy="234.0" r="2.4" fill="#2563eb"/>
+        <circle cx="543.1" cy="234.0" r="2.4" fill="#2563eb"/>
+        <polyline points="68.9,32.3 102.8,156.3 136.7,185.5 170.5,199.9 204.4,208.6 238.3,214.5 272.1,218.7 306.0,221.9 339.9,224.3 373.7,226.1 407.6,227.6 441.5,228.7 475.3,229.7 509.2,230.4 543.1,231.0" fill="none" stroke="#c2410c" stroke-width="2.6"/>
+        <circle cx="68.9" cy="32.3" r="2.4" fill="#c2410c"/>
+        <circle cx="102.8" cy="156.3" r="2.4" fill="#c2410c"/>
+        <circle cx="136.7" cy="185.5" r="2.4" fill="#c2410c"/>
+        <circle cx="170.5" cy="199.9" r="2.4" fill="#c2410c"/>
+        <circle cx="204.4" cy="208.6" r="2.4" fill="#c2410c"/>
+        <circle cx="238.3" cy="214.5" r="2.4" fill="#c2410c"/>
+        <circle cx="272.1" cy="218.7" r="2.4" fill="#c2410c"/>
+        <circle cx="306.0" cy="221.9" r="2.4" fill="#c2410c"/>
+        <circle cx="339.9" cy="224.3" r="2.4" fill="#c2410c"/>
+        <circle cx="373.7" cy="226.1" r="2.4" fill="#c2410c"/>
+        <circle cx="407.6" cy="227.6" r="2.4" fill="#c2410c"/>
+        <circle cx="441.5" cy="228.7" r="2.4" fill="#c2410c"/>
+        <circle cx="475.3" cy="229.7" r="2.4" fill="#c2410c"/>
+        <circle cx="509.2" cy="230.4" r="2.4" fill="#c2410c"/>
+        <circle cx="543.1" cy="231.0" r="2.4" fill="#c2410c"/>
+        <rect x="572" y="62" width="12" height="4" fill="#fdba74"/><text x="588" y="67" font-size="8.4" fill="#4a5578">observed</text>
+        <line x1="572" y1="84" x2="584" y2="84" stroke="#2563eb" stroke-width="2.2"/><text x="588" y="87" font-size="8.4" fill="#2563eb" font-weight="700">Poisson</text>
+        <text x="588" y="98" font-size="7.4" fill="#4a5578">misses zeros + tail</text>
+        <line x1="572" y1="114" x2="584" y2="114" stroke="#c2410c" stroke-width="2.6"/><text x="588" y="117" font-size="8.4" fill="#c2410c" font-weight="700">Neg. binomial</text>
+        <text x="588" y="128" font-size="7.4" fill="#4a5578">fits both</text>
+        <text x="306" y="272" text-anchor="middle" font-size="9" fill="#4a5578">number of claims &#8594;</text>
+        <text x="16" y="144" text-anchor="middle" font-size="9" fill="#4a5578" transform="rotate(-90 16 144)">proportion &#8594;</text>
+      </svg>
+    </figure>
+
+    <p>The negative binomial does not change the story about which factors matter, but it tells the truth about
+       <em>how sure</em> we are. On the claims data it slashes the AIC from 2881 to 2068 and roughly <span class="hl">doubles
+       the standard errors</span>, turning Poisson's over-confident intervals into honest ones. Checking for overdispersion
+       is to Poisson regression what checking for heteroscedasticity is to linear regression: the diagnostic that keeps
+       your p-values believable.</p>
+  </section>
+
+  <!-- ===== Section 4: REAL-WORLD ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: Insurance Claim Counts</h2></div>
+    <p>We model the number of <code>claims</code> per policy from driver age, car age, and region, with years insured as
+       the exposure offset, then run the workflow to its overdispersion fix.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · ch98_claims.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per policy with <code>driver_age</code>, <code>car_age</code>,
+        <code>region</code>, <code>exposure_years</code> (the offset), and the <code>claims</code> count.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/ch98_claims.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 500 policies</small></a>
+      </div>
+    </div>
+
+    <p><b>Fit and interpret (steps 2, 5).</b> A Poisson GLM with a log(exposure) offset gives clean rate ratios: younger
+       drivers and urban policies file more claims. <b>Check the conditions (step 4).</b> The counts are badly
+       overdispersed, so we refit as negative binomial:</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Check</th><th>Poisson</th><th>Negative Binomial</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Variance vs mean</td><td>assumes equal; data ratio &#8776; 7&#215;</td><td>allows variance &gt; mean &#10003;</td></tr>
+          <tr><td class="nm">Pearson &#967;&#178; / df</td><td>4.8 &#10007; overdispersed</td><td>&#8776; 1 &#10003;</td></tr>
+          <tr><td class="nm">AIC (lower is better)</td><td>2881</td><td><strong>2068</strong></td></tr>
+          <tr><td class="nm">Std. error (urban)</td><td>0.089 (too small)</td><td>0.166 (honest)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Same coefficients, very different certainty. The Poisson model would have reported the urban effect with an
+       interval half as wide as it should be, overstating the evidence. <span class="hl">The negative binomial keeps the
+       rate ratios and fixes the error bars</span>, which is exactly what a trustworthy count model must do.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>GLMs in Machine Learning &amp; AI</h2></div>
+    <p>The GLM is the bridge between classical statistics and the loss functions of machine learning.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Idea (this chapter)</th><th>In ML / AI it becomes</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Link function</td><td>The output activation of a network</td><td>identity (regression), sigmoid, softmax, exp</td></tr>
+          <tr><td class="nm">Random component</td><td>The likelihood, hence the loss</td><td>MSE (Normal), cross-entropy (Bernoulli), Poisson loss</td></tr>
+          <tr><td class="nm">Poisson / count models</td><td>Count &amp; rate prediction</td><td>demand, clicks, event forecasting</td></tr>
+          <tr><td class="nm">Overdispersion</td><td>Modeling uncertainty honestly</td><td>negative-binomial heads, distributional forecasting</td></tr>
+          <tr><td class="nm">Exponential family</td><td>A unifying view of losses</td><td>the theory behind why these losses work</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>Every regression and classification loss you use is a GLM in disguise. Mean-squared error is the Normal
+           likelihood; binary cross-entropy is the Bernoulli likelihood with a logit link; the <strong>softmax</strong>
+           output layer is the multinomial GLM; and a network predicting counts uses a <strong>Poisson</strong> or
+           negative-binomial head. The link function is literally the last activation, and the choice of loss is a choice
+           of random component. Seeing this, that <em>the loss encodes an assumption about the noise</em>, is what lets
+           researchers design principled objectives for new problems instead of guessing. And the overdispersion lesson
+           generalizes to one of the deepest issues in applied ML: a model can predict the right average while being
+           dangerously overconfident about its spread, which is why <strong>distributional</strong> and
+           <strong>uncertainty-aware</strong> models matter wherever the stakes are real.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Fit the whole GLM family in Python</h3>
+          <p>The companion notebook fits linear, logistic, and Poisson models with the same <code>statsmodels</code>
+             <code>glm()</code> call to show they are one framework, adds an exposure offset, reads out
+             <strong>rate ratios</strong>, detects <strong>overdispersion</strong> (Pearson chi-square, variance-vs-mean),
+             and refits as <strong>negative binomial</strong> on <code>ch98_claims.xlsx</code>.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch98_glm.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch98_glm.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch98_glm.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, <code>scipy</code>,
+      <code>matplotlib</code>, <code>seaborn</code>, <code>statsmodels</code>, and <code>openpyxl</code> and launch
+      <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>A GLM = random component + linear predictor + link function</strong>; choosing the family and link recovers linear, logistic, and Poisson regression from one recipe.</span></li>
+        <li><span class="ck">✓</span><span><strong>Poisson regression models log(count)</strong>, so coefficients exponentiate to <strong>rate ratios</strong>; use a log(exposure) offset to model a rate.</span></li>
+        <li><span class="ck">✓</span><span><strong>Overdispersion</strong> (variance &gt; mean, Pearson &#967;&#178;/df &#8811; 1) breaks Poisson's standard errors, making results look too significant.</span></li>
+        <li><span class="ck">✓</span><span><strong>Fix it with the negative binomial</strong> (or quasi-Poisson): same rate ratios, honest, wider standard errors, and a much lower AIC.</span></li>
+        <li><span class="ck">✓</span><span><strong>Real data</strong>: the claims counts had variance &#8776; 7&#215; the mean; switching to negative binomial cut AIC from 2881 to 2068 and doubled the standard errors.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges with statsmodels GLMs.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Fit a Poisson GLM with an offset</h4>
+        <p>Model <code>claims</code> on driver age, car age, and region with a <code>log(exposure_years)</code> offset.</p>
+        <div class="chint">Hint: <code>smf.glm(..., family=sm.families.Poisson(), offset=np.log(df.exposure_years))</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Read a rate ratio</h4>
+        <p>Exponentiate the driver-age coefficient and state the rate ratio per 10 years in a sentence.</p>
+        <div class="chint">Hint: <code>np.exp(coef * 10)</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Detect overdispersion</h4>
+        <p>Compute Pearson chi-square / df and compare the variance and mean of the counts.</p>
+        <div class="chint">Hint: <code>model.pearson_chi2 / model.df_resid</code> should be near 1 if Poisson holds.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Fix it with negative binomial</h4>
+        <p>Refit as negative binomial; compare AIC and the standard errors with Poisson.</p>
+        <div class="chint">Hint: <code>sm.families.NegativeBinomial()</code>; lower AIC, wider SEs.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Logistic is a GLM too</h4>
+        <p>Fit a Binomial-family GLM with a logit link and confirm it matches <code>smf.logit</code> from Chapter 96.</p>
+        <div class="chint">Hint: <code>family=sm.families.Binomial()</code> on a 0/1 outcome.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code. Try
+           them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/ch98_challenges_solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch98_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch98_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on generalized linear models. Answer them, hit <strong>Check Answers</strong>, and keep
+       refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">🏁</div>
+    <div><div class="ctitle">Onward</div>
+      <p>You now see linear, logistic, and count regression as one framework. <strong>Chapter 99 &middot; Econometrics
+         &amp; Panel Data</strong> closes the Part with the regression tools built for causal questions and repeated-measures
+         data.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch97.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 97 · Previous</span><br><span class="cn-title">Regularization &amp; Flexible Models</span></span>
+    </a>
+    <div class="cn-btn next" style="cursor:default;opacity:0.6" title="Coming soon">
+      <span><span class="cn-dir">Chapter 99 · Coming soon</span><br><span class="cn-title">Econometrics &amp; Panel Data</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </div>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 98 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch98";
+  window.QUIZ_DATA = [
+    {
+      q: "A generalized linear model is defined by three parts:",
+      options: ["Mean, median, mode", "A random component (distribution), a linear predictor, and a link function", "Slope, intercept, residual", "Train, validate, test"],
+      answer: 1,
+      explain: "The GLM combines a distribution for y, the linear predictor X&#946;, and a link g(&#956;)=&#951;."
+    },
+    {
+      q: "Linear regression is the GLM with…",
+      options: ["Binomial family and logit link", "Normal family and identity link", "Poisson family and log link", "No link"],
+      answer: 1,
+      explain: "Normal random component + identity link = ordinary linear regression."
+    },
+    {
+      q: "For a count outcome, the natural GLM is…",
+      options: ["Linear regression", "Poisson regression (Poisson family, log link)", "Logistic regression", "Ridge regression"],
+      answer: 1,
+      explain: "Poisson with a log link keeps predictions positive and models a rate."
+    },
+    {
+      q: "Exponentiating a Poisson coefficient gives a…",
+      options: ["Odds ratio", "Rate ratio (the multiplicative effect on the expected count)", "Probability", "Residual"],
+      answer: 1,
+      explain: "Because of the log link, e^b is the factor by which the expected count multiplies per unit of x."
+    },
+    {
+      q: "An 'offset' of log(exposure) in a Poisson model lets you…",
+      options: ["Remove outliers", "Model a rate per unit of exposure rather than a raw count", "Increase R&#178;", "Add an interaction"],
+      answer: 1,
+      explain: "The offset accounts for differing exposure (time, area, population), turning counts into rates."
+    },
+    {
+      q: "Overdispersion means the count data have…",
+      options: ["Variance equal to the mean", "Variance much larger than the mean", "No variance", "A perfect fit"],
+      answer: 1,
+      explain: "Poisson assumes variance = mean; overdispersion (variance &gt; mean) violates that assumption."
+    },
+    {
+      q: "If you ignore overdispersion in a Poisson model, the main harm is…",
+      options: ["Biased coefficients", "Standard errors that are too small, so results look too significant", "Negative predictions", "A lower R&#178;"],
+      answer: 1,
+      explain: "The coefficients stay about right, but the SEs (and thus p-values and CIs) are understated."
+    },
+    {
+      q: "The standard remedy for an overdispersed count model is…",
+      options: ["Delete the zeros", "Fit a negative binomial (or quasi-Poisson) model", "Use linear regression", "Raise the significance level"],
+      answer: 1,
+      explain: "The negative binomial adds a dispersion parameter so variance can exceed the mean, fixing the SEs."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
