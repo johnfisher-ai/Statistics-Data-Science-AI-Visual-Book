@@ -366,6 +366,8 @@ MAP = {
         ("../../ch99.html#challenges", "Back to the book", "Chapter 99 · Econometrics & Panel Data"),
     "ch100_ames_case_study.html":
         ("../../ch100.html#notebook", "Back to the book", "Chapter 100 · Case Study: Predicting Ames House Prices"),
+    "ch100_take_it_further.html":
+        ("../../ch100.html#challenges", "Back to the book", "Chapter 100 · Take It Further"),
     "ch101_churn_case_study.html":
         ("../../ch101.html#notebook", "Back to the book", "Chapter 101 · Case Study: Logistic Regression in Action"),
 }
