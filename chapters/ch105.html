@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 105 · The Machine Learning Workflow — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#eef2ff; border:1px solid #c7d2fe; border-left:4px solid #4338ca; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#3730a3; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch105_ml_workflow.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XVII · Machine Learning</span><span class="sep">/</span>
+      <span>Chapter 105</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XVII · Machine Learning</span> Doing it right</div>
+    <h1>The Machine Learning <span class="accent">Workflow</span></h1>
+    <p class="dek">A good model is the product of a good process. This chapter is the process: split off a test set before
+       anything else, expose overfitting, estimate performance honestly with cross-validation, tune with grid search, wrap
+       preprocessing in a pipeline, and, above all, avoid the data-leakage traps that quietly inflate every beginner's
+       score. All demonstrated on a loan-default table.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~20 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 105</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Anyone can call <code>.fit()</code>. The hard part, the part that separates a real model from a
+       self-deluding one, is the <span class="hl">discipline around it</span>: how you split the data, how you estimate
+       performance, how you tune, and how you keep information from <em>leaking</em> from the answer into the inputs. Get
+       the workflow right and your reported accuracy means something; get it wrong and it is a mirage.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#8635;</div>
+      <div class="def-body">
+        The <span class="def-kw">machine-learning workflow</span> is a repeatable loop: <span class="def-kw">split</span>
+        off a test set, <span class="def-kw">preprocess and model inside a pipeline</span>, <span class="def-kw">cross-validate</span>
+        to estimate performance, <span class="def-kw">tune</span> hyperparameters, guard against <span class="def-kw">leakage</span>,
+        and <span class="def-kw">evaluate once</span> on the held-out data before shipping.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🧭</div>
+      <div><div class="ctitle">The chapter in one line</div>
+        <p>Judge every model on data it has never seen: hold out a test set first, use cross-validation for all decisions,
+           keep preprocessing inside a pipeline, ban any feature you would not know at prediction time, and unlock the test
+           set exactly once.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1 ===== -->
+  <section id="workflow">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Workflow at a Glance</h2></div>
+    <p>Every serious project follows the same skeleton. The data is split immediately; all the learning and tuning happen
+       on the training portion; the test set stays <span class="hl">locked in a vault</span> until the final line.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 720 236" width="100%" font-family="Inter, sans-serif" aria-label="A flow: all data splits into a training set and a locked test set; the training set flows through a pipeline, cross-validation, and tuning to a tuned model, which is finally evaluated once on the test set">
+        <text x="360" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">The workflow: train on one part, judge on a part kept hidden</text>
+        <!-- all data -->
+        <rect x="20" y="92" width="86" height="44" rx="8" fill="#eef2ff" stroke="#4338ca"/><text x="63" y="112" text-anchor="middle" font-size="9" fill="#3730a3" font-weight="800">all data</text><text x="63" y="126" text-anchor="middle" font-size="8" fill="#4a5578">1000 loans</text>
+        <!-- split arrows -->
+        <path d="M106,104 L150,74" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#w5)"/>
+        <path d="M106,124 L150,168" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#w5)"/>
+        <text x="120" y="150" font-size="8" fill="#64748b" font-weight="700">split</text>
+        <!-- training path -->
+        <rect x="152" y="52" width="120" height="40" rx="8" fill="#e0e7ff" stroke="#4338ca"/><text x="212" y="70" text-anchor="middle" font-size="9" fill="#3730a3" font-weight="800">training set (75%)</text><text x="212" y="84" text-anchor="middle" font-size="7.5" fill="#4a5578">all decisions use this</text>
+        <path d="M272,72 L296,72" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#w5)"/>
+        <rect x="298" y="46" width="196" height="52" rx="9" fill="#fff" stroke="#4338ca"/>
+        <text x="396" y="64" text-anchor="middle" font-size="8.5" fill="#3730a3" font-weight="800">Pipeline &#183; cross-validate &#183; tune</text>
+        <text x="396" y="78" text-anchor="middle" font-size="7.5" fill="#4a5578">scale + model, k-fold CV,</text>
+        <text x="396" y="89" text-anchor="middle" font-size="7.5" fill="#4a5578">GridSearchCV picks settings</text>
+        <path d="M494,72 L518,72" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#w5)"/>
+        <rect x="520" y="52" width="112" height="40" rx="8" fill="#4338ca"/><text x="576" y="70" text-anchor="middle" font-size="9" fill="#fff" font-weight="800">tuned model</text><text x="576" y="84" text-anchor="middle" font-size="7.5" fill="#c7d2fe">settings chosen</text>
+        <!-- test path (locked) -->
+        <rect x="152" y="148" width="120" height="40" rx="8" fill="#f1f5f9" stroke="#94a3b8" stroke-dasharray="4 3"/><text x="212" y="166" text-anchor="middle" font-size="9" fill="#475569" font-weight="800">test set (25%) &#128274;</text><text x="212" y="180" text-anchor="middle" font-size="7.5" fill="#64748b">locked until the end</text>
+        <!-- join to final eval -->
+        <path d="M576,92 L576,150 L512,150" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#w5)"/>
+        <path d="M272,168 L406,168" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#w5)"/>
+        <rect x="408" y="148" width="104" height="40" rx="8" fill="#ecfdf5" stroke="#059669"/><text x="460" y="166" text-anchor="middle" font-size="9" fill="#047857" font-weight="800">evaluate once</text><text x="460" y="180" text-anchor="middle" font-size="7.5" fill="#4a5578">honest score</text>
+        <text x="360" y="216" text-anchor="middle" font-size="8.5" fill="#8b94b3">the test set touches the model exactly one time, at the very end</text>
+        <defs><marker id="w5" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#94a3b8"/></marker></defs>
+      </svg>
+    </figure>
+
+    <p>The single most important habit is the very first arrow: <span class="hl">split before you look</span>. Any
+       exploring, scaling, or feature-picking done on the whole dataset lets the test set influence the model, and your
+       final score stops being an honest forecast of real-world performance.</p>
+  </section>
+
+  <!-- ===== Section 2 ===== -->
+  <section id="overfitting">
+    <div class="section-eyebrow"><div class="num">2</div><h2>The Split and the Overfitting Trap</h2></div>
+    <p>Why hold out data at all? Because a flexible model can score <strong>100% on the data it trained on</strong> by
+       simply memorizing it, while performing poorly on anything new. Training accuracy is not evidence of learning; the
+       gap between training and validation is.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 250" width="100%" font-family="Inter, sans-serif" aria-label="A validation curve: as tree depth grows, training accuracy rises toward 1 while cross-validated accuracy peaks at a moderate depth and then declines, the overfitting zone">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Training accuracy climbs forever; validation accuracy peaks, then falls</text>
+        <line x1="60" y1="210" x2="640" y2="210" stroke="#94a3b8" stroke-width="1"/>
+        <line x1="60" y1="40" x2="60" y2="210" stroke="#94a3b8" stroke-width="1"/>
+        <text x="350" y="238" text-anchor="middle" font-size="9" fill="#4a5578" font-weight="700">model complexity (tree depth) &#8594;</text>
+        <text x="30" y="128" text-anchor="middle" font-size="9" fill="#4a5578" font-weight="700" transform="rotate(-90 30 128)">accuracy</text>
+        <g font-size="8" fill="#64748b"><text x="56" y="55" text-anchor="end">1.0</text><text x="56" y="130" text-anchor="end">0.8</text><text x="56" y="205" text-anchor="end">0.6</text></g>
+        <!-- overfitting zone shading -->
+        <rect x="300" y="40" width="340" height="170" fill="#fef2f2" fill-opacity="0.6"/>
+        <text x="470" y="58" text-anchor="middle" font-size="8.5" fill="#b91c1c" font-weight="700">overfitting zone</text>
+        <!-- training curve rises to ~1 -->
+        <path d="M80,170 C150,120 230,70 320,54 C420,46 540,44 630,44" fill="none" stroke="#ef4444" stroke-width="2.4"/>
+        <text x="590" y="38" text-anchor="middle" font-size="8.5" fill="#b91c1c" font-weight="700">training</text>
+        <!-- validation curve peaks then falls -->
+        <path d="M80,182 C150,150 250,120 300,118 C360,116 400,132 500,150 C560,162 600,168 630,172" fill="none" stroke="#4338ca" stroke-width="2.4"/>
+        <text x="600" y="188" text-anchor="middle" font-size="8.5" fill="#3730a3" font-weight="700">validation</text>
+        <!-- best -->
+        <line x1="300" y1="40" x2="300" y2="210" stroke="#64748b" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <circle cx="300" cy="118" r="4" fill="#4338ca"/><text x="300" y="230" text-anchor="middle" font-size="8" fill="#3730a3" font-weight="700">best depth</text>
+        <text x="180" y="205" text-anchor="middle" font-size="8" fill="#64748b">underfit</text>
+      </svg>
+    </figure>
+
+    <p>The notebook draws exactly this curve with <code>validation_curve</code>. As the tree deepens, training accuracy
+       marches to <strong>1.00</strong> while cross-validated accuracy tops out around a depth of 4 and then <em>declines</em>,
+       the model has started memorizing noise. The best model sits at the peak of the validation curve, and the widening
+       gap between the two lines is the definition of <span class="hl">overfitting</span>. A held-out set is the only way
+       to see that gap.</p>
+  </section>
+
+  <!-- ===== Section 3 ===== -->
+  <section id="cv-tuning">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Cross-Validation &amp; Hyperparameter Tuning</h2></div>
+    <p>A single train/validation split is noisy, one unlucky partition can flatter or damn a model. <span class="term">k-fold
+       cross-validation</span> fixes that by rotating the validation block through the data, so every row is validated
+       exactly once and the scores are averaged.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 210" width="100%" font-family="Inter, sans-serif" aria-label="Five-fold cross-validation: five rows, each splitting the data into five blocks with a different block held out for validation and the rest used for training">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">5-fold cross-validation: every block is the validation set once</text>
+        <g font-size="8" font-weight="700">
+          <text x="52" y="52" text-anchor="end" fill="#475569">fold 1</text>
+          <text x="52" y="82" text-anchor="end" fill="#475569">fold 2</text>
+          <text x="52" y="112" text-anchor="end" fill="#475569">fold 3</text>
+          <text x="52" y="142" text-anchor="end" fill="#475569">fold 4</text>
+          <text x="52" y="172" text-anchor="end" fill="#475569">fold 5</text>
+        </g>
+        <!-- 5 rows x 5 blocks; validation block = indigo, train = light -->
+        <!-- row1 val=block1 -->
+        <g stroke="#fff" stroke-width="2">
+          <rect x="64" y="38" width="108" height="20" fill="#4338ca"/><rect x="172" y="38" width="108" height="20" fill="#e0e7ff"/><rect x="280" y="38" width="108" height="20" fill="#e0e7ff"/><rect x="388" y="38" width="108" height="20" fill="#e0e7ff"/><rect x="496" y="38" width="108" height="20" fill="#e0e7ff"/>
+          <rect x="64" y="68" width="108" height="20" fill="#e0e7ff"/><rect x="172" y="68" width="108" height="20" fill="#4338ca"/><rect x="280" y="68" width="108" height="20" fill="#e0e7ff"/><rect x="388" y="68" width="108" height="20" fill="#e0e7ff"/><rect x="496" y="68" width="108" height="20" fill="#e0e7ff"/>
+          <rect x="64" y="98" width="108" height="20" fill="#e0e7ff"/><rect x="172" y="98" width="108" height="20" fill="#e0e7ff"/><rect x="280" y="98" width="108" height="20" fill="#4338ca"/><rect x="388" y="98" width="108" height="20" fill="#e0e7ff"/><rect x="496" y="98" width="108" height="20" fill="#e0e7ff"/>
+          <rect x="64" y="128" width="108" height="20" fill="#e0e7ff"/><rect x="172" y="128" width="108" height="20" fill="#e0e7ff"/><rect x="280" y="128" width="108" height="20" fill="#e0e7ff"/><rect x="388" y="128" width="108" height="20" fill="#4338ca"/><rect x="496" y="128" width="108" height="20" fill="#e0e7ff"/>
+          <rect x="64" y="158" width="108" height="20" fill="#e0e7ff"/><rect x="172" y="158" width="108" height="20" fill="#e0e7ff"/><rect x="280" y="158" width="108" height="20" fill="#e0e7ff"/><rect x="388" y="158" width="108" height="20" fill="#e0e7ff"/><rect x="496" y="158" width="108" height="20" fill="#4338ca"/>
+        </g>
+        <g font-size="8.5"><rect x="540" y="190" width="14" height="12" fill="#4338ca"/><text x="558" y="200" fill="#3730a3" font-weight="700">validation</text>
+          <rect x="628" y="190" width="14" height="12" fill="#e0e7ff"/><text x="646" y="200" fill="#475569" font-weight="700"></text></g>
+        <text x="632" y="200" font-size="8.5" fill="#475569" font-weight="700">train</text>
+      </svg>
+    </figure>
+
+    <p>With a stable estimate in hand, <span class="term">hyperparameter tuning</span> becomes safe. In the notebook,
+       <code>GridSearchCV</code> cross-validates every combination of tree depth and leaf size and reports the best,
+       <strong>a cross-validated accuracy of 0.74</strong>, entirely without touching the test set. When the grid is too
+       large, <code>RandomizedSearchCV</code> samples it instead. The golden rule holds throughout: <span class="hl">tuning
+       is a decision, and all decisions use cross-validation on the training data</span>, never the test set.</p>
+  </section>
+
+  <!-- ===== Section 4: REAL-WORLD ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: Pipelines and the Leakage Trap</h2></div>
+    <p>A lender has 1,000 past loans and wants to predict default. The workflow runs smoothly, until a single leaked
+       feature makes the model look brilliant and useless at the same time. This is the most common, most costly mistake in
+       applied machine learning.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · ch105_loans.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per loan with <code>income_k</code>, <code>loan_amount_k</code>,
+        <code>credit_score</code>, <code>debt_to_income</code>, <code>prior_defaults</code>, <code>late_payments_12m</code>,
+        and more, plus the label <code>default</code>. A deliberate trap column, <code>sent_to_collections</code>, is
+        recorded <em>after</em> the outcome.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/ch105_loans.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 1,000 loans</small></a>
+      </div>
+    </div>
+
+    <p>Wrapping the scaler and model in a <code>Pipeline</code> stops <strong>preprocessing leakage</strong>: the scaler is
+       refit inside each cross-validation fold, so the validation rows never influence the training statistics. Then comes
+       the dramatic one, <strong>target leakage</strong>:</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 560 250" width="100%" font-family="Inter, sans-serif" aria-label="A bar chart comparing an honest model at 0.71 cross-validated accuracy against a leaky model at 0.95, which looks amazing but fails in production">
+        <text x="280" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">A leaked feature inflates accuracy, then fails in production</text>
+        <line x1="90" y1="210" x2="520" y2="210" stroke="#94a3b8" stroke-width="1"/>
+        <line x1="90" y1="46" x2="90" y2="210" stroke="#94a3b8" stroke-width="1"/>
+        <g font-size="8" fill="#64748b" text-anchor="end"><text x="84" y="210">0.0</text><text x="84" y="128">0.5</text><text x="84" y="50">1.0</text></g>
+        <!-- honest bar 0.71 -->
+        <rect x="150" y="94" width="110" height="116" fill="#4338ca"/><text x="205" y="86" text-anchor="middle" font-size="13" fill="#3730a3" font-weight="800">0.71</text>
+        <text x="205" y="228" text-anchor="middle" font-size="9" fill="#3730a3" font-weight="700">honest model</text>
+        <text x="205" y="240" text-anchor="middle" font-size="7.5" fill="#64748b">legitimate features</text>
+        <!-- leaky bar 0.95 -->
+        <rect x="340" y="54" width="110" height="156" fill="#ef4444"/><text x="395" y="46" text-anchor="middle" font-size="13" fill="#b91c1c" font-weight="800">0.95</text>
+        <text x="395" y="228" text-anchor="middle" font-size="9" fill="#b91c1c" font-weight="700">LEAKY model</text>
+        <text x="395" y="240" text-anchor="middle" font-size="7.5" fill="#64748b">post-outcome feature</text>
+        <text x="395" y="120" text-anchor="middle" font-size="8.5" fill="#fff" font-weight="800">mirage</text>
+      </svg>
+    </figure>
+
+    <div class="callout warn">
+      <div class="cico">⚠️</div>
+      <div><div class="ctitle">The leakage rule</div>
+        <p>Adding <code>sent_to_collections</code> rockets cross-validated accuracy from <strong>0.71 to 0.95</strong>,
+           because that column is almost a copy of the label. But it only exists <em>after</em> a loan has defaulted, so
+           at scoring time (a brand-new application) it is unavailable and the model collapses. The rule that catches every
+           such trap: <strong>a feature must be knowable at the moment you make the prediction.</strong> If it encodes the
+           future, it is leakage.</p></div>
+    </div>
+
+    <p>With leakage banned and the pipeline tuned, the notebook unlocks the test set once: <strong>test accuracy 0.74</strong>,
+       essentially equal to the cross-validated estimate of 0.74. That agreement is the reward for a clean process, the
+       number you report is the number you will actually get.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>The Workflow in Production (MLOps)</h2></div>
+    <p>Every step here has a heavier-duty counterpart when a model leaves the notebook and runs a business. The discipline
+       does not change, it scales.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Workflow step (this chapter)</th><th>In production it becomes</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Train / test split</td><td>Offline training plus a live holdout or shadow deployment</td></tr>
+          <tr><td class="nm">Cross-validation</td><td>Time-based validation and backtesting on rolling windows</td></tr>
+          <tr><td class="nm">Hyperparameter tuning</td><td>Automated sweeps and AutoML with tracked experiments</td></tr>
+          <tr><td class="nm">Pipeline</td><td>A single deployable artifact (preprocessing + model)</td></tr>
+          <tr><td class="nm">Leakage checks</td><td>A feature store with point-in-time correctness</td></tr>
+          <tr><td class="nm">Evaluate once</td><td>Continuous monitoring, drift detection, scheduled retraining</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>Improper validation and data leakage are the leading reasons published machine-learning results fail to
+           reproduce, a whole literature documents models that scored beautifully in a paper and fell apart in the wild
+           because a feature leaked the label or the test set was reused during tuning. The workflow in this chapter, split
+           first, cross-validate every decision, pipeline your preprocessing, ban future-knowing features, and touch the
+           test set once, is exactly the checklist that separates a trustworthy result from a headline that does not
+           survive contact with reality.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Run the whole workflow in Python</h3>
+          <p>The companion notebook splits the loan data, draws the overfitting <strong>validation curve</strong>,
+             cross-validates, tunes with <strong>GridSearchCV</strong> (with a heatmap of the grid), builds a leakage-safe
+             <strong>Pipeline</strong>, demonstrates <strong>target leakage</strong> live, and evaluates once on the locked
+             test set, every cell explained.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch105_ml_workflow.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch105_ml_workflow.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch105_ml_workflow.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly. <strong>Open in Colab</strong> runs it live. To run
+      locally, install <code>numpy</code>, <code>pandas</code>, <code>scikit-learn</code>, <code>matplotlib</code>,
+      <code>seaborn</code>, and <code>openpyxl</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Split first</strong>: hold out a stratified test set before any exploring or modeling, and unlock it only once.</span></li>
+        <li><span class="ck">✓</span><span><strong>Training accuracy lies</strong>: a model can memorize the training set; the train-versus-validation gap is overfitting.</span></li>
+        <li><span class="ck">✓</span><span><strong>Cross-validation</strong> gives a stable estimate for every decision; <strong>GridSearchCV</strong> tunes hyperparameters on it.</span></li>
+        <li><span class="ck">✓</span><span><strong>Pipelines prevent preprocessing leakage</strong> by refitting each step inside every fold.</span></li>
+        <li><span class="ck">✓</span><span><strong>Target leakage</strong> (a feature knowable only after the outcome) inflates scores then fails live; every feature must be knowable at prediction time.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges on the loan table. Try them with scikit-learn before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Split first</h4>
+        <p>Hold out 30% as a stratified test set; confirm the default rate matches in both parts.</p>
+        <div class="chint">Hint: <code>train_test_split(..., stratify=y)</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>The overfitting gap</h4>
+        <p>Grow a full-depth tree; compare its training accuracy to its cross-validated accuracy.</p>
+        <div class="chint">Hint: <code>.score</code> on train vs <code>cross_val_score</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Cross-validate</h4>
+        <p>Report the 5-fold CV mean and standard deviation for a depth-4 tree.</p>
+        <div class="chint">Hint: <code>cross_val_score(..., cv=5)</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Tune with GridSearchCV</h4>
+        <p>Search <code>max_depth</code> and <code>min_samples_leaf</code>; report the best settings and CV score.</p>
+        <div class="chint">Hint: <code>GridSearchCV(estimator, param_grid, cv=5)</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Catch the leak</h4>
+        <p>Add <code>sent_to_collections</code> and show cross-validated accuracy jumps unrealistically.</p>
+        <div class="chint">Hint: it is only known after the outcome, so it is a copy of the label.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code. Try
+           them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/ch105_challenges_solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch105_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch105_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on the ML workflow. Answer them, hit <strong>Check Answers</strong>, and keep refining until
+       you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>With a sound process in place, we can open the models themselves. <strong>Chapter 106 &middot; Distance
+         Metrics</strong> covers the rulers, Euclidean, Manhattan, cosine, and more, that so many algorithms use to decide
+         which points count as "close", the foundation of nearest neighbors, clustering, and similarity search.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch104.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 104 · Previous</span><br><span class="cn-title">What Is Machine Learning?</span></span>
+    </a>
+    <a class="cn-btn next" href="ch106.html">
+      <span><span class="cn-dir">Chapter 106 · Next</span><br><span class="cn-title">Distance Metrics</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 105 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch105";
+  window.QUIZ_DATA = [
+    {
+      q: "The very first step of a trustworthy ML workflow is…",
+      options: ["Tune hyperparameters", "Split off a test set before any exploring or modeling", "Scale all the data", "Pick the best model"],
+      answer: 1,
+      explain: "Hold out a test set first; every later decision uses the training data only, so the final score stays honest."
+    },
+    {
+      q: "A model scores 1.00 on its training data but 0.65 in cross-validation. This is…",
+      options: ["A great model", "Overfitting: it memorized the training set and does not generalize", "Underfitting", "Data leakage"],
+      answer: 1,
+      explain: "The large gap between training and validation accuracy is the signature of overfitting."
+    },
+    {
+      q: "k-fold cross-validation is preferred over a single validation split because…",
+      options: ["It is faster", "It rotates the validation block so every row is validated once, giving a more stable estimate", "It uses the test set", "It avoids training"],
+      answer: 1,
+      explain: "Averaging over k folds reduces the noise of any single split and uses all the data for both roles."
+    },
+    {
+      q: "GridSearchCV selects hyperparameters by…",
+      options: ["Trying them on the test set", "Cross-validating every combination on the training data and keeping the best", "Picking random values", "Using the training accuracy"],
+      answer: 1,
+      explain: "Each combination is scored by cross-validation on the training data; the test set is never involved in tuning."
+    },
+    {
+      q: "Wrapping StandardScaler and the model in a Pipeline prevents…",
+      options: ["Overfitting entirely", "Preprocessing leakage, because the scaler is refit inside each CV fold", "The need to split data", "Slow training"],
+      answer: 1,
+      explain: "In a pipeline the scaler learns its statistics only from each fold's training rows, so validation rows never leak in."
+    },
+    {
+      q: "A feature recorded only AFTER the outcome pushed accuracy to 0.95. This is…",
+      options: ["A strong feature to keep", "Target leakage: the feature encodes the answer and is unavailable at prediction time", "Cross-validation", "Underfitting"],
+      answer: 1,
+      explain: "The feature is essentially a copy of the label but does not exist when you actually make a prediction, a leak."
+    },
+    {
+      q: "The rule that catches target leakage is…",
+      options: ["Use more features", "Every feature must be knowable at the moment of prediction", "Always standardize", "Use a deeper model"],
+      answer: 1,
+      explain: "If a feature encodes information from the future (after the outcome), it must be excluded."
+    },
+    {
+      q: "You should score the model on the held-out test set…",
+      options: ["After every change", "Once, at the very end, after all decisions are made", "Before training", "Never"],
+      answer: 1,
+      explain: "Repeatedly checking the test set turns it into a tuning set and makes the reported number optimistic."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

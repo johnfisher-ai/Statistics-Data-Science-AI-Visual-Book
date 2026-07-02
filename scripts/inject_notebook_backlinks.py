@@ -20,6 +20,10 @@ MAP = {
         ("../../ch104.html#notebook", "Back to the book", "Chapter 104 · What Is Machine Learning?"),
     "ch104_challenges_solutions.html":
         ("../../ch104.html#quiz", "Back to the book", "Chapter 104 · Take the quiz &amp; aim for 100%"),
+    "ch105_ml_workflow.html":
+        ("../../ch105.html#notebook", "Back to the book", "Chapter 105 · The Machine Learning Workflow"),
+    "ch105_challenges_solutions.html":
+        ("../../ch105.html#quiz", "Back to the book", "Chapter 105 · Take the quiz &amp; aim for 100%"),
     "ch01_what_is_statistics.html":
         ("../../ch01.html#notebook", "Back to the book", "Chapter 1 · What Is Statistics?"),
     "ch01_challenges_solutions.html":
