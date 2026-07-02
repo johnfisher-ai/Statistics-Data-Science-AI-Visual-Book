@@ -28,6 +28,10 @@ MAP = {
         ("../../ch106.html#notebook", "Back to the book", "Chapter 106 · Distance Metrics"),
     "ch106_challenges_solutions.html":
         ("../../ch106.html#quiz", "Back to the book", "Chapter 106 · Take the quiz &amp; aim for 100%"),
+    "ch107_core_algorithms.html":
+        ("../../ch107.html#notebook", "Back to the book", "Chapter 107 · Core Classification &amp; Regression Algorithms"),
+    "ch107_challenges_solutions.html":
+        ("../../ch107.html#quiz", "Back to the book", "Chapter 107 · Take the quiz &amp; aim for 100%"),
     "ch01_what_is_statistics.html":
         ("../../ch01.html#notebook", "Back to the book", "Chapter 1 · What Is Statistics?"),
     "ch01_challenges_solutions.html":
