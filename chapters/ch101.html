@@ -243,9 +243,47 @@
     </figure>
 
     <p>Month-to-month customers churn at <strong>39%</strong>, versus 25% on one-year and just <strong>16%</strong> on
-       two-year contracts, a massive, obvious signal. Fiber-optic customers and higher-bill customers also churn more.
-       And the target is <span class="term">imbalanced</span> (30% churn), which is why we will judge the model by AUC and
-       recall, not accuracy: a lazy "nobody churns" model already scores 70%.</p>
+       two-year contracts, a massive, obvious signal. And the target is <span class="term">imbalanced</span> (30% churn),
+       which is why we will judge the model by AUC and recall, not accuracy: a lazy "nobody churns" model already scores
+       70%. The same breakdown by internet service and payment method fills in the rest of the picture:</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 262" width="100%" font-family="Inter, sans-serif" aria-label="Two bar charts of churn rate: by internet service (fiber optic churns most) and by payment method (a smaller spread)">
+        <text x="340" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">Churn rate by internet service and payment method</text>
+        <line x1="40" y1="52" x2="40" y2="202" stroke="#1a2138" stroke-width="1"/>
+        <line x1="40" y1="202" x2="300" y2="202" stroke="#1a2138" stroke-width="1"/>
+        <rect x="59.5" y="82.0" width="47.7" height="120.0" fill="#dc2626" opacity="0.85"/>
+        <text x="83.3" y="78.0" text-anchor="middle" font-size="8" fill="#dc2626" font-weight="800">37%</text>
+        <text x="83.3" y="215" text-anchor="middle" font-size="7" fill="#4a5578">Fiber optic</text>
+        <rect x="146.2" y="126.0" width="47.7" height="76.0" fill="#059669" opacity="0.85"/>
+        <text x="170.0" y="122.0" text-anchor="middle" font-size="8" fill="#059669" font-weight="800">23%</text>
+        <text x="170.0" y="215" text-anchor="middle" font-size="7" fill="#4a5578">DSL</text>
+        <rect x="232.8" y="114.5" width="47.7" height="87.5" fill="#d97706" opacity="0.85"/>
+        <text x="256.7" y="110.5" text-anchor="middle" font-size="8" fill="#d97706" font-weight="800">27%</text>
+        <text x="256.7" y="215" text-anchor="middle" font-size="7" fill="#4a5578">No</text>
+        <text x="170" y="229" text-anchor="middle" font-size="8.4" fill="#1a2138" font-weight="600">internet service</text>
+        <line x1="380" y1="52" x2="380" y2="202" stroke="#1a2138" stroke-width="1"/>
+        <line x1="380" y1="202" x2="640" y2="202" stroke="#1a2138" stroke-width="1"/>
+        <rect x="394.6" y="82.0" width="35.8" height="120.0" fill="#dc2626" opacity="0.85"/>
+        <text x="412.5" y="78.0" text-anchor="middle" font-size="8" fill="#dc2626" font-weight="800">36%</text>
+        <text x="412.5" y="215" text-anchor="middle" font-size="7" fill="#4a5578">Mailed chec</text>
+        <rect x="459.6" y="94.0" width="35.8" height="108.0" fill="#d97706" opacity="0.85"/>
+        <text x="477.5" y="90.0" text-anchor="middle" font-size="8" fill="#d97706" font-weight="800">32%</text>
+        <text x="477.5" y="215" text-anchor="middle" font-size="7" fill="#4a5578">Electronic </text>
+        <rect x="524.6" y="113.6" width="35.8" height="88.4" fill="#d97706" opacity="0.85"/>
+        <text x="542.5" y="109.6" text-anchor="middle" font-size="8" fill="#d97706" font-weight="800">26%</text>
+        <text x="542.5" y="215" text-anchor="middle" font-size="7" fill="#4a5578">Bank transf</text>
+        <rect x="589.6" y="121.2" width="35.8" height="80.8" fill="#059669" opacity="0.85"/>
+        <text x="607.5" y="117.2" text-anchor="middle" font-size="8" fill="#059669" font-weight="800">24%</text>
+        <text x="607.5" y="215" text-anchor="middle" font-size="7" fill="#4a5578">Credit card</text>
+        <text x="510" y="229" text-anchor="middle" font-size="8.4" fill="#1a2138" font-weight="600">payment method</text>
+      </svg>
+    </figure>
+
+    <p>The pattern is clear: <strong>fiber-optic customers churn most (37%)</strong>, well above DSL (23%) or no-internet
+       (27%), a group worth watching. Payment method matters less, a smaller spread, so it is a weaker signal than
+       contract or internet. Reading these group rates before modeling tells us which features should carry weight, and
+       lets us sanity-check the model's coefficients afterward.</p>
 
     <div class="step-h"><span class="sn">6</span><h3>Transform features</h3></div>
     <p>Logistic regression needs numbers, so the nominal categories (<code>contract</code>, <code>internet_service</code>,
@@ -345,7 +383,33 @@
 
     <p>Dropping the cutoff lifts recall from <strong>53% to 75%</strong>: the retention team now reaches three of every
        four customers who would have left, at the cost of some unnecessary calls. That trade is exactly the business
-       decision a classifier exists to inform.</p>
+       decision a classifier exists to inform. Sweeping the threshold across its whole range shows the full trade-off:</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 290" width="100%" font-family="Inter, sans-serif" aria-label="Precision and recall plotted against the decision threshold: as the threshold falls, recall rises and precision falls; a chosen threshold of 0.3 is marked">
+        <text x="340" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">Precision vs recall: the threshold is a dial</text>
+        <text x="340" y="37" text-anchor="middle" font-size="9" fill="#4a5578">Lower the threshold to catch more churners (recall up), at the cost of more false alarms (precision down)</text>
+        <line x1="54" y1="52" x2="54" y2="240" stroke="#1a2138" stroke-width="1.1"/>
+        <line x1="54" y1="240" x2="530" y2="240" stroke="#1a2138" stroke-width="1.1"/>
+        <polyline points="54.0,63.5 62.1,66.8 70.1,70.1 78.2,71.0 86.3,71.8 94.3,75.9 102.4,78.4 110.5,80.9 118.5,86.6 126.6,88.3 134.7,89.9 142.7,93.2 150.8,96.5 158.9,97.4 166.9,97.4 175.0,99.0 183.1,101.5 191.2,103.1 199.2,108.1 207.3,110.5 215.4,111.4 223.4,114.7 231.5,116.3 239.6,122.1 247.6,124.6 255.7,128.7 263.8,128.7 271.8,132.0 279.9,134.5 288.0,140.2 296.0,142.7 304.1,145.2 312.2,155.9 320.2,162.5 328.3,165.0 336.4,166.6 344.4,169.9 352.5,175.7 360.6,179.0 368.6,183.1 376.7,183.9 384.8,188.9 392.8,192.2 400.9,196.3 409.0,200.4 417.1,203.7 425.1,205.4 433.2,207.8 441.3,212.8 449.3,216.1 457.4,217.7 465.5,217.7 473.5,222.7 481.6,227.6 489.7,231.8 497.7,231.8 505.8,232.6 513.9,233.4 521.9,234.2 530.0,235.9" fill="none" stroke="#059669" stroke-width="2.6"/>
+        <polyline points="54.0,169.5 62.1,167.6 70.1,166.0 78.2,163.5 86.3,161.1 94.3,160.2 102.4,158.3 110.5,154.8 118.5,153.7 126.6,152.6 134.7,149.7 142.7,147.8 150.8,146.0 158.9,143.8 166.9,141.7 175.0,138.6 183.1,135.4 191.2,133.1 199.2,130.6 207.3,127.8 215.4,126.3 223.4,124.3 231.5,121.0 239.6,118.9 247.6,116.4 255.7,114.4 263.8,112.5 271.8,111.1 279.9,109.2 288.0,108.5 296.0,106.4 304.1,106.5 312.2,107.8 320.2,109.1 328.3,107.4 336.4,106.1 344.4,102.2 352.5,103.0 360.6,98.0 368.6,99.0 376.7,98.0 384.8,96.1 392.8,94.6 400.9,93.5 409.0,92.1 417.1,92.3 425.1,88.2 433.2,84.0 441.3,84.9 449.3,79.6 457.4,76.3 465.5,70.8 473.5,75.5 481.6,83.3 489.7,83.3 497.7,83.3 505.8,70.8 513.9,72.9 521.9,75.5 530.0,52.0" fill="none" stroke="#2563eb" stroke-width="2.6"/>
+        <line x1="173.0" y1="52" x2="173.0" y2="240" stroke="#dc2626" stroke-width="1.3" stroke-dasharray="4 3"/>
+        <text x="173.0" y="48" text-anchor="middle" font-size="8" fill="#dc2626" font-weight="700">chosen 0.3</text>
+        <text x="538" y="99.0" font-size="9" fill="#059669" font-weight="700">recall</text>
+        <text x="538" y="75.5" font-size="9" fill="#2563eb" font-weight="700">precision</text>
+        <text x="114" y="255" text-anchor="middle" font-size="7.6" fill="#94a3b8">0.2</text>
+        <text x="233" y="255" text-anchor="middle" font-size="7.6" fill="#94a3b8">0.4</text>
+        <text x="352" y="255" text-anchor="middle" font-size="7.6" fill="#94a3b8">0.6</text>
+        <text x="470" y="255" text-anchor="middle" font-size="7.6" fill="#94a3b8">0.8</text>
+        <text x="292" y="278" text-anchor="middle" font-size="9" fill="#4a5578">decision threshold &#8594;</text>
+      </svg>
+    </figure>
+
+    <p>Read it as a dial. As the threshold drops (moving left), <span style="color:#059669;font-weight:700">recall</span>
+       climbs, more churners caught, while <span style="color:#2563eb;font-weight:700">precision</span> falls, more of the
+       flagged customers turn out to be false alarms. There is no single "best" point on this curve; the right threshold
+       depends on the cost of a missed churner versus a wasted call, which the companion notebook turns into a dollar
+       calculation.</p>
   </section>
 
   <!-- ===== Section 5: interpret & deploy (steps 10-11) ===== -->
@@ -516,6 +580,28 @@
         <h4>Score a new customer</h4>
         <p>Build a one-row DataFrame for a new customer and print their churn probability and risk flag.</p>
         <div class="chint">Hint: <code>model.predict(new_row)</code>, then compare to your threshold.</div></div></div>
+    </div>
+
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">📓</div>
+        <div class="nb-body">
+          <h3>All five, worked in a companion notebook</h3>
+          <p>A second notebook, <strong>Take It Further</strong>, recaps the Chapter 101 churn model and then works every
+             one of these five extensions with visuals and explanations, a cost-based threshold, class weighting for the
+             imbalance, a tenure-by-contract interaction, a calibration check, and scoring a new customer, closing with a
+             plain-English summary.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch101_take_it_further.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch101_take_it_further.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch101_take_it_further.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
     </div>
   </section>
 

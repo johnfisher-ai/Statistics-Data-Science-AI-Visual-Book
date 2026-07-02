@@ -370,6 +370,8 @@ MAP = {
         ("../../ch100.html#challenges", "Back to the book", "Chapter 100 · Take It Further"),
     "ch101_churn_case_study.html":
         ("../../ch101.html#notebook", "Back to the book", "Chapter 101 · Case Study: Logistic Regression in Action"),
+    "ch101_take_it_further.html":
+        ("../../ch101.html#challenges", "Back to the book", "Chapter 101 · Take It Further"),
 }
 
 def card(href, kicker, title):
