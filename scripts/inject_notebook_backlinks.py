@@ -36,6 +36,10 @@ MAP = {
         ("../../ch108.html#notebook", "Back to the book", "Chapter 108 · Ensemble Methods"),
     "ch108_challenges_solutions.html":
         ("../../ch108.html#quiz", "Back to the book", "Chapter 108 · Take the quiz &amp; aim for 100%"),
+    "ch109_feature_selection.html":
+        ("../../ch109.html#notebook", "Back to the book", "Chapter 109 · Feature Selection"),
+    "ch109_challenges_solutions.html":
+        ("../../ch109.html#quiz", "Back to the book", "Chapter 109 · Take the quiz &amp; aim for 100%"),
     "ch01_what_is_statistics.html":
         ("../../ch01.html#notebook", "Back to the book", "Chapter 1 · What Is Statistics?"),
     "ch01_challenges_solutions.html":
