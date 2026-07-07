@@ -32,6 +32,10 @@ MAP = {
         ("../../ch107.html#notebook", "Back to the book", "Chapter 107 · Core Classification &amp; Regression Algorithms"),
     "ch107_challenges_solutions.html":
         ("../../ch107.html#quiz", "Back to the book", "Chapter 107 · Take the quiz &amp; aim for 100%"),
+    "ch108_ensemble_methods.html":
+        ("../../ch108.html#notebook", "Back to the book", "Chapter 108 · Ensemble Methods"),
+    "ch108_challenges_solutions.html":
+        ("../../ch108.html#quiz", "Back to the book", "Chapter 108 · Take the quiz &amp; aim for 100%"),
     "ch01_what_is_statistics.html":
         ("../../ch01.html#notebook", "Back to the book", "Chapter 1 · What Is Statistics?"),
     "ch01_challenges_solutions.html":
