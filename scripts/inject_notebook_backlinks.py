@@ -52,6 +52,10 @@ MAP = {
         ("../../ch112.html#notebook", "Back to the book", "Chapter 112 · Model Pitfalls"),
     "ch112_challenges_solutions.html":
         ("../../ch112.html#quiz", "Back to the book", "Chapter 112 · Take the quiz &amp; aim for 100%"),
+    "ch113_interpretability.html":
+        ("../../ch113.html#notebook", "Back to the book", "Chapter 113 · Model Interpretability &amp; Explainability"),
+    "ch113_challenges_solutions.html":
+        ("../../ch113.html#quiz", "Back to the book", "Chapter 113 · Take the quiz &amp; aim for 100%"),
     "ch01_what_is_statistics.html":
         ("../../ch01.html#notebook", "Back to the book", "Chapter 1 · What Is Statistics?"),
     "ch01_challenges_solutions.html":
