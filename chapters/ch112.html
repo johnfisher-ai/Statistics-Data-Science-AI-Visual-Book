@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 112 · Model Pitfalls — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#eef2ff; border:1px solid #c7d2fe; border-left:4px solid #4338ca; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#3730a3; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch112_model_pitfalls.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XVIII · Supervised Learning</span><span class="sep">/</span>
+      <span>Chapter 112</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XVIII · Supervised Learning</span> What goes wrong</div>
+    <h1>Model <span class="accent">Pitfalls</span></h1>
+    <p class="dek">A model can post a great number and still be broken. This chapter is the field guide to the four traps that
+       catch everyone: overfitting and underfitting, the bias-variance trade-off that explains them, imbalanced data and the
+       SMOTE fix, and the cross-validation strategies that keep your estimates honest.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~19 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 112</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">The gap between a demo and a deployed model is a short list of predictable failures. Each one produces a
+       number that <span class="hl">looks fine in isolation</span> but hides a broken model, and each has a known diagnosis
+       and fix. Knowing these four is what separates a practitioner from a beginner.</p>
+
+    <div class="def-card">
+      <div class="sigma">⚠️</div>
+      <div class="def-body">
+        <span class="def-kw">Underfitting</span> is a model too simple to catch the pattern (high bias);
+        <span class="def-kw">overfitting</span> is one too complex, memorizing noise (high variance). The
+        <span class="def-kw">bias-variance trade-off</span> is the tension between them.
+        <span class="def-kw">Imbalanced data</span> lets a rare class be ignored, and the wrong
+        <span class="def-kw">cross-validation split</span> gives a misleading score.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🧭</div>
+      <div><div class="ctitle">The chapter in one line</div>
+        <p>Diagnose before you fix: a train-versus-validation gap is overfitting, both errors high is underfitting, high
+           accuracy with low minority recall is imbalance, and a leaky or unrepresentative split is a bad CV strategy.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1 ===== -->
+  <section id="overfitting">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Overfitting vs Underfitting</h2></div>
+    <p>There are two ways for a model to be wrong, and they are opposites. Fit the same noisy data with a too-simple, a
+       just-right, and a too-complex model and you can see both at once.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 720 210" width="100%" font-family="Inter, sans-serif" aria-label="Three fits of the same wavy data: a straight line underfits, a smooth curve fits just right, and a wildly wiggly curve overfits by chasing every noisy point">
+        <text x="360" y="18" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">The same data, fit three ways</text>
+        <!-- points shared shape (a sine cloud), drawn per panel -->
+        <!-- panel 1: underfit (straight line) -->
+        <rect x="24" y="34" width="212" height="140" rx="8" fill="#fbfdff" stroke="#e2e8f0"/>
+        <g fill="#94a3b8"><circle cx="52" cy="120" r="2.6"/><circle cx="70" cy="96" r="2.6"/><circle cx="90" cy="72" r="2.6"/><circle cx="110" cy="64" r="2.6"/><circle cx="130" cy="80" r="2.6"/><circle cx="150" cy="110" r="2.6"/><circle cx="170" cy="140" r="2.6"/><circle cx="190" cy="150" r="2.6"/><circle cx="208" cy="140" r="2.6"/></g>
+        <line x1="46" y1="140" x2="214" y2="86" stroke="#4338ca" stroke-width="2.4"/>
+        <text x="130" y="196" text-anchor="middle" font-size="9" fill="#3730a3" font-weight="800">underfit &#183; high bias</text>
+        <!-- panel 2: just right (curve) -->
+        <rect x="254" y="34" width="212" height="140" rx="8" fill="#fbfdff" stroke="#e2e8f0"/>
+        <g fill="#94a3b8"><circle cx="282" cy="120" r="2.6"/><circle cx="300" cy="96" r="2.6"/><circle cx="320" cy="72" r="2.6"/><circle cx="340" cy="64" r="2.6"/><circle cx="360" cy="80" r="2.6"/><circle cx="380" cy="110" r="2.6"/><circle cx="400" cy="140" r="2.6"/><circle cx="420" cy="150" r="2.6"/><circle cx="438" cy="140" r="2.6"/></g>
+        <path d="M278,124 C310,64 350,60 380,104 C405,140 430,148 444,138" fill="none" stroke="#059669" stroke-width="2.4"/>
+        <text x="360" y="196" text-anchor="middle" font-size="9" fill="#047857" font-weight="800">just right</text>
+        <!-- panel 3: overfit (wiggly) -->
+        <rect x="484" y="34" width="212" height="140" rx="8" fill="#fbfdff" stroke="#e2e8f0"/>
+        <g fill="#94a3b8"><circle cx="512" cy="120" r="2.6"/><circle cx="530" cy="96" r="2.6"/><circle cx="550" cy="72" r="2.6"/><circle cx="570" cy="64" r="2.6"/><circle cx="590" cy="80" r="2.6"/><circle cx="610" cy="110" r="2.6"/><circle cx="630" cy="140" r="2.6"/><circle cx="650" cy="150" r="2.6"/><circle cx="668" cy="140" r="2.6"/></g>
+        <path d="M512,120 L530,96 L550,72 L570,64 L590,80 L610,110 L630,140 L650,150 L668,140" fill="none" stroke="#ef4444" stroke-width="2.2"/>
+        <text x="590" y="196" text-anchor="middle" font-size="9" fill="#b91c1c" font-weight="800">overfit &#183; high variance</text>
+      </svg>
+    </figure>
+
+    <p>The straight line is <span class="term">underfitting</span>, too rigid to bend to the real curve, so it is wrong
+       everywhere (<span class="hl">high bias</span>). The wildly wiggly curve is <span class="term">overfitting</span>: it
+       passes through every training point, including the noise, so it fits the sample perfectly but will fail on anything
+       new (<span class="hl">high variance</span>). The middle model captures the true shape without chasing the noise. The
+       whole job of modeling is finding that balance.</p>
+  </section>
+
+  <!-- ===== Section 2 ===== -->
+  <section id="bias-variance">
+    <div class="section-eyebrow"><div class="num">2</div><h2>The Bias-Variance Trade-off</h2></div>
+    <p>Underfitting and overfitting are the two ends of a single dial, <span class="hl">model complexity</span>, and the
+       trade-off between them is the most important idea in all of modeling. Plot error against complexity and the pattern
+       is unmistakable.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 260" width="100%" font-family="Inter, sans-serif" aria-label="As model complexity increases, training error falls steadily while validation error follows a U shape: high on the left from underfitting, low in the middle at the sweet spot, and rising on the right from overfitting">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Training error always falls; validation error is U-shaped</text>
+        <line x1="70" y1="212" x2="630" y2="212" stroke="#94a3b8" stroke-width="1"/>
+        <line x1="70" y1="42" x2="70" y2="212" stroke="#94a3b8" stroke-width="1"/>
+        <text x="350" y="240" text-anchor="middle" font-size="9" fill="#4a5578" font-weight="700">model complexity &#8594;</text>
+        <text x="40" y="127" text-anchor="middle" font-size="9" fill="#4a5578" font-weight="700" transform="rotate(-90 40 127)">error</text>
+        <!-- regions -->
+        <rect x="70" y="42" width="180" height="170" fill="#eff6ff" fill-opacity="0.7"/><text x="160" y="58" text-anchor="middle" font-size="8" fill="#1d4ed8" font-weight="700">underfit (high bias)</text>
+        <rect x="430" y="42" width="200" height="170" fill="#fef2f2" fill-opacity="0.7"/><text x="530" y="58" text-anchor="middle" font-size="8" fill="#b91c1c" font-weight="700">overfit (high variance)</text>
+        <!-- training error: monotstically down -->
+        <path d="M84,84 C160,150 260,186 360,196 C460,202 560,205 620,206" fill="none" stroke="#2563eb" stroke-width="2.4"/>
+        <text x="600" y="200" text-anchor="middle" font-size="8" fill="#1d4ed8" font-weight="700">training</text>
+        <!-- validation error: U shape -->
+        <path d="M84,80 C170,150 260,120 340,116 C430,112 520,150 620,92" fill="none" stroke="#ef4444" stroke-width="2.6"/>
+        <text x="600" y="82" text-anchor="middle" font-size="8" fill="#b91c1c" font-weight="700">validation</text>
+        <!-- sweet spot -->
+        <line x1="340" y1="42" x2="340" y2="212" stroke="#059669" stroke-width="1.4" stroke-dasharray="4 3"/>
+        <circle cx="340" cy="116" r="5" fill="#059669"/><text x="340" y="106" text-anchor="middle" font-size="8.5" fill="#047857" font-weight="800">sweet spot</text>
+      </svg>
+    </figure>
+
+    <p>As complexity rises, <strong>training error keeps dropping</strong>, a flexible model can always fit the training
+       points better, but <strong>validation error is U-shaped</strong>: high on the left where the model is too simple
+       (bias), lowest at the sweet spot, and rising on the right where it overfits (variance). The bottom of the U is the
+       model you want, and <span class="hl">cross-validation is how you find it</span>. A companion tool, the
+       <span class="term">learning curve</span> (error versus dataset size), tells you what to do about it: a wide, shrinking
+       gap between the curves means <strong>more data will help</strong> (variance), while both curves high and together
+       means it will not, you need a better model or features (bias).</p>
+  </section>
+
+  <!-- ===== Section 3 ===== -->
+  <section id="cv">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Cross-Validation Strategies</h2></div>
+    <p>Cross-validation is only trustworthy if the split respects the <span class="hl">structure of your data</span>. Plain
+       shuffled k-fold is the wrong choice more often than beginners realize.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Splitter</th><th>Use when</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">KFold</td><td>plenty of data, no structure</td><td>simple random folds</td></tr>
+          <tr><td class="nm">StratifiedKFold</td><td>classification (esp. imbalanced)</td><td>keeps each fold's class ratio representative</td></tr>
+          <tr><td class="nm">TimeSeriesSplit</td><td>time-ordered data</td><td>trains on the past, validates on the future, no peeking ahead</td></tr>
+          <tr><td class="nm">GroupKFold</td><td>repeated units (patient, customer)</td><td>keeps a group's rows together, tests on unseen groups</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The notebook shows why it matters: on the imbalanced defect data, plain <code>KFold</code> produces folds whose
+       defect rate swings from <strong>4% to 11%</strong>, a noisy, unreliable estimate, while <code>StratifiedKFold</code>
+       holds every fold near the true <strong>7%</strong>. And for time-ordered data, a random shuffle would let the model
+       train on future rows and validate on past ones, <span class="hl">leaking the answer</span>; <code>TimeSeriesSplit</code>
+       forbids it. Match the splitter to the data, or the score you report is a fiction.</p>
+  </section>
+
+  <!-- ===== Section 4: REAL-WORLD ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: Imbalanced Data &amp; SMOTE</h2></div>
+    <p>A factory logs 1,200 units and wants to catch the roughly <strong>7% that are defective</strong>. A standard
+       classifier, chasing overall accuracy, quietly learns to call almost everything good, and misses nearly all the
+       defects.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · ch112_defects.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per unit with <code>temperature</code>, <code>pressure</code>,
+        <code>line_speed</code>, <code>machine_age_mo</code>, and <code>material_grade</code>, plus the imbalanced label
+        <code>defective</code> (about 7%).</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/ch112_defects.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 1,200 units</small></a>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Approach</th><th>Recall (defects caught)</th><th>Precision</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Plain classifier</td><td><strong>0.07</strong> (misses almost everything)</td><td>0.50</td></tr>
+          <tr><td class="nm"><code>class_weight="balanced"</code></td><td>0.82</td><td>0.19</td></tr>
+          <tr><td class="nm">SMOTE oversampling</td><td><strong>0.85</strong></td><td>0.21</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The plain model's <strong>7% recall</strong> is a disaster hiding behind high accuracy. Two fixes rescue it.
+       <span class="term">class_weight="balanced"</span> makes minority mistakes count more, so the model pays attention to
+       defects. <span class="term">SMOTE</span> (Synthetic Minority Over-sampling Technique) generates plausible new defect
+       examples between existing ones to balance the training set. Both lift recall past <strong>0.8</strong>, trading some
+       precision (more false alarms) for catching the defects that matter, and both must live <span class="hl">inside the
+       pipeline</span> so they only ever touch the training fold, never the validation data.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Avoiding Pitfalls in Machine Learning &amp; AI</h2></div>
+    <p>These four traps do not disappear at scale, they get bigger, which is why the whole ML workflow is built to guard
+       against them.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Pitfall</th><th>Symptom</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Underfitting</td><td>high training and validation error</td><td>more flexible model, better features</td></tr>
+          <tr><td class="nm">Overfitting</td><td>low train error, high validation error</td><td>regularization, more data, simpler model, ensembles</td></tr>
+          <tr><td class="nm">Imbalance</td><td>high accuracy, low minority recall</td><td>class weights / SMOTE; judge by recall, not accuracy</td></tr>
+          <tr><td class="nm">Bad CV split</td><td>optimistic or unstable estimates</td><td>stratified / time-series / group splitting</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>Every one of these scales up. Overfitting is <em>the</em> central challenge of deep learning, which is why
+           <strong>regularization, dropout, early stopping, and data augmentation</strong> exist, they are all variance
+           reducers. Imbalance is everywhere in the real world (fraud, disease, rare events), so <strong>reweighting and
+           resampling</strong> are standard. And an improper validation split, letting the model see the future or the same
+           entity in both train and test, is one of the most common reasons a published result <strong>fails to
+           reproduce</strong>. The bias-variance lens is the single most useful diagnostic you can carry: whenever a model
+           disappoints, ask first whether it is underfitting or overfitting, because the two demand opposite fixes.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>See every pitfall in Python</h3>
+          <p>The companion notebook fits <strong>under-, well-, and over-fit</strong> polynomials, draws the
+             <strong>bias-variance</strong> validation curve and a <strong>learning curve</strong>, rescues an imbalanced
+             defect model with <strong>class weights and SMOTE</strong>, and contrasts <strong>KFold, StratifiedKFold, and
+             TimeSeriesSplit</strong>, every cell explained.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch112_model_pitfalls.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch112_model_pitfalls.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch112_model_pitfalls.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly. <strong>Open in Colab</strong> runs it live. To run
+      locally, install <code>numpy</code>, <code>pandas</code>, <code>scikit-learn</code>, <code>imbalanced-learn</code>,
+      <code>matplotlib</code>, <code>seaborn</code>, and <code>openpyxl</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Underfitting</strong> (high bias) is too simple, both errors high; <strong>overfitting</strong> (high variance) is too complex, low train error but high validation error.</span></li>
+        <li><span class="ck">✓</span><span><strong>The bias-variance trade-off</strong>: training error always falls with complexity, but validation error is U-shaped, aim for the bottom.</span></li>
+        <li><span class="ck">✓</span><span><strong>Learning curves</strong> diagnose which you have: a shrinking train-validation gap means more data helps (variance); both high and close means it will not (bias).</span></li>
+        <li><span class="ck">✓</span><span><strong>Imbalanced data</strong> hides a rare class behind high accuracy; <code>class_weight</code> and <strong>SMOTE</strong> lift minority recall (0.07 &#8594; 0.85 on the defects).</span></li>
+        <li><span class="ck">✓</span><span><strong>Match the CV split to the data</strong>: stratified for classification, time-series for temporal, group for clustered, or the estimate lies.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges. Try them with scikit-learn and imbalanced-learn before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Underfit vs overfit</h4>
+        <p>Fit a degree-1 and a degree-15 polynomial; compare training and test error.</p>
+        <div class="chint">Hint: low train + high test error = overfitting.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Find the sweet spot</h4>
+        <p>Use a validation curve to pick the polynomial degree with the lowest validation error.</p>
+        <div class="chint">Hint: <code>validation_curve(..., param_name="polynomialfeatures__degree")</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Diagnose with a gap</h4>
+        <p>Show a high-degree model has a large train-validation error gap.</p>
+        <div class="chint">Hint: compare training MSE to cross-validated MSE.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Rebalance a rare class</h4>
+        <p>On the defect data, compare recall with and without <code>class_weight="balanced"</code>.</p>
+        <div class="chint">Hint: recall should jump on the minority class.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Stratify the folds</h4>
+        <p>Show StratifiedKFold keeps each fold's defect rate near the overall rate, but plain KFold does not.</p>
+        <div class="chint">Hint: print the mean of <code>y</code> in each fold.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code. Try
+           them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/ch112_challenges_solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch112_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch112_challenges_solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on model pitfalls. Answer them, hit <strong>Check Answers</strong>, and keep refining until you
+       score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>You can now build, evaluate, and debug a model, but can you explain <em>why</em> it predicts what it does?
+         <strong>Chapter 113 &middot; Model Interpretability &amp; Explainability</strong> opens the black box with feature
+         importance, partial dependence, SHAP, and LIME.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch111.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 111 · Previous</span><br><span class="cn-title">Model Evaluation</span></span>
+    </a>
+    <div class="cn-btn next" style="cursor:default;opacity:0.6" title="Coming soon">
+      <span><span class="cn-dir">Chapter 113 · Coming soon</span><br><span class="cn-title">Model Interpretability &amp; Explainability</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </div>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 112 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch112";
+  window.QUIZ_DATA = [
+    {
+      q: "Underfitting (high bias) means the model is…",
+      options: ["Too complex and memorizes noise", "Too simple to capture the pattern, so training and validation error are both high", "Perfectly tuned", "Missing data"],
+      answer: 1,
+      explain: "A too-rigid model is wrong everywhere; both training and validation error stay high."
+    },
+    {
+      q: "Overfitting (high variance) shows up as…",
+      options: ["High training error", "Low training error but high validation error (a large gap)", "Both errors zero", "No pattern at all"],
+      answer: 1,
+      explain: "An over-flexible model fits the training noise, so it aces training but fails on new data."
+    },
+    {
+      q: "As model complexity increases, training error ___ and validation error ___.",
+      options: ["rises; falls", "keeps falling; is U-shaped (falls then rises)", "stays flat; rises", "is U-shaped; keeps falling"],
+      answer: 1,
+      explain: "More flexibility always fits the training set better, but validation error bottoms out then climbs as overfitting sets in."
+    },
+    {
+      q: "A wide train-validation gap that shrinks as you add data indicates…",
+      options: ["Underfitting; more data won't help", "Overfitting / high variance; more data helps", "A bug", "Perfect fit"],
+      answer: 1,
+      explain: "A closing gap with more data is the learning-curve signature of variance, which more data reduces."
+    },
+    {
+      q: "If both training and validation error are high and close together, the model is…",
+      options: ["Overfitting", "Underfitting / high bias, so more data won't help; use a better model or features", "Just right", "Leaking data"],
+      answer: 1,
+      explain: "High, converged curves mean the model is too simple; more data cannot fix bias, a more flexible model can."
+    },
+    {
+      q: "On imbalanced data, class_weight='balanced' and SMOTE are used to…",
+      options: ["Speed up training", "Improve the model's recall on the rare (minority) class", "Reduce the number of features", "Increase accuracy directly"],
+      answer: 1,
+      explain: "Both rebalance the training signal so the rare class is not ignored, lifting minority recall (at some precision cost)."
+    },
+    {
+      q: "SMOTE works by…",
+      options: ["Deleting majority rows at random", "Creating synthetic minority-class examples between existing ones", "Changing the threshold", "Adding noise features"],
+      answer: 1,
+      explain: "SMOTE interpolates new plausible minority points to balance the training set (inside the pipeline)."
+    },
+    {
+      q: "For time-ordered data, the correct cross-validation split is…",
+      options: ["Shuffled KFold", "TimeSeriesSplit, which trains on the past and validates on the future", "GroupKFold", "No cross-validation"],
+      answer: 1,
+      explain: "A random shuffle would let the model train on future rows (a leak); TimeSeriesSplit preserves time order."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
