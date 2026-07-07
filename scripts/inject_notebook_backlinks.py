@@ -44,6 +44,10 @@ MAP = {
         ("../../ch110.html#notebook", "Back to the book", "Chapter 110 · Optimization &amp; Gradient Descent"),
     "ch110_challenges_solutions.html":
         ("../../ch110.html#quiz", "Back to the book", "Chapter 110 · Take the quiz &amp; aim for 100%"),
+    "ch111_model_evaluation.html":
+        ("../../ch111.html#notebook", "Back to the book", "Chapter 111 · Model Evaluation"),
+    "ch111_challenges_solutions.html":
+        ("../../ch111.html#quiz", "Back to the book", "Chapter 111 · Take the quiz &amp; aim for 100%"),
     "ch01_what_is_statistics.html":
         ("../../ch01.html#notebook", "Back to the book", "Chapter 1 · What Is Statistics?"),
     "ch01_challenges_solutions.html":
