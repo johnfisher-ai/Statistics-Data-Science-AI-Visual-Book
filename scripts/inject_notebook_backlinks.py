@@ -56,6 +56,22 @@ MAP = {
         ("../../ch113.html#notebook", "Back to the book", "Chapter 113 · Model Interpretability &amp; Explainability"),
     "ch113_challenges_solutions.html":
         ("../../ch113.html#quiz", "Back to the book", "Chapter 113 · Take the quiz &amp; aim for 100%"),
+    "ch114_clustering.html":
+        ("../../ch114.html#notebook", "Back to the book", "Chapter 114 · Clustering"),
+    "ch114_challenges_solutions.html":
+        ("../../ch114.html#quiz", "Back to the book", "Chapter 114 · Take the quiz &amp; aim for 100%"),
+    "ch115_dimensionality_reduction.html":
+        ("../../ch115.html#notebook", "Back to the book", "Chapter 115 · Dimensionality Reduction"),
+    "ch115_challenges_solutions.html":
+        ("../../ch115.html#quiz", "Back to the book", "Chapter 115 · Take the quiz &amp; aim for 100%"),
+    "ch116_association_rules.html":
+        ("../../ch116.html#notebook", "Back to the book", "Chapter 116 · Association Rule Mining"),
+    "ch116_challenges_solutions.html":
+        ("../../ch116.html#quiz", "Back to the book", "Chapter 116 · Take the quiz &amp; aim for 100%"),
+    "ch117_anomaly_detection.html":
+        ("../../ch117.html#notebook", "Back to the book", "Chapter 117 · Anomaly Detection"),
+    "ch117_challenges_solutions.html":
+        ("../../ch117.html#quiz", "Back to the book", "Chapter 117 · Take the quiz &amp; aim for 100%"),
     "ch01_what_is_statistics.html":
         ("../../ch01.html#notebook", "Back to the book", "Chapter 1 · What Is Statistics?"),
     "ch01_challenges_solutions.html":
