@@ -80,6 +80,10 @@ MAP = {
         ("../../ch119.html#notebook", "Back to the book", "Chapter 119 · Deep RL &amp; Applications"),
     "ch119_challenges_solutions.html":
         ("../../ch119.html#quiz", "Back to the book", "Chapter 119 · Take the quiz &amp; aim for 100%"),
+    "ch120_ml_project.html":
+        ("../../ch120.html#notebook", "Back to the book", "Chapter 120 · An End-to-End ML Project"),
+    "ch120_take_it_further.html":
+        ("../../ch120.html#challenges", "Back to the book", "Chapter 120 · Take it further"),
     "ch01_what_is_statistics.html":
         ("../../ch01.html#notebook", "Back to the book", "Chapter 1 · What Is Statistics?"),
     "ch01_challenges_solutions.html":
