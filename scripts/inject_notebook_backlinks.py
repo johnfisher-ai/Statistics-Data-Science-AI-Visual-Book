@@ -72,6 +72,14 @@ MAP = {
         ("../../ch117.html#notebook", "Back to the book", "Chapter 117 · Anomaly Detection"),
     "ch117_challenges_solutions.html":
         ("../../ch117.html#quiz", "Back to the book", "Chapter 117 · Take the quiz &amp; aim for 100%"),
+    "ch118_reinforcement_learning.html":
+        ("../../ch118.html#notebook", "Back to the book", "Chapter 118 · Reinforcement Learning Primer"),
+    "ch118_challenges_solutions.html":
+        ("../../ch118.html#quiz", "Back to the book", "Chapter 118 · Take the quiz &amp; aim for 100%"),
+    "ch119_deep_rl.html":
+        ("../../ch119.html#notebook", "Back to the book", "Chapter 119 · Deep RL &amp; Applications"),
+    "ch119_challenges_solutions.html":
+        ("../../ch119.html#quiz", "Back to the book", "Chapter 119 · Take the quiz &amp; aim for 100%"),
     "ch01_what_is_statistics.html":
         ("../../ch01.html#notebook", "Back to the book", "Chapter 1 · What Is Statistics?"),
     "ch01_challenges_solutions.html":
