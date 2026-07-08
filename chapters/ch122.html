@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 122 · Case Study: Predictive Maintenance — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#eef2ff; border:1px solid #c7d2fe; border-left:4px solid #4338ca; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#3730a3; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none; padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+    .step-h { display:flex; align-items:center; gap:0.6rem; margin:1.4rem 0 0.4rem; }
+    .step-h .sn { flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:#4338ca; color:#fff; font-weight:800; font-size:0.95rem; display:flex; align-items:center; justify-content:center; }
+    .step-h h3 { margin:0; font-size:1.02rem; color:var(--ink); }
+    .writeup { background:#eef2ff; border:1px solid #c7d2fe; border-radius:14px; padding:1.3rem 1.5rem; margin:1.3rem 0; }
+    .writeup h3 { margin-top:0; color:#3730a3; }
+    .writeup h4 { margin:1rem 0 0.3rem; color:#3730a3; font-size:0.92rem; }
+    .nb-fig { margin:1.4rem 0; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:1rem 1rem 0.6rem; }
+    .nb-fig img { display:block; width:100%; height:auto; border-radius:8px; }
+    .nb-fig figcaption { margin:0.75rem 0.2rem 0.3rem; font-size:0.85rem; color:var(--ink-soft); line-height:1.55; }
+    .nb-fig .cap-t { font-size:0.64rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#3730a3; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch122_predictive_maintenance.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXI · ML Case Study</span><span class="sep">/</span>
+      <span>Chapter 122</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XXI · Putting It All Together</span> Failure, foreseen</div>
+    <h1>Case Study: <span class="accent">Predictive Maintenance</span></h1>
+    <p class="dek">Watch a fleet of machines through their sensors and flag the ones about to fail, in time to fix them on
+       schedule. The winning moves are not the algorithm: they are engineering the raw signals into degradation features,
+       and splitting the data by machine so the score is honest.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~26 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Full notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 122</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Fixing a machine on a schedule is cheap; having it die mid-shift is not. <span class="hl">Predictive
+       maintenance</span> reads the sensor stream and predicts failure early enough to act. But raw sensor values are
+       deceptive, every machine has its own normal, so this case study lives or dies on two ideas: turning the raw signals
+       into <span class="hl">trajectory features</span>, and evaluating on machines the model has <span class="hl">never
+       seen</span>.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#9881;</div>
+      <div class="def-body">
+        <span class="def-kw">Predictive maintenance</span> predicts a failure window from sensor data.
+        <span class="def-kw">Feature engineering</span> converts raw signals into rolling levels, trends, and deviations
+        from each machine's baseline. A <span class="def-kw">group split</span> (by machine) prevents leakage, and, as the
+        failure window is rare, we judge by <span class="def-kw">precision, recall, and PR-AUC</span>.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🧭</div>
+      <div><div class="ctitle">The two twists</div>
+        <p>The 12-step method runs as usual, but two steps carry the chapter: <strong>Step 6</strong>, engineering the raw
+           sensors into degradation features (the single biggest lever), and <strong>Step 7</strong>, splitting
+           <strong>by machine</strong> so a machine never appears in both training and test. Get those right and the model
+           almost builds itself.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §1 method ===== -->
+  <section id="method">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The 12-Step Method</h2></div>
+    <p>The same repeatable loop, aimed at foreseeing failure. The companion notebook runs all twelve steps; the sections
+       below tell the story and show the plots.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 678 332" width="100%" font-family="Inter, sans-serif" aria-label="The twelve-step method as a snaking flow adapted to predictive maintenance">
+        <text x="339" y="26" text-anchor="middle" font-size="13" fill="#1a2138" font-weight="800">The 12-step method: from a sensor stream to a maintenance ticket</text>
+        <defs><marker id="m122" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#3730a3"/></marker></defs>
+        <path d="M165,84 L181,84" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m122)"/>
+        <path d="M331,84 L347,84" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m122)"/>
+        <path d="M497,84 L513,84" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m122)"/>
+        <path d="M588,120 L588,150" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m122)"/>
+        <path d="M513,186 L497,186" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m122)"/>
+        <path d="M347,186 L331,186" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m122)"/>
+        <path d="M181,186 L165,186" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m122)"/>
+        <path d="M90,222 L90,252" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m122)"/>
+        <path d="M165,288 L181,288" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m122)"/>
+        <path d="M331,288 L347,288" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m122)"/>
+        <path d="M497,288 L513,288" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m122)"/>
+        <rect x="15" y="48" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="32" cy="66" r="11" fill="#4338ca"/><text x="32" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">1</text>
+        <text x="49" y="70" font-size="10.5" fill="#3730a3" font-weight="800">Define</text>
+        <text x="27" y="92" font-size="8.3" fill="#4a5578">predict failure early</text>
+        <rect x="181" y="48" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="198" cy="66" r="11" fill="#4338ca"/><text x="198" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">2</text>
+        <text x="215" y="70" font-size="10.5" fill="#3730a3" font-weight="800">Collect</text>
+        <text x="193" y="92" font-size="8.3" fill="#4a5578">sensor log</text>
+        <rect x="347" y="48" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="364" cy="66" r="11" fill="#4338ca"/><text x="364" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">3</text>
+        <text x="381" y="70" font-size="10.5" fill="#3730a3" font-weight="800">Inspect</text>
+        <text x="359" y="92" font-size="8.3" fill="#4a5578">the rare window</text>
+        <rect x="513" y="48" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="530" cy="66" r="11" fill="#4338ca"/><text x="530" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">4</text>
+        <text x="547" y="70" font-size="10.5" fill="#3730a3" font-weight="800">Clean</text>
+        <text x="525" y="92" font-size="8.3" fill="#4a5578">dedupe, sort by cycle</text>
+        <rect x="513" y="150" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="530" cy="168" r="11" fill="#4338ca"/><text x="530" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">5</text>
+        <text x="547" y="172" font-size="10.5" fill="#3730a3" font-weight="800">Visualize</text>
+        <text x="525" y="194" font-size="8.3" fill="#4a5578">watch degradation</text>
+        <rect x="347" y="150" width="150" height="72" rx="10" fill="#dbe4ff" stroke="#4338ca" stroke-width="1.6"/>
+        <circle cx="364" cy="168" r="11" fill="#4338ca"/><text x="364" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">6</text>
+        <text x="381" y="172" font-size="10.5" fill="#3730a3" font-weight="800">Engineer</text>
+        <text x="359" y="194" font-size="8.3" fill="#4a5578">trend &amp; deviation</text>
+        <rect x="181" y="150" width="150" height="72" rx="10" fill="#dbe4ff" stroke="#4338ca" stroke-width="1.6"/>
+        <circle cx="198" cy="168" r="11" fill="#4338ca"/><text x="198" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">7</text>
+        <text x="215" y="172" font-size="10.5" fill="#3730a3" font-weight="800">Split</text>
+        <text x="193" y="194" font-size="8.3" fill="#4a5578">by machine (groups)</text>
+        <rect x="15" y="150" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="32" cy="168" r="11" fill="#4338ca"/><text x="32" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">8</text>
+        <text x="49" y="172" font-size="10.5" fill="#3730a3" font-weight="800">Build</text>
+        <text x="27" y="194" font-size="8.3" fill="#4a5578">raw vs engineered</text>
+        <rect x="15" y="252" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="32" cy="270" r="11" fill="#4338ca"/><text x="32" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">9</text>
+        <text x="49" y="274" font-size="10.5" fill="#3730a3" font-weight="800">Validate</text>
+        <text x="27" y="296" font-size="8.3" fill="#4a5578">GroupKFold, PR-AUC</text>
+        <rect x="181" y="252" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="198" cy="270" r="11" fill="#4338ca"/><text x="198" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">10</text>
+        <text x="215" y="274" font-size="10.5" fill="#3730a3" font-weight="800">Interpret</text>
+        <text x="193" y="296" font-size="8.3" fill="#4a5578">threshold to cost</text>
+        <rect x="347" y="252" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="364" cy="270" r="11" fill="#4338ca"/><text x="364" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">11</text>
+        <text x="381" y="274" font-size="10.5" fill="#3730a3" font-weight="800">Deploy</text>
+        <text x="359" y="296" font-size="8.3" fill="#4a5578">score live, monitor</text>
+        <rect x="513" y="252" width="150" height="72" rx="10" fill="#c7d2fe" stroke="#4338ca" stroke-width="1.8"/>
+        <circle cx="530" cy="270" r="11" fill="#4338ca"/><text x="530" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">12</text>
+        <text x="547" y="274" font-size="10.5" fill="#3730a3" font-weight="800">Communicate</text>
+        <text x="525" y="296" font-size="8.3" fill="#4a5578">plain-English write-up</text>
+      </svg>
+    </figure>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · machine_sensors.csv</div>
+      <p style="margin:0.5rem 0 0">One row per machine per operating cycle: <code>machine_id</code>, <code>cycle</code>,
+        and raw sensors <code>temperature</code>, <code>vibration</code>, <code>pressure</code>, <code>rpm</code>, with the
+        target <code>failure_within_20</code> (1 if the machine fails within the next 20 cycles). 180 machines run to
+        failure over widely varying lifetimes.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/machine_sensors.csv" download>📊 Download dataset &nbsp;<small>CSV · 27,585 rows</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §2 wrangle ===== -->
+  <section id="wrangle">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Define, Collect, Inspect, Clean (Steps 1&#8211;4)</h2></div>
+
+    <div class="step-h"><span class="sn">1</span><h3>Define the objective</h3></div>
+    <p>For each machine at each cycle, predict whether it will <strong>fail within the next 20 cycles</strong>, early enough
+       to schedule service. The costs are asymmetric: a <strong>missed breakdown</strong> (unplanned downtime, collateral
+       damage, idle staff) runs into the thousands, while a <strong>needless inspection</strong> costs a few hundred, so we
+       would rather over-warn than miss.</p>
+
+    <div class="step-h"><span class="sn">2</span><h3>Collect the data</h3></div>
+    <p>A run-to-failure sensor log: each machine contributes a time-ordered sequence of readings from installation to
+       failure. That grouped, sequential shape drives the two key decisions to come.</p>
+
+    <div class="step-h"><span class="sn">3</span><h3>Inspect the data</h3></div>
+    <p>180 machines, lifetimes from 70 to 229 cycles, and a <strong>failure-window rate of about 14%</strong>, the minority
+       class, so accuracy is again the wrong yardstick. A few dropped sensor reads and duplicate rows need cleaning.</p>
+
+    <div class="step-h"><span class="sn">4</span><h3>Clean the data</h3></div>
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Problem</th><th>Detail</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Duplicates</td><td>20 repeated (machine, cycle) rows</td><td>deduplicate</td></tr>
+          <tr><td class="nm">Ordering</td><td>features are computed over time per machine</td><td><strong>sort by machine then cycle</strong></td></tr>
+          <tr><td class="nm">Missing values</td><td>102 dropped temperature reads</td><td>impute in the pipeline (train only)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Sorting is not cosmetic here: the rolling and trend features in Step 6 are computed <em>within each machine, over
+       time</em>, so the rows must be in machine-then-cycle order first. After cleaning, <strong>27,585 rows</strong>
+       remain.</p>
+  </section>
+
+  <!-- ===== §3 engineer/split ===== -->
+  <section id="engineer">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Visualize, Engineer &amp; Split (Steps 5&#8211;7)</h2></div>
+
+    <div class="step-h"><span class="sn">5</span><h3>Visualize the degradation</h3></div>
+    <p>Plotting a sensor against fraction-of-life shows the pattern, readings drift, then spike near failure, and the trap:
+       every machine sits at a <strong>different baseline</strong>, so the same raw value means different things on
+       different machines.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/ch122_signal.png" alt="Vibration trajectories for four machines and failure-window rate by life stage">
+      <figcaption><span class="cap-t">From the notebook · Step 5</span><br>
+        <strong>Degradation, and the baseline trap.</strong> <strong>Left</strong>, vibration for four machines against
+        fraction of life: all trend upward and spike near the end, but they start and ride at <em>different levels</em>, so
+        a raw reading of, say, 3.0 is alarming for one machine and normal for another. <strong>Right</strong>, the share of
+        readings in a failure window climbs steeply in the last tenth of life. The signal is real, but it is
+        <em>relative</em> to each machine, which is exactly what the next step captures.</figcaption>
+    </figure>
+
+    <div class="step-h"><span class="sn">6</span><h3>Engineer features from the raw signals</h3></div>
+    <p>This is the heart of the chapter. From each raw sensor we derive features that describe <em>how the machine is
+       changing</em>, not just its current value: a <span class="term">rolling mean</span> (smoothed level), a
+       <span class="term">rolling standard deviation</span> (is it getting jittery?), a <span class="term">slope</span>
+       (the trend over recent cycles), and a <span class="term">deviation from the machine's own early-life
+       baseline</span>. That deviation is what makes readings comparable across machines.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 250" width="100%" font-family="Inter, sans-serif" aria-label="From one raw sensor signal, engineer four features: rolling mean, rolling standard deviation, slope (trend), and deviation from the machine's baseline">
+        <text x="340" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">From one raw signal to degradation features</text>
+        <!-- plot area -->
+        <line x1="45" y1="40" x2="45" y2="175" stroke="#94a3b8"/><line x1="45" y1="175" x2="360" y2="175" stroke="#94a3b8"/>
+        <text x="40" y="188" font-size="8" fill="#8b94b3">time (cycles) &#8594;</text>
+        <!-- baseline dashed -->
+        <line x1="45" y1="150" x2="360" y2="150" stroke="#94a3b8" stroke-dasharray="4 3"/>
+        <text x="48" y="146" font-size="8" fill="#64748b">machine's baseline</text>
+        <!-- raw jagged rising signal -->
+        <polyline points="55,148 75,145 95,151 115,143 135,146 155,138 175,141 195,130 215,133 235,120 255,124 275,105 295,110 315,86 335,92 352,66" fill="none" stroke="#c7d2fe" stroke-width="1.6"/>
+        <text x="300" y="60" font-size="8" fill="#6366f1">raw sensor</text>
+        <!-- rolling mean smooth -->
+        <polyline points="55,150 95,148 135,145 175,140 215,131 255,120 295,104 335,84" fill="none" stroke="#4338ca" stroke-width="2.6"/>
+        <text x="150" y="128" font-size="8" fill="#3730a3" font-weight="700">rolling mean</text>
+        <!-- deviation bracket at end -->
+        <line x1="352" y1="66" x2="352" y2="150" stroke="#059669" stroke-width="1.6"/>
+        <line x1="348" y1="66" x2="356" y2="66" stroke="#059669" stroke-width="1.6"/><line x1="348" y1="150" x2="356" y2="150" stroke="#059669" stroke-width="1.6"/>
+        <text x="360" y="112" font-size="8" fill="#065f46" font-weight="700">deviation</text>
+        <!-- slope arrow -->
+        <path d="M275,108 L330,80" stroke="#d97706" stroke-width="2" marker-end="url(#fa122)"/>
+        <defs><marker id="fa122" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#d97706"/></marker></defs>
+        <text x="286" y="98" font-size="8" fill="#b45309" font-weight="700">slope (trend)</text>
+        <!-- arrow to features -->
+        <text x="400" y="60" font-size="20" fill="#4338ca">&#8594;</text>
+        <g font-size="9.5" font-weight="700">
+          <rect x="430" y="42" width="230" height="26" rx="6" fill="#eef2ff" stroke="#c7d2fe"/><text x="440" y="59" fill="#3730a3">rolling mean &#183; smoothed level</text>
+          <rect x="430" y="74" width="230" height="26" rx="6" fill="#eef2ff" stroke="#c7d2fe"/><text x="440" y="91" fill="#3730a3">rolling std &#183; how jittery</text>
+          <rect x="430" y="106" width="230" height="26" rx="6" fill="#fff7ed" stroke="#fed7aa"/><text x="440" y="123" fill="#b45309">slope &#183; how fast it is rising</text>
+          <rect x="430" y="138" width="230" height="26" rx="6" fill="#f0fdf4" stroke="#bbf7d0"/><text x="440" y="155" fill="#065f46">deviation &#183; drift from baseline</text>
+        </g>
+        <text x="200" y="225" text-anchor="middle" font-size="9" fill="#4a5578">A snapshot value is ambiguous across machines; the <tspan font-weight="800">trajectory</tspan> is what failure looks like.</text>
+      </svg>
+    </figure>
+
+    <div class="step-h"><span class="sn">7</span><h3>Split by machine, not by row</h3></div>
+    <p>The subtle, expensive mistake: split rows at random and cycle 90 of a machine lands in training while cycle 91 of the
+       <em>same</em> machine lands in test, two nearly identical readings. The model memorizes each machine and looks
+       brilliant, then flops on a genuinely new one. Splitting <strong>by machine</strong> (<code>GroupShuffleSplit</code>)
+       is the honest test. The gap is real: on these sensors a naive row split scored a flattering
+       <strong>PR-AUC 0.73</strong>, the honest machine split a sober <strong>0.59</strong>, that 0.14 is pure illusion.
+       We group-split everything.</p>
+  </section>
+
+  <!-- ===== §4 build/validate ===== -->
+  <section id="build">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Build and Validate (Steps 8&#8211;9)</h2></div>
+
+    <div class="step-h"><span class="sn">8</span><h3>Does the engineering pay?</h3></div>
+    <p>The cleanest experiment in the book: same logistic model, once on the raw sensors, once on the engineered features.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/ch122_engineering.png" alt="Two bar charts: raw versus engineered PR-AUC, and honest group-split versus leaky row-split PR-AUC">
+      <figcaption><span class="cap-t">From the notebook · Steps 7&#8211;8</span><br>
+        <strong>Left, feature engineering is the biggest lever.</strong> On the raw sensors, logistic regression manages a
+        mediocre <strong>PR-AUC of 0.61</strong>, the absolute values are too ambiguous across machines. The same model on
+        the <em>engineered</em> features leaps to <strong>0.96</strong>; a random forest on those features actually does a
+        little worse (0.87). <strong>Right, the split matters too:</strong> a leaky row-wise split reports an inflated 0.73
+        where the honest machine-wise split reports 0.59. Two decisions, both worth more than the choice of algorithm.</figcaption>
+    </figure>
+
+    <div class="step-h"><span class="sn">9</span><h3>Validate across machines</h3></div>
+    <p>Cross-validating with <strong>GroupKFold</strong> (each fold holds out whole machines) gives a PR-AUC around
+       <strong>0.96</strong>, matching the test score, so the result is stable, not a lucky split. Because the failure
+       window is rare, the precision-recall curve is the honest lens.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/ch122_curves.png" alt="ROC curve and precision-recall curve for the engineered model">
+      <figcaption><span class="cap-t">From the notebook · Step 9</span><br>
+        <strong>Strong, and honestly so.</strong> The ROC curve is near-perfect (AUC 0.99), and the precision-recall curve
+        sits far above the 0.14 failure-window baseline (PR-AUC 0.96), the model reliably ranks about-to-fail readings
+        above healthy ones. Reported on held-out <em>machines</em>, these numbers reflect real generalization, not
+        memorized quirks.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== §5 threshold/interpret/deploy ===== -->
+  <section id="interpret">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Threshold, Interpret &amp; Deploy (Steps 10&#8211;12)</h2></div>
+
+    <div class="step-h"><span class="sn">10</span><h3>Tune the threshold to cost</h3></div>
+    <p>Because a breakdown costs many times an inspection, the default 0.5 is too cautious, we would rather inspect a few
+       healthy machines than miss a failure.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/ch122_threshold.png" alt="Total cost versus decision threshold, cost-optimal near 0.33">
+      <figcaption><span class="cap-t">From the notebook · Step 10</span><br>
+        <strong>Err on the side of caution.</strong> Counting a missed breakdown at $5,000 and a needless inspection at
+        $300, the total-cost curve bottoms out <strong>below 0.5</strong> (around 0.33). At that cutoff the model catches
+        about <strong>99% of impending failures</strong> while keeping false alarms manageable. The threshold is where
+        maintenance policy, not statistics, has the final say.</figcaption>
+    </figure>
+
+    <div class="step-h"><span class="sn">11</span><h3>Interpret: which signals warn?</h3></div>
+    <p>Permutation importance, how far the model's PR-AUC falls when a feature is scrambled, shows what the model actually
+       relies on.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/ch122_importances.png" alt="Permutation importance bar chart; engineered deviation and rolling features on top">
+      <figcaption><span class="cap-t">From the notebook · Step 11</span><br>
+        <strong>The engineered trajectory features dominate.</strong> The features the model leans on most are the
+        <strong>deviation</strong> of pressure and vibration from each machine's baseline and the <strong>rolling
+        (smoothed) levels</strong>, the raw snapshot readings barely register on their own. This is the payoff of Step 6
+        made visible: the model succeeds by tracking each machine's drift from its own normal, exactly how a maintenance
+        engineer thinks, not "is the temperature high?" but "is this machine running hotter and rougher than it used
+        to?"</figcaption>
+    </figure>
+
+    <div class="step-h"><span class="sn">12</span><h3>Deploy on new data</h3></div>
+    <p>Saved as one <code>joblib</code> pipeline, the model scores a machine it has never seen in a single call: a degrading
+       held-out machine trips the threshold and gets a maintenance ticket (probability 1.00), a healthy one is left alone
+       (0.00). In production the engineered features are recomputed from each machine's live sensor stream every cycle;
+       when the failure-soon probability crosses the cost-tuned threshold, the system schedules service. As machines age or
+       are replaced their baselines shift, so <strong>drift monitoring</strong> and periodic <strong>retraining</strong> on
+       fresh run-to-failure data are essential, the subject of Chapter 126.</p>
+  </section>
+
+  <!-- ===== §6 writeup ===== -->
+  <section id="writeup-sec">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Communicate: the Plain-English Write-Up (Step 12)</h2></div>
+    <div class="writeup">
+      <h3>For a non-technical reader</h3>
+      <p><strong>What is this?</strong> We built an early-warning system that reads each machine's sensors and estimates how
+        likely it is to break down soon, so the plant can fix it on a planned schedule instead of scrambling after an
+        unplanned failure.</p>
+
+      <h4>What goes in, and what comes out</h4>
+      <p><strong>Inputs:</strong> the ordinary sensor readings a machine already reports each cycle, temperature,
+        vibration, pressure, and speed, together with how those readings have been <em>trending</em> and how far they have
+        drifted from that machine's own normal. <strong>Output:</strong> a probability that the machine will fail within
+        the next 20 operating cycles, which becomes a "schedule maintenance / keep running" decision.</p>
+
+      <h4>The decisions we made, and why</h4>
+      <ul>
+        <li><span class="ck">✓</span><span>We <strong>did not feed the model the raw readings alone</strong>. Because every machine runs a little hot or cold to begin with, a single reading is ambiguous. Instead we gave it the <em>trend</em> and the <em>change from each machine's own baseline</em>, which is what actually signals trouble. This one change was the biggest improvement of the whole project.</span></li>
+        <li><span class="ck">✓</span><span>We <strong>tested on machines the model had never seen</strong>, not just on later readings from the same machines. Otherwise the model can "recognize" a familiar machine and look better than it really is, then disappoint on a brand-new unit in the field.</span></li>
+        <li><span class="ck">✓</span><span>We <strong>set the alarm to trip early</strong>, because a surprise breakdown is far more expensive than an unnecessary inspection. We would rather check a few healthy machines than miss a real failure.</span></li>
+      </ul>
+
+      <h4>How good is it, in plain terms</h4>
+      <p>On machines it had never seen, the system catches <strong>about 99% of impending failures</strong> with enough
+        lead time to act, typically dozens of cycles of warning before the breakdown. That turns firefighting into planned,
+        scheduled maintenance.</p>
+
+      <h4>What actually warns of failure</h4>
+      <p>Not a high absolute reading, but a machine <strong>drifting away from its own normal</strong> and <strong>trending
+        the wrong way</strong>, running progressively hotter, rougher, or at falling pressure. <strong>Bottom line: the
+        clever part of this project was not the algorithm, it was turning raw sensor numbers into the right features and
+        testing honestly on unseen machines.</strong></p>
+    </div>
+  </section>
+
+  <!-- ===== notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body"><h3>Run the entire project in Python</h3><p>The companion notebook is the full 12-step pipeline: it loads and cleans the run-to-failure log, plots the degradation, engineers rolling, trend, and deviation features from the raw sensors, demonstrates the row-split leakage, splits by machine, compares raw against engineered features, validates with GroupKFold, draws the ROC and precision-recall curves, tunes the threshold to cost, ranks the features with permutation importance, and scores a new machine, with every table and chart explained.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch122_predictive_maintenance.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch122_predictive_maintenance.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch122_predictive_maintenance.ipynb" target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)"><strong>View</strong> opens the rendered notebook instantly.
+      <strong>Open in Colab</strong> runs it live. To run locally, install <code>numpy</code>, <code>pandas</code>,
+      <code>matplotlib</code>, <code>seaborn</code>, and <code>scikit-learn</code>.</p>
+  </section>
+
+  <!-- ===== takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Engineer features from the raw signals</strong>: rolling level, trend, and deviation from each machine's baseline, the biggest lever (PR-AUC 0.61 raw to 0.96 engineered).</span></li>
+        <li><span class="ck">✓</span><span><strong>Split by machine, not by row</strong>: a row-wise split leaks and inflated PR-AUC from an honest 0.59 to a flattering 0.73.</span></li>
+        <li><span class="ck">✓</span><span><strong>The failure window is rare</strong>, so judge by precision, recall, and PR-AUC, and cross-validate with GroupKFold.</span></li>
+        <li><span class="ck">✓</span><span><strong>Tune the threshold to cost</strong>: a missed breakdown dwarfs an inspection, so flag early and catch about 99% of failures.</span></li>
+        <li><span class="ck">✓</span><span><strong>The warning signs are trajectories</strong>, drift and trend, not raw values; deploy on each machine's live stream and watch for drift.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== §7 take it further ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Take It Further</h2></div>
+    <p>Five ways to extend the project in the notebook:</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Sweep the prediction horizon</h4>
+        <p>Predict failure within 5, 10, 20, 40, 60 cycles. Where is the sweet spot between lead time and accuracy?</p>
+        <div class="chint">Hint: rebuild the label from cycles-to-failure for each horizon.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Feature-family ablation</h4>
+        <p>Add rolling, then slope, then deviation features and watch PR-AUC. Which family carries it?</p>
+        <div class="chint">Hint: fit the same model on growing feature sets.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>A gradient-boosting rival</h4>
+        <p>Does a boosted model beat the logistic one once the features are engineered?</p>
+        <div class="chint">Hint: compare on PR-AUC; complexity must earn its place.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Measure the alert lead time</h4>
+        <p>For each failing machine, how many cycles of warning does the model give before failure?</p>
+        <div class="chint">Hint: first cycle the probability crosses the threshold, vs the failure cycle.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Plot one machine's decline</h4>
+        <p>Track a single machine's failure probability over its life and watch it cross the alert line.</p>
+        <div class="chint">Hint: predict for every cycle of one test machine; plot probability vs cycle.</div></div></div>
+    </div>
+
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">📓</div>
+        <div class="nb-body"><h3>All five, worked in a companion notebook</h3><p>A second notebook, <strong>Take It Further</strong>, rebuilds the Chapter 122 model and works every one of these five extensions with visuals and explanations, the horizon sweet spot, a feature-family ablation, a gradient-boosting rival, the alert lead time, and one machine's probability climbing over its life, closing with a plain-English summary.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch122_take_it_further.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch122_take_it_further.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch122_take_it_further.ipynb" target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §8 quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">8</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on predictive maintenance and feature engineering. Answer them, hit <strong>Check Answers</strong>,
+       and keep refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>We have predicted a yes/no event twice. The next case study blends the unsupervised and supervised worlds.
+         <strong>Chapter 123 &middot; Customer Segmentation &amp; Targeting</strong> clusters customers into segments,
+         then builds a model to decide whom to target, measuring the lift over an untargeted campaign.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch121.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 121 · Previous</span><br><span class="cn-title">Fraud Detection</span></span>
+    </a>
+    <div class="cn-btn next" style="cursor:default;opacity:0.6" title="Coming soon">
+      <span><span class="cn-dir">Chapter 123 · Coming soon</span><br><span class="cn-title">Customer Segmentation &amp; Targeting</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </div>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 122 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => { const h = document.documentElement; bar.style.width = ((h.scrollTop)/(h.scrollHeight-h.clientHeight)*100) + '%'; });
+</script>
+
+<script>
+  window.QUIZ_ID = "ch122";
+  window.QUIZ_DATA = [
+    {
+      q: "In predictive maintenance, the single biggest lever in this project was…",
+      options: ["Picking a fancier algorithm", "Engineering trajectory features (trend, deviation) from the raw signals", "Collecting more machines", "Using accuracy as the metric"],
+      answer: 1,
+      explain: "Raw sensors gave PR-AUC 0.61; the engineered features lifted the same model to 0.96, far more than any model swap."
+    },
+    {
+      q: "Why is a raw sensor reading a weak predictor here?",
+      options: ["Sensors are inaccurate", "Every machine has a different baseline, so the same value means different things", "Readings are always missing", "It is perfectly predictive"],
+      answer: 1,
+      explain: "A vibration of 3.0 is alarming for one machine and normal for another; the deviation from each machine's own baseline is what matters."
+    },
+    {
+      q: "The 'deviation from baseline' feature measures…",
+      options: ["The raw reading", "How far a sensor has drifted from that machine's own early-life normal", "The failure label", "The rolling standard deviation"],
+      answer: 1,
+      explain: "It subtracts each machine's early-life average, making degradation comparable across machines with different baselines."
+    },
+    {
+      q: "Why split the data by machine instead of by row?",
+      options: ["It is faster", "So no machine appears in both train and test, otherwise the model memorizes machines and the score is inflated", "To balance the classes", "To remove duplicates"],
+      answer: 1,
+      explain: "A row-wise split puts adjacent cycles of the same machine in both sets, leaking information and inflating PR-AUC (0.59 to 0.73 here)."
+    },
+    {
+      q: "GroupKFold cross-validation differs from ordinary K-fold in that…",
+      options: ["It uses more folds", "Each fold holds out whole groups (machines), never splitting a machine across folds", "It ignores the target", "It requires balanced classes"],
+      answer: 1,
+      explain: "It respects the grouping so the CV estimate reflects performance on unseen machines, matching how the model is used."
+    },
+    {
+      q: "Because the failure window is rare (~14%), the right metrics are…",
+      options: ["Accuracy alone", "Precision, recall, and PR-AUC", "R-squared", "Mean squared error"],
+      answer: 1,
+      explain: "As with fraud, accuracy is misleading on an imbalanced target; precision/recall and PR-AUC tell the real story."
+    },
+    {
+      q: "Why tune the alert threshold below 0.5?",
+      options: ["To reduce recall", "Because a missed breakdown costs far more than a needless inspection, so flag early", "To increase accuracy", "It is required by GroupKFold"],
+      answer: 1,
+      explain: "The cost-optimal cutoff follows the error-cost ratio; a costly miss pushes the threshold down so almost no failure is missed."
+    },
+    {
+      q: "The chapter's overall lesson is that…",
+      options: ["Deep learning is required", "Feature engineering and an honest, group-aware split matter more than the choice of model", "Accuracy is fine when high", "Raw sensors are always enough"],
+      answer: 1,
+      explain: "Turning raw signals into trajectory features and testing on unseen machines drove the result far more than the algorithm did."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

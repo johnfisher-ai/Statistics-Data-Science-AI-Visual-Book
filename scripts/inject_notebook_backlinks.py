@@ -88,6 +88,10 @@ MAP = {
         ("../../ch121.html#notebook", "Back to the book", "Chapter 121 · Fraud Detection"),
     "ch121_take_it_further.html":
         ("../../ch121.html#challenges", "Back to the book", "Chapter 121 · Take it further"),
+    "ch122_predictive_maintenance.html":
+        ("../../ch122.html#notebook", "Back to the book", "Chapter 122 · Predictive Maintenance"),
+    "ch122_take_it_further.html":
+        ("../../ch122.html#challenges", "Back to the book", "Chapter 122 · Take it further"),
     "ch01_what_is_statistics.html":
         ("../../ch01.html#notebook", "Back to the book", "Chapter 1 · What Is Statistics?"),
     "ch01_challenges_solutions.html":
