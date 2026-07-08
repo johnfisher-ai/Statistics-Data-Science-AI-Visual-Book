@@ -26,6 +26,10 @@
     .writeup { background:#eef2ff; border:1px solid #c7d2fe; border-radius:14px; padding:1.3rem 1.5rem; margin:1.3rem 0; }
     .writeup h3 { margin-top:0; color:#3730a3; }
     .writeup h4 { margin:1rem 0 0.3rem; color:#3730a3; font-size:0.92rem; }
+    .nb-fig { margin:1.4rem 0; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:1rem 1rem 0.6rem; }
+    .nb-fig img { display:block; width:100%; height:auto; border-radius:8px; }
+    .nb-fig figcaption { margin:0.75rem 0.2rem 0.3rem; font-size:0.85rem; color:var(--ink-soft); line-height:1.55; }
+    .nb-fig .cap-t { font-size:0.64rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#3730a3; }
   </style>
 </head>
 <body class="chapter">
@@ -221,6 +225,17 @@
        fall through) and depends strongly on <strong>deposit type</strong>: guests who put money down rarely cancel, while
        <code>No Deposit</code> bookings are the riskiest. That separable structure is what a model can exploit.</p>
 
+    <figure class="nb-fig">
+      <img src="../assets/img/ch120_signal.png" alt="Three bar charts: target balance, cancellation rate by deposit type, and cancellation rate by lead time">
+      <figcaption><span class="cap-t">From the notebook · Step 5</span><br>
+        <strong>Seeing the signal.</strong> <strong>Left</strong>, the target is about 45% canceled, common enough to learn
+        from and a real baseline to beat (not a rare needle in a haystack). <strong>Center</strong>, cancellation rate by
+        deposit type: <code>No Deposit</code> bookings cancel over half the time, while <code>Non Refund</code> guests, who
+        have money at stake, cancel under 20%. <strong>Right</strong>, the rate climbs steadily with lead time, from under
+        30% for last-minute bookings to about 65% for those made six months out. The signal is real and separable, exactly
+        what a model needs.</figcaption>
+    </figure>
+
     <div class="step-h"><span class="sn">6</span><h3>Transform, inside a pipeline</h3></div>
     <p>Numeric columns are median-imputed and standardized; categoricals are one-hot encoded. Crucially, all of this lives
        <strong>inside a scikit-learn <code>Pipeline</code></strong>, so each cross-validation fold re-fits the preprocessing
@@ -296,6 +311,15 @@
        reach for a boosted forest reflexively. A <strong>learning curve</strong> (in the notebook) confirms the training
        and validation scores converge, so the model is not badly overfit and much more data would help only a little.</p>
 
+    <figure class="nb-fig">
+      <img src="../assets/img/ch120_models.png" alt="Bar chart of 5-fold cross-validated AUC for three models with error bars">
+      <figcaption><span class="cap-t">From the notebook · Step 8</span><br>
+        <strong>Comparing models fairly.</strong> Each bar is a model's mean AUC across the five cross-validation folds; the
+        thin whiskers show how much it varied fold to fold, and the dashed line is random guessing (0.5). All three clear
+        the baseline comfortably, but <strong>logistic regression (0.81) edges out both tree ensembles (0.79)</strong>, and
+        its error bar overlaps theirs, so the simplest model is at least as good. That is reason enough to keep it.</figcaption>
+    </figure>
+
     <div class="step-h"><span class="sn">9</span><h3>Tune, then the one honest test</h3></div>
     <p><code>GridSearchCV</code> sweeps the regularization strength and settles on <strong>C = 0.3</strong> (CV AUC 0.812).
        Only then do we unlock the test set, once, for the final verdict:</p>
@@ -313,6 +337,17 @@
     <p>Because tuning happened only on cross-validation and the test set was touched exactly once, <strong>0.85 is an honest
        estimate</strong> of next month's performance, not an optimistic mirage. The confusion matrix (106 true-honored, 89
        true-canceled, 35 false alarms, 29 misses) makes the trade-off concrete.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/ch120_eval.png" alt="Confusion matrix and ROC curve on the held-out test set">
+      <figcaption><span class="cap-t">From the notebook · Step 9</span><br>
+        <strong>The final verdict, on data the model never saw.</strong> <strong>Left</strong>, the confusion matrix: the
+        model correctly labeled <strong>106</strong> honored and <strong>89</strong> canceled bookings, against
+        <strong>35</strong> false alarms (flagged but honored) and <strong>29</strong> misses (canceled but not flagged).
+        <strong>Right</strong>, the ROC curve bows well above the diagonal (<strong>AUC 0.85</strong>): across every possible
+        threshold the model ranks risky bookings above safe ones far better than chance. Because the test set was touched
+        only here, at the very end, these numbers are trustworthy.</figcaption>
+    </figure>
   </section>
 
   <!-- ===== §5 interpret/deploy ===== -->
@@ -325,6 +360,16 @@
        of <strong>prior cancellations</strong>. The strongest <strong>reliability signals</strong> are <code>Non Refund</code>
        deposits, <code>Corporate</code> bookings, and more <strong>special requests</strong> (a sign of genuine intent). Every
        one matches hotel-industry intuition, evidence the model learned real structure, not noise.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/ch120_drivers.png" alt="Horizontal bar chart of logistic regression coefficients for each feature">
+      <figcaption><span class="cap-t">From the notebook · Step 10</span><br>
+        <strong>What pushes a booking toward cancellation.</strong> Each bar is a feature's logistic coefficient (in
+        log-odds). Bars pointing <strong>right (red)</strong> raise cancellation risk, no deposit, the <code>Groups</code>
+        segment, long lead time, and prior cancellations; bars pointing <strong>left (green)</strong> mark reliable bookings,
+        a non-refundable deposit, <code>Corporate</code> bookings, and more special requests. The longer the bar, the
+        stronger the effect. This ranking is only readable because we kept a simple, interpretable model.</figcaption>
+    </figure>
 
     <div class="step-h"><span class="sn">11</span><h3>Deploy the model</h3></div>
     <p>Persisting the fitted <code>Pipeline</code> with <code>joblib</code> bundles preprocessing and model together, so
