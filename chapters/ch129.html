@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 129 · Volatility &amp; Advanced Models — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .ml-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.85rem; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .ml-table th,.ml-table td { padding:0.6rem 0.8rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .ml-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .ml-table td { color:var(--ink-soft); } .ml-table tr:last-child td { border-bottom:none; }
+    .ml-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#f0f9ff; border:1px solid #bae6fd; border-left:4px solid #0284c7; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#075985; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none; padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+    .rw-find { background:var(--panel-2); border-radius:10px; padding:0.5rem 1rem; margin-top:0.9rem; }
+    .rw-find li { font-size:0.85rem; color:var(--ink-soft); line-height:1.6; margin:0.2rem 0; }
+    .research { background:#f0f9ff; border:1px solid #bae6fd; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#075985; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch129_volatility_advanced.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXII · Time Series &amp; Forecasting</span><span class="sep">/</span>
+      <span>Chapter 129</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XXII · Time Series &amp; Forecasting</span> When the variance moves too</div>
+    <h1><span class="accent">Volatility</span> &amp; Advanced Models</h1>
+    <p class="dek">Forecasting the level is only half the story. Financial returns are unpredictable in the mean yet cluster into
+       calm and stormy stretches, memory that lives in the variance. This chapter adds the professional toolkit: reading
+       correlograms, cross-checking stationarity, modeling volatility, and relating one series to another.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~26 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 129</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Some series defy the models of the last chapter. Daily stock returns are essentially
+       <span class="hl">unforecastable in the mean</span>, their ACF is flat, so no ARIMA will beat a coin flip on tomorrow's
+       direction. Yet they are far from random: big moves cluster together into
+       <span class="hl">volatile</span> and <span class="hl">calm</span> regimes. The signal is in the
+       <span class="hl">variance</span>, and capturing it needs a different family of models, plus tools to
+       cross-check stationarity and to relate one series to another.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#963;</div>
+      <div class="def-body">
+        This chapter covers the advanced toolkit: <span class="def-kw">ACF/PACF</span> for order selection,
+        <span class="def-kw">unit-root tests</span> (ADF, PP, KPSS) that cross-check stationarity,
+        <span class="def-kw">ARCH/GARCH</span> for volatility clustering, and <span class="def-kw">Granger causality</span>
+        and <span class="def-kw">ARDL</span> for relationships between series.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">&#127754;</div>
+      <div><div class="ctitle">The key idea: memory in the variance</div>
+        <p>A series can be <strong>white noise in its level</strong> (unpredictable returns) while its
+           <strong>squared values are strongly autocorrelated</strong> (predictable volatility). ARIMA models the first and
+           finds nothing; <strong>GARCH models the second</strong> and forecasts the <em>size</em> of moves, the basis of
+           financial risk management.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §1 ACF/PACF ===== -->
+  <section id="acfpacf">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Reading ACF &amp; PACF</h2></div>
+    <p>The autocorrelation and partial-autocorrelation functions are the classic tools for picking model orders, and for
+       spotting where the predictable structure lives.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 214" width="100%" font-family="Inter, sans-serif" aria-label="An AR process has a PACF that cuts off and an ACF that tails off; an MA process is the reverse; for returns the ACF is flat but the ACF of squared returns has spikes, so the memory is in the variance">
+        <text x="350" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">Correlograms tell you the order, and where the signal hides</text>
+        <!-- cheat table -->
+        <g font-size="8">
+          <rect x="24" y="34" width="330" height="22" fill="#f8fafc" stroke="#e2e8f0"/><text x="34" y="49" fill="#475569" font-weight="800">process</text><text x="150" y="49" fill="#475569" font-weight="800">ACF</text><text x="255" y="49" fill="#475569" font-weight="800">PACF</text>
+          <rect x="24" y="56" width="330" height="22" fill="#f0f9ff" stroke="#bae6fd"/><text x="34" y="71" fill="#0284c7" font-weight="700">AR(p)</text><text x="150" y="71" fill="#075985">tails off</text><text x="255" y="71" fill="#075985" font-weight="700">cuts off at p</text>
+          <rect x="24" y="78" width="330" height="22" fill="#f5f3ff" stroke="#ddd6fe"/><text x="34" y="93" fill="#6d28d9" font-weight="700">MA(q)</text><text x="150" y="93" fill="#5b21b6" font-weight="700">cuts off at q</text><text x="255" y="93" fill="#5b21b6">tails off</text>
+          <rect x="24" y="100" width="330" height="22" fill="#ecfdf5" stroke="#a7f3d0"/><text x="34" y="115" fill="#047857" font-weight="700">ARMA(p,q)</text><text x="150" y="115" fill="#065f46">tails off</text><text x="255" y="115" fill="#065f46">tails off</text>
+        </g>
+        <text x="189" y="138" text-anchor="middle" font-size="7.6" fill="#64748b">&#8220;cuts off&#8221; = drops inside the band after that lag</text>
+        <!-- two mini ACFs -->
+        <text x="470" y="46" text-anchor="middle" font-size="8.3" fill="#475569" font-weight="800">returns: ACF flat</text>
+        <line x1="392" y1="86" x2="548" y2="86" stroke="#94a3b8" stroke-width="1"/>
+        <rect x="392" y="70" width="156" height="32" fill="none" stroke="#e2e8f0" stroke-dasharray="2 2"/>
+        <g stroke="#0284c7" stroke-width="2"><line x1="404" y1="86" x2="404" y2="82"/><line x1="418" y1="86" x2="418" y2="89"/><line x1="432" y1="86" x2="432" y2="83"/><line x1="446" y1="86" x2="446" y2="88"/><line x1="460" y1="86" x2="460" y2="84"/><line x1="474" y1="86" x2="474" y2="87"/><line x1="488" y1="86" x2="488" y2="84"/><line x1="502" y1="86" x2="502" y2="88"/><line x1="516" y1="86" x2="516" y2="85"/><line x1="530" y1="86" x2="530" y2="87"/></g>
+        <text x="470" y="116" text-anchor="middle" font-size="7.4" fill="#0369a1">mean is unpredictable</text>
+        <text x="628" y="46" text-anchor="middle" font-size="8.3" fill="#b91c1c" font-weight="800">returns&#178;: ACF spikes</text>
+        <line x1="556" y1="130" x2="690" y2="130" stroke="#94a3b8" stroke-width="1"/>
+        <g stroke="#ef4444" stroke-width="2"><line x1="566" y1="130" x2="566" y2="76"/><line x1="580" y1="130" x2="580" y2="98"/><line x1="594" y1="130" x2="594" y2="104"/><line x1="608" y1="130" x2="608" y2="92"/><line x1="622" y1="130" x2="622" y2="112"/><line x1="636" y1="130" x2="636" y2="118"/><line x1="650" y1="130" x2="650" y2="120"/><line x1="664" y1="130" x2="664" y2="124"/><line x1="678" y1="130" x2="678" y2="126"/></g>
+        <text x="623" y="146" text-anchor="middle" font-size="7.4" fill="#b91c1c">variance HAS memory</text>
+        <text x="350" y="176" text-anchor="middle" font-size="9" fill="#1a2138" font-weight="700">Flat ACF on returns, tall ACF on squared returns &#8594; the story is volatility, not direction.</text>
+        <text x="350" y="196" text-anchor="middle" font-size="8" fill="#64748b">(in practice, tools like AIC and auto-ARIMA search orders for you, but the correlogram builds the intuition)</text>
+      </svg>
+    </figure>
+
+    <p>The reading rules are a useful shorthand: an <strong>AR(p)</strong> process shows a PACF that <em>cuts off</em> after
+       lag p while its ACF tails away; an <strong>MA(q)</strong> is the mirror image. But the deeper use here is diagnostic.
+       Our returns have a <strong>flat ACF</strong>, no linear memory in the level, yet the ACF of their <strong>squared</strong>
+       values is full of spikes. That single contrast is the entire motivation for the volatility models below.</p>
+  </section>
+
+  <!-- ===== §2 unit-root ===== -->
+  <section id="unitroot">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Unit-Root Tests: ADF, PP &amp; KPSS</h2></div>
+    <p>Chapter 127 introduced the ADF test. In practice you cross-check stationarity with more than one test, and the trick
+       is that they do not all share the same null hypothesis.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 188" width="100%" font-family="Inter, sans-serif" aria-label="ADF and Phillips-Perron share the null of a unit root, so a small p-value means stationary; KPSS flips the null to stationarity, so a large p-value means stationary; using ADF and KPSS together confirms the verdict">
+        <text x="350" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">Three tests, two opposite nulls, use them together</text>
+        <rect x="24" y="36" width="205" height="70" rx="10" fill="#f0f9ff" stroke="#7dd3fc"/>
+        <text x="126" y="55" text-anchor="middle" font-size="9.5" fill="#0284c7" font-weight="800">ADF</text>
+        <text x="126" y="72" text-anchor="middle" font-size="7.8" fill="#075985">H&#8320;: unit root (non-stationary)</text>
+        <text x="126" y="90" text-anchor="middle" font-size="8.2" fill="#0369a1" font-weight="700">small p &#8594; stationary</text>
+        <rect x="247" y="36" width="205" height="70" rx="10" fill="#f0f9ff" stroke="#7dd3fc"/>
+        <text x="349" y="55" text-anchor="middle" font-size="9.5" fill="#0284c7" font-weight="800">Phillips-Perron (PP)</text>
+        <text x="349" y="72" text-anchor="middle" font-size="7.8" fill="#075985">H&#8320;: unit root (same as ADF)</text>
+        <text x="349" y="90" text-anchor="middle" font-size="8.2" fill="#0369a1" font-weight="700">small p &#8594; stationary</text>
+        <rect x="470" y="36" width="205" height="70" rx="10" fill="#fff7ed" stroke="#fdba74"/>
+        <text x="572" y="55" text-anchor="middle" font-size="9.5" fill="#c2410c" font-weight="800">KPSS (flipped)</text>
+        <text x="572" y="72" text-anchor="middle" font-size="7.8" fill="#9a3412">H&#8320;: STATIONARY</text>
+        <text x="572" y="90" text-anchor="middle" font-size="8.2" fill="#c2410c" font-weight="700">LARGE p &#8594; stationary</text>
+        <rect x="24" y="120" width="651" height="52" rx="9" fill="#ecfdf5" stroke="#a7f3d0"/>
+        <text x="350" y="140" text-anchor="middle" font-size="8.7" fill="#047857" font-weight="800">ADF says stationary AND KPSS says stationary &#8594; trust it</text>
+        <text x="350" y="158" text-anchor="middle" font-size="8" fill="#065f46">our returns pass all three; a price LEVEL would fail (difference it first). If the two disagree, be cautious.</text>
+      </svg>
+    </figure>
+
+    <p>The <strong>ADF</strong> and <strong>Phillips-Perron (PP)</strong> tests share the null &#8220;the series has a unit
+       root&#8221; (non-stationary), so a <strong>small p-value</strong> lets you reject it and conclude stationary. The
+       <strong>KPSS</strong> test <strong>reverses the null</strong> to &#8220;the series is stationary&#8221;, so there a
+       <strong>large p-value</strong> is the good news. Pairing ADF with KPSS is the standard confirmatory move: when both
+       point the same way, the verdict is solid. Our returns are stationary on all three tests; a wandering
+       <strong>price level</strong> would fail them, which is why you model returns, not prices.</p>
+  </section>
+
+  <!-- ===== §3 GARCH ===== -->
+  <section id="garch">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Volatility Clustering: ARCH &amp; GARCH</h2></div>
+    <p>Now the marquee model. When variance itself has memory, you stop modeling the level and start modeling the
+       <strong>variance</strong>.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 210" width="100%" font-family="Inter, sans-serif" aria-label="A returns series with calm and turbulent stretches; GARCH tracks the changing conditional volatility, with the equation variance equals omega plus alpha times last squared shock plus beta times last variance">
+        <text x="350" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">GARCH models the variance: big moves cluster together</text>
+        <!-- returns with clustering -->
+        <line x1="30" y1="96" x2="670" y2="96" stroke="#cbd5e1" stroke-width="1"/>
+        <g stroke="#0284c7" stroke-width="1.1">
+          <line x1="44" y1="96" x2="44" y2="88"/><line x1="56" y1="96" x2="56" y2="104"/><line x1="68" y1="96" x2="68" y2="90"/><line x1="80" y1="96" x2="80" y2="102"/><line x1="92" y1="96" x2="92" y2="91"/><line x1="104" y1="96" x2="104" y2="101"/>
+          <line x1="120" y1="96" x2="120" y2="70"/><line x1="132" y1="96" x2="132" y2="126"/><line x1="144" y1="96" x2="144" y2="64"/><line x1="156" y1="96" x2="156" y2="132"/><line x1="168" y1="96" x2="168" y2="72"/><line x1="180" y1="96" x2="180" y2="124"/><line x1="192" y1="96" x2="192" y2="68"/>
+          <line x1="208" y1="96" x2="208" y2="90"/><line x1="220" y1="96" x2="220" y2="103"/><line x1="232" y1="96" x2="232" y2="92"/><line x1="244" y1="96" x2="244" y2="100"/><line x1="256" y1="96" x2="256" y2="93"/><line x1="268" y1="96" x2="268" y2="99"/><line x1="280" y1="96" x2="280" y2="91"/>
+          <line x1="300" y1="96" x2="300" y2="74"/><line x1="312" y1="96" x2="312" y2="120"/><line x1="324" y1="96" x2="324" y2="66"/><line x1="336" y1="96" x2="336" y2="128"/><line x1="348" y1="96" x2="348" y2="70"/>
+          <line x1="364" y1="96" x2="364" y2="90"/><line x1="376" y1="96" x2="376" y2="102"/><line x1="388" y1="96" x2="388" y2="92"/><line x1="400" y1="96" x2="400" y2="100"/><line x1="412" y1="96" x2="412" y2="93"/><line x1="424" y1="96" x2="424" y2="99"/>
+        </g>
+        <!-- conditional vol envelope -->
+        <path d="M44,86 Q100,84 116,64 Q156,58 196,64 Q250,84 296,68 Q340,60 360,86 Q400,88 430,88" fill="none" stroke="#ef4444" stroke-width="1.8"/>
+        <path d="M44,106 Q100,108 116,128 Q156,134 196,128 Q250,108 296,124 Q340,132 360,106 Q400,104 430,104" fill="none" stroke="#ef4444" stroke-width="1.8"/>
+        <text x="150" y="150" text-anchor="middle" font-size="7.4" fill="#b91c1c" font-weight="700">turbulent</text>
+        <text x="244" y="150" text-anchor="middle" font-size="7.4" fill="#0369a1" font-weight="700">calm</text>
+        <text x="324" y="150" text-anchor="middle" font-size="7.4" fill="#b91c1c" font-weight="700">turbulent</text>
+        <text x="500" y="86" font-size="7.6" fill="#b91c1c" font-weight="700">GARCH conditional</text>
+        <text x="500" y="98" font-size="7.6" fill="#b91c1c" font-weight="700">volatility (the band)</text>
+        <!-- equation -->
+        <rect x="446" y="120" width="228" height="66" rx="10" fill="#f0f9ff" stroke="#7dd3fc"/>
+        <text x="560" y="142" text-anchor="middle" font-size="9.5" fill="#075985" font-weight="800">var&#8348; = &#969; + &#945;&#183;shock&#178;&#8348;&#8331;&#8321; + &#946;&#183;var&#8348;&#8331;&#8321;</text>
+        <text x="560" y="160" text-anchor="middle" font-size="7.6" fill="#0369a1">today's variance leans on yesterday's</text>
+        <text x="560" y="176" text-anchor="middle" font-size="7.8" fill="#c2410c" font-weight="700">&#945; + &#946; near 1 &#8594; shocks are long-lived</text>
+      </svg>
+    </figure>
+
+    <p><strong>ARCH</strong> and its generalization <strong>GARCH</strong> let today's variance depend on recent squared
+       shocks and recent variance. The workhorse <strong>GARCH(1,1)</strong> is
+       <code>var_t = omega + alpha &#183; shock&#178;_(t-1) + beta &#183; var_(t-1)</code>. Fitting it to our stock gives a
+       <strong>persistence of alpha + beta &#8776; 0.96</strong>: a shock to volatility decays slowly, so a stormy day raises
+       expected volatility for many days. The model's <strong>conditional volatility</strong> rises and falls with the
+       clustering, and forecasting it, the <em>size</em> of future moves, is exactly what risk measures like Value-at-Risk
+       need.</p>
+  </section>
+
+  <!-- ===== §4 Granger/ARDL ===== -->
+  <section id="granger">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Relationships: Granger Causality &amp; ARDL</h2></div>
+    <p>So far, one series at a time. The last tools ask whether one series helps explain <em>another</em>.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 176" width="100%" font-family="Inter, sans-serif" aria-label="Granger causality tests whether the past of the market improves the forecast of the stock; an ARDL model regresses the stock on its own lag and on current and lagged market returns; the caveat is that this is predictive precedence, not proof of cause">
+        <text x="350" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">Does one series help predict another?</text>
+        <rect x="40" y="44" width="150" height="40" rx="9" fill="#f0f9ff" stroke="#7dd3fc"/><text x="115" y="62" text-anchor="middle" font-size="9" fill="#0284c7" font-weight="800">market&#8348;&#8331;&#8321;</text><text x="115" y="76" text-anchor="middle" font-size="7.2" fill="#075985">yesterday's market</text>
+        <rect x="330" y="44" width="150" height="40" rx="9" fill="#ecfdf5" stroke="#a7f3d0"/><text x="405" y="62" text-anchor="middle" font-size="9" fill="#047857" font-weight="800">stock&#8348;</text><text x="405" y="76" text-anchor="middle" font-size="7.2" fill="#065f46">today's stock</text>
+        <path d="M190,64 L328,64" stroke="#0284c7" stroke-width="2.2" marker-end="url(#g4a)"/>
+        <defs><marker id="g4a" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#0284c7"/></marker></defs>
+        <text x="259" y="56" text-anchor="middle" font-size="7.8" fill="#0369a1" font-weight="700">Granger: past of market improves stock's forecast (p &lt; 0.05)</text>
+        <rect x="500" y="40" width="175" height="48" rx="9" fill="#f5f3ff" stroke="#c4b5fd"/>
+        <text x="587" y="58" text-anchor="middle" font-size="8" fill="#6d28d9" font-weight="800">ARDL</text>
+        <text x="587" y="73" text-anchor="middle" font-size="7.3" fill="#5b21b6">stock&#8348; = a&#183;stock&#8348;&#8331;&#8321;</text>
+        <text x="587" y="84" text-anchor="middle" font-size="7.3" fill="#5b21b6">+ b&#183;market&#8348; + c&#183;market&#8348;&#8331;&#8321;</text>
+        <rect x="40" y="104" width="620" height="52" rx="9" fill="#fff7ed" stroke="#fdba74"/>
+        <text x="350" y="124" text-anchor="middle" font-size="8.6" fill="#c2410c" font-weight="800">Caveat: Granger causality is predictive precedence, NOT proof of cause</text>
+        <text x="350" y="142" text-anchor="middle" font-size="8" fill="#9a3412">a common driver or a faster-reacting third series can produce the same pattern, ARDL then quantifies the effect</text>
+      </svg>
+    </figure>
+
+    <p><strong>Granger causality</strong> asks a precise, testable question: does adding the past of series X improve the
+       forecast of Y beyond Y's own past? For our data the <strong>market Granger-causes the stock</strong> (p far below
+       0.05) but not the reverse, matching the built-in lag. The essential caveat: this is <strong>predictive precedence,
+       not true causation</strong>. An <strong>ARDL (AutoRegressive Distributed Lag)</strong> model then <em>quantifies</em>
+       the link, regressing the stock on its own lag plus current and lagged market returns (coefficients about
+       <strong>0.33 today and 0.29 yesterday</strong>). ARDL also powers the <strong>bounds test</strong> for
+       cointegration, whether two trending series share a long-run equilibrium.</p>
+  </section>
+
+  <!-- ===== §5 real-world ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Real-World Example: Daily Market &amp; Stock Returns</h2></div>
+    <p>The companion notebook runs the whole advanced toolkit on three years of daily returns, using
+       <strong>statsmodels</strong> and the <strong>arch</strong> library.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · ch129_daily_returns.xlsx</div>
+      <p style="margin:0.5rem 0 0"><strong>756 trading days</strong> (2021 to 2023) of daily percent returns for a broad
+        market index and a single stock. The stock reacts to the market both same-day and with a one-day lag, and its shocks
+        follow a GARCH process. Columns: <code>date</code>, <code>market_return</code>, <code>stock_return</code>.</p>
+      <ul class="rw-find">
+        <li><span class="ck">&#9679;</span><strong>Stationarity:</strong> returns pass all three tests (ADF and PP p &#8776; 0, KPSS p large); the price <em>level</em> would not.</li>
+        <li><span class="ck">&#9679;</span><strong>Signal in the variance:</strong> returns' ACF is flat, but squared returns are autocorrelated, volatility clustering.</li>
+        <li><span class="ck">&#9679;</span><strong>GARCH(1,1):</strong> persistence alpha + beta &#8776; <strong>0.96</strong>, so volatility shocks are long-lived.</li>
+        <li><span class="ck">&#9679;</span><strong>Granger:</strong> market &#8594; stock is significant (p &#8776; 0); stock &#8594; market is not (p &#8776; 0.56).</li>
+      </ul>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/ch129_daily_returns.xlsx" download>📊 Download dataset &nbsp;<small>XLSX · 756 days</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §6 ML/AI ===== -->
+  <section id="mlai">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Advanced Time Series in Machine Learning &amp; AI</h2></div>
+    <p>The classical tools here have modern, learned counterparts, and the questions they pose, forecasting volatility and
+       untangling relationships, are active machine-learning research areas.</p>
+
+    <table class="ml-table">
+      <thead><tr><th>Classical tool</th><th>Modern / ML counterpart</th><th>Idea</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">GARCH volatility</td><td>Deep / neural volatility models, realized-vol ML</td><td>Learn the variance process from richer inputs and high-frequency data</td></tr>
+        <tr><td class="nm">Granger causality</td><td>Neural Granger, PCMCI, causal discovery</td><td>Find lead-lag and causal structure among many series with nonlinear models</td></tr>
+        <tr><td class="nm">ARDL / VAR</td><td>Multivariate deep models, graph neural networks</td><td>Model many interacting series jointly, sharing structure across them</td></tr>
+        <tr><td class="nm">Regime detection</td><td>Hidden Markov models, change-point &amp; regime-switching</td><td>Detect shifts between calm and turbulent states automatically</td></tr>
+        <tr><td class="nm">Risk / tails</td><td>Quantile &amp; distributional forecasting (DeepAR, quantile nets)</td><td>Forecast intervals and tail risk, not just a point</td></tr>
+      </tbody>
+    </table>
+
+    <div class="research">
+      <div class="rtag">🔬 Research frontier</div>
+      <p style="margin:0.4rem 0 0">Two threads are hot: <strong>causal discovery in time series</strong>, learning the
+        directed graph of who-drives-whom among hundreds of series with nonlinear, neural methods, and
+        <strong>probabilistic deep forecasting</strong>, which models the full predictive distribution (and thus volatility
+        and tail risk) rather than a single number. Both push past what GARCH and Granger can do, yet they are validated with
+        the very ideas in this chapter: stationarity, autocorrelation of residuals, and honest out-of-sample testing.</p>
+    </div>
+  </section>
+
+  <!-- ===== notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body"><h3>Run the advanced toolkit in Python</h3><p>The companion notebook reads the daily returns, plots the ACF and PACF (flat for returns, spiky for squared returns), runs ADF, Phillips-Perron, and KPSS, fits a GARCH(1,1) and plots its conditional volatility, tests Granger causality in both directions, and fits an ARDL model, using statsmodels and the arch library (installed automatically if missing).</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch129_volatility_advanced.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch129_volatility_advanced.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch129_volatility_advanced.ipynb" target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)"><strong>View</strong> opens the rendered notebook instantly.
+      <strong>Open in Colab</strong> runs it live. To run locally, install <code>numpy</code>, <code>pandas</code>,
+      <code>matplotlib</code>, <code>statsmodels</code>, <code>arch</code>, and <code>openpyxl</code>.</p>
+  </section>
+
+  <!-- ===== takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>ACF/PACF pick orders</strong>: AR cuts off in the PACF, MA in the ACF; and the ACF of squared returns reveals memory in the variance.</span></li>
+        <li><span class="ck">✓</span><span><strong>Cross-check stationarity</strong>: ADF and PP share the unit-root null; KPSS flips it, use ADF and KPSS together.</span></li>
+        <li><span class="ck">✓</span><span><strong>GARCH models volatility</strong>: when big moves cluster, forecast the variance; high persistence (alpha + beta near 1) means shocks last.</span></li>
+        <li><span class="ck">✓</span><span><strong>Granger tests predictive precedence</strong>: does X's past improve Y's forecast? It is not proof of causation.</span></li>
+        <li><span class="ck">✓</span><span><strong>ARDL quantifies the link</strong>: regress a series on its own and another's lags; it also underpins cointegration testing.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== §7 challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Practice Challenges</h2></div>
+    <p>Five exercises on the daily-returns series. Full solutions are in the companion solutions notebook.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Mean or variance?</h4>
+        <p>Use the Ljung-Box test on the returns and on the squared returns. Where is the predictable structure?</p>
+        <div class="chint">Hint: <code>acorr_ljungbox</code> on each.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Levels vs returns</h4>
+        <p>Build a price level (cumulative returns) and show it is non-stationary while the returns are.</p>
+        <div class="chint">Hint: run ADF and KPSS on both.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Forecast the volatility</h4>
+        <p>Fit GARCH(1,1) and forecast the next five days' volatility. Does it mean-revert?</p>
+        <div class="chint">Hint: <code>res.forecast(horizon=5).variance</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Granger both ways</h4>
+        <p>Test causality in each direction at two lags. State the direction and the caveat.</p>
+        <div class="chint">Hint: <code>grangercausalitytests</code> with the columns swapped.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>ARDL vs Granger</h4>
+        <p>Fit an ARDL and check whether its coefficients agree with the Granger conclusion.</p>
+        <div class="chint">Hint: compare the market lag coefficients to the Granger p-values.</div></div></div>
+    </div>
+
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">📓</div>
+        <div class="nb-body"><h3>Solutions notebook</h3><p>All five challenges worked in code, Ljung-Box on returns versus squared returns, levels versus returns stationarity, a five-day GARCH volatility forecast, Granger causality both ways, and ARDL versus Granger, each with a short explanation.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch129_challenges_solutions.html">📓 View Solutions</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch129_challenges_solutions.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch129_challenges_solutions.ipynb" target="_blank" rel="noopener">⬇ GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §8 quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">8</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on correlograms, unit-root tests, GARCH, and Granger/ARDL. Answer them, hit <strong>Check
+       Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>You have built many models; now learn to grade them fairly. <strong>Chapter 130 &middot; Forecast Accuracy</strong>
+         defines ME, MAE, MSE, RMSE, MAPE, and Theil's U, and shows how to compare forecasts, closing the loop before the
+         forecasting case study.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch128.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 128 · Previous</span><br><span class="cn-title">Forecasting Models</span></span>
+    </a>
+    <div class="cn-btn next" style="cursor:default;opacity:0.6" title="Coming soon">
+      <span><span class="cn-dir">Chapter 130 · Coming soon</span><br><span class="cn-title">Forecast Accuracy</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </div>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 129 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => { const h = document.documentElement; bar.style.width = ((h.scrollTop)/(h.scrollHeight-h.clientHeight)*100) + '%'; });
+</script>
+
+<script>
+  window.QUIZ_ID = "ch129";
+  window.QUIZ_DATA = [
+    {
+      q: "For an AR(p) process, the PACF typically…",
+      options: ["Tails off slowly", "Cuts off after lag p, while the ACF tails off", "Is always flat", "Equals the ACF"],
+      answer: 1,
+      explain: "AR: PACF cuts off at p, ACF tails. MA is the mirror image (ACF cuts off at q). This is the classic order-reading rule."
+    },
+    {
+      q: "Daily returns had a flat ACF but their squared values were autocorrelated. This means…",
+      options: ["The data is corrupted", "The mean is unpredictable but the variance has memory, motivating GARCH", "Returns follow a strong trend", "Nothing can be modeled"],
+      answer: 1,
+      explain: "White noise in the level, structure in the variance: the signal is volatility clustering, which ARIMA misses and GARCH captures."
+    },
+    {
+      q: "The ADF and KPSS tests are often used together because…",
+      options: ["They are identical", "They have opposite null hypotheses, so agreement confirms the verdict", "KPSS is always right", "ADF only works on returns"],
+      answer: 1,
+      explain: "ADF/PP null is 'unit root' (small p means stationary); KPSS null is 'stationary' (large p means stationary). Agreement is a strong signal."
+    },
+    {
+      q: "A small p-value from an ADF test means…",
+      options: ["Non-stationary", "Reject the unit-root null, the series is stationary", "The series has a trend", "The test failed"],
+      answer: 1,
+      explain: "ADF's null is that a unit root (non-stationarity) is present; rejecting it (small p) concludes stationarity."
+    },
+    {
+      q: "In GARCH(1,1), a persistence alpha + beta close to 1 indicates…",
+      options: ["No volatility", "Volatility shocks are long-lived, turbulence persists for many periods", "The model is wrong", "Constant variance"],
+      answer: 1,
+      explain: "High persistence means a shock to volatility decays slowly, so a stormy day keeps expected volatility elevated for a long time."
+    },
+    {
+      q: "GARCH forecasts…",
+      options: ["The direction of the next move", "The variance (size) of future moves, not their direction", "The exact next price", "The trend"],
+      answer: 1,
+      explain: "GARCH models conditional variance; it predicts how big moves will be, the core of risk measures like Value-at-Risk."
+    },
+    {
+      q: "Granger causality tells you that…",
+      options: ["X definitely causes Y", "X's past helps predict Y beyond Y's own past, predictive precedence, not proof of cause", "X and Y are independent", "Y causes X"],
+      answer: 1,
+      explain: "Granger is about forecast improvement and timing. A confounder or faster-reacting third series can produce it, so it is not true causation."
+    },
+    {
+      q: "An ARDL model is useful because it…",
+      options: ["Only works on stationary returns", "Regresses a series on its own lags and another series' current and lagged values, quantifying the relationship", "Replaces the ACF", "Removes seasonality"],
+      answer: 1,
+      explain: "ARDL estimates the size of a dynamic relationship (today and at each lag) and underpins the bounds test for cointegration."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
