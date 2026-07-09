@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 124 · Case Study: Loan Default Risk — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#eef2ff; border:1px solid #c7d2fe; border-left:4px solid #4338ca; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#3730a3; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none; padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+    .step-h { display:flex; align-items:center; gap:0.6rem; margin:1.4rem 0 0.4rem; }
+    .step-h .sn { flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:#4338ca; color:#fff; font-weight:800; font-size:0.95rem; display:flex; align-items:center; justify-content:center; }
+    .step-h h3 { margin:0; font-size:1.02rem; color:var(--ink); }
+    .writeup { background:#eef2ff; border:1px solid #c7d2fe; border-radius:14px; padding:1.3rem 1.5rem; margin:1.3rem 0; }
+    .writeup h3 { margin-top:0; color:#3730a3; }
+    .writeup h4 { margin:1rem 0 0.3rem; color:#3730a3; font-size:0.92rem; }
+    .nb-fig { margin:1.4rem 0; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:1rem 1rem 0.6rem; }
+    .nb-fig img { display:block; width:100%; height:auto; border-radius:8px; }
+    .nb-fig figcaption { margin:0.75rem 0.2rem 0.3rem; font-size:0.85rem; color:var(--ink-soft); line-height:1.55; }
+    .nb-fig .cap-t { font-size:0.64rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#3730a3; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch124_loan_default.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXI · ML Case Study</span><span class="sep">/</span>
+      <span>Chapter 124</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XXI · Putting It All Together</span> Clean, explainable, and fair</div>
+    <h1>Case Study: <span class="accent">Loan Default Risk</span></h1>
+    <p class="dek">Lending is high-stakes and regulated: a decision must be accurate, explainable, and fair. This is the most
+       complete project in the part, a messy credit file taken end to end, from parsing text-valued income through SHAP
+       reason codes to a fairness audit across a protected group.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~28 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Full notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 124</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">A credit model cannot just be accurate. The law requires that a declined applicant be told
+       <span class="hl">why</span> (an adverse-action notice), and that the model not <span class="hl">discriminate</span>
+       against protected groups. So this case study carries three burdens the earlier ones did not: real
+       <span class="hl">cleaning</span> of a messy file, per-decision <span class="hl">explanations</span> with SHAP, and a
+       <span class="hl">fairness audit</span>. It is the full pipeline, with a conscience.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#9878;</div>
+      <div class="def-body">
+        A <span class="def-kw">credit-risk model</span> predicts default to inform approvals. Beyond accuracy it must be
+        <span class="def-kw">explainable</span> (SHAP gives per-applicant reason codes) and <span class="def-kw">fair</span>
+        (audited across a protected group with metrics like <span class="def-kw">demographic parity</span> and
+        <span class="def-kw">equal opportunity</span>).
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🧭</div>
+      <div><div class="ctitle">Three burdens beyond accuracy</div>
+        <p><strong>Cleaning</strong> (Step 4): the file has text-valued income, free-text employment, and messy categories.
+           <strong>Explaining</strong> (Step 8): SHAP turns each score into legally-required reason codes.
+           <strong>Fairness</strong> (Step 9): a model blind to the protected attribute can still produce unequal outcomes,
+           so we measure it.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §1 method ===== -->
+  <section id="method">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The 12-Step Method</h2></div>
+    <p>The same repeatable loop, now with explainability and fairness built in. The companion notebook runs all twelve
+       steps; the sections below tell the story and show the plots.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 678 332" width="100%" font-family="Inter, sans-serif" aria-label="The twelve-step method as a snaking flow adapted to credit-risk modeling">
+        <text x="339" y="26" text-anchor="middle" font-size="13" fill="#1a2138" font-weight="800">The 12-step method: from a messy application file to a fair, explainable decision</text>
+        <defs><marker id="m124" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#3730a3"/></marker></defs>
+        <path d="M165,84 L181,84" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m124)"/>
+        <path d="M331,84 L347,84" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m124)"/>
+        <path d="M497,84 L513,84" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m124)"/>
+        <path d="M588,120 L588,150" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m124)"/>
+        <path d="M513,186 L497,186" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m124)"/>
+        <path d="M347,186 L331,186" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m124)"/>
+        <path d="M181,186 L165,186" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m124)"/>
+        <path d="M90,222 L90,252" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m124)"/>
+        <path d="M165,288 L181,288" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m124)"/>
+        <path d="M331,288 L347,288" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m124)"/>
+        <path d="M497,288 L513,288" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m124)"/>
+        <rect x="15" y="48" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="32" cy="66" r="11" fill="#4338ca"/><text x="32" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">1</text>
+        <text x="49" y="70" font-size="10.5" fill="#3730a3" font-weight="800">Define</text>
+        <text x="27" y="92" font-size="8.3" fill="#4a5578">predict default</text>
+        <rect x="181" y="48" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="198" cy="66" r="11" fill="#4338ca"/><text x="198" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">2</text>
+        <text x="215" y="70" font-size="10.5" fill="#3730a3" font-weight="800">Collect</text>
+        <text x="193" y="92" font-size="8.3" fill="#4a5578">application export</text>
+        <rect x="347" y="48" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="364" cy="66" r="11" fill="#4338ca"/><text x="364" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">3</text>
+        <text x="381" y="70" font-size="10.5" fill="#3730a3" font-weight="800">Inspect</text>
+        <text x="359" y="92" font-size="8.3" fill="#4a5578">the mess</text>
+        <rect x="513" y="48" width="150" height="72" rx="10" fill="#fff7ed" stroke="#f59e0b" stroke-width="1.6"/>
+        <circle cx="530" cy="66" r="11" fill="#d97706"/><text x="530" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">4</text>
+        <text x="547" y="70" font-size="10.5" fill="#b45309" font-weight="800">Clean</text>
+        <text x="525" y="92" font-size="8.3" fill="#9a5b1c">parse text fields</text>
+        <rect x="513" y="150" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="530" cy="168" r="11" fill="#4338ca"/><text x="530" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">5</text>
+        <text x="547" y="172" font-size="10.5" fill="#3730a3" font-weight="800">Engineer</text>
+        <text x="525" y="194" font-size="8.3" fill="#4a5578">affordability ratio</text>
+        <rect x="347" y="150" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="364" cy="168" r="11" fill="#4338ca"/><text x="364" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">6</text>
+        <text x="381" y="172" font-size="10.5" fill="#3730a3" font-weight="800">Split</text>
+        <text x="359" y="194" font-size="8.3" fill="#4a5578">group held aside</text>
+        <rect x="181" y="150" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="198" cy="168" r="11" fill="#4338ca"/><text x="198" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">7</text>
+        <text x="215" y="172" font-size="10.5" fill="#3730a3" font-weight="800">Build</text>
+        <text x="193" y="194" font-size="8.3" fill="#4a5578">compare models</text>
+        <rect x="15" y="150" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="32" cy="168" r="11" fill="#4338ca"/><text x="32" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">8</text>
+        <text x="49" y="172" font-size="10.5" fill="#3730a3" font-weight="800">Explain</text>
+        <text x="27" y="194" font-size="8.3" fill="#4a5578">SHAP reason codes</text>
+        <rect x="15" y="252" width="150" height="72" rx="10" fill="#fff7ed" stroke="#f59e0b" stroke-width="1.6"/>
+        <circle cx="32" cy="270" r="11" fill="#d97706"/><text x="32" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">9</text>
+        <text x="49" y="274" font-size="10.5" fill="#b45309" font-weight="800">Audit</text>
+        <text x="27" y="296" font-size="8.3" fill="#9a5b1c">fairness by group</text>
+        <rect x="181" y="252" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="198" cy="270" r="11" fill="#4338ca"/><text x="198" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">10</text>
+        <text x="215" y="274" font-size="10.5" fill="#3730a3" font-weight="800">Interpret</text>
+        <text x="193" y="296" font-size="8.3" fill="#4a5578">threshold to cost</text>
+        <rect x="347" y="252" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="364" cy="270" r="11" fill="#4338ca"/><text x="364" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">11</text>
+        <text x="381" y="274" font-size="10.5" fill="#3730a3" font-weight="800">Deploy</text>
+        <text x="359" y="296" font-size="8.3" fill="#4a5578">decision + reasons</text>
+        <rect x="513" y="252" width="150" height="72" rx="10" fill="#c7d2fe" stroke="#4338ca" stroke-width="1.8"/>
+        <circle cx="530" cy="270" r="11" fill="#4338ca"/><text x="530" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">12</text>
+        <text x="547" y="274" font-size="10.5" fill="#3730a3" font-weight="800">Communicate</text>
+        <text x="525" y="296" font-size="8.3" fill="#4a5578">plain-English write-up</text>
+      </svg>
+    </figure>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · loan_applications.csv</div>
+      <p style="margin:0.5rem 0 0">One row per application with <code>annual_income</code> (text!),
+        <code>credit_score</code>, <code>employment_length</code> (text!), <code>debt_to_income</code>,
+        <code>revolving_util</code>, <code>num_credit_lines</code>, <code>loan_amount</code>, <code>home_ownership</code>,
+        <code>loan_purpose</code>, <code>age</code>, a protected <code>group</code> (A/B), and the target
+        <code>defaulted</code>. Deliberately messy.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/loan_applications.csv" download>📊 Download dataset &nbsp;<small>CSV · 5,235 rows</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §2 wrangle ===== -->
+  <section id="wrangle">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Define, Collect, Inspect, Clean (Steps 1&#8211;4)</h2></div>
+
+    <div class="step-h"><span class="sn">1</span><h3>Define the objective</h3></div>
+    <p>Predict <strong>default</strong> to inform an approve/deny decision. But in a regulated domain the model must also be
+       <strong>explainable</strong> (adverse-action notices are legally required) and <strong>fair</strong> across protected
+       groups. We treat the <code>group</code> column as a stand-in for a legally protected class (race, gender, age),
+       which fair-lending laws such as the ECOA forbid discriminating on.</p>
+
+    <div class="step-h"><span class="sn">2</span><h3>Collect the data</h3></div>
+    <p>A raw export from the loan-origination system, one row per application, straight from the source and not yet
+       cleaned.</p>
+
+    <div class="step-h"><span class="sn">3</span><h3>Inspect the data</h3></div>
+    <p>The file fights back: <code>annual_income</code> is text with dollar signs and 'n/a'; <code>employment_length</code>
+       reads '10+ years' and '< 1 year'; categories come in mixed case; credit scores have gaps; and there are impossible
+       ages, negative debt ratios, and duplicate applications. About <strong>26% defaulted</strong>.</p>
+
+    <div class="step-h"><span class="sn">4</span><h3>Clean the data</h3></div>
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Problem</th><th>Detail</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td class="nm"><code>annual_income</code> as text</td><td><code>"$53,096"</code>, some <code>"n/a"</code></td><td>strip <code>$</code>/commas, coerce to number</td></tr>
+          <tr><td class="nm"><code>employment_length</code> as text</td><td><code>"10+ years"</code>, <code>"&lt; 1 year"</code>, blanks</td><td>parse to years (10+ &#8594; 10, &lt;1 &#8594; 0)</td></tr>
+          <tr><td class="nm">Messy categories</td><td>home ownership &amp; purpose in mixed case</td><td>standardize spelling</td></tr>
+          <tr><td class="nm">Impossible values</td><td>ages &lt; 18, negative DTI, 35 duplicates</td><td>drop / set missing / dedupe</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>After cleaning, <strong>5,188 applications</strong> remain. Cleaning here is not a preamble, it is fully half the
+       work, and none of the modeling could happen without it.</p>
+  </section>
+
+  <!-- ===== §3 engineer/explore ===== -->
+  <section id="explore">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Engineer, Explore &amp; Split (Steps 5&#8211;6)</h2></div>
+
+    <div class="step-h"><span class="sn">5</span><h3>Feature engineering, and the signal</h3></div>
+    <p>A $20,000 loan means something different to a $40,000 earner than to a $200,000 one, so <code>loan_to_income</code>
+       captures <strong>affordability</strong> better than either column alone. Exploring confirms the credit intuition.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/ch124_signal.png" alt="Class balance, default rate by credit score, and default rate by debt-to-income">
+      <figcaption><span class="cap-t">From the notebook · Step 5</span><br>
+        <strong>The credit intuition, confirmed.</strong> <strong>Left</strong>, about 26% of applicants defaulted, a
+        moderately imbalanced target. <strong>Center</strong>, default rate falls sharply as <strong>credit score</strong>
+        rises. <strong>Right</strong>, it climbs steeply with <strong>debt-to-income</strong>. Both relationships are clearly
+        non-linear (note the jumps), a hint that a flexible model may pay off.</figcaption>
+    </figure>
+
+    <div class="step-h"><span class="sn">6</span><h3>Split, with the protected attribute held aside</h3></div>
+    <p>We hold out 25% of applicants and, crucially, <strong>exclude <code>group</code> from the features</strong>, the
+       model never sees the protected attribute. That is called being fair-through-unawareness, and Step 9 will show why it
+       is not enough. We keep <code>group</code> separate precisely so we can audit outcomes by it.</p>
+  </section>
+
+  <!-- ===== §4 build/shap ===== -->
+  <section id="build">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Build, Compare &amp; Explain (Steps 7&#8211;8)</h2></div>
+
+    <div class="step-h"><span class="sn">7</span><h3>Compare models</h3></div>
+    <p>A baseline plus a linear model and two ensembles, compared on ROC-AUC.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/ch124_models.png" alt="ROC-AUC comparison of logistic regression, random forest, and gradient boosting">
+      <figcaption><span class="cap-t">From the notebook · Step 7</span><br>
+        <strong>Here, flexibility earns its place.</strong> Unlike the earlier chapters, the non-linear structure of credit
+        risk (the sharp jumps at low credit scores and high debt ratios) lets <strong>Gradient Boosting</strong> edge ahead
+        at <strong>ROC-AUC 0.74</strong>, versus 0.73 for logistic regression. An AUC in the low 0.70s is normal and useful
+        for credit; default is genuinely hard to predict. We take the boosted model forward, and because it is a tree model,
+        SHAP can explain it exactly.</figcaption>
+    </figure>
+
+    <div class="step-h"><span class="sn">8</span><h3>Explain every decision with SHAP</h3></div>
+    <p>An opaque score is illegal in lending. SHAP decomposes each prediction into per-feature contributions, giving both a
+       global picture and, for any single applicant, the exact reasons.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/ch124_shap_summary.png" alt="SHAP beeswarm summary of the credit model">
+      <figcaption><span class="cap-t">From the notebook · Step 8</span><br>
+        <strong>Global explanation.</strong> Each dot is one applicant's SHAP value for a feature, colored by the feature's
+        value (red high, blue low). It reads exactly as a credit analyst would expect: a high <strong>debt-to-income</strong>
+        and high <strong>revolving utilization</strong> push risk up (red dots to the right), while a high
+        <strong>credit score</strong> and high <strong>income</strong> push it down. These are the model's drivers, in the
+        open.</figcaption>
+    </figure>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/ch124_shap_waterfall.png" alt="SHAP waterfall explaining one high-risk applicant">
+      <figcaption><span class="cap-t">From the notebook · Step 8</span><br>
+        <strong>Local explanation, the adverse-action notice.</strong> The waterfall explains a single decision: starting
+        from the average prediction, it adds each feature's push until it reaches this applicant's risk score (here a
+        <strong>89%</strong> default probability). You can read the exact, ranked reasons, a stretched debt-to-income
+        (+1.54), heavy card utilization (+1.47), a poor credit score, each with its contribution. This is precisely what a
+        lender must send a declined applicant: specific, ranked factors, not "the algorithm said no".</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== §5 fairness/deploy ===== -->
+  <section id="fairness">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Audit Fairness &amp; Deploy (Steps 9&#8211;12)</h2></div>
+
+    <div class="step-h"><span class="sn">9</span><h3>Fairness audit: blind is not fair</h3></div>
+    <p>The model never saw <code>group</code>. That does not make it fair, because other features correlate with the group,
+       disparity flows in through the back door.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 240" width="100%" font-family="Inter, sans-serif" aria-label="A model blind to the protected attribute can still produce unequal outcomes because features correlate with the group; two fairness definitions are demographic parity and equal opportunity">
+        <text x="340" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">A group-blind model can still be unfair</text>
+        <!-- features -->
+        <rect x="20" y="46" width="150" height="66" rx="11" fill="#eef2ff" stroke="#c7d2fe"/>
+        <text x="95" y="70" text-anchor="middle" font-size="10" fill="#3730a3" font-weight="800">Features</text>
+        <text x="95" y="86" text-anchor="middle" font-size="8" fill="#4a5578">income, credit history</text>
+        <text x="95" y="99" text-anchor="middle" font-size="7.5" fill="#b45309">(correlate with group)</text>
+        <!-- model -->
+        <rect x="255" y="46" width="150" height="66" rx="11" fill="#dbe4ff" stroke="#4338ca"/>
+        <text x="330" y="72" text-anchor="middle" font-size="10" fill="#3730a3" font-weight="800">Model</text>
+        <text x="330" y="88" text-anchor="middle" font-size="8" fill="#4a5578">never sees the group</text>
+        <!-- outcomes -->
+        <rect x="490" y="46" width="170" height="66" rx="11" fill="#fef2f2" stroke="#dc2626"/>
+        <text x="575" y="70" text-anchor="middle" font-size="10" fill="#b91c1c" font-weight="800">Unequal outcomes &#9888;</text>
+        <text x="575" y="86" text-anchor="middle" font-size="8" fill="#b91c1c">Group B denied more</text>
+        <text x="575" y="99" text-anchor="middle" font-size="7.5" fill="#b91c1c">= disparate impact</text>
+        <path d="M170,79 L255,79" stroke="#3730a3" stroke-width="1.8" marker-end="url(#f124)"/>
+        <path d="M405,79 L490,79" stroke="#dc2626" stroke-width="1.8" marker-end="url(#f124b)"/>
+        <defs>
+          <marker id="f124" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#3730a3"/></marker>
+          <marker id="f124b" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#dc2626"/></marker>
+        </defs>
+        <!-- two definitions -->
+        <rect x="40" y="146" width="290" height="72" rx="11" fill="#f7f8fc" stroke="#e6e9f2"/>
+        <text x="185" y="168" text-anchor="middle" font-size="10" fill="#3730a3" font-weight="800">Demographic parity</text>
+        <text x="185" y="186" text-anchor="middle" font-size="8.5" fill="#4a5578">equal approval rates across groups</text>
+        <text x="185" y="202" text-anchor="middle" font-size="8" fill="#8b94b3">(ignores who actually repays)</text>
+        <rect x="350" y="146" width="290" height="72" rx="11" fill="#f0fdf4" stroke="#bbf7d0"/>
+        <text x="495" y="168" text-anchor="middle" font-size="10" fill="#065f46" font-weight="800">Equal opportunity</text>
+        <text x="495" y="186" text-anchor="middle" font-size="8.5" fill="#4a5578">equal approval among the creditworthy</text>
+        <text x="495" y="202" text-anchor="middle" font-size="8" fill="#8b94b3">(the metric we focus on)</text>
+      </svg>
+    </figure>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/ch124_fairness.png" alt="Denial rate by group and creditworthy applicants wrongly denied by group">
+      <figcaption><span class="cap-t">From the notebook · Step 9</span><br>
+        <strong>The outcomes are not equal.</strong> <strong>Left</strong>, Group B is denied at <strong>16%</strong> versus
+        <strong>9%</strong> for Group A. <strong>Right</strong>, and more tellingly, <em>creditworthy</em> Group B applicants
+        (who would not default) are wrongly denied more often, <strong>7% versus 5%</strong>, an <strong>equal-opportunity</strong>
+        gap. The approval ratio (0.93) happens to clear the legal four-fifths rule, but that gap is a real harm. The lesson:
+        a model can be blind to the protected attribute and still discriminate, so you must <strong>measure fairness
+        explicitly</strong>, and treat mitigation (reweighting, per-group thresholds, proxy audits) as a deliberate,
+        governed choice.</figcaption>
+    </figure>
+
+    <div class="step-h"><span class="sn">10&#8211;12</span><h3>Deploy on new data, and communicate</h3></div>
+    <p>Saved as a <code>joblib</code> pipeline, the model scores a new application and, paired with SHAP, returns the reasons
+       behind it: a subprime, high-debt applicant is denied (84% risk); a high-score, low-debt applicant is approved (4%).
+       But deployment in lending carries duties beyond the earlier chapters: send <strong>reason codes</strong> with every
+       denial, <strong>monitor the fairness metrics on live decisions</strong> (not just at build time), keep a
+       <strong>human reviewer</strong> on rejections, and retrain as the applicant pool shifts. Chapter 126 covers operating
+       such a model responsibly.</p>
+  </section>
+
+  <!-- ===== §6 writeup ===== -->
+  <section id="writeup-sec">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Communicate: the Plain-English Write-Up (Step 12)</h2></div>
+    <div class="writeup">
+      <h3>For a non-technical reader</h3>
+      <p><strong>What is this?</strong> We built a tool that estimates how likely a loan applicant is to fail to repay, to
+        help decide who to approve, and we made sure the tool can <em>explain</em> each decision and treats different groups
+        of people even-handedly.</p>
+
+      <h4>What goes in, and what comes out</h4>
+      <p><strong>Inputs:</strong> the information on a loan application, income, credit score, existing debts, employment,
+        how much they want to borrow, and so on. <strong>Output:</strong> a default-risk score that becomes an
+        approve/deny recommendation, <em>plus</em> the specific reasons behind it.</p>
+
+      <h4>The decisions we made, and why</h4>
+      <ul>
+        <li><span class="ck">✓</span><span>We spent real effort <strong>cleaning the file first</strong>, incomes and job histories arrived as text ("$53,096", "10+ years"), which a computer cannot do math on until it is converted. This was fully half the work.</span></li>
+        <li><span class="ck">✓</span><span>We <strong>made every decision explainable</strong>. For each applicant the tool lists the exact factors behind the score, which the law requires a lender to give anyone it turns down.</span></li>
+        <li><span class="ck">✓</span><span>We <strong>checked the tool for fairness</strong>, even though it never sees an applicant's group. It turned out to deny one group somewhat more, including some who would have repaid, because factors like income quietly stand in for the group. We measured this rather than assume it away.</span></li>
+      </ul>
+
+      <h4>How good is it, in plain terms</h4>
+      <p>The tool is meaningfully better than guessing at spotting risky loans (though default is hard to predict, so it is
+        not close to perfect). More importantly, every decision comes with a clear reason, and we can see and manage its
+        effect on different groups.</p>
+
+      <h4>The big idea</h4>
+      <p>In lending, being accurate is not enough. <strong>Bottom line: a model has to be clean, explainable, and fair, and
+        the only way to know it is fair is to measure the outcomes for each group, because a model that ignores who someone
+        is can still treat them unequally.</strong></p>
+    </div>
+  </section>
+
+  <!-- ===== notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body"><h3>Run the entire project in Python</h3><p>The companion notebook is the full 12-step pipeline: it parses the text-valued income and employment fields, standardizes categories and drops impossible rows, engineers an affordability ratio, compares a baseline against logistic regression, random forest, and gradient boosting, explains the model globally and per-applicant with SHAP, audits fairness across the protected group (denial rate and equal opportunity), and scores a new application, with every table and chart explained.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch124_loan_default.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch124_loan_default.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch124_loan_default.ipynb" target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)"><strong>View</strong> opens the rendered notebook instantly.
+      <strong>Open in Colab</strong> runs it live. To run locally, install <code>numpy</code>, <code>pandas</code>,
+      <code>matplotlib</code>, <code>seaborn</code>, <code>scikit-learn</code>, and <code>shap</code>.</p>
+  </section>
+
+  <!-- ===== takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Cleaning was half the work</strong>: parse text-valued income and employment, standardize categories, drop impossible rows, before any model.</span></li>
+        <li><span class="ck">✓</span><span><strong>Feature engineering helps</strong>: <code>loan_to_income</code> captures affordability better than loan amount or income alone.</span></li>
+        <li><span class="ck">✓</span><span><strong>Compare models</strong>: gradient boosting edged out logistic regression (ROC-AUC about 0.74) on this non-linear problem.</span></li>
+        <li><span class="ck">✓</span><span><strong>Explain with SHAP</strong>: global drivers and per-applicant reason codes for the legally-required adverse-action notice.</span></li>
+        <li><span class="ck">✓</span><span><strong>Audit fairness</strong>: a group-blind model still denied Group B more and wrongly denied creditworthy B applicants more, measure it, do not assume it away.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== §7 take it further ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Take It Further</h2></div>
+    <p>Five ways to extend the project in the notebook:</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>A cost-based threshold</h4>
+        <p>Balance the loss from a default against the profit from a good loan to pick the approval cutoff.</p>
+        <div class="chint">Hint: sweep the threshold; maximize portfolio profit.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Mitigate the fairness gap</h4>
+        <p>Use a per-group threshold to close the equal-opportunity gap, and see what it costs.</p>
+        <div class="chint">Hint: raise Group B's cutoff to match Group A's wrongful-denial rate.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Hunt the proxies</h4>
+        <p>Try to predict the protected group from the other features. If you can, that is how disparity leaks in.</p>
+        <div class="chint">Hint: train a classifier for <code>group</code>; check its AUC.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Calibrated for both groups?</h4>
+        <p>Does a "30%" mean 30% for each group? Draw a reliability curve per group.</p>
+        <div class="chint">Hint: <code>calibration_curve</code> within each group.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Generate reason codes</h4>
+        <p>For one applicant, turn the SHAP contributions into the top adverse-action reasons.</p>
+        <div class="chint">Hint: sort the applicant's SHAP values; the largest positives are the reasons.</div></div></div>
+    </div>
+
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">📓</div>
+        <div class="nb-body"><h3>All five, worked in a companion notebook</h3><p>A second notebook, <strong>Take It Further</strong>, rebuilds the Chapter 124 model and works every one of these five extensions with visuals and explanations, a cost-based threshold, per-group fairness mitigation, a proxy hunt, calibration across groups, and SHAP reason codes, closing with a plain-English summary.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch124_take_it_further.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch124_take_it_further.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch124_take_it_further.ipynb" target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §8 quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">8</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on the credit-risk project, cleaning, SHAP, and fairness. Answer them, hit <strong>Check
+       Answers</strong>, and keep refining until you score 100%. Your progress is saved, so you can hop back to the chapter
+       and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>We have built and audited a string of models. The next chapter zooms out from any single one.
+         <strong>Chapter 125 &middot; From Model to Decision</strong> compares models with the right metrics, guards against
+         leakage, interprets the winner, and communicates it to the people who will act on it.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch123.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 123 · Previous</span><br><span class="cn-title">Segmentation &amp; Targeting</span></span>
+    </a>
+    <div class="cn-btn next" style="cursor:default;opacity:0.6" title="Coming soon">
+      <span><span class="cn-dir">Chapter 125 · Coming soon</span><br><span class="cn-title">Case Study: From Model to Decision</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </div>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 124 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => { const h = document.documentElement; bar.style.width = ((h.scrollTop)/(h.scrollHeight-h.clientHeight)*100) + '%'; });
+</script>
+
+<script>
+  window.QUIZ_ID = "ch124";
+  window.QUIZ_DATA = [
+    {
+      q: "Why was cleaning called 'half the work' in this project?",
+      options: ["The data was already clean", "Income and employment arrived as text, categories were inconsistent, and impossible values had to be fixed before any model", "Cleaning is optional", "The model cleans itself"],
+      answer: 1,
+      explain: "annual_income was '$53,096' and employment '10+ years'; none of it could enter a model until parsed and standardized."
+    },
+    {
+      q: "The engineered feature loan_to_income captures…",
+      options: ["The credit score", "Affordability, the loan size relative to income, better than either column alone", "The default label", "The applicant's age"],
+      answer: 1,
+      explain: "A fixed loan is easy for a high earner and hard for a low earner; the ratio expresses that directly."
+    },
+    {
+      q: "Gradient boosting beat logistic regression here mainly because…",
+      options: ["It is always better", "Credit risk is non-linear (sharp jumps at low scores and high debt), which trees capture", "It needs no data", "Logistic regression cannot classify"],
+      answer: 1,
+      explain: "Unlike the earlier chapters, the non-linear structure let the flexible model edge ahead (ROC-AUC ~0.74)."
+    },
+    {
+      q: "What does a SHAP waterfall plot provide for a single applicant?",
+      options: ["The overall accuracy", "The ranked per-feature contributions behind that one prediction, the reason codes", "The fairness metrics", "The training data"],
+      answer: 1,
+      explain: "It decomposes one score into each feature's push, exactly what an adverse-action notice must contain."
+    },
+    {
+      q: "The model never used the protected 'group'. Why can it still be unfair?",
+      options: ["It cannot be unfair", "Other features (income, credit history) correlate with the group and act as proxies", "Because of a bug", "Because SHAP adds bias"],
+      answer: 1,
+      explain: "Disparity enters through correlated features, so 'fairness through unawareness' does not guarantee equal outcomes."
+    },
+    {
+      q: "The 'equal opportunity' fairness metric compares…",
+      options: ["Overall accuracy by group", "The rate at which truly creditworthy applicants are wrongly denied, across groups", "The number of features", "The training size"],
+      answer: 1,
+      explain: "It asks whether good (non-defaulting) applicants get approved at equal rates regardless of group."
+    },
+    {
+      q: "The audit found the model denied Group B more, including creditworthy B applicants. The right response is to…",
+      options: ["Ignore it if accuracy is high", "Measure it explicitly and treat mitigation as a deliberate, governed decision", "Add the group as a feature", "Delete Group B"],
+      answer: 1,
+      explain: "Fairness must be measured, not assumed; mitigations (reweighting, per-group thresholds, proxy audits) are value-laden choices."
+    },
+    {
+      q: "The chapter's overall lesson for a regulated domain is…",
+      options: ["Accuracy is all that matters", "A model must be clean, explainable, and fair, and fairness must be measured per group", "Never use tree models", "Skip the cleaning step"],
+      answer: 1,
+      explain: "In lending, cleaning, per-decision explanations (SHAP), and an explicit fairness audit are as important as accuracy."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

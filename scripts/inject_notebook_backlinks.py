@@ -96,6 +96,10 @@ MAP = {
         ("../../ch123.html#notebook", "Back to the book", "Chapter 123 · Customer Segmentation &amp; Targeting"),
     "ch123_take_it_further.html":
         ("../../ch123.html#challenges", "Back to the book", "Chapter 123 · Take it further"),
+    "ch124_loan_default.html":
+        ("../../ch124.html#notebook", "Back to the book", "Chapter 124 · Loan Default Risk"),
+    "ch124_take_it_further.html":
+        ("../../ch124.html#challenges", "Back to the book", "Chapter 124 · Take it further"),
     "ch01_what_is_statistics.html":
         ("../../ch01.html#notebook", "Back to the book", "Chapter 1 · What Is Statistics?"),
     "ch01_challenges_solutions.html":
