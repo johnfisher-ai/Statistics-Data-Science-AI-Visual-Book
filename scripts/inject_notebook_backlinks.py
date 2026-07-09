@@ -108,6 +108,10 @@ MAP = {
         ("../../ch126.html#notebook", "Back to the book", "Chapter 126 · Operationalizing the Model"),
     "ch126_take_it_further.html":
         ("../../ch126.html#challenges", "Back to the book", "Chapter 126 · Take it further"),
+    "ch127_time_series_components.html":
+        ("../../ch127.html#notebook", "Back to the book", "Chapter 127 · Components of a Time Series"),
+    "ch127_challenges_solutions.html":
+        ("../../ch127.html#challenges", "Back to the book", "Chapter 127 · Challenge solutions"),
     "ch01_what_is_statistics.html":
         ("../../ch01.html#notebook", "Back to the book", "Chapter 1 · What Is Statistics?"),
     "ch01_challenges_solutions.html":
