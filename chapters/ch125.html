@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 125 · Case Study: From Model to Decision — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#eef2ff; border:1px solid #c7d2fe; border-left:4px solid #4338ca; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#3730a3; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none; padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+    .step-h { display:flex; align-items:center; gap:0.6rem; margin:1.4rem 0 0.4rem; }
+    .step-h .sn { flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:#4338ca; color:#fff; font-weight:800; font-size:0.95rem; display:flex; align-items:center; justify-content:center; }
+    .step-h h3 { margin:0; font-size:1.02rem; color:var(--ink); }
+    .writeup { background:#eef2ff; border:1px solid #c7d2fe; border-radius:14px; padding:1.3rem 1.5rem; margin:1.3rem 0; }
+    .writeup h3 { margin-top:0; color:#3730a3; }
+    .writeup h4 { margin:1rem 0 0.3rem; color:#3730a3; font-size:0.92rem; }
+    .nb-fig { margin:1.4rem 0; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:1rem 1rem 0.6rem; }
+    .nb-fig img { display:block; width:100%; height:auto; border-radius:8px; }
+    .nb-fig figcaption { margin:0.75rem 0.2rem 0.3rem; font-size:0.85rem; color:var(--ink-soft); line-height:1.55; }
+    .nb-fig .cap-t { font-size:0.64rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#3730a3; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch125_model_to_decision.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXI · ML Case Study</span><span class="sep">/</span>
+      <span>Chapter 125</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XXI · Putting It All Together</span> The judgement around the model</div>
+    <h1>Case Study: <span class="accent">From Model to Decision</span></h1>
+    <p class="dek">Every earlier case study built a model. This one is about everything around it, the judgement that turns a
+       trained classifier into a decision you can trust: catching a leak that fakes a perfect score, comparing models
+       without being fooled by noise, choosing the metric that matches the question, and thresholding by cost.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~26 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Full notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 125</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">A trained model is not a decision. Between the two lie the choices that actually create, or destroy,
+       value: is the score <span class="hl">honest</span> or inflated by a leak? Is one model <span class="hl">really</span>
+       better than another, or just luckier on this split? Which <span class="hl">metric</span> matches the goal, and where
+       should the <span class="hl">threshold</span> sit? This capstone uses an attrition problem to work through those
+       questions, and its lessons apply to every model in the book.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#8594;</div>
+      <div class="def-body">
+        Turning a <span class="def-kw">model</span> into a <span class="def-kw">decision</span> means: guarding against
+        <span class="def-kw">leakage</span>, comparing models with cross-validation (not one split), choosing a
+        <span class="def-kw">metric</span> that reflects the goal (accuracy often does not), setting the
+        <span class="def-kw">threshold</span> by the cost of each error, and communicating it plainly.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🧭</div>
+      <div><div class="ctitle">Where the value is really made</div>
+        <p>The model is the easy part. The decisions that matter come <em>after</em> it: <strong>Step 5</strong> catches a
+           data leak that fakes a 0.99 AUC; <strong>Step 7</strong> shows accuracy would lead you to help nobody; and
+           <strong>Step 8</strong> sets the threshold where the money is, exactly where accuracy is worst.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §1 method ===== -->
+  <section id="method">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The 12-Step Method</h2></div>
+    <p>The same repeatable loop, now with the spotlight on evaluation and decision-making. The companion notebook runs all
+       twelve steps; the sections below tell the story and show the plots.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 678 332" width="100%" font-family="Inter, sans-serif" aria-label="The twelve-step method as a snaking flow, focused on turning a model into a decision">
+        <text x="339" y="26" text-anchor="middle" font-size="13" fill="#1a2138" font-weight="800">The 12-step method: from a trained model to a trusted decision</text>
+        <defs><marker id="m125" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#3730a3"/></marker></defs>
+        <path d="M165,84 L181,84" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m125)"/>
+        <path d="M331,84 L347,84" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m125)"/>
+        <path d="M497,84 L513,84" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m125)"/>
+        <path d="M588,120 L588,150" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m125)"/>
+        <path d="M513,186 L497,186" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m125)"/>
+        <path d="M347,186 L331,186" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m125)"/>
+        <path d="M181,186 L165,186" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m125)"/>
+        <path d="M90,222 L90,252" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m125)"/>
+        <path d="M165,288 L181,288" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m125)"/>
+        <path d="M331,288 L347,288" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m125)"/>
+        <path d="M497,288 L513,288" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m125)"/>
+        <rect x="15" y="48" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="32" cy="66" r="11" fill="#4338ca"/><text x="32" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">1</text>
+        <text x="49" y="70" font-size="10.5" fill="#3730a3" font-weight="800">Define</text>
+        <text x="27" y="92" font-size="8.3" fill="#4a5578">a decision, not a score</text>
+        <rect x="181" y="48" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="198" cy="66" r="11" fill="#4338ca"/><text x="198" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">2</text>
+        <text x="215" y="70" font-size="10.5" fill="#3730a3" font-weight="800">Collect</text>
+        <text x="193" y="92" font-size="8.3" fill="#4a5578">HR export</text>
+        <rect x="347" y="48" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="364" cy="66" r="11" fill="#4338ca"/><text x="364" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">3</text>
+        <text x="381" y="70" font-size="10.5" fill="#3730a3" font-weight="800">Inspect</text>
+        <text x="359" y="92" font-size="8.3" fill="#4a5578">spot the leak</text>
+        <rect x="513" y="48" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="530" cy="66" r="11" fill="#4338ca"/><text x="530" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">4</text>
+        <text x="547" y="70" font-size="10.5" fill="#3730a3" font-weight="800">Clean</text>
+        <text x="525" y="92" font-size="8.3" fill="#4a5578">exclude the leak</text>
+        <rect x="513" y="150" width="150" height="72" rx="10" fill="#fff7ed" stroke="#f59e0b" stroke-width="1.6"/>
+        <circle cx="530" cy="168" r="11" fill="#d97706"/><text x="530" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">5</text>
+        <text x="547" y="172" font-size="10.5" fill="#b45309" font-weight="800">Prove leak</text>
+        <text x="525" y="194" font-size="8.3" fill="#9a5b1c">0.99 vs honest 0.76</text>
+        <rect x="347" y="150" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="364" cy="168" r="11" fill="#4338ca"/><text x="364" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">6</text>
+        <text x="381" y="172" font-size="10.5" fill="#3730a3" font-weight="800">Compare</text>
+        <text x="359" y="194" font-size="8.3" fill="#4a5578">fold by fold</text>
+        <rect x="181" y="150" width="150" height="72" rx="10" fill="#fff7ed" stroke="#f59e0b" stroke-width="1.6"/>
+        <circle cx="198" cy="168" r="11" fill="#d97706"/><text x="198" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">7</text>
+        <text x="215" y="172" font-size="10.5" fill="#b45309" font-weight="800">Metric</text>
+        <text x="193" y="194" font-size="8.3" fill="#9a5b1c">match the decision</text>
+        <rect x="15" y="150" width="150" height="72" rx="10" fill="#fff7ed" stroke="#f59e0b" stroke-width="1.6"/>
+        <circle cx="32" cy="168" r="11" fill="#d97706"/><text x="32" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">8</text>
+        <text x="49" y="172" font-size="10.5" fill="#b45309" font-weight="800">Decide</text>
+        <text x="27" y="194" font-size="8.3" fill="#9a5b1c">threshold by cost</text>
+        <rect x="15" y="252" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="32" cy="270" r="11" fill="#4338ca"/><text x="32" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">9</text>
+        <text x="49" y="274" font-size="10.5" fill="#3730a3" font-weight="800">Interpret</text>
+        <text x="27" y="296" font-size="8.3" fill="#4a5578">the real drivers</text>
+        <rect x="181" y="252" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="198" cy="270" r="11" fill="#4338ca"/><text x="198" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">10</text>
+        <text x="215" y="274" font-size="10.5" fill="#3730a3" font-weight="800">Deploy</text>
+        <text x="193" y="296" font-size="8.3" fill="#4a5578">score &amp; act</text>
+        <rect x="347" y="252" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="364" cy="270" r="11" fill="#4338ca"/><text x="364" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">11</text>
+        <text x="381" y="274" font-size="10.5" fill="#3730a3" font-weight="800">Monitor</text>
+        <text x="359" y="296" font-size="8.3" fill="#4a5578">control group</text>
+        <rect x="513" y="252" width="150" height="72" rx="10" fill="#c7d2fe" stroke="#4338ca" stroke-width="1.8"/>
+        <circle cx="530" cy="270" r="11" fill="#4338ca"/><text x="530" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">12</text>
+        <text x="547" y="274" font-size="10.5" fill="#3730a3" font-weight="800">Communicate</text>
+        <text x="525" y="296" font-size="8.3" fill="#4a5578">plain-English write-up</text>
+      </svg>
+    </figure>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · employee_attrition.csv</div>
+      <p style="margin:0.5rem 0 0">One row per employee with <code>age</code>, <code>tenure_years</code>,
+        <code>monthly_salary</code>, <code>satisfaction</code>, <code>work_life_balance</code>, <code>overtime</code>,
+        <code>num_promotions</code>, <code>years_since_promotion</code>, <code>commute_km</code>, <code>job_role</code>, a
+        <strong>leaky</strong> <code>exit_process_started</code>, and the target <code>attrition</code> (about 19% left).</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/employee_attrition.csv" download>📊 Download dataset &nbsp;<small>CSV · 4,020 rows</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §2 wrangle ===== -->
+  <section id="wrangle">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Define, Collect, Inspect, Clean (Steps 1&#8211;4)</h2></div>
+
+    <div class="step-h"><span class="sn">1</span><h3>Define the objective</h3></div>
+    <p>An HR team wants to reduce attrition by offering retention support to at-risk employees. The model's job is not to be
+       "accurate", it is to help decide <strong>who to talk to</strong>, given that losing an employee is expensive and a
+       conversation is cheap. Keeping that <em>decision</em> in view is what makes every later choice right or wrong.</p>
+
+    <div class="step-h"><span class="sn">2</span><h3>Collect the data</h3></div>
+    <p>A standard HR export, one row per employee with the usual signals, and one column that will turn out to be a trap.</p>
+
+    <div class="step-h"><span class="sn">3</span><h3>Inspect the data</h3></div>
+    <p>About <strong>19% of employees left</strong>, so predicting "stays" for everyone is already <strong>81%
+       accurate</strong>, the first sign accuracy will mislead. And one feature, <code>exit_process_started</code>,
+       correlates far more strongly with attrition (0.92) than any real signal, employees for whom it is 1 leave over 90% of
+       the time.</p>
+
+    <div class="step-h"><span class="sn">4</span><h3>Clean the data</h3></div>
+    <p>Light cleaning (dedupe, impute a few missing values), and one deliberate exclusion: <code>exit_process_started</code>
+       is <strong>left out of the features</strong>. The offboarding process is only started <em>after</em> someone resigns,
+       so for a current employee it is always 0. Using it would build a model that looks brilliant in testing and is useless
+       in production, the definition of a leak.</p>
+  </section>
+
+  <!-- ===== §3 leak ===== -->
+  <section id="leak">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Prove the Leak (Step 5)</h2></div>
+    <p>It is worth <em>quantifying</em> the leak, both to understand its danger and to build the habit of distrusting a
+       score that looks too good.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/ch125_leakage.png" alt="Two ROC curves: with the leaky feature (AUC 0.99) and honest (AUC 0.76)">
+      <figcaption><span class="cap-t">From the notebook · Step 5</span><br>
+        <strong>Leakage is the most dangerous evaluation mistake.</strong> Including <code>exit_process_started</code>
+        rockets the AUC to <strong>0.99</strong> (red), a model that would collapse to <strong>0.76</strong> (indigo) the
+        moment it met a real, current employee. The tell was the too-good score; the fix was asking <em>when</em> each
+        feature becomes known. Before trusting any high number, ask: could this feature have been recorded only after the
+        outcome? We proceed with the honest feature set.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== §4 compare/metric ===== -->
+  <section id="compare">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Compare Models, Choose the Metric (Steps 6&#8211;7)</h2></div>
+
+    <div class="step-h"><span class="sn">6</span><h3>Compare models fold by fold</h3></div>
+    <p>The candidate models land within a few points of each other, close enough that on one lucky split any could look best.
+       The disciplined check is cross-validation, examined fold by fold.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/ch125_compare.png" alt="Cross-validated ROC-AUC for three models with individual folds shown">
+      <figcaption><span class="cap-t">From the notebook · Step 6</span><br>
+        <strong>Do not over-read a single split.</strong> Each bar is a model's mean cross-validated AUC; the dots are the
+        five individual folds. Logistic regression (0.75) beats gradient boosting (0.72) in <strong>all five folds</strong>,
+        so its edge is consistent and real, not a fluke of one split, and it is the simpler, more interpretable model. That
+        makes it the clear choice. Had the per-fold differences flipped signs, we would have called it a tie and kept the
+        simpler model anyway.</figcaption>
+    </figure>
+
+    <div class="step-h"><span class="sn">7</span><h3>Choose the metric that matches the decision</h3></div>
+    <p>Now the pivotal choice. Which number tells us the model is good? On this problem, the obvious one, accuracy, points
+       in exactly the wrong direction.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/ch125_metrics.png" alt="Accuracy versus recall for predict-everyone-stays, the model at 0.5, and the cost-optimal threshold">
+      <figcaption><span class="cap-t">From the notebook · Step 7</span><br>
+        <strong>Accuracy is the wrong yardstick here.</strong> Predicting "stays" for everyone scores <strong>0.81
+        accuracy</strong>, higher than the working model, while catching <strong>zero</strong> at-risk employees (recall 0).
+        As we lower the threshold to catch more leavers (recall rises, indigo), accuracy (amber) <em>falls</em>. If we
+        optimized accuracy we would ship the do-nothing model and help no one. The metric has to reflect the goal, catching
+        leavers, so we judge by <strong>recall, PR-AUC, and ultimately dollar value</strong>.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== §5 decision/interpret/deploy ===== -->
+  <section id="decide">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Decide, Interpret &amp; Communicate (Steps 8&#8211;12)</h2></div>
+
+    <figure style="margin:0.4rem 0 1.4rem;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.4rem 1.2rem">
+      <svg viewBox="0 0 680 150" width="100%" font-family="Inter, sans-serif" aria-label="A flow from model score to metric to threshold to decision to communication; the value is created in the middle steps, not the model">
+        <text x="340" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">A model is not a decision</text>
+        <rect x="10" y="40" width="112" height="54" rx="10" fill="#f7f8fc" stroke="#e6e9f2"/>
+        <text x="66" y="63" text-anchor="middle" font-size="9.5" fill="#475569" font-weight="800">Model</text>
+        <text x="66" y="78" text-anchor="middle" font-size="7.5" fill="#8b94b3">scores 0-1</text>
+        <rect x="146" y="40" width="112" height="54" rx="10" fill="#eef2ff" stroke="#4338ca"/>
+        <text x="202" y="61" text-anchor="middle" font-size="9.5" fill="#3730a3" font-weight="800">Right metric</text>
+        <text x="202" y="76" text-anchor="middle" font-size="7.5" fill="#4a5578">match the question</text>
+        <rect x="282" y="40" width="112" height="54" rx="10" fill="#eef2ff" stroke="#4338ca"/>
+        <text x="338" y="61" text-anchor="middle" font-size="9.5" fill="#3730a3" font-weight="800">Threshold</text>
+        <text x="338" y="76" text-anchor="middle" font-size="7.5" fill="#4a5578">set by cost</text>
+        <rect x="418" y="40" width="112" height="54" rx="10" fill="#f0fdf4" stroke="#059669"/>
+        <text x="474" y="61" text-anchor="middle" font-size="9.5" fill="#065f46" font-weight="800">Decision</text>
+        <text x="474" y="76" text-anchor="middle" font-size="7.5" fill="#047857">who to act on</text>
+        <rect x="554" y="40" width="116" height="54" rx="10" fill="#f0fdf4" stroke="#059669"/>
+        <text x="612" y="61" text-anchor="middle" font-size="9.5" fill="#065f46" font-weight="800">Communicate</text>
+        <text x="612" y="76" text-anchor="middle" font-size="7.5" fill="#047857">a paragraph</text>
+        <g stroke="#94a3b8" stroke-width="1.6">
+          <path d="M122,67 L146,67" marker-end="url(#d125)"/><path d="M258,67 L282,67" marker-end="url(#d125)"/>
+          <path d="M394,67 L418,67" marker-end="url(#d125)"/><path d="M530,67 L554,67" marker-end="url(#d125)"/>
+        </g>
+        <defs><marker id="d125" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#94a3b8"/></marker></defs>
+        <text x="340" y="122" text-anchor="middle" font-size="9" fill="#4a5578">The model is the easy part. The <tspan font-weight="800" fill="#3730a3">value is created in the middle steps</tspan>, choosing the metric and the threshold.</text>
+        <line x1="146" y1="104" x2="394" y2="104" stroke="#4338ca" stroke-width="1.4" stroke-dasharray="4 3"/>
+      </svg>
+    </figure>
+
+    <div class="step-h"><span class="sn">8</span><h3>From score to decision: threshold by cost</h3></div>
+    <p>The threshold is where value is made. With a departure costing far more than a conversation (say $25,000 versus
+       $1,500, and retention keeping about half of would-be leavers), the profit-maximizing cutoff is nowhere near 0.5.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/ch125_decision.png" alt="Business value and accuracy versus decision threshold; value peaks near 0.38 where accuracy is low">
+      <figcaption><span class="cap-t">From the notebook · Step 8</span><br>
+        <strong>Accuracy and value point in opposite directions.</strong> The business-value curve (indigo) peaks around a
+        threshold of <strong>0.38</strong>, catching most at-risk employees. But the accuracy line (amber, dashed) <em>rises</em>
+        toward the right, exactly where value collapses, and is highest when you flag no one and create zero value. The
+        chapter in one picture: <strong>set the threshold by the decision's economics, never by accuracy.</strong></figcaption>
+    </figure>
+
+    <div class="step-h"><span class="sn">9</span><h3>Interpret the drivers</h3></div>
+    <p>The model also yields insight, arguably more valuable to HR than the predictions.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/ch125_interpret.png" alt="Logistic coefficients: what raises versus lowers attrition risk">
+      <figcaption><span class="cap-t">From the notebook · Step 9</span><br>
+        <strong>Insight, not just a score.</strong> Low <strong>satisfaction</strong> and poor <strong>work-life
+        balance</strong> are the strongest departure signals, followed by a long time <strong>since the last
+        promotion</strong>, a long <strong>commute</strong>, and <strong>overtime</strong>, while higher salary and tenure
+        hold people. This points HR at the <em>levers</em>, career progression, workload, flexibility, that reduce attrition
+        at the source, not just a list of who to chase.</figcaption>
+    </figure>
+
+    <div class="step-h"><span class="sn">10&#8211;12</span><h3>Deploy, monitor, and communicate</h3></div>
+    <p>The saved model scores a new employee, the unhappy, overworked junior with a long commute is flagged (88% risk); the
+       well-paid, satisfied, recently-promoted senior is not (5%), and the result comes with a one-paragraph summary a
+       manager can act on. In production, a <strong>holdout control group</strong> left uncontacted confirms whether the
+       retention effort actually works, because a good prediction does not guarantee a good outcome. That translation, from
+       probabilities to a sentence a decision-maker trusts, is the final and most under-rated step of any project.</p>
+  </section>
+
+  <!-- ===== §6 writeup ===== -->
+  <section id="writeup-sec">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Communicate: the Plain-English Write-Up (Step 12)</h2></div>
+    <div class="writeup">
+      <h3>For a non-technical reader</h3>
+      <p><strong>What is this?</strong> We built a tool that flags the employees most likely to leave, so HR can focus
+        retention effort where it will do the most good, and, just as importantly, we made sure we were measuring the tool
+        the right way.</p>
+
+      <h4>What goes in, and what comes out</h4>
+      <p><strong>Inputs:</strong> the employee information HR already has, satisfaction, salary, workload, commute,
+        promotion history, and so on. <strong>Output:</strong> a leaving-risk score that becomes a "reach out / no action"
+        recommendation.</p>
+
+      <h4>The decisions we made, and why</h4>
+      <ul>
+        <li><span class="ck">✓</span><span>We <strong>threw out a column that looked magically predictive</strong>. It recorded the start of the exit paperwork, which only happens <em>after</em> someone has already quit, so it would have made the tool look perfect in testing and useless in real life. Spotting that trap ("leakage") was the most important step.</span></li>
+        <li><span class="ck">✓</span><span>We <strong>refused to judge the tool on plain accuracy</strong>. Because only about one in six people leave, a tool that says "nobody will leave" is right 81% of the time while helping no one. We measured how many actual leavers it catches instead.</span></li>
+        <li><span class="ck">✓</span><span>We <strong>chose how aggressively to flag people using money</strong>, since losing an employee costs far more than a conversation, it pays to reach out to more people, even at the cost of some false alarms.</span></li>
+      </ul>
+
+      <h4>How good is it, in plain terms</h4>
+      <p>The tool is meaningfully better than guessing at spotting who is likely to leave (though people are hard to
+        predict, so it is not close to perfect). Used at the right sensitivity, it catches most would-be leavers while HR
+        contacts only a manageable slice of the workforce.</p>
+
+      <h4>The big idea</h4>
+      <p>The hard part of this project was not building the model, it was <em>evaluating</em> it honestly.
+        <strong>Bottom line: a model is not a decision. The value is created in catching leaks, choosing the right yardstick,
+        setting the cutoff by cost, and explaining the result, and the drivers (satisfaction, workload, career progress)
+        point at real fixes.</strong></p>
+    </div>
+  </section>
+
+  <!-- ===== notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body"><h3>Run the entire project in Python</h3><p>The companion notebook is the full 12-step pipeline: it spots and proves a data leak, compares three models with fold-by-fold cross-validation, shows why accuracy misleads on an imbalanced target, builds the business-value curve to set the threshold by cost, interprets the drivers, and scores a new employee, with every table and chart explained.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch125_model_to_decision.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch125_model_to_decision.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch125_model_to_decision.ipynb" target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)"><strong>View</strong> opens the rendered notebook instantly.
+      <strong>Open in Colab</strong> runs it live. To run locally, install <code>numpy</code>, <code>pandas</code>,
+      <code>matplotlib</code>, <code>seaborn</code>, and <code>scikit-learn</code>.</p>
+  </section>
+
+  <!-- ===== takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Hunt for leakage first</strong>: a feature known only after the outcome inflated AUC from an honest 0.76 to a fake 0.99.</span></li>
+        <li><span class="ck">✓</span><span><strong>Compare models fold by fold</strong>: logistic beat the ensembles in all five CV folds, a consistent, real edge, and it is simpler.</span></li>
+        <li><span class="ck">✓</span><span><strong>Pick the metric that matches the decision</strong>: accuracy ranked "do nothing" first while catching zero leavers.</span></li>
+        <li><span class="ck">✓</span><span><strong>Set the threshold by economics</strong>: business value peaked near 0.38, exactly where accuracy was worst.</span></li>
+        <li><span class="ck">✓</span><span><strong>Interpret and communicate</strong>: the drivers point to real levers, and a one-paragraph summary turns the model into a decision people will act on.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== §7 take it further ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Take It Further</h2></div>
+    <p>Five ways to extend the project in the notebook:</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Screen for leaks</h4>
+        <p>Fit a tiny model on each feature alone; any that predicts the outcome almost perfectly is a leak suspect.</p>
+        <div class="chint">Hint: single-feature AUC; flag anything above 0.9.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>A confidence interval for the AUC</h4>
+        <p>Bootstrap the test set to put a 95% interval on the 0.76 AUC.</p>
+        <div class="chint">Hint: resample the test rows with replacement, recompute AUC.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Are the scores calibrated?</h4>
+        <p>The cost math uses probabilities, check that a "40%" leaves about 40% of the time.</p>
+        <div class="chint">Hint: <code>calibration_curve(y_test, prob)</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Decide under a budget</h4>
+        <p>If HR can hold only N conversations, rank by risk and see what recall that buys.</p>
+        <div class="chint">Hint: sort by probability; take the top N.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Is the program worth running?</h4>
+        <p>Sweep how well retention works; when does the program stop paying for itself?</p>
+        <div class="chint">Hint: vary the save-rate in the value curve.</div></div></div>
+    </div>
+
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">📓</div>
+        <div class="nb-body"><h3>All five, worked in a companion notebook</h3><p>A second notebook, <strong>Take It Further</strong>, rebuilds the Chapter 125 model and works every one of these five extensions with visuals and explanations, a systematic leak screen, a bootstrap confidence interval, a calibration check, a budget-constrained decision, and a cost-assumption sensitivity test, closing with a plain-English summary.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch125_take_it_further.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch125_take_it_further.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch125_take_it_further.ipynb" target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §8 quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">8</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on evaluation, leakage, metrics, and decisions. Answer them, hit <strong>Check Answers</strong>, and
+       keep refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>We have built, evaluated, and decided. The final case study keeps the model alive.
+         <strong>Chapter 126 &middot; Operationalizing the Model</strong> takes a trained model to production, packaging and
+         serving it, monitoring for data drift, setting retraining triggers, and rolling out safely.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch124.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 124 · Previous</span><br><span class="cn-title">Loan Default Risk</span></span>
+    </a>
+    <div class="cn-btn next" style="cursor:default;opacity:0.6" title="Coming soon">
+      <span><span class="cn-dir">Chapter 126 · Coming soon</span><br><span class="cn-title">Case Study: Operationalizing the Model</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </div>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 125 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => { const h = document.documentElement; bar.style.width = ((h.scrollTop)/(h.scrollHeight-h.clientHeight)*100) + '%'; });
+</script>
+
+<script>
+  window.QUIZ_ID = "ch125";
+  window.QUIZ_DATA = [
+    {
+      q: "Data leakage means…",
+      options: ["The data file is corrupted", "A feature carries information not available at prediction time (e.g., recorded after the outcome), inflating the score", "Too little training data", "Missing values"],
+      answer: 1,
+      explain: "exit_process_started is recorded after someone resigns; using it fakes a near-perfect score that collapses in production."
+    },
+    {
+      q: "The tell-tale sign of the leak here was…",
+      options: ["Low accuracy", "A suspiciously high AUC (0.99) and one feature correlating almost perfectly with the outcome", "Missing data", "A slow model"],
+      answer: 1,
+      explain: "A score that looks too good, and a single near-perfect predictor, are classic leakage warning signs."
+    },
+    {
+      q: "Why compare models with cross-validation fold by fold rather than one train/test split?",
+      options: ["It is faster", "One split can make any model look best by luck; consistent per-fold wins show a real difference", "It avoids cleaning", "It removes leakage"],
+      answer: 1,
+      explain: "Logistic beat gradient boosting in all five folds, so its ~0.02 edge is consistent and real, not a lucky split."
+    },
+    {
+      q: "Why is accuracy a poor metric on this problem?",
+      options: ["It is hard to compute", "With ~19% attrition, predicting 'stays' for everyone is 81% accurate while catching zero leavers", "It needs probabilities", "It only works for regression"],
+      answer: 1,
+      explain: "Optimizing accuracy would ship the do-nothing model; recall, PR-AUC, and business value are the right lenses."
+    },
+    {
+      q: "The business-value curve peaked near a threshold of 0.38, where accuracy was low. This shows…",
+      options: ["Accuracy and value always agree", "The decision should be set by the cost of each error, not by accuracy", "0.5 is always best", "The model is broken"],
+      answer: 1,
+      explain: "Because a departure costs far more than a conversation, the value-maximizing cutoff sits well below 0.5."
+    },
+    {
+      q: "Interpreting the model showed the top attrition drivers were…",
+      options: ["Age and job role", "Low satisfaction, poor work-life balance, and time since last promotion", "The employee id", "Random noise"],
+      answer: 1,
+      explain: "These point HR at real levers, career progression, workload, flexibility, that reduce attrition at the source."
+    },
+    {
+      q: "Why deploy with a holdout control group?",
+      options: ["To train faster", "To confirm the retention effort actually works, since a good prediction does not guarantee a good outcome", "To remove leakage", "To increase accuracy"],
+      answer: 1,
+      explain: "A control group measures the intervention's true incremental effect, the model predicts risk, not whether outreach helps."
+    },
+    {
+      q: "The chapter's overall lesson is…",
+      options: ["Bigger models are better", "A model is not a decision; value is created in catching leaks, choosing the metric, thresholding by cost, and communicating", "Accuracy is all that matters", "Never use cross-validation"],
+      answer: 1,
+      explain: "The judgement around the model, evaluation, thresholding, explanation, is what turns a score into a trusted decision."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
