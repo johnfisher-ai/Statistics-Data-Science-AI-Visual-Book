@@ -128,6 +128,10 @@ MAP = {
         ("../../ch131.html#notebook", "Back to the book", "Chapter 131 · Forecasting Retail Sales"),
     "ch131_take_it_further.html":
         ("../../ch131.html#challenges", "Back to the book", "Chapter 131 · Take it further"),
+    "ch132_volatility_risk.html":
+        ("../../ch132.html#notebook", "Back to the book", "Chapter 132 · Financial Volatility & Risk"),
+    "ch132_take_it_further.html":
+        ("../../ch132.html#challenges", "Back to the book", "Chapter 132 · Take it further"),
     "ch01_what_is_statistics.html":
         ("../../ch01.html#notebook", "Back to the book", "Chapter 1 · What Is Statistics?"),
     "ch01_challenges_solutions.html":
