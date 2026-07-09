@@ -112,6 +112,10 @@ MAP = {
         ("../../ch127.html#notebook", "Back to the book", "Chapter 127 · Components of a Time Series"),
     "ch127_challenges_solutions.html":
         ("../../ch127.html#challenges", "Back to the book", "Chapter 127 · Challenge solutions"),
+    "ch128_forecasting_models.html":
+        ("../../ch128.html#notebook", "Back to the book", "Chapter 128 · Forecasting Models"),
+    "ch128_challenges_solutions.html":
+        ("../../ch128.html#challenges", "Back to the book", "Chapter 128 · Challenge solutions"),
     "ch01_what_is_statistics.html":
         ("../../ch01.html#notebook", "Back to the book", "Chapter 1 · What Is Statistics?"),
     "ch01_challenges_solutions.html":

@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 128 · Forecasting Models — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .ml-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.85rem; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .ml-table th,.ml-table td { padding:0.6rem 0.8rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .ml-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .ml-table td { color:var(--ink-soft); } .ml-table tr:last-child td { border-bottom:none; }
+    .ml-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#f0f9ff; border:1px solid #bae6fd; border-left:4px solid #0284c7; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#075985; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none; padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+    .rw-find { background:var(--panel-2); border-radius:10px; padding:0.5rem 1rem; margin-top:0.9rem; }
+    .rw-find li { font-size:0.85rem; color:var(--ink-soft); line-height:1.6; margin:0.2rem 0; }
+    .research { background:#f0f9ff; border:1px solid #bae6fd; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#075985; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch128_forecasting_models.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXII · Time Series &amp; Forecasting</span><span class="sep">/</span>
+      <span>Chapter 128</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XXII · Time Series &amp; Forecasting</span> Predicting what comes next</div>
+    <h1><span class="accent">Forecasting</span> Models</h1>
+    <p class="dek">Decomposition told you what a series is made of; forecasting predicts where it goes. This chapter fits the
+       standard toolkit, baselines, moving averages, Holt-Winters smoothing, and ARIMA/SARIMA, holds out the last year of
+       data, and lets the honest test decide which model wins.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~24 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 128</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">A forecast is a claim about the future, and the future is the one thing you cannot peek at. So the entire
+       discipline rests on one habit: <span class="hl">split in time</span>, fit on the past, and score on data the model has
+       never seen. Get that right and the models themselves form a short ladder, from a <span class="hl">naive baseline</span>
+       you must beat, up through <span class="hl">exponential smoothing</span> and <span class="hl">ARIMA</span>, each adding
+       one more piece of structure.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#128200;</div>
+      <div class="def-body">
+        A <span class="def-kw">forecasting model</span> extrapolates a time series into the future. The core families are
+        <span class="def-kw">baselines</span> (naive, seasonal-naive), <span class="def-kw">exponential smoothing</span>
+        (SES, Holt, Holt-Winters), and <span class="def-kw">ARIMA / SARIMA</span>. They are judged on a
+        <span class="def-kw">held-out</span> stretch of time, and a forecast can be <span class="def-kw">static</span>
+        (one step ahead) or <span class="def-kw">dynamic</span> (many steps, feeding predictions forward).
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">&#127919;</div>
+      <div><div class="ctitle">Two rules that outrank every model</div>
+        <p><strong>Never shuffle a time series.</strong> Train on the earlier part and test on the most recent part, so the
+           evaluation mimics real forecasting. And <strong>always beat a baseline</strong>: if a fancy model cannot beat
+           &#8220;same month last year&#8221;, it is not earning its complexity.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §1 basics ===== -->
+  <section id="basics">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Backtesting, Baselines &amp; the Horizon</h2></div>
+    <p>Before any model, set up the test honestly and draw the line every model has to clear.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 214" width="100%" font-family="Inter, sans-serif" aria-label="Split the series chronologically into train and test; a static one-step forecast uses real past values and hugs the data, while a dynamic multi-step forecast feeds its own predictions forward and its error grows with the horizon">
+        <text x="350" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">Split in time, then forecast: static hugs the data, dynamic is the honest test</text>
+        <!-- train/test bar -->
+        <rect x="40" y="34" width="380" height="18" rx="4" fill="#bae6fd"/><text x="230" y="47" text-anchor="middle" font-size="8.5" fill="#075985" font-weight="700">train (fit on the past)</text>
+        <rect x="420" y="34" width="240" height="18" rx="4" fill="#fecaca"/><text x="540" y="47" text-anchor="middle" font-size="8.5" fill="#b91c1c" font-weight="700">test (the held-out future)</text>
+        <!-- axes -->
+        <line x1="40" y1="180" x2="660" y2="180" stroke="#94a3b8" stroke-width="1"/>
+        <line x1="420" y1="66" x2="420" y2="184" stroke="#0284c7" stroke-width="1.4" stroke-dasharray="4 3"/>
+        <text x="420" y="196" text-anchor="middle" font-size="7.5" fill="#0369a1" font-weight="700">forecast starts here</text>
+        <!-- actual line -->
+        <polyline points="46,150 74,132 102,150 130,120 158,104 186,120 214,96 242,80 270,96 298,72 326,58 354,74 382,52 410,60" fill="none" stroke="#64748b" stroke-width="2.2"/>
+        <polyline points="410,60 438,46 466,74 494,40 522,64 550,34 578,58 606,30 634,54 656,40" fill="none" stroke="#64748b" stroke-width="2.2"/>
+        <text x="150" y="96" font-size="7.5" fill="#475569" font-weight="700">actual</text>
+        <!-- static: hugs actual over test -->
+        <polyline points="410,62 438,48 466,76 494,42 522,66 550,36 578,60 606,32 634,56 656,42" fill="none" stroke="#059669" stroke-width="2" stroke-dasharray="1 0"/>
+        <circle cx="494" cy="42" r="2.4" fill="#059669"/><circle cx="550" cy="36" r="2.4" fill="#059669"/>
+        <text x="600" y="76" font-size="7.5" fill="#047857" font-weight="700">static</text>
+        <!-- dynamic: diverges -->
+        <polyline points="410,62 438,58 466,66 494,58 522,70 550,64 578,80 606,74 634,92 656,86" fill="none" stroke="#ef4444" stroke-width="2" stroke-dasharray="5 3"/>
+        <text x="628" y="104" font-size="7.5" fill="#b91c1c" font-weight="700">dynamic</text>
+        <!-- callouts -->
+        <rect x="44" y="196" width="292" height="14" fill="none"/>
+        <text x="46" y="208" font-size="7.6" fill="#047857">static = 1-step-ahead, uses REAL past values (optimistic)</text>
+        <text x="404" y="208" font-size="7.6" fill="#b91c1c">dynamic = multi-step, feeds its OWN predictions (honest)</text>
+      </svg>
+    </figure>
+
+    <p>A <strong>baseline</strong> is the forecast a five-year-old could make. The <strong>naive</strong> method repeats the
+       last value; the <strong>seasonal-naive</strong> method repeats the value from one season ago (same month last year).
+       On our data the naive forecast scores a poor <strong>13.6% MAPE</strong> while seasonal-naive, capturing the yearly
+       wave for free, hits <strong>4.1%</strong>, that 4.1% is the bar. Just as important is the
+       <strong>horizon</strong>: a <strong>static</strong> (one-step-ahead) forecast quietly uses the real value at each step
+       and looks great, while a <strong>dynamic</strong> (multi-step) forecast feeds its own predictions forward and its
+       error grows the further out you look. Evaluate at the horizon you will actually forecast.</p>
+  </section>
+
+  <!-- ===== §2 smoothing ===== -->
+  <section id="smoothing">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Moving Averages &amp; Exponential Smoothing</h2></div>
+    <p>The first real family builds a forecast from a fading average of the past, then adds back the structure a plain
+       average throws away.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 210" width="100%" font-family="Inter, sans-serif" aria-label="Exponential smoothing weights recent observations more, with weights that fade geometrically into the past; the Holt-Winters family adds a level, then a trend, then a seasonal component">
+        <text x="350" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">Weight the recent past more, then add trend and season</text>
+        <!-- decaying weights -->
+        <rect x="24" y="36" width="300" height="158" rx="10" fill="#f0f9ff" stroke="#bae6fd"/>
+        <text x="174" y="54" text-anchor="middle" font-size="9" fill="#075985" font-weight="800">weights fade into the past (rate &#945;)</text>
+        <line x1="44" y1="170" x2="308" y2="170" stroke="#94a3b8" stroke-width="1"/>
+        <g fill="#0284c7">
+          <rect x="278" y="76" width="20" height="94"/><rect x="248" y="100" width="20" height="70"/><rect x="218" y="120" width="20" height="50"/><rect x="188" y="136" width="20" height="34"/><rect x="158" y="148" width="20" height="22"/><rect x="128" y="156" width="20" height="14"/><rect x="98" y="161" width="20" height="9"/><rect x="68" y="164" width="20" height="6"/>
+        </g>
+        <text x="288" y="182" text-anchor="middle" font-size="7" fill="#475569">now</text>
+        <text x="78" y="182" text-anchor="middle" font-size="7" fill="#475569">older</text>
+        <text x="174" y="196" text-anchor="middle" font-size="7.5" fill="#0369a1">recent observations count most</text>
+        <!-- component ladder -->
+        <rect x="340" y="36" width="336" height="158" rx="10" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="508" y="54" text-anchor="middle" font-size="9" fill="#1d4ed8" font-weight="800">the Holt-Winters family adds one piece at a time</text>
+        <!-- SES level -->
+        <line x1="360" y1="86" x2="440" y2="86" stroke="#94a3b8" stroke-width="2"/>
+        <text x="400" y="102" text-anchor="middle" font-size="7.6" fill="#475569" font-weight="700">SES: level</text>
+        <!-- Holt trend -->
+        <line x1="470" y1="98" x2="550" y2="72" stroke="#2563eb" stroke-width="2"/>
+        <text x="510" y="112" text-anchor="middle" font-size="7.6" fill="#1d4ed8" font-weight="700">Holt: + trend</text>
+        <!-- HW season -->
+        <path d="M580,90 Q595,70 610,90 Q625,110 640,84 Q655,64 665,80" fill="none" stroke="#7c3aed" stroke-width="2"/>
+        <text x="620" y="112" text-anchor="middle" font-size="7.6" fill="#6d28d9" font-weight="700">Holt-Winters: + season</text>
+        <rect x="360" y="130" width="300" height="46" rx="8" fill="#fff" stroke="#bfdbfe"/>
+        <text x="510" y="149" text-anchor="middle" font-size="8" fill="#1e40af" font-weight="700">level + trend + season, each with its own smoothing rate</text>
+        <text x="510" y="165" text-anchor="middle" font-size="7.6" fill="#3730a3">seasonal part is additive (fixed swing) or multiplicative (growing swing)</text>
+      </svg>
+    </figure>
+
+    <p>A <strong>moving average</strong> smooths the series but forecasts a flat line. <strong>Simple exponential smoothing
+       (SES)</strong> improves on that by weighting recent points more, with weights that decay geometrically (one rate,
+       alpha), yet it still has no trend or season and predicts a flat line too (<strong>13.6% MAPE</strong> here).
+       <strong>Holt</strong> adds a trend term; <strong>Holt-Winters</strong> adds a seasonal term as well, and because this
+       series' seasonal swing grows with its level, the <strong>multiplicative</strong> Holt-Winters wins outright at
+       <strong>2.8% MAPE</strong>. The lesson from Chapter 127 returns: match additive vs multiplicative to the data.</p>
+  </section>
+
+  <!-- ===== §3 ARIMA ===== -->
+  <section id="arima">
+    <div class="section-eyebrow"><div class="num">3</div><h2>ARIMA &amp; SARIMA</h2></div>
+    <p>The other great family does not smooth; it <strong>models the correlations</strong> directly, using exactly the
+       stationarity and autocorrelation ideas from the last chapter.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 196" width="100%" font-family="Inter, sans-serif" aria-label="SARIMA decodes into three non-seasonal orders p d q for the autoregressive, differencing, and moving-average parts, and three seasonal orders P D Q at lag s that repeat them one season back">
+        <text x="350" y="22" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">Reading SARIMA(p, d, q)(P, D, Q)&#8347;</text>
+        <text x="350" y="52" text-anchor="middle" font-size="20" font-weight="800"><tspan fill="#075985">SARIMA(</tspan><tspan fill="#0284c7">p</tspan><tspan fill="#075985">, </tspan><tspan fill="#059669">d</tspan><tspan fill="#075985">, </tspan><tspan fill="#7c3aed">q</tspan><tspan fill="#075985">)(</tspan><tspan fill="#0284c7">P</tspan><tspan fill="#075985">, </tspan><tspan fill="#059669">D</tspan><tspan fill="#075985">, </tspan><tspan fill="#7c3aed">Q</tspan><tspan fill="#075985">)</tspan><tspan fill="#c2410c">&#8347;</tspan></text>
+        <!-- three non-seasonal -->
+        <rect x="30" y="72" width="200" height="44" rx="9" fill="#f0f9ff" stroke="#7dd3fc"/>
+        <text x="130" y="90" text-anchor="middle" font-size="9" fill="#0284c7" font-weight="800">AR( p )</text>
+        <text x="130" y="106" text-anchor="middle" font-size="7.6" fill="#075985">regress on recent VALUES</text>
+        <rect x="250" y="72" width="200" height="44" rx="9" fill="#ecfdf5" stroke="#6ee7b7"/>
+        <text x="350" y="90" text-anchor="middle" font-size="9" fill="#059669" font-weight="800">I( d )</text>
+        <text x="350" y="106" text-anchor="middle" font-size="7.6" fill="#065f46">DIFFERENCE to make it stationary</text>
+        <rect x="470" y="72" width="200" height="44" rx="9" fill="#f5f3ff" stroke="#c4b5fd"/>
+        <text x="570" y="90" text-anchor="middle" font-size="9" fill="#7c3aed" font-weight="800">MA( q )</text>
+        <text x="570" y="106" text-anchor="middle" font-size="7.6" fill="#5b21b6">regress on recent ERRORS</text>
+        <!-- seasonal note -->
+        <rect x="30" y="128" width="640" height="50" rx="9" fill="#fff7ed" stroke="#fed7aa"/>
+        <text x="350" y="147" text-anchor="middle" font-size="8.6" fill="#c2410c" font-weight="800">(P, D, Q)&#8347; repeats all three ONE SEASON back, at lag s (here s = 12)</text>
+        <text x="350" y="164" text-anchor="middle" font-size="8" fill="#9a3412">d and D are simply the first and seasonal differences that made the series stationary in Chapter 127</text>
+      </svg>
+    </figure>
+
+    <p><strong>ARIMA(p, d, q)</strong> stacks three ideas: <strong>AR(p)</strong> regresses on the p most recent values,
+       <strong>I(d)</strong> differences the series d times to make it stationary, and <strong>MA(q)</strong> regresses on the
+       q most recent forecast errors. <strong>SARIMA</strong> adds a seasonal copy <strong>(P, D, Q)</strong> at the season's
+       lag s. Fitting <code>SARIMA(1,1,1)(1,1,1,12)</code> forecasts our holdout at <strong>3.7% MAPE</strong>, also beating
+       the baseline, and, being a full statistical model, it hands back a <strong>prediction interval</strong> that
+       Holt-Winters does not. Which of the two wins is usually a coin toss, so fit both and let the holdout decide.</p>
+  </section>
+
+  <!-- ===== §4 real-world ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: Forecasting Airport Passengers</h2></div>
+    <p>The companion notebook runs the whole ladder on a ten-year passenger series, holding out the final year and scoring
+       every model with MAPE.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · ch128_airport_passengers.xlsx</div>
+      <p style="margin:0.5rem 0 0">Monthly passengers at a growing regional airport, <strong>120 observations</strong> from
+        January 2014 to December 2023, with a clear upward trend and strong multiplicative yearly seasonality (summer peak,
+        winter trough). Columns: <code>month</code> and <code>passengers</code>. The last 12 months are the test set.</p>
+      <ul class="rw-find">
+        <li><span class="ck">&#9679;</span><strong>Baseline:</strong> seasonal-naive scores <strong>4.1% MAPE</strong>, the bar to beat (plain naive is 13.6%).</li>
+        <li><span class="ck">&#9679;</span><strong>Winner:</strong> Holt-Winters (multiplicative) at <strong>2.8%</strong>, matching the growing seasonal swing.</li>
+        <li><span class="ck">&#9679;</span><strong>Close behind:</strong> SARIMA(1,1,1)(1,1,1,12) at <strong>3.7%</strong>, and it comes with a 95% prediction interval.</li>
+        <li><span class="ck">&#9679;</span><strong>Horizon:</strong> the multi-step error grows from about 2% one month out to 3.4% a year out.</li>
+      </ul>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/ch128_airport_passengers.xlsx" download>📊 Download dataset &nbsp;<small>XLSX · 120 months</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §5 ML/AI ===== -->
+  <section id="mlai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Forecasting in Machine Learning &amp; AI</h2></div>
+    <p>Classical models remain strong baselines, but modern forecasting reframes the problem as machine learning, and, more
+       and more, as a job for large pre-trained models.</p>
+
+    <table class="ml-table">
+      <thead><tr><th>Approach</th><th>Idea</th><th>Examples</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">Classical</td><td>Model the components after making the series stationary</td><td>Holt-Winters (ETS), ARIMA / SARIMA, this chapter</td></tr>
+        <tr><td class="nm">ML regression</td><td>Turn the past into columns (lags, rolling stats, calendar parts) and fit a tabular model</td><td>Lag features + XGBoost / LightGBM</td></tr>
+        <tr><td class="nm">Additive ML</td><td>A decomposable model robust to holidays, gaps, and changepoints</td><td>Prophet</td></tr>
+        <tr><td class="nm">Deep learning</td><td>Networks that learn temporal structure and forecast probabilistically</td><td>DeepAR, N-BEATS, Temporal Fusion Transformer</td></tr>
+        <tr><td class="nm">Foundation models</td><td>Pre-trained on many series; forecast a new one zero-shot</td><td>TimeGPT, Amazon Chronos, Google TimesFM</td></tr>
+      </tbody>
+    </table>
+
+    <div class="research">
+      <div class="rtag">🔬 Research frontier</div>
+      <p style="margin:0.4rem 0 0">Two shifts define the frontier. First, <strong>global models</strong>, a single model
+        trained across thousands of related series (all stores, all SKUs) instead of one model per series, which usually
+        wins at scale. Second, <strong>time-series foundation models</strong> that forecast an unseen series with little or
+        no fine-tuning. Yet the winners of forecasting competitions are still often <strong>simple statistical models or
+        their ensembles</strong>; the ideas here, baselines, seasonality, and honest backtesting, remain the yardstick every
+        new method is measured against.</p>
+    </div>
+  </section>
+
+  <!-- ===== notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body"><h3>Fit the whole ladder in Python</h3><p>The companion notebook splits the passenger series in time, sets naive and seasonal-naive baselines, fits a moving average and simple exponential smoothing, then Holt-Winters and SARIMA, scores every model with MAPE on the held-out year, draws the SARIMA prediction interval, and contrasts a static one-step forecast with an honest dynamic multi-step one, all with statsmodels.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch128_forecasting_models.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch128_forecasting_models.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch128_forecasting_models.ipynb" target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)"><strong>View</strong> opens the rendered notebook instantly.
+      <strong>Open in Colab</strong> runs it live. To run locally, install <code>numpy</code>, <code>pandas</code>,
+      <code>matplotlib</code>, <code>statsmodels</code>, and <code>openpyxl</code>.</p>
+  </section>
+
+  <!-- ===== takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Split in time, never shuffle</strong>: fit on the past, test on the most recent stretch, and score with a scale-free metric like MAPE.</span></li>
+        <li><span class="ck">✓</span><span><strong>Beat a baseline or stop</strong>: seasonal-naive (same period last year) is the bar; here it is 4.1% MAPE.</span></li>
+        <li><span class="ck">✓</span><span><strong>Exponential smoothing builds up</strong>: SES (level) &#8594; Holt (+trend) &#8594; Holt-Winters (+season); the multiplicative version won here at 2.8%.</span></li>
+        <li><span class="ck">✓</span><span><strong>ARIMA/SARIMA model the correlations</strong>: AR values + I differencing + MA errors, plus a seasonal copy, and it returns a prediction interval.</span></li>
+        <li><span class="ck">✓</span><span><strong>Static vs dynamic</strong>: one-step-ahead flatters the model; multi-step is the honest test and its error grows with the horizon.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== §6 challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five exercises on the passenger series. Full solutions are in the companion solutions notebook.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Baselines</h4>
+        <p>Compute the naive, seasonal-naive, and drift baselines and their MAPE. Which is the bar to beat, and why?</p>
+        <div class="chint">Hint: seasonal-naive repeats the value 12 months back.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>The smoothing ladder</h4>
+        <p>Fit SES, Holt, and Holt-Winters and compare. What does each added component buy you?</p>
+        <div class="chint">Hint: <code>SimpleExpSmoothing</code>, <code>Holt</code>, <code>ExponentialSmoothing</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Choosing SARIMA orders</h4>
+        <p>Fit two candidate orders, pick by AIC, and forecast 12 months with a 95% interval.</p>
+        <div class="chint">Hint: lower AIC is better; do not peek at the test set to choose.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Head to head</h4>
+        <p>Compare Holt-Winters and SARIMA on the same holdout. Is there a universal winner?</p>
+        <div class="chint">Hint: fit both, tabulate MAPE, plot both forecasts.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>The horizon matters</h4>
+        <p>Show that multi-step forecast error grows the further ahead you predict.</p>
+        <div class="chint">Hint: plot absolute percent error by months-ahead.</div></div></div>
+    </div>
+
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">📓</div>
+        <div class="nb-body"><h3>Solutions notebook</h3><p>All five challenges worked in code, baselines, the smoothing ladder, choosing SARIMA orders by AIC, a Holt-Winters versus SARIMA head-to-head, and how error grows with the forecast horizon, each with a short explanation.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch128_challenges_solutions.html">📓 View Solutions</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch128_challenges_solutions.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch128_challenges_solutions.ipynb" target="_blank" rel="noopener">⬇ GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §7 quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on baselines, smoothing, ARIMA, and the forecast horizon. Answer them, hit <strong>Check
+       Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>These models assume a fairly steady variance. When the <em>volatility itself</em> moves, as in financial returns,
+         you need more. <strong>Chapter 129 &middot; Volatility &amp; Advanced Models</strong> covers ARCH/GARCH, the ACF/PACF
+         toolkit for order selection, unit-root tests, and Granger causality.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch127.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 127 · Previous</span><br><span class="cn-title">Components of a Time Series</span></span>
+    </a>
+    <div class="cn-btn next" style="cursor:default;opacity:0.6" title="Coming soon">
+      <span><span class="cn-dir">Chapter 129 · Coming soon</span><br><span class="cn-title">Volatility &amp; Advanced Models</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </div>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 128 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => { const h = document.documentElement; bar.style.width = ((h.scrollTop)/(h.scrollHeight-h.clientHeight)*100) + '%'; });
+</script>
+
+<script>
+  window.QUIZ_ID = "ch128";
+  window.QUIZ_DATA = [
+    {
+      q: "Why must you split a time series chronologically instead of randomly?",
+      options: ["Random splits are slower", "A random split lets the model train on future points and peek ahead, inflating the score", "Time series cannot be shuffled in code", "It makes no difference"],
+      answer: 1,
+      explain: "Forecasting means predicting the future from the past; training on future points leaks information that will not exist at prediction time."
+    },
+    {
+      q: "The seasonal-naive forecast predicts…",
+      options: ["The overall mean", "The value from one season ago (e.g., the same month last year)", "Zero", "A random value"],
+      answer: 1,
+      explain: "Seasonal-naive repeats last season's value, capturing seasonality for free; it is the baseline a real model must beat."
+    },
+    {
+      q: "Simple exponential smoothing (SES) alone forecast poorly here because…",
+      options: ["It is too complex", "It has no trend or seasonal term, so it predicts a flat line", "It requires too much data", "It cannot be fit in statsmodels"],
+      answer: 1,
+      explain: "SES only tracks the level. With a trending, seasonal series it forecasts flat, as weak as the naive method."
+    },
+    {
+      q: "Holt-Winters extends exponential smoothing by adding…",
+      options: ["Nothing new", "Trend and seasonal components on top of the level", "A neural network", "A random-forest step"],
+      answer: 1,
+      explain: "Holt-Winters updates level, trend, and season, each with its own smoothing rate, additive or multiplicative."
+    },
+    {
+      q: "In ARIMA(p, d, q), the 'd' stands for…",
+      options: ["The number of predictors", "The number of times the series is differenced to make it stationary", "The forecast horizon", "The seasonal period"],
+      answer: 1,
+      explain: "I(d) is the integrated part: differencing d times removes trend and yields a stationary series, exactly the Chapter 127 step."
+    },
+    {
+      q: "The '(P, D, Q)s' part of a SARIMA model handles…",
+      options: ["Missing values", "The seasonal structure, repeating AR, differencing, and MA one season back at lag s", "The prediction interval", "The train/test split"],
+      answer: 1,
+      explain: "SARIMA adds a seasonal copy of the AR, I, and MA terms at the seasonal lag s (12 for monthly data)."
+    },
+    {
+      q: "A static (one-step-ahead) forecast differs from a dynamic (multi-step) one because…",
+      options: ["Static is always worse", "Static uses the real past value at each step; dynamic feeds its own predictions forward", "They are identical", "Dynamic cannot be computed"],
+      answer: 1,
+      explain: "Static evaluation is optimistic because it always sees the true recent value; dynamic is the honest multi-step test, and its error grows with the horizon."
+    },
+    {
+      q: "Both Holt-Winters and SARIMA beat the baseline here. The practical takeaway is…",
+      options: ["Always use SARIMA", "There is no universal best model; fit several and let the held-out test decide", "Baselines are useless", "Only deep learning works"],
+      answer: 1,
+      explain: "The best model depends on the data's structure. Fitting several cheaply and comparing on a holdout is the reliable way to choose."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
