@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 130 · Forecast Accuracy — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .ml-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.85rem; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .ml-table th,.ml-table td { padding:0.6rem 0.8rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .ml-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .ml-table td { color:var(--ink-soft); } .ml-table tr:last-child td { border-bottom:none; }
+    .ml-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#f0f9ff; border:1px solid #bae6fd; border-left:4px solid #0284c7; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#075985; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none; padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+    .rw-find { background:var(--panel-2); border-radius:10px; padding:0.5rem 1rem; margin-top:0.9rem; }
+    .rw-find li { font-size:0.85rem; color:var(--ink-soft); line-height:1.6; margin:0.2rem 0; }
+    .research { background:#f0f9ff; border:1px solid #bae6fd; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#075985; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch130_forecast_accuracy.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXII · Time Series &amp; Forecasting</span><span class="sep">/</span>
+      <span>Chapter 130</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XXII · Time Series &amp; Forecasting</span> Grading the forecast</div>
+    <h1><span class="accent">Forecast</span> Accuracy</h1>
+    <p class="dek">You have built forecasts; now judge them fairly. The error metrics disagree on purpose, each one encodes a
+       different view of which mistakes matter most. This chapter defines the whole family and shows how to pick a winner
+       you can defend.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~23 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 130</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Two forecasters show you their numbers. One is <span class="hl">accurate on a typical day</span> but blew a
+       single big call; the other is <span class="hl">always a little low</span>. Which is better? There is no answer until
+       you say <span class="hl">which errors cost you</span>, and that choice <em>is</em> the metric. A forecast metric is a
+       <span class="hl">loss function</span> in disguise, so learning the family is really learning to state your priorities
+       precisely.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#8730;</div>
+      <div class="def-body">
+        Forecast error is <span class="def-kw">actual &#8722; forecast</span>. The metrics summarize those errors in
+        different ways: <span class="def-kw">ME</span> (bias), <span class="def-kw">MAE / MSE / RMSE</span> (scale-dependent),
+        <span class="def-kw">MAPE / sMAPE</span> (percentage), and <span class="def-kw">MASE / Theil's U</span> (relative to a
+        naive benchmark). The <span class="def-kw">Diebold-Mariano</span> test says whether a gap is real.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">&#9878;</div>
+      <div><div class="ctitle">The metric is the loss function</div>
+        <p><strong>MAE</strong> treats every miss equally; <strong>RMSE</strong> squares them, so one big miss dominates. On
+           our data one model wins by MAE and the other edges it by RMSE, both true. Report several metrics, check they agree,
+           and pick the one that mirrors the <strong>cost</strong> of being wrong.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §1 the family ===== -->
+  <section id="family">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Metric Family</h2></div>
+    <p>Every metric starts from the same residual, <code>actual &#8722; forecast</code>, and then makes one choice: how to
+       summarize a whole column of them. Those choices sort into four groups.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 220" width="100%" font-family="Inter, sans-serif" aria-label="Four families of forecast-error metrics: scale-dependent (ME, MAE, MSE, RMSE), percentage (MAPE, sMAPE), scaled (MASE), and relative (Theil's U), each answering a different question">
+        <text x="350" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">Four families, one residual: actual &#8722; forecast</text>
+        <rect x="20" y="36" width="164" height="168" rx="11" fill="#f0f9ff" stroke="#7dd3fc"/>
+        <text x="102" y="56" text-anchor="middle" font-size="9" fill="#0284c7" font-weight="800">Scale-dependent</text>
+        <text x="102" y="76" text-anchor="middle" font-size="8.5" fill="#075985" font-weight="700">ME &#183; MAE</text>
+        <text x="102" y="92" text-anchor="middle" font-size="8.5" fill="#075985" font-weight="700">MSE &#183; RMSE</text>
+        <line x1="36" y1="104" x2="168" y2="104" stroke="#bae6fd"/>
+        <text x="102" y="122" text-anchor="middle" font-size="7.4" fill="#0369a1">ME = bias (a lean)</text>
+        <text x="102" y="138" text-anchor="middle" font-size="7.4" fill="#0369a1">MAE = typical miss</text>
+        <text x="102" y="154" text-anchor="middle" font-size="7.4" fill="#0369a1">RMSE = punishes</text>
+        <text x="102" y="165" text-anchor="middle" font-size="7.4" fill="#0369a1">big misses</text>
+        <text x="102" y="190" text-anchor="middle" font-size="7.2" fill="#64748b">in the data's own units</text>
+        <rect x="196" y="36" width="164" height="168" rx="11" fill="#f5f3ff" stroke="#c4b5fd"/>
+        <text x="278" y="56" text-anchor="middle" font-size="9" fill="#6d28d9" font-weight="800">Percentage</text>
+        <text x="278" y="76" text-anchor="middle" font-size="8.5" fill="#5b21b6" font-weight="700">MAPE &#183; sMAPE</text>
+        <line x1="212" y1="88" x2="344" y2="88" stroke="#ddd6fe"/>
+        <text x="278" y="106" text-anchor="middle" font-size="7.4" fill="#6d28d9">error as a percent</text>
+        <text x="278" y="122" text-anchor="middle" font-size="7.4" fill="#6d28d9">of the actual value</text>
+        <text x="278" y="146" text-anchor="middle" font-size="7.4" fill="#9a3412">scale-free, but</text>
+        <text x="278" y="158" text-anchor="middle" font-size="7.4" fill="#9a3412">fragile near zero</text>
+        <text x="278" y="182" text-anchor="middle" font-size="7.2" fill="#64748b">compare across series</text>
+        <rect x="372" y="36" width="150" height="168" rx="11" fill="#ecfdf5" stroke="#a7f3d0"/>
+        <text x="447" y="56" text-anchor="middle" font-size="9" fill="#047857" font-weight="800">Scaled</text>
+        <text x="447" y="76" text-anchor="middle" font-size="8.5" fill="#065f46" font-weight="700">MASE</text>
+        <line x1="388" y1="88" x2="506" y2="88" stroke="#a7f3d0"/>
+        <text x="447" y="106" text-anchor="middle" font-size="7.4" fill="#047857">MAE divided by</text>
+        <text x="447" y="118" text-anchor="middle" font-size="7.4" fill="#047857">the naive MAE</text>
+        <text x="447" y="142" text-anchor="middle" font-size="8" fill="#065f46" font-weight="700">&lt; 1 beats naive</text>
+        <text x="447" y="166" text-anchor="middle" font-size="7.2" fill="#64748b">no zero-division</text>
+        <text x="447" y="178" text-anchor="middle" font-size="7.2" fill="#64748b">trap</text>
+        <rect x="534" y="36" width="146" height="168" rx="11" fill="#fff7ed" stroke="#fdba74"/>
+        <text x="607" y="56" text-anchor="middle" font-size="9" fill="#c2410c" font-weight="800">Relative</text>
+        <text x="607" y="76" text-anchor="middle" font-size="8.5" fill="#9a3412" font-weight="700">Theil's U</text>
+        <line x1="550" y1="88" x2="664" y2="88" stroke="#fed7aa"/>
+        <text x="607" y="106" text-anchor="middle" font-size="7.4" fill="#c2410c">RMSE divided by</text>
+        <text x="607" y="118" text-anchor="middle" font-size="7.4" fill="#c2410c">the naive RMSE</text>
+        <text x="607" y="142" text-anchor="middle" font-size="8" fill="#9a3412" font-weight="700">&lt; 1 beats naive</text>
+        <text x="607" y="166" text-anchor="middle" font-size="7.2" fill="#64748b">a skill score</text>
+      </svg>
+    </figure>
+
+    <p>The four families answer different questions. <strong>Scale-dependent</strong> metrics stay in the data's units, great
+       for one series, useless for comparing dollars to units. <strong>Percentage</strong> metrics free you from the scale
+       but misbehave near zero. <strong>Scaled</strong> and <strong>relative</strong> metrics divide your error by a
+       <strong>naive benchmark</strong>, turning it into a skill score where <strong>below 1 means &#8220;better than doing
+       nothing.&#8221;</strong> Pick from the group that matches your question.</p>
+  </section>
+
+  <!-- ===== §2 scale-dependent ===== -->
+  <section id="scale">
+    <div class="section-eyebrow"><div class="num">2</div><h2>ME, MAE &amp; RMSE: How You Punish Big Errors</h2></div>
+    <p>The three workhorses differ only in how they treat a large miss, and that difference can flip the ranking.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 210" width="100%" font-family="Inter, sans-serif" aria-label="A column of mostly small errors with one large one; MAE is the average height while RMSE is pulled up by squaring the single large error, so one big miss barely changes MAE but dominates RMSE">
+        <text x="350" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">One big miss barely moves MAE, but dominates RMSE</text>
+        <line x1="40" y1="150" x2="470" y2="150" stroke="#94a3b8" stroke-width="1"/>
+        <text x="34" y="153" text-anchor="end" font-size="7.5" fill="#475569">0</text>
+        <!-- error bars: small ones + one big -->
+        <g fill="#0284c7">
+          <rect x="54" y="132" width="20" height="18"/><rect x="86" y="126" width="20" height="24"/><rect x="118" y="136" width="20" height="14"/><rect x="150" y="122" width="20" height="28"/><rect x="182" y="138" width="20" height="12"/>
+          <rect x="214" y="60" width="20" height="90" fill="#ef4444"/>
+          <rect x="246" y="130" width="20" height="20"/><rect x="278" y="134" width="20" height="16"/><rect x="310" y="124" width="20" height="26"/><rect x="342" y="138" width="20" height="12"/><rect x="374" y="132" width="20" height="18"/><rect x="406" y="128" width="20" height="22"/><rect x="438" y="136" width="20" height="14"/></g>
+        <text x="224" y="52" text-anchor="middle" font-size="7.5" fill="#b91c1c" font-weight="700">the missed spike</text>
+        <line x1="40" y1="130" x2="470" y2="130" stroke="#0284c7" stroke-width="1.6" stroke-dasharray="5 3"/><text x="476" y="132" font-size="8" fill="#0284c7" font-weight="700">MAE</text>
+        <line x1="40" y1="96" x2="470" y2="96" stroke="#ef4444" stroke-width="1.6" stroke-dasharray="5 3"/><text x="476" y="98" font-size="8" fill="#b91c1c" font-weight="700">RMSE</text>
+        <!-- right explainer -->
+        <rect x="516" y="42" width="166" height="52" rx="9" fill="#f0f9ff" stroke="#7dd3fc"/>
+        <text x="599" y="61" text-anchor="middle" font-size="8" fill="#075985" font-weight="700">RMSE &#8805; MAE always</text>
+        <text x="599" y="77" text-anchor="middle" font-size="7.4" fill="#0369a1">the gap grows with</text>
+        <text x="599" y="88" text-anchor="middle" font-size="7.4" fill="#0369a1">the error spread</text>
+        <rect x="516" y="104" width="166" height="46" rx="9" fill="#fff7ed" stroke="#fdba74"/>
+        <text x="599" y="122" text-anchor="middle" font-size="8" fill="#c2410c" font-weight="700">ME = sum of signed</text>
+        <text x="599" y="137" text-anchor="middle" font-size="7.4" fill="#9a3412">errors &#8594; bias, a lean</text>
+        <text x="350" y="182" text-anchor="middle" font-size="8.6" fill="#1a2138" font-weight="700">Our model_a wins on MAE (218) yet its one missed spike lifts RMSE (564) above model_b (532).</text>
+        <text x="350" y="199" text-anchor="middle" font-size="7.8" fill="#64748b">Choosing MAE vs RMSE = deciding how much a rare, large error should hurt.</text>
+      </svg>
+    </figure>
+
+    <p><strong>Mean Error (ME)</strong> averages the <em>signed</em> residuals, so it measures <strong>bias</strong>: a
+       systematic lean high or low. It says nothing about accuracy, errors can cancel to near zero while individually being
+       large. <strong>MAE</strong> averages the <em>absolute</em> errors, giving the typical miss in real units.
+       <strong>MSE</strong> and its root <strong>RMSE</strong> <em>square</em> first, so a single large error weighs far more.
+       <strong>RMSE is always at least MAE</strong>, and the gap widens with the spread. That is why our two models split the
+       decision: model_a is best on MAE but its one missed spike, squared, pushes its RMSE just past model_b's.</p>
+  </section>
+
+  <!-- ===== §3 percentage/relative ===== -->
+  <section id="relative">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Percentage, Scaled &amp; Relative Errors</h2></div>
+    <p>Units-based metrics cannot compare a demand forecast to a revenue forecast. Three families fix that, each with its own
+       character.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 150" width="100%" font-family="Inter, sans-serif" aria-label="A skill scale where MASE and Theil's U below 1 beat the naive benchmark, equal to 1 ties it, and above 1 is worse than doing nothing; model A sits at 0.26 and model B at 0.60">
+        <text x="350" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">MASE and Theil's U: a skill score against the naive benchmark</text>
+        <rect x="60" y="52" width="360" height="20" fill="#dcfce7"/><rect x="420" y="52" width="40" height="20" fill="#e5e7eb"/><rect x="460" y="52" width="180" height="20" fill="#fee2e2"/>
+        <line x1="60" y1="48" x2="640" y2="48" stroke="#94a3b8" stroke-width="1"/>
+        <g font-size="7.5" text-anchor="middle" fill="#475569" font-weight="700">
+          <line x1="60" y1="46" x2="60" y2="78" stroke="#94a3b8"/><text x="60" y="90">0</text>
+          <line x1="440" y1="46" x2="440" y2="82" stroke="#64748b"/><text x="440" y="94">1.0 (naive)</text>
+          <line x1="640" y1="46" x2="640" y2="78" stroke="#94a3b8"/><text x="640" y="90">2.0</text>
+        </g>
+        <text x="240" y="66" text-anchor="middle" font-size="8" fill="#15803d" font-weight="800">beats naive</text>
+        <text x="550" y="66" text-anchor="middle" font-size="8" fill="#b91c1c" font-weight="800">worse than doing nothing</text>
+        <!-- markers -->
+        <polygon points="164,44 158,32 170,32" fill="#0284c7"/><text x="164" y="28" text-anchor="middle" font-size="7.6" fill="#0284c7" font-weight="800">model_a 0.26</text>
+        <polygon points="300,44 294,32 306,32" fill="#6d28d9"/><text x="300" y="28" text-anchor="middle" font-size="7.6" fill="#6d28d9" font-weight="800">model_b 0.60</text>
+        <text x="350" y="122" text-anchor="middle" font-size="8.6" fill="#1a2138" font-weight="700">Both models land well below 1, they add real value over the seasonal-naive forecast.</text>
+        <text x="350" y="139" text-anchor="middle" font-size="7.8" fill="#64748b">MASE scales MAE by naive MAE; Theil's U scales RMSE by naive RMSE. Clearing 1.0 is the first hurdle.</text>
+      </svg>
+    </figure>
+
+    <p><strong>MAPE</strong> (mean absolute percentage error) is the most quoted, intuitive and scale-free, but it
+       <strong>explodes when actuals approach zero</strong> and penalizes over- and under-forecasts asymmetrically.
+       <strong>sMAPE</strong> symmetrizes the denominator to ease that. The most robust choice is <strong>MASE</strong>, the
+       MAE divided by the naive forecast's MAE, and <strong>Theil's U</strong>, the RMSE version: both are
+       <strong>skill scores</strong> where <strong>below 1 beats naive</strong>. On our data model_a scores MASE
+       <strong>0.26</strong> and model_b <strong>0.60</strong>, so both clearly earn their keep over doing nothing, the very
+       first thing a forecast must prove.</p>
+  </section>
+
+  <!-- ===== §4 comparing ===== -->
+  <section id="comparing">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Is the Difference Real? The Diebold-Mariano Test</h2></div>
+    <p>A leaderboard is only useful if its gaps are trustworthy. A tiny RMSE difference on 24 points might be pure luck.</p>
+    <p>The <strong>Diebold-Mariano (DM) test</strong> formalizes the comparison: it takes the two models' per-period losses
+       (say squared errors), forms the difference series, and tests whether its mean is <strong>significantly</strong> away
+       from zero. On our data, <strong>model_a vs model_b gives p &#8776; 0.90</strong>, the RMSE gap is <em>not</em>
+       statistically distinguishable, it rides entirely on one missed spike, so crowning model_b on RMSE would be
+       overconfident. By contrast, <strong>model_a vs naive gives p &#8776; 0.0001</strong>: that improvement is real. Pair
+       every ranking with a check like this, and confirm the winner's <strong>residuals look like white noise</strong> (a
+       Ljung-Box test), which means no obvious signal was left on the table.</p>
+    <div class="callout tip">
+      <div class="cico">&#128161;</div>
+      <div><div class="ctitle">A practical routine</div>
+        <p>Compute <strong>ME</strong> (catch bias), <strong>MAE</strong> and <strong>RMSE</strong> (typical vs large-error
+           accuracy), a <strong>MASE</strong> or <strong>Theil's U</strong> against naive (skill), and a
+           <strong>Diebold-Mariano</strong> test between your top two. If the metrics agree, ship the winner; if they
+           disagree, let the <strong>cost of errors</strong> break the tie.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §5 real-world ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Real-World Example: Grading Three Forecasts</h2></div>
+    <p>The companion notebook scores three competing forecasts of the same 24 months across the whole metric family, then
+       tests whether the differences are real.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · ch130_demand_forecasts.xlsx</div>
+      <p style="margin:0.5rem 0 0">A <strong>24-month</strong> comparison table (2022 to 2023): the <code>actual</code>
+        demand plus three forecasts, <code>model_a</code> (accurate but missed one promotion spike), <code>model_b</code>
+        (systematically low), and <code>naive</code> (seasonal-naive benchmark). Ready to grade, no model fitting needed.</p>
+      <ul class="rw-find">
+        <li><span class="ck">&#9679;</span><strong>Bias:</strong> ME is near zero for model_a but +496 for model_b and +827 for naive (both under-forecast).</li>
+        <li><span class="ck">&#9679;</span><strong>The flip:</strong> model_a wins on MAE (218 vs 496) but model_b edges it on RMSE (532 vs 564), the missed spike.</li>
+        <li><span class="ck">&#9679;</span><strong>Skill:</strong> MASE 0.26 and 0.60, both beat the naive benchmark (1.00).</li>
+        <li><span class="ck">&#9679;</span><strong>Significance:</strong> A vs B is not significant (p &#8776; 0.90); A vs naive is (p &#8776; 0.0001).</li>
+      </ul>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/ch130_demand_forecasts.xlsx" download>📊 Download dataset &nbsp;<small>XLSX · 24 months</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §6 ML/AI ===== -->
+  <section id="mlai">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Forecast Evaluation in Machine Learning &amp; AI</h2></div>
+    <p>Modern forecasting keeps these metrics but changes <em>how</em> you compute them, over many windows, many series, and
+       whole predictive distributions rather than single points.</p>
+
+    <table class="ml-table">
+      <thead><tr><th>Idea</th><th>What it adds</th><th>Where it shows up</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">Rolling-origin backtesting</td><td>Re-forecast at many cutoffs (expanding or sliding window), not one split, time-series cross-validation</td><td>The standard way to evaluate any forecasting model</td></tr>
+        <tr><td class="nm">Probabilistic scoring</td><td>Grade the whole predictive distribution, not just the mean</td><td>Pinball / quantile loss, CRPS, interval coverage</td></tr>
+        <tr><td class="nm">Competition metrics</td><td>Blend and weight the classics across many series</td><td>M4 (OWA of sMAPE + MASE), M5 (WRMSSE)</td></tr>
+        <tr><td class="nm">Global-model evaluation</td><td>Aggregate error fairly across thousands of series of different scales</td><td>Weighted / scaled metrics for retail, energy</td></tr>
+        <tr><td class="nm">Guarding the test</td><td>Avoid leakage and look-ahead in the backtest pipeline</td><td>Same discipline as Chapters 105 and 126</td></tr>
+      </tbody>
+    </table>
+
+    <div class="research">
+      <div class="rtag">🔬 Research frontier</div>
+      <p style="margin:0.4rem 0 0">Evaluation itself is a research topic. The move is toward <strong>probabilistic
+        forecasting</strong>, judging models by proper scoring rules like <strong>CRPS</strong> that reward well-calibrated
+        <em>uncertainty</em>, not just a point, and toward <strong>rolling-origin backtesting</strong> as the honest default.
+        Forecasting competitions (M4, M5) have repeatedly shown that <strong>simple, well-evaluated statistical models</strong>
+        rival elaborate ones, which is why the humble metrics in this chapter still decide who wins.</p>
+    </div>
+  </section>
+
+  <!-- ===== notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body"><h3>Grade the forecasts in Python</h3><p>The companion notebook computes the residuals and ME (bias), the scale-dependent MAE/MSE/RMSE (and shows the MAE-vs-RMSE flip), the percentage MAPE/sMAPE, the naive-relative MASE and Theil's U, runs a Diebold-Mariano test between models, checks the winner's residuals with Ljung-Box, and lays out one verdict panel, all in a few lines of numpy and pandas.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch130_forecast_accuracy.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch130_forecast_accuracy.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch130_forecast_accuracy.ipynb" target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)"><strong>View</strong> opens the rendered notebook instantly.
+      <strong>Open in Colab</strong> runs it live. To run locally, install <code>numpy</code>, <code>pandas</code>,
+      <code>matplotlib</code>, <code>scipy</code>, <code>statsmodels</code>, and <code>openpyxl</code>.</p>
+  </section>
+
+  <!-- ===== takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>The metric is a loss function</strong>: choosing one is choosing which errors you refuse to tolerate.</span></li>
+        <li><span class="ck">✓</span><span><strong>ME is bias, not accuracy</strong>: a near-zero ME can still hide large errors that cancel.</span></li>
+        <li><span class="ck">✓</span><span><strong>MAE vs RMSE</strong>: RMSE (always at least MAE) punishes big misses hardest and can flip the ranking, as it did here.</span></li>
+        <li><span class="ck">✓</span><span><strong>Benchmark against naive</strong>: MASE and Theil's U below 1 is the bar every forecast must clear.</span></li>
+        <li><span class="ck">✓</span><span><strong>Test the gap</strong>: Diebold-Mariano tells you whether one model is really better or just lucky.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== §7 challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Practice Challenges</h2></div>
+    <p>Five exercises on the forecast comparison. Full solutions are in the companion solutions notebook.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Bias vs accuracy</h4>
+        <p>Compute ME, MAE, and RMSE for each model. Which one is biased, and how do you know?</p>
+        <div class="chint">Hint: ME uses signed errors; MAE and RMSE use their size.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Why RMSE beats up big errors</h4>
+        <p>Show RMSE is always at least MAE and explain model_a's large gap.</p>
+        <div class="chint">Hint: find model_a's single largest error.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Percentage traps</h4>
+        <p>Compute MAPE and sMAPE. When does MAPE mislead, and what fixes it?</p>
+        <div class="chint">Hint: think about actuals near zero and asymmetry.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Beating the benchmark</h4>
+        <p>Compute MASE and Theil's U. Which models beat the naive forecast?</p>
+        <div class="chint">Hint: divide by the naive MAE and RMSE; look for values below 1.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Is the difference real?</h4>
+        <p>Run Diebold-Mariano for A vs B and A vs naive. Interpret the two p-values.</p>
+        <div class="chint">Hint: a small p means the loss difference is unlikely to be luck.</div></div></div>
+    </div>
+
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">📓</div>
+        <div class="nb-body"><h3>Solutions notebook</h3><p>All five challenges worked in code, bias versus accuracy, why RMSE punishes big errors, the percentage traps, beating the naive benchmark, and the Diebold-Mariano significance test, each with a short explanation.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch130_challenges_solutions.html">📓 View Solutions</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch130_challenges_solutions.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch130_challenges_solutions.ipynb" target="_blank" rel="noopener">⬇ GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §8 quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">8</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on the error metrics and comparing models. Answer them, hit <strong>Check Answers</strong>, and keep
+       refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">🏁</div>
+    <div><div class="ctitle">Part XXII complete, up next</div>
+      <p>You can now decompose a series, forecast it, model its volatility, and grade the result. Time to put it all
+         together. <strong>Chapter 131 &middot; Case Study: Forecasting a Time Series</strong> opens Part XXIII with a full
+         end-to-end forecasting project, from raw data to an evaluated, deployed forecast.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch129.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 129 · Previous</span><br><span class="cn-title">Volatility &amp; Advanced Models</span></span>
+    </a>
+    <div class="cn-btn next" style="cursor:default;opacity:0.6" title="Coming soon">
+      <span><span class="cn-dir">Chapter 131 · Coming soon</span><br><span class="cn-title">Case Study: Forecasting a Time Series</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </div>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 130 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => { const h = document.documentElement; bar.style.width = ((h.scrollTop)/(h.scrollHeight-h.clientHeight)*100) + '%'; });
+</script>
+
+<script>
+  window.QUIZ_ID = "ch130";
+  window.QUIZ_DATA = [
+    {
+      q: "Why is choosing a forecast metric described as choosing a loss function?",
+      options: ["Metrics are all identical", "Each metric weights different errors differently, so it encodes which mistakes you care about most", "Loss functions are only for neural nets", "Metrics have no effect on model choice"],
+      answer: 1,
+      explain: "MAE, RMSE, MAPE, and the rest reward and punish errors differently; picking one states your priorities."
+    },
+    {
+      q: "Mean Error (ME) primarily measures…",
+      options: ["Overall accuracy", "Bias, a systematic tendency to over- or under-forecast", "The largest error", "The percentage error"],
+      answer: 1,
+      explain: "ME averages signed residuals, so it catches a lean. Errors can cancel to near zero while still being individually large."
+    },
+    {
+      q: "Compared with MAE, RMSE…",
+      options: ["Is always smaller", "Squares errors first, so it punishes large misses more (and is always at least MAE)", "Ignores large errors", "Is a percentage"],
+      answer: 1,
+      explain: "Squaring makes big errors dominate; RMSE >= MAE, and the gap grows with the spread of the errors."
+    },
+    {
+      q: "On the data, model_a won on MAE but model_b edged it on RMSE. This happened because…",
+      options: ["The data was wrong", "model_a had one large missed spike that RMSE squares and MAE does not over-weight", "RMSE is always wrong", "They were actually equal"],
+      answer: 1,
+      explain: "One big error barely moves MAE but dominates RMSE, so the ranking depends on how much a rare large miss should count."
+    },
+    {
+      q: "A key weakness of MAPE is that it…",
+      options: ["Cannot be computed", "Explodes when actual values are near zero and treats over- and under-forecasts asymmetrically", "Is not scale-free", "Requires a neural network"],
+      answer: 1,
+      explain: "Dividing by the actual value breaks down near zero; sMAPE eases the asymmetry and MASE avoids the trap entirely."
+    },
+    {
+      q: "A MASE (or Theil's U) below 1 means…",
+      options: ["The model is broken", "The model beats the naive benchmark", "The forecast is perfect", "The series is non-stationary"],
+      answer: 1,
+      explain: "MASE and Theil's U rescale error by the naive forecast's error; below 1 means better than doing nothing, the first hurdle."
+    },
+    {
+      q: "The Diebold-Mariano test is used to…",
+      options: ["Fit a forecasting model", "Test whether two forecasts' errors differ significantly, so a ranking gap is not just luck", "Remove seasonality", "Compute MAPE"],
+      answer: 1,
+      explain: "It tests the mean of the per-period loss difference. Here A vs B was not significant (p ~ 0.90) but A vs naive was."
+    },
+    {
+      q: "If rare but very large errors are extremely costly to your business, you should emphasize…",
+      options: ["MAE", "RMSE (or MSE), because it weights large misses most heavily", "ME", "Nothing, all metrics agree"],
+      answer: 1,
+      explain: "RMSE penalizes big misses hardest, so it aligns with a cost that punishes rare large errors disproportionately."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

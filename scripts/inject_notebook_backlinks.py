@@ -120,6 +120,10 @@ MAP = {
         ("../../ch129.html#notebook", "Back to the book", "Chapter 129 · Volatility & Advanced Models"),
     "ch129_challenges_solutions.html":
         ("../../ch129.html#challenges", "Back to the book", "Chapter 129 · Challenge solutions"),
+    "ch130_forecast_accuracy.html":
+        ("../../ch130.html#notebook", "Back to the book", "Chapter 130 · Forecast Accuracy"),
+    "ch130_challenges_solutions.html":
+        ("../../ch130.html#challenges", "Back to the book", "Chapter 130 · Challenge solutions"),
     "ch01_what_is_statistics.html":
         ("../../ch01.html#notebook", "Back to the book", "Chapter 1 · What Is Statistics?"),
     "ch01_challenges_solutions.html":
