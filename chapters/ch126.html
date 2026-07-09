@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 126 · Case Study: Operationalizing the Model (MLOps) — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#eef2ff; border:1px solid #c7d2fe; border-left:4px solid #4338ca; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#3730a3; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none; padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+    .step-h { display:flex; align-items:center; gap:0.6rem; margin:1.4rem 0 0.4rem; }
+    .step-h .sn { flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:#4338ca; color:#fff; font-weight:800; font-size:0.95rem; display:flex; align-items:center; justify-content:center; }
+    .step-h h3 { margin:0; font-size:1.02rem; color:var(--ink); }
+    .writeup { background:#eef2ff; border:1px solid #c7d2fe; border-radius:14px; padding:1.3rem 1.5rem; margin:1.3rem 0; }
+    .writeup h3 { margin-top:0; color:#3730a3; }
+    .writeup h4 { margin:1rem 0 0.3rem; color:#3730a3; font-size:0.92rem; }
+    .nb-fig { margin:1.4rem 0; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:1rem 1rem 0.6rem; }
+    .nb-fig img { display:block; width:100%; height:auto; border-radius:8px; }
+    .nb-fig figcaption { margin:0.75rem 0.2rem 0.3rem; font-size:0.85rem; color:var(--ink-soft); line-height:1.55; }
+    .nb-fig .cap-t { font-size:0.64rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#3730a3; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch126_operationalizing.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXI · ML Case Study</span><span class="sep">/</span>
+      <span>Chapter 126</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XXI · Putting It All Together</span> The model lifecycle after the notebook</div>
+    <h1>Case Study: <span class="accent">Operationalizing the Model</span></h1>
+    <p class="dek">The other case studies ended when the model was good. In production that is the halfway point. A deployed model
+       is a living system that must be packaged, served, and above all watched, because the world it learned from keeps
+       changing. This is the full MLOps loop: deploy, monitor, detect drift, retrain, and roll out safely.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~27 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Full notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 126</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">A model that scores 0.80 in a notebook and a model that keeps working for two years are different
+       achievements. The second one requires <span class="hl">MLOps</span>: the discipline of running a model as a product.
+       The reason it is hard has one name, <span class="hl">drift</span>. The data a model meets in production slowly stops
+       looking like the data it trained on, and its accuracy quietly rots, with no error message. This chapter follows a
+       churn model through 18 months as exactly that happens, and shows the <span class="hl">loop</span> that catches and
+       fixes it.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#8734;</div>
+      <div class="def-body">
+        <span class="def-kw">MLOps</span> is the practice of operating a model in production: <span class="def-kw">package</span>
+        and <span class="def-kw">serve</span> it, <span class="def-kw">monitor</span> inputs and performance,
+        detect <span class="def-kw">drift</span>, <span class="def-kw">retrain</span> when it decays, and
+        <span class="def-kw">roll out</span> the replacement safely, then repeat, forever.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🧭</div>
+      <div><div class="ctitle">The problem in one sentence</div>
+        <p>Labels arrive <em>late</em>. You will not know your model's accuracy dropped until the churn outcomes come in
+           months later, so the whole game is watching the <strong>inputs</strong> for drift (which needs no labels) and
+           acting on that <strong>leading</strong> signal, before the <strong>lagging</strong> performance metric confirms
+           the damage.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §1 method ===== -->
+  <section id="method">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The 12-Step Method</h2></div>
+    <p>The familiar loop, adapted to the production lifecycle. The companion notebook runs all twelve steps on the 18-month
+       log; the sections below tell the story and show the plots.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 678 332" width="100%" font-family="Inter, sans-serif" aria-label="The twelve-step method as a snaking flow adapted to running a model in production">
+        <text x="339" y="26" text-anchor="middle" font-size="13" fill="#1a2138" font-weight="800">The 12-step method: from a trained model to a monitored, self-renewing product</text>
+        <defs><marker id="m126" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#3730a3"/></marker></defs>
+        <path d="M165,84 L181,84" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m126)"/>
+        <path d="M331,84 L347,84" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m126)"/>
+        <path d="M497,84 L513,84" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m126)"/>
+        <path d="M588,120 L588,150" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m126)"/>
+        <path d="M513,186 L497,186" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m126)"/>
+        <path d="M347,186 L331,186" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m126)"/>
+        <path d="M181,186 L165,186" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m126)"/>
+        <path d="M90,222 L90,252" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m126)"/>
+        <path d="M165,288 L181,288" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m126)"/>
+        <path d="M331,288 L347,288" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m126)"/>
+        <path d="M497,288 L513,288" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m126)"/>
+        <rect x="15" y="48" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="32" cy="66" r="11" fill="#4338ca"/><text x="32" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">1</text>
+        <text x="49" y="70" font-size="10.5" fill="#3730a3" font-weight="800">Define</text>
+        <text x="27" y="92" font-size="8.3" fill="#4a5578">the production contract</text>
+        <rect x="181" y="48" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="198" cy="66" r="11" fill="#4338ca"/><text x="198" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">2</text>
+        <text x="215" y="70" font-size="10.5" fill="#3730a3" font-weight="800">Package</text>
+        <text x="193" y="92" font-size="8.3" fill="#4a5578">versioned artifact</text>
+        <rect x="347" y="48" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="364" cy="66" r="11" fill="#4338ca"/><text x="364" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">3</text>
+        <text x="381" y="70" font-size="10.5" fill="#3730a3" font-weight="800">Serve</text>
+        <text x="359" y="92" font-size="8.3" fill="#4a5578">load once, predict many</text>
+        <rect x="513" y="48" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="530" cy="66" r="11" fill="#4338ca"/><text x="530" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">4</text>
+        <text x="547" y="70" font-size="10.5" fill="#3730a3" font-weight="800">Log</text>
+        <text x="525" y="92" font-size="8.3" fill="#4a5578">every prediction</text>
+        <rect x="513" y="150" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="530" cy="168" r="11" fill="#4338ca"/><text x="530" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">5</text>
+        <text x="547" y="172" font-size="10.5" fill="#3730a3" font-weight="800">Monitor</text>
+        <text x="525" y="194" font-size="8.3" fill="#4a5578">rolling metrics</text>
+        <rect x="347" y="150" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="364" cy="168" r="11" fill="#4338ca"/><text x="364" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">6</text>
+        <text x="381" y="172" font-size="10.5" fill="#3730a3" font-weight="800">Detect drift</text>
+        <text x="359" y="194" font-size="8.3" fill="#4a5578">PSI, no labels</text>
+        <rect x="181" y="150" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="198" cy="168" r="11" fill="#4338ca"/><text x="198" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">7</text>
+        <text x="215" y="172" font-size="10.5" fill="#3730a3" font-weight="800">Alert</text>
+        <text x="193" y="194" font-size="8.3" fill="#4a5578">leading vs lagging</text>
+        <rect x="15" y="150" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="32" cy="168" r="11" fill="#4338ca"/><text x="32" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">8</text>
+        <text x="49" y="172" font-size="10.5" fill="#3730a3" font-weight="800">Diagnose</text>
+        <text x="27" y="194" font-size="8.3" fill="#4a5578">data vs concept</text>
+        <rect x="15" y="252" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="32" cy="270" r="11" fill="#4338ca"/><text x="32" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">9</text>
+        <text x="49" y="274" font-size="10.5" fill="#3730a3" font-weight="800">Retrain</text>
+        <text x="27" y="296" font-size="8.3" fill="#4a5578">on the recent window</text>
+        <rect x="181" y="252" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="198" cy="270" r="11" fill="#4338ca"/><text x="198" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">10</text>
+        <text x="215" y="274" font-size="10.5" fill="#3730a3" font-weight="800">Validate</text>
+        <text x="193" y="296" font-size="8.3" fill="#4a5578">challenger vs champion</text>
+        <rect x="347" y="252" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="364" cy="270" r="11" fill="#4338ca"/><text x="364" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">11</text>
+        <text x="381" y="274" font-size="10.5" fill="#3730a3" font-weight="800">Roll out</text>
+        <text x="359" y="296" font-size="8.3" fill="#4a5578">shadow, canary</text>
+        <rect x="513" y="252" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="530" cy="270" r="11" fill="#4338ca"/><text x="530" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">12</text>
+        <text x="547" y="274" font-size="10.5" fill="#3730a3" font-weight="800">Govern</text>
+        <text x="525" y="296" font-size="8.3" fill="#4a5578">close the loop</text>
+      </svg>
+    </figure>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · model_monitoring.csv</div>
+      <p style="margin:0.5rem 0 0">A production log of a churn model: one row per customer scored in a given
+        <code>month</code> (0 = the training window, 1 to 18 = live), with <code>tenure_months</code>,
+        <code>monthly_usage_gb</code>, <code>support_tickets</code>, <code>add_ons</code>, <code>monthly_charges</code>,
+        <code>price_increase</code>, and the <code>churned</code> outcome that arrived later. A market shift starting month 7
+        drives both data drift and concept drift.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/model_monitoring.csv" download>📊 Download dataset &nbsp;<small>CSV · 14,800 rows</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §2 deploy ===== -->
+  <section id="deploy">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Define, Package, Serve, Log (Steps 1&#8211;4)</h2></div>
+
+    <div class="step-h"><span class="sn">1</span><h3>Define the production contract</h3></div>
+    <p>Before deploying, write down what must stay true in production: a <strong>performance floor</strong> (retrain if
+       rolling AUC falls below 0.65), a <strong>drift threshold</strong> (investigate any feature with PSI above 0.25), a
+       <strong>latency budget</strong>, and, crucially, the <strong>label delay</strong>: churn is only confirmed about two
+       months after we score. That delay is the whole reason the rest of this chapter is hard.</p>
+
+    <div class="step-h"><span class="sn">2</span><h3>Package the champion</h3></div>
+    <p>The deployable artifact is not just the model, it is the <strong>whole pipeline</strong> (imputer, scaler, classifier)
+       so the exact preprocessing travels with the weights, bundled with <strong>metadata</strong>: a version tag, the
+       training window, the feature list. Versioning is what makes a later rollback possible.</p>
+
+    <div class="step-h"><span class="sn">3</span><h3>Serve it</h3></div>
+    <p>A scoring service loads the artifact <strong>once</strong> and scores many rows, turning each probability into an
+       action at the chosen threshold, fast enough to satisfy the latency budget.</p>
+
+    <div class="step-h"><span class="sn">4</span><h3>Log every prediction</h3></div>
+    <p>Each score is written to a <strong>prediction log</strong> with its inputs, the output, the model version, and,
+       once known, the outcome. You cannot monitor what you did not log; this log is the raw material for everything that
+       follows.</p>
+  </section>
+
+  <!-- ===== §3 monitor/detect ===== -->
+  <section id="monitor">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Monitor &amp; Detect Drift (Steps 5&#8211;6)</h2></div>
+
+    <div class="step-h"><span class="sn">5</span><h3>Monitor performance</h3></div>
+    <p>With outcomes attached, we can track the model's accuracy month by month. This is where the silent failure becomes
+       visible.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/ch126_decay.png" alt="Rolling monthly AUC of the champion declining from about 0.77 to about 0.53">
+      <figcaption><span class="cap-t">From the notebook · Step 5</span><br>
+        <strong>Models decay silently.</strong> The champion holds around <strong>0.77</strong> for six months, then slides
+        through the market shock to about <strong>0.53</strong>, no better than a coin flip, and stays there. Nothing
+        errored, no exception was thrown; the model just quietly stopped working as the world changed. Rolling metrics are
+        what turn an invisible problem into a visible one.</figcaption>
+    </figure>
+
+    <div class="step-h"><span class="sn">6</span><h3>Detect drift in the inputs</h3></div>
+    <p>Because labels lag, we also watch the <em>inputs</em> directly. The <strong>Population Stability Index (PSI)</strong>
+       compares each feature's current distribution to the training reference, and it needs no outcomes at all.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/ch126_drift.png" alt="Reference versus recent distributions of support tickets (large PSI) and monthly usage (small PSI)">
+      <figcaption><span class="cap-t">From the notebook · Step 6</span><br>
+        <strong>The inputs moved.</strong> Support tickets (left) have shifted dramatically since training, PSI far above the
+        0.25 alert line, while monthly usage (right) drifted only mildly. As a rule of thumb, PSI below 0.1 is stable, 0.1 to
+        0.25 is a watch, and above 0.25 is significant drift. The key point: this signal is available <em>immediately</em>,
+        long before enough churn outcomes exist to measure accuracy.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== §4 alert/diagnose ===== -->
+  <section id="alert">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Alert &amp; Diagnose (Steps 7&#8211;8)</h2></div>
+
+    <div class="step-h"><span class="sn">7</span><h3>Alert on the leading signal</h3></div>
+    <p>Here is the central MLOps insight, in one picture: input drift is a <strong>leading</strong> indicator, performance
+       is a <strong>lagging</strong> one.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/ch126_early_warning.png" alt="Support-ticket PSI rising at month 7 while the AUC drop is only confirmable at month 9">
+      <figcaption><span class="cap-t">From the notebook · Step 7</span><br>
+        <strong>Watch the inputs, because labels are late.</strong> The PSI alarm fires at <strong>month 7</strong>, the
+        instant tickets shift, using no labels. Performance actually dropped that same month, but churn outcomes lag two
+        months, so the AUC breach is not <em>confirmable until month 9</em>. The shaded gap is time you would fly blind if
+        you only watched accuracy. In production you act on the leading signal; waiting for the lagging one costs months of
+        bad decisions.</figcaption>
+    </figure>
+
+    <div class="step-h"><span class="sn">8</span><h3>Diagnose: data drift or concept drift?</h3></div>
+    <p>The fix depends on which kind of drift you have. <strong>Data drift</strong> means the inputs moved but the underlying
+       relationship holds. <strong>Concept drift</strong> means the relationship itself changed, and only retraining can fix
+       that. Fitting a fresh model on recent data settles it: the coefficient on <code>monthly_usage</code> has
+       <strong>flipped sign</strong> (from about -1.0 to +0.4). Once, disengaged low-usage customers churned; now
+       high-usage customers hit the price increase and leave. The champion's learned rule is <em>backwards</em>, this is
+       concept drift, and retraining is the only cure.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 660 250" width="100%" font-family="Inter, sans-serif" aria-label="The MLOps lifecycle drawn as a closed loop that never ends">
+        <text x="330" y="24" text-anchor="middle" font-size="13" fill="#1a2138" font-weight="800">The MLOps loop never ends</text>
+        <defs><marker id="lp" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#4338ca"/></marker></defs>
+        <circle cx="330" cy="135" r="46" fill="#eef2ff" stroke="#c7d2fe"/>
+        <text x="330" y="128" text-anchor="middle" font-size="11" fill="#3730a3" font-weight="800">a model is</text>
+        <text x="330" y="144" text-anchor="middle" font-size="11" fill="#3730a3" font-weight="800">on the clock</text>
+        <text x="330" y="160" text-anchor="middle" font-size="8" fill="#6b73a3">never &quot;done&quot;</text>
+        <!-- nodes around the ring -->
+        <g>
+          <rect x="270" y="46" width="120" height="34" rx="9" fill="#4338ca"/><text x="330" y="68" text-anchor="middle" font-size="11" fill="#fff" font-weight="800">Deploy</text>
+          <rect x="470" y="92" width="120" height="34" rx="9" fill="#eef2ff" stroke="#c7d2fe"/><text x="530" y="114" text-anchor="middle" font-size="11" fill="#3730a3" font-weight="800">Monitor</text>
+          <rect x="470" y="176" width="120" height="34" rx="9" fill="#eef2ff" stroke="#c7d2fe"/><text x="530" y="198" text-anchor="middle" font-size="11" fill="#3730a3" font-weight="800">Detect drift</text>
+          <rect x="270" y="200" width="120" height="34" rx="9" fill="#eef2ff" stroke="#c7d2fe"/><text x="330" y="222" text-anchor="middle" font-size="11" fill="#3730a3" font-weight="800">Retrain</text>
+          <rect x="70" y="176" width="120" height="34" rx="9" fill="#eef2ff" stroke="#c7d2fe"/><text x="130" y="198" text-anchor="middle" font-size="11" fill="#3730a3" font-weight="800">Validate</text>
+          <rect x="70" y="92" width="120" height="34" rx="9" fill="#eef2ff" stroke="#c7d2fe"/><text x="130" y="114" text-anchor="middle" font-size="11" fill="#3730a3" font-weight="800">Roll out</text>
+        </g>
+        <g fill="none" stroke="#4338ca" stroke-width="1.8">
+          <path d="M394,63 Q470,68 512,92" marker-end="url(#lp)"/>
+          <path d="M530,126 L530,176" marker-end="url(#lp)"/>
+          <path d="M470,205 Q430,222 394,219" marker-end="url(#lp)"/>
+          <path d="M270,219 Q230,222 190,205" marker-end="url(#lp)"/>
+          <path d="M130,176 L130,126" marker-end="url(#lp)"/>
+          <path d="M148,92 Q190,68 266,63" marker-end="url(#lp)"/>
+        </g>
+      </svg>
+    </figure>
+  </section>
+
+  <!-- ===== §5 retrain/rollout ===== -->
+  <section id="renew">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Retrain, Validate &amp; Roll Out (Steps 9&#8211;12)</h2></div>
+
+    <div class="step-h"><span class="sn">9&#8211;10</span><h3>Retrain a challenger, then validate it</h3></div>
+    <p>The challenger is trained on the <strong>most recent stable window</strong> (months 10 to 12), after the shock
+       settled, training on the whole muddled history would blend two contradictory regimes. Then we prove it works on data
+       neither model has seen.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/ch126_retrain.png" alt="The aged champion staying near 0.53 while the retrained challenger recovers to about 0.74 after month 12">
+      <figcaption><span class="cap-t">From the notebook · Steps 9&#8211;10</span><br>
+        <strong>Retraining recovers what drift destroyed.</strong> The aged champion (grey) stays stuck near 0.53 in the new
+        regime. The retrained challenger (indigo), promoted after month 12, jumps back to about <strong>0.74</strong> on the
+        very same months, because it learned the new, inverted relationship. Retraining is the concrete fix for concept
+        drift.</figcaption>
+    </figure>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/ch126_champion_challenger.png" alt="Grouped bars: aged champion AUC 0.53 versus retrained challenger AUC 0.74 on held-out months 13 to 18">
+      <figcaption><span class="cap-t">From the notebook · Step 10</span><br>
+        <strong>Never promote on faith.</strong> On held-out recent data (months 13 to 18), the challenger beats the aged
+        champion decisively on AUC (about <strong>0.74 vs 0.53</strong>). Only a win this clear, on data the challenger did
+        not train on, justifies promotion. A challenger that merely ties is not worth the disruption of a model change.</figcaption>
+    </figure>
+
+    <div class="step-h"><span class="sn">11&#8211;12</span><h3>Roll out safely, then govern the loop</h3></div>
+    <p>A safe rollout is gradual, and it is where most production incidents are prevented.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 660 210" width="100%" font-family="Inter, sans-serif" aria-label="A safe rollout progresses shadow to canary to full, with a rollback path">
+        <text x="330" y="24" text-anchor="middle" font-size="13" fill="#1a2138" font-weight="800">Roll out gradually, with a rollback always armed</text>
+        <defs><marker id="ro" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#3730a3"/></marker>
+          <marker id="rb" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#ef4444"/></marker></defs>
+        <rect x="30" y="70" width="150" height="66" rx="11" fill="#eef2ff" stroke="#c7d2fe"/>
+        <text x="105" y="96" text-anchor="middle" font-size="12" fill="#3730a3" font-weight="800">Shadow</text>
+        <text x="105" y="114" text-anchor="middle" font-size="8.5" fill="#4a5578">scores live traffic,</text>
+        <text x="105" y="126" text-anchor="middle" font-size="8.5" fill="#4a5578">acts on nothing</text>
+        <rect x="255" y="70" width="150" height="66" rx="11" fill="#eef2ff" stroke="#c7d2fe"/>
+        <text x="330" y="96" text-anchor="middle" font-size="12" fill="#3730a3" font-weight="800">Canary</text>
+        <text x="330" y="114" text-anchor="middle" font-size="8.5" fill="#4a5578">a small slice of</text>
+        <text x="330" y="126" text-anchor="middle" font-size="8.5" fill="#4a5578">traffic, e.g. 20%</text>
+        <rect x="480" y="70" width="150" height="66" rx="11" fill="#eef2ff" stroke="#c7d2fe"/>
+        <text x="555" y="96" text-anchor="middle" font-size="12" fill="#3730a3" font-weight="800">Full</text>
+        <text x="555" y="114" text-anchor="middle" font-size="8.5" fill="#4a5578">100% once the</text>
+        <text x="555" y="126" text-anchor="middle" font-size="8.5" fill="#4a5578">canary holds</text>
+        <path d="M180,103 L253,103" stroke="#3730a3" stroke-width="1.8" marker-end="url(#ro)"/>
+        <path d="M405,103 L478,103" stroke="#3730a3" stroke-width="1.8" marker-end="url(#ro)"/>
+        <path d="M330,145 Q330,180 190,180 Q110,180 105,140" fill="none" stroke="#ef4444" stroke-width="1.8" stroke-dasharray="5 3" marker-end="url(#rb)"/>
+        <text x="250" y="196" text-anchor="middle" font-size="9" fill="#b91c1c" font-weight="700">rollback if the canary underperforms the champion</text>
+      </svg>
+    </figure>
+
+    <p><strong>Shadow</strong> mode scores live traffic without acting on it; a <strong>canary</strong> routes a small slice
+       (here 20%) to the challenger and compares. In the notebook's canary, the challenger arm scores 0.79 against the
+       champion's 0.50, so we widen it. A <strong>rollback rule</strong> stays armed throughout: if the new model
+       underperforms, traffic reverts to the versioned champion automatically. Finally, <strong>governance</strong> closes
+       the loop: the promoted challenger becomes the new champion (v2.0), it scores fresh customers correctly under the new
+       relationship, and monitoring begins again. The loop never ends.</p>
+  </section>
+
+  <!-- ===== §6 writeup ===== -->
+  <section id="writeup-sec">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Govern: the Plain-English Write-Up (Step 12)</h2></div>
+    <div class="writeup">
+      <h3>For a non-technical reader</h3>
+      <p><strong>What is this?</strong> A worked example of keeping a prediction tool <em>working</em> after it is switched
+        on. Our tool flags customers likely to cancel. This project follows it for 18 months and shows how we notice when it
+        goes stale and how we refresh it, without ever taking it offline.</p>
+
+      <h4>What goes in, and what comes out</h4>
+      <p><strong>Inputs:</strong> a running log of every customer the tool scored, plus the features it saw and whether they
+        eventually cancelled. <strong>Output:</strong> not a single model, but a <em>routine</em>, a dashboard of health
+        checks and a rule for when to rebuild and re-launch the tool.</p>
+
+      <h4>The decisions we made, and why</h4>
+      <ul>
+        <li><span class="ck">✓</span><span>We <strong>watched the incoming data, not just the results</strong>. Because we only learn who actually cancelled months later, waiting for results would leave us blind. Watching the inputs shift gave us a two-month head start.</span></li>
+        <li><span class="ck">✓</span><span>We <strong>worked out why it broke</strong>. The tool did not have a bug; the world changed. A price increase flipped the pattern, so customers who used to be safe were now the ones leaving. When the pattern itself changes, the only fix is to rebuild the tool on fresh data.</span></li>
+        <li><span class="ck">✓</span><span>We <strong>proved the rebuilt tool was better before trusting it</strong>, and rolled it out to a small slice of customers first, ready to switch back instantly if it disappointed.</span></li>
+      </ul>
+
+      <h4>The big idea</h4>
+      <p>The model was the easy, one-time part. The real work was building the <em>loop</em> that keeps it honest.
+        <strong>Bottom line: a deployed model is not finished, it is on the clock. The world drifts, so the true deliverable
+        is the closed loop that watches for decay and renews the model, not the model itself.</strong></p>
+    </div>
+  </section>
+
+  <!-- ===== notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body"><h3>Run the entire lifecycle in Python</h3><p>The companion notebook is the full 12-step MLOps loop: it packages and serves the champion with joblib, logs predictions, tracks rolling AUC as the model decays, computes PSI to detect drift without labels, shows input drift leading performance by two months, diagnoses the concept drift via a flipped coefficient, retrains and validates a challenger, runs a canary with a rollback rule, and promotes v2.0, with every step explained.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch126_operationalizing.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch126_operationalizing.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch126_operationalizing.ipynb" target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)"><strong>View</strong> opens the rendered notebook instantly.
+      <strong>Open in Colab</strong> runs it live. To run locally, install <code>numpy</code>, <code>pandas</code>,
+      <code>matplotlib</code>, <code>seaborn</code>, <code>scikit-learn</code>, and <code>joblib</code>.</p>
+  </section>
+
+  <!-- ===== takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Deployment is the halfway point</strong>: a model in production is a living system that must be packaged, served, logged, and watched.</span></li>
+        <li><span class="ck">✓</span><span><strong>Models decay silently</strong>: the champion slid from 0.77 to 0.53 with no error, only rolling metrics revealed it.</span></li>
+        <li><span class="ck">✓</span><span><strong>Watch inputs, not just performance</strong>: PSI flagged drift at month 7, two months before the accuracy drop could be confirmed.</span></li>
+        <li><span class="ck">✓</span><span><strong>Diagnose before fixing</strong>: a flipped coefficient meant concept drift, so retraining, not recalibration, was the cure.</span></li>
+        <li><span class="ck">✓</span><span><strong>Retrain, validate, roll out safely</strong>: a challenger on fresh data (0.74 vs 0.53), promoted via canary with a rollback armed, and the loop restarts.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== §7 take it further ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Take It Further</h2></div>
+    <p>Five ways to extend the lifecycle in the notebook:</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>A second drift test</h4>
+        <p>Cross-check PSI with the Kolmogorov-Smirnov test; do they agree on which features moved?</p>
+        <div class="chint">Hint: <code>scipy.stats.ks_2samp(ref, recent)</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Watch the model's own output</h4>
+        <p>Monitor the distribution of predicted scores over time, a label-free warning.</p>
+        <div class="chint">Hint: compute PSI on <code>predict_proba</code>, not the features.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>How often to retrain?</h4>
+        <p>Compare never, monthly, and triggered retraining on cost versus performance.</p>
+        <div class="chint">Hint: retrain only when PSI crosses the threshold.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>A rollback drill</h4>
+        <p>Ship a deliberately bad challenger and confirm the canary plus rollback rule catch it.</p>
+        <div class="chint">Hint: train a challenger on the stale old regime.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>When is it safe to promote?</h4>
+        <p>Run the challenger in shadow and find the month it overtakes the champion.</p>
+        <div class="chint">Hint: score both on each month, look for the crossover.</div></div></div>
+    </div>
+
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">📓</div>
+        <div class="nb-body"><h3>All five, worked in a companion notebook</h3><p>A second notebook, <strong>Take It Further</strong>, rebuilds the Chapter 126 champion and works every extension with visuals and explanations, a KS-test drift check, label-free prediction-drift monitoring, a retraining-cadence comparison, a rollback drill that catches a bad challenger, and a shadow evaluation that pinpoints when to promote, closing with a plain-English summary.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch126_take_it_further.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch126_take_it_further.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch126_take_it_further.ipynb" target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §8 quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">8</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on deployment, drift, monitoring, and the retraining loop. Answer them, hit <strong>Check
+       Answers</strong>, and keep refining until you score 100%. Your progress is saved, so you can hop back to the chapter
+       and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">🏁</div>
+    <div><div class="ctitle">Part XXI complete, up next</div>
+      <p>That closes <strong>Putting It All Together: the ML Case Study</strong>, seven end-to-end projects from a first
+         model to a self-renewing production system. Next the book turns to data that moves through time.
+         <strong>Chapter 127 &middot; Components of a Time Series</strong> opens Part XXII with trend, seasonality, cycles,
+         and stationarity.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch125.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 125 · Previous</span><br><span class="cn-title">From Model to Decision</span></span>
+    </a>
+    <div class="cn-btn next" style="cursor:default;opacity:0.6" title="Coming soon">
+      <span><span class="cn-dir">Chapter 127 · Coming soon</span><br><span class="cn-title">Components of a Time Series</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </div>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 126 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => { const h = document.documentElement; bar.style.width = ((h.scrollTop)/(h.scrollHeight-h.clientHeight)*100) + '%'; });
+</script>
+
+<script>
+  window.QUIZ_ID = "ch126";
+  window.QUIZ_DATA = [
+    {
+      q: "In MLOps, 'drift' refers to…",
+      options: ["A bug in the deployment code", "The production data slowly diverging from the training data, so accuracy silently decays", "The model file becoming corrupted", "Slow prediction latency"],
+      answer: 1,
+      explain: "The world the model learned from keeps changing; inputs and relationships drift, and performance rots with no error message."
+    },
+    {
+      q: "Why watch input drift instead of just watching accuracy?",
+      options: ["Input drift is easier to plot", "Accuracy needs outcome labels, which arrive late; input drift needs no labels and gives an early warning", "Accuracy never changes", "Input drift is more accurate"],
+      answer: 1,
+      explain: "PSI fired at month 7 while the AUC breach was only confirmable at month 9: input drift is the leading indicator."
+    },
+    {
+      q: "PSI (Population Stability Index) above about 0.25 means…",
+      options: ["The model is fine", "Significant drift in that feature; investigate", "The feature should be deleted", "Accuracy is above 0.25"],
+      answer: 1,
+      explain: "Rule of thumb: below 0.1 stable, 0.1 to 0.25 watch, above 0.25 significant drift. And PSI needs no labels."
+    },
+    {
+      q: "The champion's AUC fell from 0.77 to 0.53 with no error thrown. The lesson is…",
+      options: ["Models never fail", "Models can fail silently, so you must monitor them, not assume they keep working", "Always use a bigger model", "Accuracy is unimportant"],
+      answer: 1,
+      explain: "Nothing crashed; the model just stopped working as the market shifted. Monitoring is what makes silent failure visible."
+    },
+    {
+      q: "Diagnosing showed the monthly_usage coefficient flipped sign. This is…",
+      options: ["A coding bug", "Concept drift: the relationship itself changed, so retraining is the only fix", "Data drift you can rescale away", "Random noise"],
+      answer: 1,
+      explain: "Once low-usage customers churned; now high-usage ones do. The learned rule is backwards, only retraining on fresh data cures it."
+    },
+    {
+      q: "Why train the challenger on months 10 to 12 rather than all 18 months?",
+      options: ["To save time", "To learn the new steady state, not blend two contradictory regimes into a muddle", "Because more data is always worse", "To reduce the file size"],
+      answer: 1,
+      explain: "After the shock settled, recent data reflects the new relationship; the full history mixes the old and new regimes."
+    },
+    {
+      q: "A canary rollout means…",
+      options: ["Deploying to everyone at once", "Routing a small slice of traffic to the new model first, with a rollback rule armed", "Never deploying", "Training on a canary dataset"],
+      answer: 1,
+      explain: "Shadow then canary limits blast radius; if the new model underperforms, traffic auto-reverts to the versioned champion."
+    },
+    {
+      q: "The chapter's overall message is…",
+      options: ["A trained model is the final deliverable", "A deployed model is on the clock; the real deliverable is the loop that watches for decay and renews it", "Accuracy is all that matters", "Never retrain a model"],
+      answer: 1,
+      explain: "The world drifts, so operating a model, monitor, detect, retrain, roll out, is the product, not the one-time model."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
