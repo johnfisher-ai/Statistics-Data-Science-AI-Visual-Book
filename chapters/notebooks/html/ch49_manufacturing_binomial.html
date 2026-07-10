@@ -8022,6 +8022,65 @@ observed mean defects/batch  = 1.927  (matches n p)
 </div>
 </div>
 </div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=f465a234">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Formal goodness-of-fit: chi-square on observed vs expected counts.</span>
+<span class="c1"># Rule of thumb: merge adjacent bins so every EXPECTED count is at least 5, then</span>
+<span class="c1"># chi-square = sum((obs-exp)**2 / exp), with df = (bins - 1 - number of fitted parameters).</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">chisq_gof</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="n">pmf</span><span class="p">,</span> <span class="n">n_params</span><span class="p">):</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">counts</span><span class="p">);</span> <span class="n">kmax</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">counts</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+    <span class="n">obs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="n">counts</span> <span class="o">==</span> <span class="n">k</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">kmax</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)],</span> <span class="nb">float</span><span class="p">)</span>
+    <span class="n">exp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">N</span> <span class="o">*</span> <span class="n">pmf</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">kmax</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)],</span> <span class="nb">float</span><span class="p">)</span>
+    <span class="n">obs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">);</span> <span class="n">exp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">N</span> <span class="o">-</span> <span class="n">exp</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>   <span class="c1"># tail bin for k &gt; kmax</span>
+    <span class="n">mo</span><span class="p">,</span> <span class="n">me</span><span class="p">,</span> <span class="n">co</span><span class="p">,</span> <span class="n">ce</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span>
+    <span class="k">for</span> <span class="n">o</span><span class="p">,</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">exp</span><span class="p">):</span>
+        <span class="n">co</span> <span class="o">+=</span> <span class="n">o</span><span class="p">;</span> <span class="n">ce</span> <span class="o">+=</span> <span class="n">e</span>
+        <span class="k">if</span> <span class="n">ce</span> <span class="o">&gt;=</span> <span class="mi">5</span><span class="p">:</span>
+            <span class="n">mo</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">co</span><span class="p">);</span> <span class="n">me</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ce</span><span class="p">);</span> <span class="n">co</span> <span class="o">=</span> <span class="n">ce</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">if</span> <span class="n">ce</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">mo</span><span class="p">:</span>
+        <span class="n">mo</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">co</span><span class="p">;</span> <span class="n">me</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">ce</span>
+    <span class="n">mo</span><span class="p">,</span> <span class="n">me</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mo</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">me</span><span class="p">)</span>
+    <span class="n">chi2</span> <span class="o">=</span> <span class="p">((</span><span class="n">mo</span> <span class="o">-</span> <span class="n">me</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">/</span> <span class="n">me</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">();</span> <span class="n">dof</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mo</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">n_params</span>
+    <span class="k">return</span> <span class="n">chi2</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">stats</span><span class="o">.</span><span class="n">chi2</span><span class="o">.</span><span class="n">sf</span><span class="p">(</span><span class="n">chi2</span><span class="p">,</span> <span class="n">dof</span><span class="p">)</span>
+
+<span class="n">chi2</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">pval</span> <span class="o">=</span> <span class="n">chisq_gof</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">defective_count</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">k</span><span class="p">:</span> <span class="n">stats</span><span class="o">.</span><span class="n">binom</span><span class="o">.</span><span class="n">pmf</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">p</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Chi-square goodness-of-fit: chi2 = </span><span class="si">{</span><span class="n">chi2</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, df = </span><span class="si">{</span><span class="n">dof</span><span class="si">}</span><span class="s2">, p = </span><span class="si">{</span><span class="n">pval</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">  -&gt; "</span>
+      <span class="o">+</span> <span class="p">(</span><span class="s2">"cannot reject the fit (Binomial is a good model)"</span> <span class="k">if</span> <span class="n">pval</span> <span class="o">&gt;</span> <span class="mf">0.05</span> <span class="k">else</span> <span class="s2">"reject: not Binomial"</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Chi-square goodness-of-fit: chi2 = 5.18, df = 5, p = 0.394  -&gt; cannot reject the fit (Binomial is a good model)
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=3a39ec60">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p>The bars line up, but validate it: a <strong>chi-square goodness-of-fit</strong> test compares the observed count of batches with 0, 1, 2, ... defects against the counts a Binomial(n, p) predicts (merging rare tail bins so every expected count is at least 5). Here chi-square = 5.18 on 5 df, p = 0.39, so we cannot reject the Binomial, the model is validated, not just drawn.</p>
+</div>
+</div>
+</div>
 </div>
 <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ch49-cell-07">
 <div class="jp-Cell-inputWrapper" tabindex="0">
@@ -8053,7 +8112,7 @@ observed mean defects/batch  = 1.927  (matches n p)
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="k">for</span> <span class="n">thr</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">]:</span>
@@ -8117,7 +8176,7 @@ manual P(X=2) = C(50,2) p^2 (1-p)^48 = 0.2758  (scipy 0.2758)
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">49</span><span class="p">)</span>
