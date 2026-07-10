@@ -132,6 +132,10 @@ MAP = {
         ("../../ch132.html#notebook", "Back to the book", "Chapter 132 · Financial Volatility & Risk"),
     "ch132_take_it_further.html":
         ("../../ch132.html#challenges", "Back to the book", "Chapter 132 · Take it further"),
+    "ch133_energy_demand.html":
+        ("../../ch133.html#notebook", "Back to the book", "Chapter 133 · Energy Demand Forecasting"),
+    "ch133_take_it_further.html":
+        ("../../ch133.html#challenges", "Back to the book", "Chapter 133 · Take it further"),
     "ch01_what_is_statistics.html":
         ("../../ch01.html#notebook", "Back to the book", "Chapter 1 · What Is Statistics?"),
     "ch01_challenges_solutions.html":
