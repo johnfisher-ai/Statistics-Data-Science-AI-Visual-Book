@@ -144,6 +144,10 @@ MAP = {
         ("../../ch135.html#notebook", "Back to the book", "Chapter 135 · Operationalizing a Forecast"),
     "ch135_take_it_further.html":
         ("../../ch135.html#challenges", "Back to the book", "Chapter 135 · Take it further"),
+    "ch136_survey_capstone.html":
+        ("../../ch136.html#notebook", "Back to the book", "Chapter 136 · Designing and Analyzing a Survey"),
+    "ch136_take_it_further.html":
+        ("../../ch136.html#challenges", "Back to the book", "Chapter 136 · Take it further"),
     "ch01_what_is_statistics.html":
         ("../../ch01.html#notebook", "Back to the book", "Chapter 1 · What Is Statistics?"),
     "ch01_challenges_solutions.html":
