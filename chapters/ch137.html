@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 137 · Case Study: Difference-in-Differences — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .rw-card { background:#ecfdf5; border:1px solid #a7f3d0; border-left:4px solid #059669; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#047857; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none; padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+    .step-h { display:flex; align-items:center; gap:0.6rem; margin:1.4rem 0 0.4rem; }
+    .step-h .sn { flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:#059669; color:#fff; font-weight:800; font-size:0.95rem; display:flex; align-items:center; justify-content:center; }
+    .step-h h3 { margin:0; font-size:1.02rem; color:var(--ink); }
+    .writeup { background:#ecfdf5; border:1px solid #a7f3d0; border-radius:14px; padding:1.3rem 1.5rem; margin:1.3rem 0; }
+    .writeup h3 { margin-top:0; color:#047857; }
+    .writeup h4 { margin:1rem 0 0.3rem; color:#047857; font-size:0.92rem; }
+    .nb-fig { margin:1.4rem 0; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:1rem 1rem 0.6rem; }
+    .nb-fig img { display:block; width:100%; height:auto; border-radius:8px; }
+    .nb-fig figcaption { margin:0.75rem 0.2rem 0.3rem; font-size:0.85rem; color:var(--ink-soft); line-height:1.55; }
+    .nb-fig .cap-t { font-size:0.64rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#047857; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ch137_diff_in_diff.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXIV · Extended Case Studies</span><span class="sep">/</span>
+      <span>Chapter 137</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XXIV · Extended Case Study</span> Causal inference when you cannot randomize</div>
+    <h1>Case Study: <span class="accent">Difference-in-Differences</span></h1>
+    <p class="dek">Did a program actually work? A retailer launched a loyalty program in some stores and not others.
+       Difference-in-differences separates the program's real effect from the market-wide trend and the baseline gap
+       between stores, and the naive before-and-after number turns out to be about 50% too large.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~22 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Full notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 137</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">The gold standard for a causal question is a randomized experiment, but you often cannot run one: the
+       program already launched, in specific places, chosen for reasons of their own. <span class="hl">Difference-in-differences</span>
+       (DiD) is the workhorse for exactly this situation, and its logic is disarmingly simple: compare the treated group's
+       before-to-after change against the change in a control group that never got the treatment.</p>
+
+    <div class="def-card">
+      <div class="sigma">🔬</div>
+      <div class="def-body">
+        <span class="def-kw">Difference-in-differences</span> estimates a causal effect from a
+        <span class="def-kw">treated</span> and a <span class="def-kw">control</span> group observed
+        <span class="def-kw">before and after</span> an intervention. The effect is the treated group's change
+        <em>minus</em> the control group's change, which cancels both the baseline gap and the common time trend, provided
+        the two groups would have moved in <span class="def-kw">parallel</span> without the treatment.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🎯</div>
+      <div><div class="ctitle">What this case study ties together</div>
+        <p>It applies the causal-inference ideas of <strong>Part XVI</strong> to a real evaluation: the difference between
+           correlation and cause, the <strong>parallel-trends</strong> assumption, and DiD written as a
+           <strong>regression interaction</strong> with clustered standard errors, all the way to a recommendation.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §1 method + data ===== -->
+  <section id="method">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Setup, and the Data</h2></div>
+    <p>A retailer launched a <strong>loyalty program</strong> in 20 stores at month 13, leaving 20 similar stores as a
+       control group, and recorded monthly revenue per customer for 24 months. Revenue is up in the treated stores
+       afterward, but sales were drifting up everywhere and the treated stores started a little higher. The task is to
+       isolate what the program actually caused.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · ch137_loyalty_program.xlsx</div>
+      <p style="margin:0.5rem 0 0">A store-by-month panel: <code>store</code>, <code>group</code> (Treated / Control),
+        <code>treated</code> (0/1), <code>month</code> (1&#8211;24), <code>post</code> (1 after the month-13 launch), and
+        <code>revenue_per_customer</code>. The true program effect, known because the data is simulated, is +4.00 dollars.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/ch137_loyalty_program.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 40 stores × 24 months</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §2 the naive traps ===== -->
+  <section id="traps">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Two Naive Comparisons, Both Biased</h2></div>
+    <p>Two obvious ways to measure the effect each hide a different bias. The <strong>before/after</strong> comparison
+       (treated stores only) says <strong>+6.85</strong>, but part of that is a market-wide trend every store enjoyed. The
+       <strong>treated-versus-control</strong> comparison (after only) says <strong>+6.70</strong>, but treated stores were
+       already about 2 dollars ahead to begin with. Each controls for one bias and ignores the other.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 210" width="100%" font-family="Inter, sans-serif" aria-label="A two-by-two table of average revenue per customer: control pre 50.9 and post 53.2 (change +2.3), treated pre 53.1 and post 59.9 (change +6.9); the difference of the two changes, 6.9 minus 2.3, is the difference-in-differences of 4.55">
+        <text x="340" y="22" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Difference-in-differences = the difference of two changes</text>
+        <g font-size="10" fill="#1a2138">
+          <text x="150" y="60" text-anchor="middle" font-weight="800">PRE</text>
+          <text x="300" y="60" text-anchor="middle" font-weight="800">POST</text>
+          <text x="440" y="60" text-anchor="middle" font-weight="800" fill="#047857">CHANGE</text>
+          <text x="60" y="96" font-weight="700">Control</text>
+          <text x="150" y="96" text-anchor="middle">50.9</text><text x="300" y="96" text-anchor="middle">53.2</text>
+          <text x="440" y="96" text-anchor="middle" fill="#047857" font-weight="800">+2.3</text>
+          <text x="60" y="132" font-weight="700">Treated</text>
+          <text x="150" y="132" text-anchor="middle">53.1</text><text x="300" y="132" text-anchor="middle">59.9</text>
+          <text x="440" y="132" text-anchor="middle" fill="#047857" font-weight="800">+6.9</text>
+        </g>
+        <line x1="40" y1="72" x2="500" y2="72" stroke="#e6e9f2"/>
+        <line x1="40" y1="108" x2="500" y2="108" stroke="#e6e9f2"/>
+        <line x1="380" y1="45" x2="380" y2="145" stroke="#a7f3d0" stroke-width="1.5"/>
+        <rect x="524" y="66" width="140" height="76" rx="10" fill="#ecfdf5" stroke="#059669"/>
+        <text x="594" y="90" text-anchor="middle" font-size="9.5" fill="#047857" font-weight="800">DiD</text>
+        <text x="594" y="112" text-anchor="middle" font-size="10" fill="#1a2138">6.9 &#8722; 2.3 =</text>
+        <text x="594" y="132" text-anchor="middle" font-size="17" fill="#047857" font-weight="800">4.55</text>
+        <text x="340" y="176" text-anchor="middle" font-size="9.5" fill="#4a5578">The baseline gap cancels in each row's change; the common trend cancels when you subtract the changes.</text>
+        <text x="340" y="194" text-anchor="middle" font-size="9.5" fill="#4a5578">What is left is the program's causal effect.</text>
+      </svg>
+    </figure>
+  </section>
+
+  <!-- ===== §3 parallel trends ===== -->
+  <section id="parallel">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Parallel Trends: the Load-Bearing Assumption</h2></div>
+    <p>DiD works only if, without the program, the treated stores would have moved in <strong>parallel</strong> with the
+       control stores. You cannot test that after the launch, but you can test it <em>before</em>: were the groups already
+       drifting apart? A regression of the pre-period gap on time gives a differential trend of just
+       <strong>&#8722;0.06 per month (p = 0.53)</strong>, indistinguishable from zero. The picture confirms it: the two
+       lines run parallel until the launch, then the treated line jumps.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/ch137_timeseries.png" alt="Revenue per customer over 24 months for treated and control stores: the two lines rise together and in parallel before month 13, then the treated line steps up and stays up after the launch">
+      <figcaption><span class="cap-t">From the notebook &#183; Step 3</span><br>Parallel before launch, a clean step up after. The parallel pre-period is what makes the control a credible stand-in for the treated stores' counterfactual.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== §4 the estimate ===== -->
+  <section id="estimate">
+    <div class="section-eyebrow"><div class="num">4</div><h2>The DiD Estimate (Steps 6&#8211;7)</h2></div>
+
+    <div class="step-h"><span class="sn">6</span><h3>Difference the differences</h3></div>
+    <p>The control group's change (<strong>+2.30</strong>) is what the treated stores <em>would</em> have done without the
+       program, the counterfactual trend. Subtract it from the treated group's change (<strong>+6.85</strong>) and the
+       program's effect is <strong>+4.55 dollars</strong> per customer. The picture below is the same idea: the dashed
+       line is the counterfactual (treated stores following the control trend), and the gap between it and the actual
+       treated line is the effect.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 300" width="100%" font-family="Inter, sans-serif" aria-label="A difference-in-differences line chart: the control line rises gently from pre to post, the treated line rises steeply, and a dashed counterfactual continues the treated line parallel to the control; the vertical gap between the actual treated post value and the counterfactual is the program effect of 4.55">
+        <text x="340" y="22" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">The causal effect is the gap from the counterfactual</text>
+        <line x1="180" y1="40" x2="180" y2="250" stroke="#e6e9f2"/><line x1="560" y1="40" x2="560" y2="250" stroke="#e6e9f2"/>
+        <text x="180" y="268" text-anchor="middle" font-size="10" fill="#8b94b3">PRE (before launch)</text>
+        <text x="560" y="268" text-anchor="middle" font-size="10" fill="#8b94b3">POST (after launch)</text>
+        <!-- control: 50.9 -> 53.2 -->
+        <line x1="180" y1="225" x2="560" y2="187" stroke="#94a3b8" stroke-width="2.4"/>
+        <circle cx="180" cy="225" r="4" fill="#94a3b8"/><circle cx="560" cy="187" r="4" fill="#94a3b8"/>
+        <text x="600" y="190" font-size="9.5" fill="#64748b" font-weight="700">Control</text>
+        <!-- counterfactual: from treated pre (189) parallel to control (+38px up) -> 151 -->
+        <line x1="180" y1="189" x2="560" y2="151" stroke="#059669" stroke-width="2" stroke-dasharray="5 4"/>
+        <circle cx="560" cy="151" r="3.5" fill="#fff" stroke="#059669" stroke-width="1.6"/>
+        <text x="592" y="150" font-size="8.5" fill="#047857">counterfactual</text>
+        <!-- treated actual: 53.1 -> 59.9 -->
+        <line x1="180" y1="189" x2="560" y2="77" stroke="#059669" stroke-width="2.6"/>
+        <circle cx="180" cy="189" r="4" fill="#059669"/><circle cx="560" cy="77" r="4" fill="#059669"/>
+        <text x="600" y="76" font-size="9.5" fill="#047857" font-weight="700">Treated</text>
+        <!-- effect gap -->
+        <line x1="560" y1="77" x2="560" y2="151" stroke="#e11d48" stroke-width="2"/>
+        <line x1="555" y1="77" x2="565" y2="77" stroke="#e11d48" stroke-width="2"/>
+        <line x1="555" y1="151" x2="565" y2="151" stroke="#e11d48" stroke-width="2"/>
+        <rect x="470" y="100" width="86" height="26" rx="7" fill="#fee2e2"/>
+        <text x="513" y="118" text-anchor="middle" font-size="11" fill="#e11d48" font-weight="800">+4.55</text>
+      </svg>
+      <figcaption style="font-size:0.85rem;color:var(--ink-soft);margin-top:0.6rem">The dashed counterfactual is what the treated stores would have earned had they merely followed the control trend. The red gap to their actual value is the program's effect.</figcaption>
+    </figure>
+
+    <div class="step-h"><span class="sn">7</span><h3>The same answer, as a regression</h3></div>
+    <p>Written as <code>revenue ~ treated + post + treated:post</code>, every part of the story becomes a coefficient: the
+       intercept is the control baseline, <code>treated</code> is the group gap, <code>post</code> is the market trend, and
+       the <strong>interaction <code>treated:post</code> is the causal effect</strong>, exactly the +4.55 from the table.
+       Writing DiD as a regression is what lets us attach standard errors, add controls, and extend to many periods.</p>
+  </section>
+
+  <!-- ===== §5 uncertainty + robustness ===== -->
+  <section id="robust">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Uncertainty &amp; Robustness (Steps 8&#8211;9)</h2></div>
+    <p><strong>Cluster the standard errors.</strong> A store's 24 months are not 24 independent data points, so we cluster
+       by store. That gives a 95% confidence interval of <strong>[3.33, 5.77]</strong>, which contains the true effect of
+       4.00. Clustering here <em>widens</em> the interval (the classical standard error, 0.49, understates it; the
+       clustered one is 0.62), the usual direction for serially-correlated panel data, and forgetting to cluster is one of
+       the most common ways DiD studies overstate their certainty.</p>
+
+    <p><strong>Run a placebo.</strong> Pretend the launch happened in the pre-period, when no program existed: an honest
+       method should find nothing, and it does (a near-zero, non-significant estimate). The Take It Further notebook goes
+       further with an event study and a space placebo that reassigns treatment at random, and the real +4.55 sits far
+       outside the null distribution.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/ch137_eventstudy.png" alt="An event-study plot of the treated-minus-control gap by month relative to the pre-period: the points hover around zero before the launch and jump to about plus four afterward">
+      <figcaption><span class="cap-t">From the notebook &#183; Take It Further</span><br>The event study is the whole DiD argument in one picture: the gap is flat at zero before launch (parallel trends, visually confirmed), then steps up to about +4.55 and stays there.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== §6 write-up ===== -->
+  <section id="writeup-sec">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Interpret &amp; Communicate (Steps 10&#8211;12)</h2></div>
+    <div class="writeup">
+      <h3>Memo to leadership</h3>
+      <p>The loyalty program raised revenue per customer by an estimated <strong>4.55 dollars, about a 9% lift</strong>, in
+         the stores that received it, a statistically strong effect (95% confidence interval 3.33 to 5.77).</p>
+      <h4>Why not the simpler number</h4>
+      <p>A plain before-and-after on the treated stores shows +6.85, roughly 50% larger. That number wrongly credits the
+         program with a market-wide sales trend that lifted every store. Comparing treated to control stores after launch
+         is no better, because the treated stores started higher. Difference-in-differences strips out both biases.</p>
+      <h4>Why we believe it is causal</h4>
+      <p>The two store groups moved in parallel before the launch (a clean pre-trend test and event study), and a placebo
+         analysis found no spurious effect. The load-bearing assumption is that they would have stayed parallel without the
+         program; we cannot prove it, but the evidence for it is strong.</p>
+      <h4>Recommendation</h4>
+      <p>Roll the program out to the remaining stores, and re-estimate the effect as new data arrives to confirm it holds.</p>
+    </div>
+  </section>
+
+  <!-- ===== notebook cta ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body"><h3>Run the whole analysis in Python</h3><p>The companion notebook is the full 12-step DiD workflow: it plots the two groups over time, exposes the two naive traps, tests parallel pre-trends, computes the 2x2 difference-in-differences and reproduces it as a regression interaction, attaches store-clustered standard errors, passes a placebo test, and writes a leadership memo, all library-first with statsmodels.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch137_diff_in_diff.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch137_diff_in_diff.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch137_diff_in_diff.ipynb" target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)"><strong>View</strong> opens the rendered notebook instantly.
+      <strong>Open in Colab</strong> runs it live. To run locally, install <code>numpy</code>, <code>pandas</code>,
+      <code>matplotlib</code>, <code>statsmodels</code>, and <code>openpyxl</code>.</p>
+  </section>
+
+  <!-- ===== takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Difference the differences</strong>: subtract the control group's change from the treated group's, and both the baseline gap and the common trend cancel.</span></li>
+        <li><span class="ck">✓</span><span><strong>Naive comparisons mislead</strong>: before/after (+6.85) mixes in the market trend; treated-vs-control (+6.70) mixes in the baseline gap; DiD (+4.55) removes both.</span></li>
+        <li><span class="ck">✓</span><span><strong>Parallel trends is everything</strong>: test the pre-trend, plot the event study, and be honest that the post-launch assumption is untestable.</span></li>
+        <li><span class="ck">✓</span><span><strong>Cluster the standard errors</strong>: repeated observations of a unit are not independent; clustering by store gave the honest interval [3.33, 5.77].</span></li>
+        <li><span class="ck">✓</span><span><strong>Stress-test the design</strong>: a placebo that finds nothing is what makes the real effect credible.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== take it further ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Take It Further</h2></div>
+    <p>Five ways to sharpen the causal claim in the companion notebook:</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>An event study</h4>
+        <p>Estimate the treated-versus-control gap in every month, and watch it sit at zero before launch, then jump.</p>
+        <div class="chint">Hint: the gap relative to the pre-period average, plotted over time.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Two-way fixed effects</h4>
+        <p>Absorb store and month fixed effects; the same estimate, in the framework that scales to many units and periods.</p>
+        <div class="chint">Hint: <code>revenue ~ treated:post + C(store) + C(month)</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>A placebo-reassignment test</h4>
+        <p>Randomly relabel stores as fake-treated many times and confirm the real effect is far out in the null.</p>
+        <div class="chint">Hint: build a distribution of placebo DiDs and compare.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Which standard error?</h4>
+        <p>Compare classical, robust, and clustered errors, and see why clustering is the honest choice for panels.</p>
+        <div class="chint">Hint: refit with each <code>cov_type</code> and compare the intervals.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>When parallel trends breaks</h4>
+        <p>Inject a fake differential trend and watch the DiD estimate balloon, and the pre-trend test catch it.</p>
+        <div class="chint">Hint: add a treated-only drift, then re-run the estimate and the pre-trend check.</div></div></div>
+    </div>
+
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">📓</div>
+        <div class="nb-body"><h3>All five, worked in a companion notebook</h3><p>A second notebook, <strong>Take It Further</strong>, rebuilds the Chapter 137 analysis and works every extension with visuals and explanations: an event study, two-way fixed effects, a placebo-reassignment null distribution, a standard-error comparison, and a demonstration of the bias when parallel trends fails.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ch137_take_it_further.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch137_take_it_further.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ch137_take_it_further.ipynb" target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">8</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on difference-in-differences, from the naive traps to clustered standard errors. Answer them, hit
+       <strong>Check Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>DiD compared two groups over time. Next we compare the <em>same</em> subjects before and after.
+         <strong>Chapter 138 &#183; Case Study: A Paired Pre/Post Study</strong> analyzes a within-subject design with the
+         paired t-test and its Wilcoxon signed-rank fallback.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="ch136.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 136 · Previous</span><br><span class="cn-title">Designing and Analyzing a Survey</span></span>
+    </a>
+    <a class="cn-btn next" href="ch138.html">
+      <span><span class="cn-dir">Chapter 138 · Next</span><br><span class="cn-title">Case Study: A Paired Pre/Post Study</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 137 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => { const h = document.documentElement; bar.style.width = ((h.scrollTop)/(h.scrollHeight-h.clientHeight)*100) + '%'; });
+</script>
+
+<script>
+  window.QUIZ_ID = "ch137";
+  window.QUIZ_DATA = [
+    {
+      q: "What does difference-in-differences actually compute?",
+      options: ["The treated group's after value", "The treated group's before-to-after change minus the control group's before-to-after change", "The average of treated and control", "The correlation of treatment and outcome"],
+      answer: 1,
+      explain: "DiD subtracts the control group's change (the counterfactual trend) from the treated group's change, leaving the causal effect."
+    },
+    {
+      q: "The naive before/after estimate (treated only) was +6.85 but the true effect is +4.55. What inflated it?",
+      options: ["Measurement error", "A market-wide time trend that lifted every store, treated or not", "Too small a sample", "The control group"],
+      answer: 1,
+      explain: "Before/after credits the program with a rise that partly reflects a common trend. DiD removes it by differencing out the control group's change."
+    },
+    {
+      q: "Why is the parallel-trends assumption central to DiD?",
+      options: ["It makes the math easier", "The control group's change is only a valid counterfactual if the groups would have moved together without the treatment", "It guarantees significance", "It removes the need for data"],
+      answer: 1,
+      explain: "DiD uses the control's change to stand in for what the treated group would have done. That only works if their trends would have been parallel."
+    },
+    {
+      q: "A regression of the pre-period gap on time gave a differential trend of -0.06 (p = 0.53). This means…",
+      options: ["The program failed", "No detectable differential pre-trend, so parallel trends is supported (though not proven for the post-period)", "The data is wrong", "The effect is negative"],
+      answer: 1,
+      explain: "A flat, non-significant pre-trend is the strongest testable evidence for parallel trends; a significant one would undermine the design."
+    },
+    {
+      q: "In revenue ~ treated + post + treated:post, which coefficient is the causal effect?",
+      options: ["Intercept", "treated", "post", "treated:post (the interaction)"],
+      answer: 3,
+      explain: "The interaction is the DiD estimate; treated is the baseline gap, post is the common trend, and the intercept is the control baseline."
+    },
+    {
+      q: "Why cluster the standard errors by store?",
+      options: ["To make them smaller", "A store's repeated monthly observations are correlated, so treating them as independent understates the uncertainty", "It is required for OLS", "To remove the trend"],
+      answer: 1,
+      explain: "Serial correlation within a unit means 24 months are not 24 independent data points; clustering gives the honest, here wider, interval [3.33, 5.77]."
+    },
+    {
+      q: "A placebo test pretends the launch happened when no program existed. A good result is…",
+      options: ["A large significant effect", "Essentially zero and not significant, showing the method does not manufacture effects", "Exactly +4.55", "An error"],
+      answer: 1,
+      explain: "If the design finds an effect where none exists, its real estimate is suspect. A near-zero placebo makes the real +4.55 credible."
+    },
+    {
+      q: "The overall lesson of the case study is…",
+      options: ["Always use the simplest comparison", "DiD earns a causal claim by differencing out confounders and standing on a testable parallel-trends assumption, backed by diagnostics", "Randomized experiments are never needed", "Bigger effects are always real"],
+      answer: 1,
+      explain: "The credibility of a DiD lives in its diagnostics, the event study, placebo, pre-trend test, as much as in the point estimate."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
