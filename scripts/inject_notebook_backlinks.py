@@ -148,6 +148,10 @@ MAP = {
         ("../../ch136.html#notebook", "Back to the book", "Chapter 136 · Designing and Analyzing a Survey"),
     "ch136_take_it_further.html":
         ("../../ch136.html#challenges", "Back to the book", "Chapter 136 · Take it further"),
+    "ch137_diff_in_diff.html":
+        ("../../ch137.html#notebook", "Back to the book", "Chapter 137 · Difference-in-Differences"),
+    "ch137_take_it_further.html":
+        ("../../ch137.html#challenges", "Back to the book", "Chapter 137 · Take it further"),
     "ch01_what_is_statistics.html":
         ("../../ch01.html#notebook", "Back to the book", "Chapter 1 · What Is Statistics?"),
     "ch01_challenges_solutions.html":
