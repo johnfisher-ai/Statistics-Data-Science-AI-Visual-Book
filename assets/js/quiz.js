@@ -27,6 +27,46 @@
   const DATA = window.QUIZ_DATA;
   const N = DATA.length;
 
+  // ---- Deterministic per-question option shuffle ----
+  // Authored quizzes tend to leave the correct answer in the same slot, so a
+  // reader could game them by always picking the same position. We shuffle each
+  // question's options, but with a seed fixed per (quiz, question) so the order
+  // is STABLE across reloads. That matters because a reader's selection is saved
+  // by option position: a stable order keeps saved answers valid.
+  // Any "all/none of the above" style option is pinned to the last slot so it
+  // still reads correctly.
+  function seedFrom(str) {
+    let h = 2166136261 >>> 0;
+    for (let k = 0; k < str.length; k++) {
+      h ^= str.charCodeAt(k);
+      h = Math.imul(h, 16777619) >>> 0;
+    }
+    return h >>> 0;
+  }
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const PINNED = /\b(all|none|both|any|neither) of the (above|other|options)\b/i;
+  DATA.forEach((item, i) => {
+    const opts = item.options || [];
+    // Indices that must stay put (pinned), and those free to shuffle.
+    const free = [], pinned = [];
+    opts.forEach((opt, j) => (PINNED.test(String(opt)) ? pinned : free).push(j));
+    const rng = mulberry32(seedFrom(ID + ":" + i + ":" + opts.length));
+    for (let k = free.length - 1; k > 0; k--) {
+      const m = Math.floor(rng() * (k + 1));
+      const tmp = free[k]; free[k] = free[m]; free[m] = tmp;
+    }
+    const order = free.concat(pinned);        // display position -> original index
+    item._display = order.map((o) => opts[o]);
+    item._answerPos = order.indexOf(item.answer);
+  });
+
   // Restore saved answers (object: { qIndex: optionIndex })
   let answers = {};
   try { answers = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { answers = {}; }
@@ -49,7 +89,7 @@
     html += `<div class="q-card" data-q="${i}">
         <div class="q-text"><span class="qn">${i + 1}</span><span>${item.q}</span></div>
         <div class="q-opts">`;
-    item.options.forEach((opt, j) => {
+    item._display.forEach((opt, j) => {
       const checked = answers[i] === j ? "checked" : "";
       const sel = answers[i] === j ? "selected" : "";
       html += `<label class="q-opt ${sel}" data-opt="${j}">
@@ -107,7 +147,7 @@
         lab.classList.remove("correct", "incorrect");
         const mark = lab.querySelector(".mark");
         mark.textContent = "";
-        if (j === item.answer) {
+        if (j === item._answerPos) {
           lab.classList.add("correct");
           if (chosen !== undefined) mark.textContent = "✓";
         } else if (chosen === j) {
@@ -117,9 +157,9 @@
       });
       // explanation
       const ex = card.querySelector(".q-explain");
-      ex.innerHTML = `<b>${chosen === item.answer ? "Correct!" : "Answer:"}</b> ${item.explain}`;
+      ex.innerHTML = `<b>${chosen === item._answerPos ? "Correct!" : "Answer:"}</b> ${item.explain}`;
       ex.classList.add("show");
-      if (chosen === item.answer) correct++;
+      if (chosen === item._answerPos) correct++;
     });
 
     // score banner
