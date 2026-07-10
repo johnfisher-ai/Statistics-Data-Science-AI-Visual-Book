@@ -8101,6 +8101,11 @@ n=300, mean=$111,251, median=$107,650, skew=0.85 (right-skewed)
 <span class="c1"># compare to the normal-theory CI for the MEAN</span>
 <span class="n">se</span><span class="o">=</span><span class="n">sal</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sal</span><span class="p">));</span> <span class="n">t</span><span class="o">=</span><span class="n">stats</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="mf">0.975</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">sal</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"t-interval 95% CI for the MEAN salary:   [$</span><span class="si">{</span><span class="n">sal</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">-</span><span class="n">t</span><span class="o">*</span><span class="n">se</span><span class="si">:</span><span class="s2">,.0f</span><span class="si">}</span><span class="s2">, $</span><span class="si">{</span><span class="n">sal</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">+</span><span class="n">t</span><span class="o">*</span><span class="n">se</span><span class="si">:</span><span class="s2">,.0f</span><span class="si">}</span><span class="s2">]  (point $</span><span class="si">{</span><span class="n">sal</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">,.0f</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+<span class="c1"># Library-first, and a sharper interval: scipy.stats.bootstrap returns the BCa interval,</span>
+<span class="c1"># which corrects the plain percentile method for bias and skew (it matters for a skewed median).</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">bootstrap</span> <span class="k">as</span> <span class="n">scipy_bootstrap</span>
+<span class="n">bca</span> <span class="o">=</span> <span class="n">scipy_bootstrap</span><span class="p">((</span><span class="n">sal</span><span class="p">,),</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">,</span> <span class="n">confidence_level</span><span class="o">=</span><span class="mf">0.95</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">"BCa"</span><span class="p">,</span> <span class="n">n_resamples</span><span class="o">=</span><span class="mi">20000</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"scipy BCa 95% CI for the MEDIAN salary:  [$</span><span class="si">{</span><span class="n">bca</span><span class="o">.</span><span class="n">confidence_interval</span><span class="o">.</span><span class="n">low</span><span class="si">:</span><span class="s2">,.0f</span><span class="si">}</span><span class="s2">, $</span><span class="si">{</span><span class="n">bca</span><span class="o">.</span><span class="n">confidence_interval</span><span class="o">.</span><span class="n">high</span><span class="si">:</span><span class="s2">,.0f</span><span class="si">}</span><span class="s2">]  (BCa = bias-corrected and accelerated)"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -8115,6 +8120,13 @@ n=300, mean=$111,251, median=$107,650, skew=0.85 (right-skewed)
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>BOOTSTRAP 95% CI for the MEDIAN salary: [$101,050, $111,100]  (point $107,650)
 t-interval 95% CI for the MEAN salary:   [$107,335, $115,167]  (point $111,251)
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>scipy BCa 95% CI for the MEDIAN salary:  [$101,050, $111,100]  (BCa = bias-corrected and accelerated)
 </pre>
 </div>
 </div>
@@ -8163,7 +8175,7 @@ t-interval 95% CI for the MEAN salary:   [$107,335, $115,167]  (point $111,251)
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>The median salary is about <strong>107,650 dollars</strong>, with a bootstrap 95% interval of roughly <strong>101,000 to 111,000</strong>, a defensible "typical pay" range that no textbook formula could provide. Because pay is right-skewed, the mean (111,251) sits above the median; reporting the median with a bootstrap interval is the honest, robust summary. The bootstrap turned an awkward statistic into a routine one.</p>
+<p>The median salary is about <strong>107,650 dollars</strong>, with a bootstrap 95% interval of roughly <strong>101,000 to 111,000</strong>, a defensible "typical pay" range that no textbook formula could provide. Because pay is right-skewed, the mean (111,251) sits above the median; reporting the median with a bootstrap interval is the honest, robust summary. The bootstrap turned an awkward statistic into a routine one. For a defensible published number you would report the <strong>BCa</strong> interval from <code>scipy.stats.bootstrap</code>, which nudges the plain percentile ends to correct for the skew, here it matches the percentile interval almost exactly, because n = 300 is large; BCa is the safer default on small or very skewed samples.</p>
 </div>
 </div>
 </div>
