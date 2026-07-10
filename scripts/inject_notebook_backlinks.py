@@ -136,6 +136,10 @@ MAP = {
         ("../../ch133.html#notebook", "Back to the book", "Chapter 133 · Energy Demand Forecasting"),
     "ch133_take_it_further.html":
         ("../../ch133.html#challenges", "Back to the book", "Chapter 133 · Take it further"),
+    "ch134_forecast_to_decision.html":
+        ("../../ch134.html#notebook", "Back to the book", "Chapter 134 · From Forecast to Decision"),
+    "ch134_take_it_further.html":
+        ("../../ch134.html#challenges", "Back to the book", "Chapter 134 · Take it further"),
     "ch01_what_is_statistics.html":
         ("../../ch01.html#notebook", "Back to the book", "Chapter 1 · What Is Statistics?"),
     "ch01_challenges_solutions.html":
