@@ -156,6 +156,10 @@ MAP = {
         ("../../ch138.html#notebook", "Back to the book", "Chapter 138 · A Paired Pre/Post Study"),
     "ch138_take_it_further.html":
         ("../../ch138.html#challenges", "Back to the book", "Chapter 138 · Take it further"),
+    "ch139_customer_lifetime_value.html":
+        ("../../ch139.html#notebook", "Back to the book", "Chapter 139 · Customer Lifetime Value"),
+    "ch139_take_it_further.html":
+        ("../../ch139.html#challenges", "Back to the book", "Chapter 139 · Take it further"),
     "ch01_what_is_statistics.html":
         ("../../ch01.html#notebook", "Back to the book", "Chapter 1 · What Is Statistics?"),
     "ch01_challenges_solutions.html":
