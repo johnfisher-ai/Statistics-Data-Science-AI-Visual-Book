@@ -532,6 +532,10 @@ MAP = {
         ("../../case-study-predicting-medical-charges.html#notebook", "Back to the book", "Chapter 103 · Case Study: Predicting Medical Charges"),
     "case-study-predicting-medical-charges--take-it-further.html":
         ("../../case-study-predicting-medical-charges.html#challenges", "Back to the book", "Chapter 103 · Take It Further"),
+    "bayesian-inference-in-practice.html":
+        ("../../bayesian-inference-in-practice.html#notebook", "Back to the book", "Chapter 142 · Bayesian Inference in Practice"),
+    "bayesian-inference-in-practice--solutions.html":
+        ("../../bayesian-inference-in-practice.html#challenges", "Back to the book", "Chapter 142 · Challenge solutions"),
 }
 
 def card(href, kicker, title):
