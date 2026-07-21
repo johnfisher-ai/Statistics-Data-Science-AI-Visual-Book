@@ -27,6 +27,21 @@ avail = toc[toc.index("const AVAILABLE"):]
 ready = set(re.findall(r'"([a-z0-9-]+)"', avail[:avail.index("]")]))
 print(f"manifest: {len(slugs_in_order)} chapters, {len(ready)} ready")
 
+def set_upnext_num(html, n_next):
+    """In the 'Up next' callout, restamp the hardcoded 'Chapter N ·' to the immediate next
+    chapter's number (this chapter + 1). Numbering is contiguous, so the next chapter is always
+    this+1; the callout's title is left untouched. No-op if there is no Up-next number (e.g. the
+    last published chapter's coming-soon callout)."""
+    m = re.search(r'ctitle">Up next.*?</div>\s*</div>', html, re.DOTALL)
+    if not m:
+        return html
+    seg = m.group(0)
+    newseg = re.sub(r'(Chapter )\d+(\s*(?:&#183;|&middot;|·))',
+                    lambda mm: mm.group(1)+str(n_next)+mm.group(2), seg, count=1)
+    if newseg == seg:
+        return html
+    return html[:m.start()] + newseg + html[m.end():]
+
 def set_card_num(html, kind):
     """In the prev/next card, set 'Chapter N' from the number of the slug it links to."""
     word = "Previous" if kind == "prev" else "Next"
@@ -57,6 +72,8 @@ for slug in slugs_in_order:
     html = re.sub(r'(Chapter )\d+( &nbsp;·&nbsp; ©)', lambda m: m.group(1)+str(n)+m.group(2), html, count=1)
     html = set_card_num(html, "prev")
     html = set_card_num(html, "next")
+    if n + 1 <= len(slugs_in_order):
+        html = set_upnext_num(html, n + 1)
     if html != orig:
         changed += 1
         if not CHECK:
