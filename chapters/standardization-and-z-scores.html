@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 12 · Standardization &amp; z-scores — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.88rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.65rem 0.9rem; text-align:left; border-bottom:1px solid var(--line); }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.76rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .zform { font-family:"Iowan Old Style",Georgia,serif; font-size:1.5rem; color:var(--ink); text-align:center; margin:0.4rem 0; }
+    .zform .frac { display:inline-block; vertical-align:middle; text-align:center; }
+    .zform .frac .top { display:block; border-bottom:2px solid var(--ink-soft); padding:0 0.5rem; }
+    .zform .frac .bot { display:block; padding:0 0.5rem; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#ecfeff; border:1px solid #a5f3fc; border-left:4px solid #0891b2; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#0e7490; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none; padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<!-- ============ TOP NAV ============ -->
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/standardization-and-z-scores.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<!-- ============ HERO ============ -->
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part II · Describing Data</span><span class="sep">/</span>
+      <span>Chapter 12</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part II · Describing Data</span> Summarizing a dataset</div>
+    <h1>Standardization <span class="accent">&amp; z-scores</span></h1>
+    <p class="dek">Earlier chapters kept hinting at a number that says how far a value sits from the mean in standard
+       deviations. This is that number: the z-score, and the standard scale it puts everything on.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~12 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 12</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <!-- ===== Intro / Section 1 ===== -->
+  <section id="zscore">
+    <p class="lead">A score of 85 is good on one test and poor on another. Raw numbers only mean something next to
+       the mean and spread they came from. The <span class="term">z-score</span> bakes both in and gives you a
+       universal unit: standard deviations from the mean.</p>
+
+    <div class="def-card">
+      <div class="sigma">z</div>
+      <div class="def-body">
+        A <span class="def-kw">z-score</span> (or standard score) is how many <span class="def-kw">standard
+        deviations</span> a value lies above or below the mean. The sign gives direction, the magnitude gives distance.
+      </div>
+    </div>
+
+    <div class="section-eyebrow"><div class="num">1</div><h2>The z-score Formula</h2></div>
+    <p>Subtract the mean, divide by the standard deviation. That is the whole move.</p>
+
+    <div style="background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.4rem 1rem;margin:1.2rem 0">
+      <div class="zform">
+        z &nbsp;=&nbsp;
+        <span class="frac"><span class="top">x &#8722; &#956;</span><span class="bot">&#963;</span></span>
+        &nbsp;&nbsp;<span style="color:var(--ink-faint);font-size:1rem">(population)</span>
+        &nbsp;&nbsp;&nbsp;&nbsp; z &nbsp;=&nbsp;
+        <span class="frac"><span class="top">x &#8722; x&#772;</span><span class="bot">s</span></span>
+        &nbsp;&nbsp;<span style="color:var(--ink-faint);font-size:1rem">(sample)</span>
+      </div>
+      <p style="text-align:center;font-size:0.9rem;color:var(--ink-faint);margin:0.6rem 0 0">
+        Same structure either way: only the symbols change. With real data you usually have a sample, so you use
+        x&#772; and s.</p>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🧮</div>
+      <div><div class="ctitle">A quick read</div>
+        <p>If a test has mean 70 and standard deviation 8, then a score of 86 is z = (86 − 70) / 8 = <strong>+2.0</strong>,
+           two SDs above average. A score of 62 is z = (62 − 70) / 8 = <strong>−1.0</strong>, one SD below. The points
+           vanish; what remains is position on a common ruler.</p></div>
+    </div>
+
+    <div class="callout note">
+      <div class="cico">🎯</div>
+      <div><div class="ctitle">After you standardize a whole dataset</div>
+        <p>Convert every value to its z-score and the new dataset always has <strong>mean 0 and standard deviation
+           1</strong>. That is the point of the standard scale: a fixed center and a fixed unit, no matter what you
+           started with.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 2: the standard scale + normal ===== -->
+  <section id="standard-scale">
+    <div class="section-eyebrow"><div class="num">2</div><h2>The Standard Scale &amp; the Normal Curve</h2></div>
+    <p>z-scores live on one axis centered at 0. When the data is roughly <span class="hl">normal</span>, that axis
+       lines up with the familiar bell, and a z translates straight into a percentile through the
+       <span class="term">68-95-99.7</span> rule from Chapter 9.</p>
+
+    <figure style="margin:1.5rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.4rem">
+      <svg viewBox="0 0 640 330" width="100%" font-family="Inter, sans-serif" aria-label="Standard normal curve on the z-axis with the 68-95-99.7 rule">
+        <!-- bell fill + outline -->
+        <path d="M64,234 C150,232 250,72 320,62 C390,72 490,232 576,234 L576,235 L64,235 Z" fill="#e0f7fb" stroke="#0891b2" stroke-width="2.5"/>
+        <!-- separators at z = -2,-1,0,1,2 -->
+        <g stroke="#8b94b3" stroke-width="1" stroke-dasharray="3 3">
+          <line x1="160" y1="120" x2="160" y2="235"/>
+          <line x1="240" y1="86"  x2="240" y2="235"/>
+          <line x1="320" y1="62"  x2="320" y2="235"/>
+          <line x1="400" y1="86"  x2="400" y2="235"/>
+          <line x1="480" y1="120" x2="480" y2="235"/>
+        </g>
+        <!-- z axis -->
+        <line x1="56" y1="235" x2="584" y2="235" stroke="#1a2138" stroke-width="1.5"/>
+        <g font-size="11" fill="#4a5578" text-anchor="middle" font-weight="700">
+          <text x="80"  y="251">−3</text><text x="160" y="251">−2</text><text x="240" y="251">−1</text>
+          <text x="320" y="251">0</text><text x="400" y="251">+1</text><text x="480" y="251">+2</text><text x="560" y="251">+3</text>
+        </g>
+        <text x="320" y="22" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">Standard normal: mean 0, sd 1</text>
+        <text x="320" y="38" text-anchor="middle" font-size="10" fill="#8b94b3">the z-axis is measured in standard deviations</text>
+        <!-- brackets -->
+        <g stroke-width="1.5" fill="none">
+          <path d="M240,266 L240,272 L400,272 L400,266" stroke="#059669"/>
+          <path d="M160,288 L160,294 L480,294 L480,288" stroke="#d97706"/>
+          <path d="M80,310 L80,316 L560,316 L560,310" stroke="#db2777"/>
+        </g>
+        <g font-size="11" font-weight="800" text-anchor="middle">
+          <text x="320" y="269" fill="#059669">68% within ±1 SD</text>
+          <text x="320" y="291" fill="#d97706">95% within ±2 SD</text>
+          <text x="320" y="313" fill="#db2777">99.7% within ±3 SD</text>
+        </g>
+      </svg>
+      <figcaption style="text-align:center;font-size:0.8rem;color:var(--ink-faint);margin-top:0.3rem">
+        On a normal distribution, z = +1 sits at about the 84th percentile and z = +2 at about the 98th. The famous
+        z = 1.96 marks the central 95%.
+      </figcaption>
+    </figure>
+
+    <div class="callout note">
+      <div class="cico">⚠️</div>
+      <div><div class="ctitle">z works for any data, percentiles need normality</div>
+        <p>You can compute a z-score for <em>any</em> distribution, it only needs a mean and an SD. But turning that
+           z into a percentile (and the 68-95-99.7 rule itself) is valid <strong>only when the data is roughly
+           normal</strong>. For skewed or heavy-tailed data, z = +2 is <em>not</em> the 98th percentile.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 3: why standardize ===== -->
+  <section id="why">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Why Standardize</h2></div>
+    <p>Three jobs the standard scale does well:</p>
+    <div class="cardgrid cols-3">
+      <div class="ic-card bg-cyan"><div class="ic" style="background:#fff">⚖️</div><h4>Compare across scales</h4><p>SAT vs ACT, math vs reading, cm vs kg: convert each to z and ask who is further above their own average.</p></div>
+      <div class="ic-card bg-purple"><div class="ic" style="background:#fff">🤖</div><h4>Feature scaling for ML</h4><p>Distance- and gradient-based models (KNN, K-means, SVM, PCA) need features on one scale or the big-numbered one dominates.</p></div>
+      <div class="ic-card bg-amber"><div class="ic" style="background:#fff">🚨</div><h4>Spot outliers</h4><p>Flag values past a cutoff: |z| &gt; 2 is unusual, |z| &gt; 3 is a common outlier threshold.</p></div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">📈</div>
+      <div><div class="ctitle">A real comparison</div>
+        <p>You scored 84 on Exam A (mean 78, sd 6) and 85 on Exam B (mean 55, sd 20). Raw, B looks better. But the
+           z-scores are <strong>+1.0</strong> and <strong>+1.5</strong>: relative to each class, you actually did
+           better on Exam B. This is the everyday power of the standard scale.</p></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">🩺</div>
+      <div><div class="ctitle">z-scores in the wild</div>
+        <p>Pediatric growth charts report a child's height and weight as z-scores (SD-scores) against a reference
+           population, with cutoffs like −2 SD flagging concern. Same idea, life-or-death context.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 4: standardization vs normalization ===== -->
+  <section id="vs-normalization">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Standardization vs. Normalization</h2></div>
+    <p>Two scaling methods get muddled because "normalization" is an overloaded word. They are different transforms
+       with different uses.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Method</th><th>Formula</th><th>Result</th><th>scikit-learn</th><th>Best when</th></tr></thead>
+        <tbody>
+          <tr><td><b>Standardization</b><br>(z-score scaling)</td><td>(x − mean) / sd</td><td>mean 0, sd 1, unbounded</td><td><code>StandardScaler</code></td><td>roughly Gaussian data; PCA, linear models, regularization</td></tr>
+          <tr><td><b>Normalization</b><br>(min-max scaling)</td><td>(x − min) / (max − min)</td><td>fixed range, usually [0, 1]</td><td><code>MinMaxScaler</code></td><td>you need bounded inputs; but fragile to outliers</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:0.9rem;color:var(--ink-faint)">Min-max is sensitive to extremes: one giant value sets the max
+       and squashes everything else toward 0. Standardization spreads that hit across the mean and SD instead.</p>
+
+    <div class="callout note">
+      <div class="cico">🚰</div>
+      <div><div class="ctitle">Fit the scaler on training data only</div>
+        <p>In machine learning, learn the mean and SD (or min and max) from the <strong>training set</strong>, then
+           apply that same scaler to the test set. Computing them over all the data before splitting leaks test
+           information into training and inflates your scores. A scikit-learn <code>Pipeline</code> handles this
+           safely inside cross-validation.</p></div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🧬</div>
+      <div><div class="ctitle">Standardizing does not make data normal</div>
+        <p>This is the most common misconception. Standardization is a <em>linear</em> transform: it shifts and
+           rescales, so the shape, the skew, and the ordering all stay exactly as they were. A right-skewed dataset
+           is just as right-skewed after standardizing. To change shape you need a nonlinear transform like the log
+           (Chapter 11).</p></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">🏷️</div>
+      <div><div class="ctitle">Name collision: the Altman Z-score</div>
+        <p>The <strong>Altman Z-score</strong> is a bankruptcy-prediction formula built from financial ratios. Despite
+           the name, it is unrelated to the statistical z-score in this chapter. Same word, different thing.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 5: In ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Standardization in Machine Learning &amp; AI</h2></div>
+    <p>Standardization is not an optional nicety in machine learning, it is a required step for a whole class of models.
+       The z-score you compute by hand here is exactly what <code>StandardScaler</code> applies to every feature.</p>
+
+    <table class="disp-table">
+      <thead>
+        <tr><th>Model family</th><th>Why scaling matters</th><th>If you skip it</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="nm tx-cyan">Distance-based (KNN, k-means, SVM)</td><td>Distances are dominated by whichever feature has the biggest raw range</td><td>A feature in dollars silently outvotes one in years, purely because of units</td></tr>
+        <tr><td class="nm tx-purple">Gradient descent (neural nets, logistic/linear regression)</td><td>Wildly different scales make the loss surface stretched and slow to optimize</td><td>Training is slower and less stable, and may not converge well</td></tr>
+        <tr><td class="nm tx-amber">Regularized models (ridge, lasso)</td><td>The penalty is applied per coefficient, so it must see features on a common scale</td><td>Large-scale features are under-penalized and small-scale ones over-penalized</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Fit the scaler on training data only</div>
+        <p>One rule matters in practice: compute the mean and SD on the <strong>training set</strong>, then apply that
+           same transform to the test set. Standardizing before you split lets test-set information leak into training,
+           a subtle but real form of data leakage that inflates your reported accuracy.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 6: Real-World Example ===== -->
+  <section id="real-world">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Real-World Example: Comparing Scores Across Scales</h2></div>
+    <p>Standardization's original job is comparison. These <strong>300 students</strong> each sat three exams marked on
+       very different scales, math out of 100, reading out of 40, science out of 200, so the raw numbers are not
+       comparable: a 35 is superb on reading but poor on science. Converting each exam to a <strong>z-score</strong>
+       puts all three on one common scale, and the companion notebook uses it to rank a student across subjects.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · standardization-and-z-scores--exam_scales.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per student: <code>student_id</code>, <code>math_100</code>,
+        <code>reading_40</code>, and <code>science_200</code>, three exam scores on different maximums. Standardizing
+        each column is what makes a cross-subject comparison, or a machine-learning model, treat them fairly.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/standardization-and-z-scores--exam_scales.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 300 students</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Bring it to life in Python</h3>
+          <p>The companion notebook computes z-scores by hand and with SciPy, proves standardizing keeps the shape,
+             compares two exams on one ruler, hunts outliers with classic and robust z-scores, and scales features
+             for machine learning with a fit-on-train-only StandardScaler.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/standardization-and-z-scores.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/standardization-and-z-scores.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/standardization-and-z-scores.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>,
+      <code>scipy</code>, <code>scikit-learn</code>, <code>matplotlib</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Key Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>z = (x − mean) / sd</strong>: how many standard deviations a value is from the mean. Sign = direction, size = distance.</span></li>
+        <li><span class="ck">✓</span><span><strong>Standardized data has mean 0 and sd 1</strong>, the standard scale.</span></li>
+        <li><span class="ck">✓</span><span><strong>z works on any data; the z-to-percentile mapping</strong> (68-95-99.7) holds only when data is roughly normal.</span></li>
+        <li><span class="ck">✓</span><span><strong>Standardizing does not change shape</strong>: it is linear, so skew and ordering survive.</span></li>
+        <li><span class="ck">✓</span><span><strong>For ML, scale features and fit on train only</strong>; standardization (z) and min-max normalization are different tools.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Practice Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them on paper or in Python before checking the solutions.</p>
+
+    <div class="challenges">
+      <div class="challenge">
+        <div class="cnum">1</div>
+        <div class="cbody">
+          <h4>z by hand</h4>
+          <p>A test has mean 70 and standard deviation 8. Compute the z-score for a 86 and for a 62, and say what
+             each means in words.</p>
+          <div class="chint">Hint: z = (x − mean) / sd; the sign is the direction.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">2</div>
+        <div class="cbody">
+          <h4>One common ruler</h4>
+          <p>You scored 88 in History (mean 80, sd 5) and 88 in Physics (mean 75, sd 13). Same raw score: on which
+             exam did you perform relatively better?</p>
+          <div class="chint">Hint: compute a z for each and compare.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">3</div>
+        <div class="cbody">
+          <h4>z to percentile</h4>
+          <p>Heights are roughly normal with mean 170 cm, sd 7 cm. For a 184 cm person, find the z-score and the
+             approximate percentile. What assumption does the percentile rely on?</p>
+          <div class="chint">Hint: <code>scipy.stats.norm.cdf(z)</code>; the mapping needs normality.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">4</div>
+        <div class="cbody">
+          <h4>Outlier hunt</h4>
+          <p>For <code>[48, 50, 51, 49, 52, 50, 47, 53, 51, 95]</code>, compute z-scores and flag any value with
+             |z| &gt; 2.5.</p>
+          <div class="chint">Hint: standardize the array, then test the absolute z.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">5</div>
+        <div class="cbody">
+          <h4>Shape check</h4>
+          <p>Standardize a right-skewed sample <code>rng.lognormal(mean=1, sigma=0.7, size=3000)</code>. Confirm
+             mean ≈ 0 and sd ≈ 1, then check whether the skewness changed.</p>
+          <div class="chint">Hint: compare <code>scipy.stats.skew</code> before and after.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges in the same visual
+           style. Try them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/standardization-and-z-scores--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/standardization-and-z-scores--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/standardization-and-z-scores--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">8</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on standardization. Answer them, hit <strong>Check Answers</strong>, and keep refining
+       until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <!-- ===== Chapter Nav ===== -->
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="shape-of-a-distribution.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 11 · Previous</span><br><span class="cn-title">Shape of a Distribution</span></span>
+    </a>
+    <a class="cn-btn next" href="frequency-distributions.html">
+      <span><span class="cn-dir">Chapter 13 · Next</span><br><span class="cn-title">Frequency Distributions</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 12 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<!-- ===== Quiz data for this chapter ===== -->
+<script>
+  window.QUIZ_ID = "ch12";
+  window.QUIZ_DATA = [
+    {
+      q: "A z-score tells you…",
+      options: [
+        "The raw value of a data point",
+        "How many standard deviations a value is above or below the mean",
+        "The probability of an event",
+        "The number of data points in a sample"
+      ],
+      answer: 1,
+      explain: "z = (x − mean) / sd. The sign gives direction, the magnitude gives distance in standard-deviation units."
+    },
+    {
+      q: "A test has mean 70, sd 8. A score of 86 has a z-score of…",
+      options: [
+        "+1.0",
+        "+2.0",
+        "+16",
+        "−2.0"
+      ],
+      answer: 1,
+      explain: "(86 − 70) / 8 = 16 / 8 = +2.0, i.e. two standard deviations above the mean."
+    },
+    {
+      q: "After you standardize an entire dataset, the standardized values have…",
+      options: [
+        "Mean 1 and sd 0",
+        "Mean 0 and sd 1",
+        "Mean 0 and sd 0",
+        "The same mean and sd as before"
+      ],
+      answer: 1,
+      explain: "Standardization always produces mean 0 and standard deviation 1, the standard scale."
+    },
+    {
+      q: "Standardizing a strongly right-skewed dataset will…",
+      options: [
+        "Make it approximately normal",
+        "Remove the skew",
+        "Keep the same shape and skew; only re-center and re-scale it",
+        "Turn it into a uniform distribution"
+      ],
+      answer: 2,
+      explain: "Standardization is a linear transform. It changes center and spread but never the shape; the data stays just as skewed."
+    },
+    {
+      q: "Converting a z-score to a percentile (e.g. z = +2 → ~98th percentile) is valid…",
+      options: [
+        "For any distribution",
+        "Only when the data is approximately normal",
+        "Only for negative z-scores",
+        "Only after min-max scaling"
+      ],
+      answer: 1,
+      explain: "z is defined for any data, but the z-to-percentile mapping and the 68-95-99.7 rule assume approximate normality."
+    },
+    {
+      q: "A common rule-of-thumb threshold for flagging an outlier with z-scores is…",
+      options: [
+        "|z| > 0.5",
+        "|z| > 1",
+        "|z| > 3",
+        "|z| > 10"
+      ],
+      answer: 2,
+      explain: "|z| > 3 is a common cutoff (~0.3% of normal data lies beyond ±3). It's a heuristic, and mean/SD aren't robust to extreme outliers."
+    },
+    {
+      q: "The key difference between StandardScaler and MinMaxScaler is…",
+      options: [
+        "They are identical",
+        "StandardScaler gives mean 0 / sd 1 (unbounded); MinMaxScaler rescales to a fixed range like [0,1]",
+        "MinMaxScaler makes data normal",
+        "StandardScaler only works on integers"
+      ],
+      answer: 1,
+      explain: "Standardization → mean 0, sd 1, unbounded. Min-max normalization → bounded range [0,1], but more sensitive to outliers."
+    },
+    {
+      q: "When scaling features for a machine-learning model, you should fit the scaler on…",
+      options: [
+        "The full dataset before splitting",
+        "The test set only",
+        "The training set only, then apply it to the test set",
+        "Each row independently"
+      ],
+      answer: 2,
+      explain: "Fitting on all data leaks test information into training. Fit (learn mean/SD) on train only, then transform the test set with it."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

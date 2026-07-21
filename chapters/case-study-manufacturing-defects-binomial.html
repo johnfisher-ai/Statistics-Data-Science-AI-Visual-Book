@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 49 · Case Study: Manufacturing Defects (Binomial) — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/case-study-manufacturing-defects-binomial.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part IX · Probability &amp; Distributions Case Studies</span><span class="sep">/</span>
+      <span>Chapter 49</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part IX · Case Study</span> Binomial distribution</div>
+    <h1>Manufacturing Defects: the <span class="accent">Binomial</span></h1>
+    <p class="dek">Each batch holds 50 parts, and each part passes or fails inspection. The number of defects per batch is
+       the binomial distribution, n independent Bernoulli trials counted up. From 1,000 inspected batches we estimate the
+       defect rate, fit the model, and size the risk of a bad batch.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~12 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 49</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Chapter 48 modeled one part with the Bernoulli. Stack 50 of them into a batch and count the defects,
+       and you have the <span class="term">binomial</span>, the most important discrete distribution in quality control.
+       It turns a per-part defect rate into a full forecast of batch outcomes.</p>
+
+    <div class="def-card">
+      <div class="sigma">C</div>
+      <div class="def-body">
+        The <span class="def-kw">binomial</span> counts the successes in n independent Bernoulli trials. Its PMF is
+        <strong>C(n, k) p<sup>k</sup>(1 &#8722; p)<sup>n&#8722;k</sup></strong>, with <span class="def-kw">mean np</span>
+        and <span class="def-kw">variance np(1 &#8722; p)</span>. Here n = 50 parts and p is the defect rate.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🏭</div>
+      <div><div class="ctitle">The dataset</div>
+        <p><code>manufacturing_qc_inspections.csv</code> records 1,000 inspections, each a batch of
+           <code>batch_size</code> = 50 with a <code>defective_count</code>. We treat each batch as 50 Bernoulli trials
+           and model the count of defects.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: fit ===== -->
+  <section id="fit">
+    <div class="section-eyebrow"><div class="num">1</div><h2>From the Part Rate to the Batch Count</h2></div>
+    <p>The per-part defect rate is total defects over total parts: <strong>p = 0.0385</strong>. That single rate, plugged
+       into the binomial, predicts the whole distribution of defects per batch, mean np = 1.93, variance np(1&#8722;p) =
+       1.85, both matching the data exactly.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 210" width="100%" font-family="Inter, sans-serif" aria-label="Observed defects per batch with the fitted binomial PMF overlaid">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Defects per batch: Binomial(50, 0.0385) fits the data</text>
+        <line x1="60" y1="170" x2="630" y2="170" stroke="#1a2138" stroke-width="1.1"/>
+        <!-- binomial PMF p=0.0385 scaled *600: k0 .140->84, k1 .280->168, k2 .276->166, k3 .176->106, k4 .082->49, k5 .030->18, k6 .009->5 -->
+        <g fill="#d97706" fill-opacity="0.8">
+          <rect x="70" y="86" width="48" height="84" rx="2"/><rect x="142" y="2" width="48" height="168" rx="2"/>
+          <rect x="214" y="4" width="48" height="166" rx="2"/><rect x="286" y="64" width="48" height="106" rx="2"/>
+          <rect x="358" y="121" width="48" height="49" rx="2"/><rect x="430" y="152" width="48" height="18" rx="2"/>
+          <rect x="502" y="165" width="48" height="5" rx="2"/>
+        </g>
+        <g font-size="9" fill="#8b94b3" text-anchor="middle">
+          <text x="94" y="186">0</text><text x="166" y="186">1</text><text x="238" y="186">2</text><text x="310" y="186">3</text>
+          <text x="382" y="186">4</text><text x="454" y="186">5</text><text x="526" y="186">6</text>
+        </g>
+        <text x="345" y="202" text-anchor="middle" font-size="9" fill="#8b94b3">defects per batch (mean np = 1.93)</text>
+      </svg>
+    </figure>
+
+    <p>The term <strong>C(50, k)</strong> counts the ways k defects can land among 50 parts, the combinatorics of
+       Chapter 32 made concrete. Multiply by the probability of any one such arrangement, p<sup>k</sup>(1&#8722;p)<sup>50&#8722;k</sup>,
+       and the binomial PMF drops right onto the observed batches.</p>
+  </section>
+
+  <!-- ===== Section 2: risk ===== -->
+  <section id="risk">
+    <div class="section-eyebrow"><div class="num">2</div><h2>The Risk of a Bad Batch</h2></div>
+    <p>Quality rules are thresholds, and the <span class="hl">CDF</span> P(X &#8804; k) prices them. Reading it off the
+       model tells the plant exactly how much production a given accept/reject rule will scrap.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Rule</th><th>P(X &#8804; k) accept</th><th>P(X &gt; k) reject</th></tr></thead>
+        <tbody>
+          <tr><td>at most 0 defects</td><td class="nm">0.140</td><td>0.860</td></tr>
+          <tr><td>at most 1 defect</td><td class="nm">0.421</td><td>0.579</td></tr>
+          <tr><td>at most 2 defects</td><td class="nm">0.697</td><td>0.303</td></tr>
+          <tr><td>at most 3 defects</td><td class="nm">0.874</td><td>0.126</td></tr>
+          <tr><td>at most 5 defects</td><td class="nm">0.988</td><td>0.012</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>A "reject if more than 2 defects" rule accepts <strong>70%</strong> of batches, so it scraps about
+       <strong>30%</strong>, a costly bar. Loosening it to "more than 3" cuts scrap to 13%. The hand-computed
+       P(X = 2) = C(50, 2) p&#178;(1&#8722;p)&#8308;&#8312; matches SciPy to four decimals, confirming the model is exactly
+       the binomial.</p>
+  </section>
+
+  <!-- ===== Section 3: simulate ===== -->
+  <section id="simulate">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Simulating a Production Run</h2></div>
+    <p>Scale a single batch up to a full shift. The defect-free rate is P(X = 0) = (1&#8722;p)<sup>50</sup> &#8776;
+       <strong>14%</strong>, and a 30-batch day produces a total that is a sum of binomials, centered near
+       <strong>58 defects</strong> and, by the Central Limit Theorem, approximately normal.</p>
+
+    <div class="callout note">
+      <div class="cico">🔢</div>
+      <div><div class="ctitle">The binomial is a sum of Bernoullis</div>
+        <p>Every binomial is just n Bernoulli trials added together, which is why np is the mean (n trials, each
+           contributing p) and np(1&#8722;p) is the variance (n independent variances). Simulating 200,000 batches
+           reproduces the mean 1.93 and the 14% defect-free rate, and a simulated day lets the plant budget rework from
+           the distribution, not a guess.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Run the QC analysis</h3>
+          <p>The companion notebook estimates the defect rate, overlays the fitted Binomial(50, 0.0385) on the observed
+             batch counts, validates the fit with a chi-square goodness-of-fit test, tabulates the accept/reject CDF, confirms P(X = 2) by hand with C(50, 2), and simulates a
+             production run, every figure reproduced in code.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/case-study-manufacturing-defects-binomial.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-manufacturing-defects-binomial.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-manufacturing-defects-binomial.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, <code>scipy</code>,
+      and <code>matplotlib</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Defects per fixed batch are binomial</strong>: n = 50 trials, defect rate p; PMF C(n, k) p<sup>k</sup>(1&#8722;p)<sup>n&#8722;k</sup>.</span></li>
+        <li><span class="ck">✓</span><span><strong>One rate p = 0.0385</strong> gives mean np = 1.93 and variance np(1&#8722;p) = 1.85, both matching the data.</span></li>
+        <li><span class="ck">✓</span><span><strong>The CDF prices accept/reject rules</strong>: P(X &#8804; 2) = 0.70, so a "more than 2" rule scraps 30% of batches.</span></li>
+        <li><span class="ck">✓</span><span><strong>C(50, k)</strong> counts the arrangements of k defects among 50 parts, combinatorics turning a part rate into a batch forecast.</span></li>
+        <li><span class="ck">✓</span><span><strong>A binomial is a sum of Bernoullis</strong>, and a day of batches is approximately normal by the CLT.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on the binomial case study. Answer them, hit <strong>Check Answers</strong>, and keep
+       refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="case-study-e-commerce-conversions-bernoulli.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 48 · Previous</span><br><span class="cn-title">E-commerce Conversions (Bernoulli)</span></span>
+    </a>
+    <a class="cn-btn next" href="case-study-server-traffic-spikes-poisson.html">
+      <span><span class="cn-dir">Chapter 50 · Next</span><br><span class="cn-title">Server Traffic Spikes (Poisson)</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 49 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch49";
+  window.QUIZ_DATA = [
+    {
+      q: "The number of defects in a fixed batch of 50 parts is modeled as…",
+      options: ["Bernoulli", "Binomial(50, p)", "Poisson", "Normal"],
+      answer: 1,
+      explain: "Counting successes (defects) in a fixed number n = 50 of independent Bernoulli trials is the binomial distribution."
+    },
+    {
+      q: "The binomial PMF is…",
+      options: ["p(1 − p)", "C(n, k) p^k (1 − p)^(n−k)", "λ^k e^−λ / k!", "1/p"],
+      answer: 1,
+      explain: "C(n, k) counts the arrangements of k successes; p^k(1−p)^(n−k) is the probability of any one such arrangement."
+    },
+    {
+      q: "The mean and variance of Binomial(50, 0.0385) are…",
+      options: ["0.0385 and 0.0385", "np = 1.93 and np(1 − p) = 1.85", "50 and 50", "1.93 and 1.93"],
+      answer: 1,
+      explain: "Binomial mean is np = 50 × 0.0385 = 1.93; variance is np(1 − p) = 1.85. Both matched the observed batches."
+    },
+    {
+      q: "The per-part defect rate p was estimated as…",
+      options: ["The median defect count", "Total defects ÷ total parts inspected", "1 ÷ mean", "The maximum count"],
+      answer: 1,
+      explain: "p is the overall fraction of defective parts: total defects divided by (50 × number of batches) = 0.0385."
+    },
+    {
+      q: "P(X ≤ 2) = 0.70 means a 'reject if more than 2 defects' rule…",
+      options: ["Accepts all batches", "Accepts 70% and scraps about 30% of batches", "Scraps 70%", "Has no effect"],
+      answer: 1,
+      explain: "The CDF gives the accept probability (0.70); its complement, 0.30, is the fraction of batches rejected, the scrap cost."
+    },
+    {
+      q: "The combinatorial term C(50, k) in the PMF represents…",
+      options: ["The defect rate", "The number of ways k defects can occur among 50 parts", "The variance", "The batch size"],
+      answer: 1,
+      explain: "C(50, k) is the count of distinct arrangements of k defective parts among the 50, the combinatorics from Chapter 32."
+    },
+    {
+      q: "The probability a batch is completely defect-free is…",
+      options: ["p^50", "(1 − p)^50 ≈ 0.14", "0.5", "1 − p"],
+      answer: 1,
+      explain: "All 50 parts must be good, so P(X = 0) = (1 − p)^50 = 0.9615^50 ≈ 0.14, about a 14% chance."
+    },
+    {
+      q: "A binomial is fundamentally…",
+      options: ["A single trial", "A sum of n independent Bernoulli trials", "A continuous curve", "A ratio of variances"],
+      answer: 1,
+      explain: "Binomial = sum of n Bernoullis, which is why mean = np and variance = np(1 − p), and a day of batches is approximately normal."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

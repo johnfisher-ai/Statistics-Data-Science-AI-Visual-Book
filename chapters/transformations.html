@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 22 · Transformations — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .disp-table code { font-size:0.82em; }
+    .formula { font-family:"Iowan Old Style",Georgia,serif; font-size:1.25rem; color:var(--ink); text-align:center; margin:0.5rem 0; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#ecfeff; border:1px solid #a5f3fc; border-left:4px solid #0891b2; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#0e7490; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none; padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<!-- ============ TOP NAV ============ -->
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/transformations.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<!-- ============ HERO ============ -->
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part IV · Preparing Data for Analysis</span><span class="sep">/</span>
+      <span>Chapter 22</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part IV · Preparing Data</span> Getting data ready</div>
+    <h1><span class="accent">Transformations</span></h1>
+    <p class="dek">Sometimes the data is fine but its <em>shape</em> fights you: a long tail, a fan of growing
+       variance, a curve where you wanted a line. A transformation reshapes the variable to cooperate, and you only
+       have to remember to change it back.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~13 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 22</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <!-- ===== Intro / Section 1 ===== -->
+  <section id="intro">
+    <p class="lead">Chapter 11 showed a log pulling in a right skew; Chapter 21 listed transforms as one way to tame
+       an outlier. This chapter is the deep dive: the family of transforms, how to choose one, and the trap almost
+       everyone hits when reporting the results.</p>
+
+    <div class="def-card">
+      <div class="sigma">f(x)</div>
+      <div class="def-body">
+        A <span class="def-kw">transformation</span> replaces each value <code>x</code> with a
+        <span class="def-kw">nonlinear</span> function <code>f(x)</code> (a log, a root, a power) to reshape the
+        distribution, reduce skew, stabilize variance, or straighten a relationship.
+      </div>
+    </div>
+
+    <div class="callout note">
+      <div class="cico">🔁</div>
+      <div><div class="ctitle">Nonlinear, unlike standardizing</div>
+        <p>Standardizing (Chapter 12) is <em>linear</em>: it shifts and rescales but leaves the shape, skew, and
+           kurtosis exactly as they were. Transformations here are <em>nonlinear</em>, so they genuinely
+           <strong>change the shape</strong>. Don't confuse "scaling" with "transforming."</p></div>
+    </div>
+
+    <div class="section-eyebrow"><div class="num">1</div><h2>Why Transform</h2></div>
+    <div class="cardgrid cols-2">
+      <div class="ic-card bg-cyan"><h4 class="tx-cyan">Reduce skew</h4><p>Pull a long tail in so the variable is more symmetric, closer to the normality many methods assume.</p></div>
+      <div class="ic-card bg-amber"><h4 class="tx-amber">Stabilize variance</h4><p>When the spread fans out as values grow (heteroscedasticity), a transform flattens the fan.</p></div>
+      <div class="ic-card bg-purple"><h4 class="tx-purple">Straighten a curve</h4><p>A curved x-y relationship can become linear, which is exactly what linear regression wants.</p></div>
+      <div class="ic-card bg-green"><h4 class="tx-green">Compress a range</h4><p>Logs bring data spanning orders of magnitude (populations, prices) back onto a comparable scale.</p></div>
+    </div>
+    <p style="font-size:0.9rem;color:var(--ink-faint)">On a log scale, equal <em>distances</em> mean equal
+       <em>ratios</em>: a step is a percent change, not an absolute one. That is why pH, decibels, and the Richter
+       scale are already logarithmic, the underlying quantity is multiplicative.</p>
+  </section>
+
+  <!-- ===== Section 2: ladder of powers ===== -->
+  <section id="ladder">
+    <div class="section-eyebrow"><div class="num">2</div><h2>The Ladder of Powers</h2></div>
+    <p>Tukey's <span class="hl">ladder of powers</span> is the one idea that organizes every transform. Order them by
+       their exponent, with log sitting at the p = 0 rung. <strong>Going down</strong> the ladder pulls in a
+       <strong>right</strong> skew; <strong>going up</strong> pulls in a <strong>left</strong> skew.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 660 250" width="100%" font-family="Inter, sans-serif" aria-label="Tukey's ladder of powers from reciprocal up to cube, with skew direction">
+        <!-- vertical ladder line -->
+        <line x1="330" y1="20" x2="330" y2="210" stroke="#cdd3e6" stroke-width="2"/>
+        <!-- rungs: y from top(up) to bottom(down) -->
+        <g font-family="Inter, sans-serif" text-anchor="middle">
+          <g><rect x="278" y="22" width="104" height="26" rx="7" fill="#fde8ef" stroke="#db2777"/><text x="330" y="39" font-size="11.5" fill="#1a2138" font-weight="700">x³ , x²  (p&gt;1)</text></g>
+          <g><rect x="278" y="64" width="104" height="26" rx="7" fill="#eef1f8" stroke="#8b94b3"/><text x="330" y="81" font-size="11.5" fill="#1a2138" font-weight="800">x   (p=1, none)</text></g>
+          <g><rect x="278" y="106" width="104" height="26" rx="7" fill="#e0f7fb" stroke="#0891b2"/><text x="330" y="123" font-size="11.5" fill="#0891b2" font-weight="700">√x   (p=0.5)</text></g>
+          <g><rect x="278" y="148" width="104" height="26" rx="7" fill="#e3f6ee" stroke="#059669"/><text x="330" y="165" font-size="11.5" fill="#059669" font-weight="800">log x   (p=0)</text></g>
+          <g><rect x="278" y="190" width="104" height="26" rx="7" fill="#fef3e2" stroke="#d97706"/><text x="330" y="207" font-size="11.5" fill="#d97706" font-weight="700">1/x   (p=−1)</text></g>
+        </g>
+        <!-- up arrow + label (left skew) -->
+        <g stroke="#db2777" stroke-width="2" fill="#db2777"><line x1="150" y1="120" x2="150" y2="35"/><path d="M150,30 l-5,9 l10,0 z"/></g>
+        <text x="150" y="150" text-anchor="middle" font-size="11" fill="#db2777" font-weight="800">UP</text>
+        <text x="150" y="166" text-anchor="middle" font-size="9.5" fill="#4a5578">pulls in a</text>
+        <text x="150" y="179" text-anchor="middle" font-size="9.5" fill="#4a5578">LEFT skew</text>
+        <!-- down arrow + label (right skew) -->
+        <g stroke="#059669" stroke-width="2" fill="#059669"><line x1="510" y1="110" x2="510" y2="200"/><path d="M510,205 l-5,-9 l10,0 z"/></g>
+        <text x="510" y="95" text-anchor="middle" font-size="11" fill="#059669" font-weight="800">DOWN</text>
+        <text x="510" y="79" text-anchor="middle" font-size="9.5" fill="#4a5578">pulls in a</text>
+        <text x="510" y="66" text-anchor="middle" font-size="9.5" fill="#4a5578">RIGHT skew</text>
+      </svg>
+      <figcaption style="text-align:center;font-size:0.8rem;color:var(--ink-faint);margin-top:0.3rem">
+        Right-skewed data (income, counts) goes down the ladder; left-skewed data (ceiling effects) goes up. The
+        lower you go, the stronger the pull.
+      </figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== Section 3: the transforms ===== -->
+  <section id="transforms">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The Key Transforms</h2></div>
+    <p>Each rung is a tool with its own job, requirements, and how you read it back.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Transform</th><th>Good for</th><th>Requires</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Log (ln / log₁₀)</td><td>Right skew, multiplicative data, wide ranges (income, prices, populations)</td><td>x &gt; 0 (strictly positive)</td><td>Steps = percent change; back-transform with exp. For zeros use <code>log1p</code>.</td></tr>
+          <tr><td class="nm">Square root</td><td>Milder right skew; <strong>count / Poisson</strong> data (stabilizes variance)</td><td>x ≥ 0</td><td>Variance ≈ mean for counts, so √ flattens it.</td></tr>
+          <tr><td class="nm">Reciprocal (1/x)</td><td>Very heavy right skew; rates (time → speed)</td><td>x ≠ 0</td><td><strong>Reverses the order</strong> of values, flag this.</td></tr>
+          <tr><td class="nm">Square (x²), cubes</td><td><strong>Left</strong> skew (long left tail)</td><td>any sign</td><td>Going up the ladder.</td></tr>
+          <tr><td class="nm">Box-Cox</td><td>Auto-pick the best power to normalize</td><td>x &gt; 0</td><td>Chooses λ by maximum likelihood (below).</td></tr>
+          <tr><td class="nm">Yeo-Johnson</td><td>Same idea, but data has zeros / negatives</td><td>any real x</td><td>The Box-Cox generalization; sklearn's default.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🎚️</div>
+      <div><div class="ctitle">Box-Cox: a slider across the ladder</div>
+        <p>Box-Cox is the power family <code>(x<sup>λ</sup> − 1) / λ</code> (and <code>ln x</code> at λ = 0), with
+           <strong>λ chosen automatically by maximum likelihood</strong> to best normalize the data. The λ it picks
+           lands you on a familiar rung: <strong>λ≈1</strong> no transform, <strong>λ≈0.5</strong> square root,
+           <strong>λ≈0</strong> log, <strong>λ≈−1</strong> reciprocal. It needs positive data; when you have zeros or
+           negatives, reach for <strong>Yeo-Johnson</strong> instead.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 4: choosing, interpreting, pitfalls ===== -->
+  <section id="choose">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Choosing, Interpreting &amp; Pitfalls</h2></div>
+    <p>The workflow is short: look at the distribution (a histogram and the skew, or a Q-Q plot), read the direction
+       from the skew, try <strong>log or square root first</strong> because they are interpretable, and use
+       <strong>Box-Cox or Yeo-Johnson</strong> when you just need normality for a model. Verify with the skew or a
+       Q-Q plot afterward.</p>
+
+    <div class="callout note">
+      <div class="cico">↩️</div>
+      <div><div class="ctitle">The back-transform trap (Jensen's inequality)</div>
+        <p>After transforming, every result lives on the new scale, you must <strong>back-transform</strong> to report
+           in real units. But the back-transformed mean is <em>not</em> the original mean:
+           <code>exp(mean(log x))</code> gives the <strong>geometric mean</strong>, which sits <em>below</em> the
+           arithmetic mean for skewed data. So report the <strong>median</strong> (it back-transforms cleanly), or
+           apply a bias correction such as Duan's smearing estimator.</p></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">⚠️</div>
+      <div><div class="ctitle">The usual traps</div>
+        <p><strong>Positivity:</strong> log and Box-Cox need x &gt; 0, use log1p, a justified shift, or Yeo-Johnson
+           otherwise. <strong>The "+ constant"</strong> before a log changes the result, so document it.
+           <strong>Reciprocal reverses order.</strong> <strong>Don't over-transform</strong> when the method is robust
+           or interpretability matters (a log-dollar coefficient is harder to explain than dollars). And in ML,
+           <strong>fit the transform (the λ, the shift) on training data only</strong>, the same no-leakage rule as
+           scaling, imputation, and outlier thresholds.</p></div>
+    </div>
+
+    <div class="callout note">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for data science</div>
+        <p>Many classic models assume roughly normal, constant-variance, linear inputs, and a transform is often the
+           cheapest way to meet those assumptions without abandoning the method. The cost is interpretability and the
+           discipline of back-transforming honestly. Used well, a single log can turn a hopeless variable into a
+           well-behaved one; used carelessly, it quietly biases every number you report.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 5: In ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Transformations in Machine Learning &amp; AI</h2></div>
+    <p>Transforming a skewed feature is one of the highest-value, lowest-effort moves in feature engineering. Many models
+       simply work better when their inputs, and sometimes their target, are roughly symmetric.</p>
+
+    <table class="disp-table">
+      <thead>
+        <tr><th>Transform</th><th>The scikit-learn tool</th><th>What it is for</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="nm tx-cyan">Log / power</td><td><code>PowerTransformer</code> (Box-Cox, Yeo-Johnson)</td><td>Pulls a skewed feature toward symmetry; Yeo-Johnson also handles zeros and negatives</td></tr>
+        <tr><td class="nm tx-purple">Quantile</td><td><code>QuantileTransformer</code></td><td>Forces any distribution to uniform or normal, a heavy hammer for stubborn shapes</td></tr>
+        <tr><td class="nm tx-amber">Target transform</td><td><code>TransformedTargetRegressor</code></td><td>Modeling <code>log(price)</code> instead of price often improves a regressor</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Fit the transform on training data, and remember to invert it</div>
+        <p>Like scaling and imputation, a power transform is <em>learned</em> (Box-Cox estimates a &#955;), so fit it on
+           the training set only. And when you transform the <strong>target</strong>, remember to invert the transform
+           on the predictions, a model trained on <code>log(price)</code> outputs logs, which you must exponentiate back
+           to dollars before anyone reads them.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 6: Real-World Example ===== -->
+  <section id="real-world">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Real-World Example: Response Times</h2></div>
+    <p>API response times are reliably right-skewed, most requests are fast, a few are slow, and these <strong>500</strong>
+       are no exception (skewness about <strong>1.7</strong>). The companion notebook races four transforms: a
+       <strong>log</strong> transform brings the skew almost to zero (about <strong>0.1</strong>), a <strong>Box-Cox</strong>
+       does slightly better, a <strong>square root</strong> only helps partway, and the winner turns a lopsided column
+       into a near-symmetric one.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · transformations--response_times.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per request: <code>request_id</code>, <code>endpoint</code> (four API
+        routes), and <code>response_ms</code>, the server response time in milliseconds. The response column is strongly
+        right-skewed, the classic candidate for a log or Box-Cox transform.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/transformations--response_times.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 500 requests</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Bring it to life in Python</h3>
+          <p>The companion notebook logs a right-skewed variable straight, climbs the ladder of powers on one
+             variable, square-roots count data to stabilize its variance, lets Box-Cox pick the power with a Q-Q
+             check, and shows why <code>exp(mean(log x))</code> is the geometric mean, not the arithmetic one.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/transformations.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/transformations.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/transformations.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>,
+      <code>scipy</code>, <code>matplotlib</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Key Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>A transform is nonlinear</strong>: it reshapes the distribution (standardizing, Chapter 12, does not).</span></li>
+        <li><span class="ck">✓</span><span><strong>The ladder of powers</strong>: go down (√, log, 1/x) for right skew, up (x², x³) for left skew.</span></li>
+        <li><span class="ck">✓</span><span><strong>Log</strong> needs positive data and reads as percent change; <strong>square root</strong> stabilizes count variance.</span></li>
+        <li><span class="ck">✓</span><span><strong>Box-Cox auto-picks the power</strong> (λ); <strong>Yeo-Johnson</strong> handles zeros and negatives.</span></li>
+        <li><span class="ck">✓</span><span><strong>Back-transform to report</strong>, but exp(mean of logs) is the geometric mean (biased low), so report the median.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Practice Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them on paper or in Python before checking the solutions.</p>
+
+    <div class="challenges">
+      <div class="challenge">
+        <div class="cnum">1</div>
+        <div class="cbody">
+          <h4>Log the skew</h4>
+          <p>Generate <code>rng.lognormal(mean=2, sigma=0.9, size=3000)</code>, report its skew, log it, report the
+             skew again. Which way on the ladder did you move, and why does log need positive data?</p>
+          <div class="chint">Hint: <code>scipy.stats.skew</code>; log is a step down the ladder.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">2</div>
+        <div class="cbody">
+          <h4>Pick the direction</h4>
+          <p>For each, say up or down the ladder and name a transform: (a) right-skewed income; (b) left-skewed exam
+             scores; (c) Poisson counts to variance-stabilize.</p>
+          <div class="chint">Hint: right → down; left → up; counts → square root.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">3</div>
+        <div class="cbody">
+          <h4>Stabilize the variance</h4>
+          <p>Make two Poisson groups (mean 5 and mean 100). Show the raw variances track the means, then square-root
+             and show they become comparable.</p>
+          <div class="chint">Hint: Poisson variance ≈ mean; √ pulls both toward ~0.25.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">4</div>
+        <div class="cbody">
+          <h4>Let Box-Cox choose</h4>
+          <p>Apply <code>scipy.stats.boxcox</code> to a positive right-skewed sample. Report the chosen λ and what
+             values near 0, 0.5, and 1 would each imply.</p>
+          <div class="chint">Hint: λ≈0 log, λ≈0.5 sqrt, λ≈1 none.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">5</div>
+        <div class="cbody">
+          <h4>Mind the back-transform</h4>
+          <p>For a lognormal sample, compute the arithmetic mean and <code>exp(mean(log x))</code>. Are they equal?
+             Which should you report for a right-skewed quantity, and why?</p>
+          <div class="chint">Hint: exp(mean log) is the geometric mean (Jensen); prefer the median.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges in the same visual
+           style. Try them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/transformations--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/transformations--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/transformations--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">8</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on transformations. Answer them, hit <strong>Check Answers</strong>, and keep refining
+       until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <!-- ===== Chapter Nav ===== -->
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="detecting-and-treating-outliers.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 21 · Previous</span><br><span class="cn-title">Detecting &amp; Treating Outliers</span></span>
+    </a>
+    <a class="cn-btn next" href="combining-and-reshaping-data.html">
+      <span><span class="cn-dir">Chapter 23 · Next</span><br><span class="cn-title">Combining &amp; Reshaping Data</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 22 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<!-- ===== Quiz data for this chapter ===== -->
+<script>
+  window.QUIZ_ID = "ch22";
+  window.QUIZ_DATA = [
+    {
+      q: "How does a transformation differ from standardizing (z-scores)?",
+      options: [
+        "They are the same thing",
+        "A transformation is nonlinear and changes the shape; standardizing is linear and preserves shape",
+        "Standardizing changes shape; transforming does not",
+        "Transformations only work on categorical data"
+      ],
+      answer: 1,
+      explain: "z-scoring shifts and rescales (linear) so skew/shape stay the same. Log, root, and power transforms are nonlinear, so they reshape the distribution."
+    },
+    {
+      q: "On Tukey's ladder of powers, to pull in a RIGHT skew you move…",
+      options: [
+        "Up the ladder (x², x³)",
+        "Down the ladder (√x, log x, 1/x)",
+        "Off the ladder",
+        "Nowhere; skew can't be changed"
+      ],
+      answer: 1,
+      explain: "Going down (powers below 1, including log and reciprocal) compresses a long right tail. Going up (x², x³) addresses a left skew."
+    },
+    {
+      q: "A key REQUIREMENT of the log transform is that the data must be…",
+      options: [
+        "Normally distributed",
+        "Strictly positive (x > 0)",
+        "Whole numbers",
+        "Centered at zero"
+      ],
+      answer: 1,
+      explain: "log(0) is undefined and log of a negative isn't real. For zeros use log1p or a shift; for negatives use Yeo-Johnson."
+    },
+    {
+      q: "Count (Poisson) data has variance that grows with the mean. The classic variance-stabilizing transform is…",
+      options: [
+        "The reciprocal",
+        "The square root",
+        "Squaring",
+        "Standardizing"
+      ],
+      answer: 1,
+      explain: "For Poisson data variance ≈ mean, and the square root flattens that dependence so groups with different means have comparable spread."
+    },
+    {
+      q: "Box-Cox chooses its parameter λ by…",
+      options: [
+        "Always setting λ = 1",
+        "Maximum likelihood: the power that best normalizes the data",
+        "Rounding the mean",
+        "Picking a random value"
+      ],
+      answer: 1,
+      explain: "Box-Cox finds the λ that best normalizes via maximum likelihood. λ≈0 ≈ log, λ≈0.5 ≈ sqrt, λ≈1 ≈ no transform, λ≈−1 ≈ reciprocal."
+    },
+    {
+      q: "Your data contains zeros and negative values. Which transform can handle it?",
+      options: [
+        "Box-Cox",
+        "Plain log",
+        "Yeo-Johnson",
+        "Square root"
+      ],
+      answer: 2,
+      explain: "Box-Cox and plain log require positive data; the square root can't take negatives. Yeo-Johnson generalizes Box-Cox to handle zeros and negatives."
+    },
+    {
+      q: "After logging income, you compute exp(mean(log income)). This equals…",
+      options: [
+        "The arithmetic mean income",
+        "The geometric mean, which is below the arithmetic mean for skewed data",
+        "Exactly the maximum",
+        "Zero"
+      ],
+      answer: 1,
+      explain: "By Jensen's inequality, back-transforming a mean of logs gives the geometric mean, biased below the arithmetic mean. Report the median or use a bias correction."
+    },
+    {
+      q: "Which is a real pitfall when transforming for a machine-learning model?",
+      options: [
+        "Transforms always improve accuracy",
+        "Fit the transform's parameters (λ, shift) on the FULL data before splitting",
+        "Fit the transform's parameters on the training set only, then apply to test",
+        "Transforms never need back-transformation"
+      ],
+      answer: 1,
+      explain: "Fitting the transform's parameters (λ, shift) on the full dataset before splitting leaks test information into training, the same no-leakage rule that governs scaling, imputation, and outlier thresholds. Fitting on the training set only, then applying to test, is the safe practice."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

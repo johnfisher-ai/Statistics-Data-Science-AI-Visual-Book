@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 19 · Finding &amp; Removing Duplicates and Inconsistencies — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.85rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.58rem 0.8rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#ecfeff; border:1px solid #a5f3fc; border-left:4px solid #0891b2; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#0e7490; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none; padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<!-- ============ TOP NAV ============ -->
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/finding-and-removing-duplicates-and-inconsistencies.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<!-- ============ HERO ============ -->
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part IV · Preparing Data for Analysis</span><span class="sep">/</span>
+      <span>Chapter 19</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part IV · Preparing Data</span> Getting data ready</div>
+    <h1>Finding &amp; Removing <span class="accent">Duplicates &amp; Inconsistencies</span></h1>
+    <p class="dek">Chapter 18 built the mindset. Now the hands-on work: collapsing duplicate records, unifying the
+       dozen spellings of one value, fixing formats, and writing rules that guarantee the data stays clean.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~13 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 19</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <!-- ===== Intro / Section 1 ===== -->
+  <section id="intro">
+    <p class="lead">The previous chapter promised that the techniques for duplicates and inconsistencies were
+       coming. Here they are. This is a pandas chapter: less philosophy, more recipes you will reuse on every
+       dataset.</p>
+
+    <div class="def-card">
+      <div class="sigma">⧉</div>
+      <div class="def-body">
+        <span class="def-kw">Deduplication</span> removes repeated records so each real entity appears once.
+        <span class="def-kw">Standardization</span> unifies the many representations of one value into a single
+        canonical form. <span class="def-kw">Validation rules</span> codify what valid data must look like.
+      </div>
+    </div>
+
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Order of Operations</h2></div>
+    <p>Cleaning has a sequence, and the order is not optional. Standardize <em>before</em> you deduplicate (so
+       "Acme " and "Acme" collapse together), and validate <em>after</em> (to prove the fixes worked).</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 150" width="100%" font-family="Inter, sans-serif" aria-label="The cleaning pipeline: profile, standardize, deduplicate, validate, document">
+        <g font-family="Inter, sans-serif">
+          <!-- 5 stages -->
+          <rect x="14"  y="45" width="116" height="56" rx="10" fill="#eef1f8" stroke="#8b94b3" stroke-width="1.4"/>
+          <text x="72" y="69" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">Profile</text>
+          <text x="72" y="86" text-anchor="middle" font-size="8.5" fill="#4a5578">value_counts</text>
+          <rect x="148" y="45" width="116" height="56" rx="10" fill="#f0e9fe" stroke="#7c3aed" stroke-width="1.6"/>
+          <text x="206" y="69" text-anchor="middle" font-size="12.5" fill="#7c3aed" font-weight="800">Standardize</text>
+          <text x="206" y="86" text-anchor="middle" font-size="8.5" fill="#4a5578">case · space · format</text>
+          <rect x="282" y="45" width="116" height="56" rx="10" fill="#e0f7fb" stroke="#0891b2" stroke-width="1.6"/>
+          <text x="340" y="69" text-anchor="middle" font-size="12.5" fill="#0891b2" font-weight="800">Deduplicate</text>
+          <text x="340" y="86" text-anchor="middle" font-size="8.5" fill="#4a5578">exact · then fuzzy</text>
+          <rect x="416" y="45" width="116" height="56" rx="10" fill="#e3f6ee" stroke="#059669" stroke-width="1.6"/>
+          <text x="474" y="69" text-anchor="middle" font-size="12.5" fill="#059669" font-weight="800">Validate</text>
+          <text x="474" y="86" text-anchor="middle" font-size="8.5" fill="#4a5578">rules pass</text>
+          <rect x="550" y="45" width="116" height="56" rx="10" fill="#fef3e2" stroke="#d97706" stroke-width="1.4"/>
+          <text x="608" y="69" text-anchor="middle" font-size="12.5" fill="#d97706" font-weight="800">Document</text>
+          <text x="608" y="86" text-anchor="middle" font-size="8.5" fill="#4a5578">log what changed</text>
+          <!-- arrows -->
+          <g stroke="#cdd3e6" stroke-width="2" fill="#cdd3e6">
+            <line x1="130" y1="73" x2="146" y2="73"/><path d="M146,73 l-7,-4 l0,8 z"/>
+            <line x1="264" y1="73" x2="280" y2="73"/><path d="M280,73 l-7,-4 l0,8 z"/>
+            <line x1="398" y1="73" x2="414" y2="73"/><path d="M414,73 l-7,-4 l0,8 z"/>
+            <line x1="532" y1="73" x2="548" y2="73"/><path d="M548,73 l-7,-4 l0,8 z"/>
+          </g>
+          <text x="340" y="28" text-anchor="middle" font-size="11" fill="#1a2138" font-weight="700">The cleaning pipeline</text>
+          <text x="206" y="128" text-anchor="middle" font-size="9.5" fill="#7c3aed" font-weight="700">standardize BEFORE dedup</text>
+          <text x="474" y="128" text-anchor="middle" font-size="9.5" fill="#059669" font-weight="700">validate AFTER</text>
+        </g>
+      </svg>
+    </figure>
+    <p style="font-size:0.9rem;color:var(--ink-faint)">Always keep the raw data untouched and clean into a new
+       copy, logging how many rows you change. Cleaning you cannot audit is cleaning you cannot trust.</p>
+  </section>
+
+  <!-- ===== Section 2: duplicates ===== -->
+  <section id="duplicates">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Removing Duplicates</h2></div>
+    <p>Duplicates inflate counts, double-count revenue, and bias every average. In pandas,
+       <code>duplicated()</code> finds them (returns a boolean flag, removes nothing) and
+       <code>drop_duplicates()</code> removes them. Two arguments do the real work:</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Argument</th><th>What it does</th><th>Use it when</th></tr></thead>
+        <tbody>
+          <tr><td class="nm"><code>subset=</code></td><td>Compare only these columns (a key) instead of all columns</td><td>"One row per <code>customer_id</code>" even if other fields differ</td></tr>
+          <tr><td class="nm"><code>keep="first"</code></td><td>Keep the first occurrence (the default)</td><td>Order does not matter, or the first is canonical</td></tr>
+          <tr><td class="nm"><code>keep="last"</code></td><td>Keep the last occurrence</td><td>The latest record is the most current</td></tr>
+          <tr><td class="nm"><code>keep=False</code></td><td>Flag/drop <em>every</em> member of a duplicate group</td><td><code>df[df.duplicated(keep=False)]</code> to inspect all dupes</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout note">
+      <div class="cico">🔑</div>
+      <div><div class="ctitle">Identical is not the same as duplicate</div>
+        <p>Two different customers can share a name. Without a <strong>unique key</strong> (email, account ID), you
+           cannot be sure two identical-looking rows are really the same entity. And <code>drop_duplicates()</code>
+           with no <code>subset</code> keeps an arbitrary "first" row, you may instead want the
+           <strong>most complete</strong> record, so sort first or choose the key deliberately.</p></div>
+    </div>
+
+    <h3 style="font-size:1.05rem;color:var(--ink);margin:1.4rem 0 0.4rem">Near-duplicates need more than equality</h3>
+    <p>Exact matching never catches "Jon Smith" vs "John Smith" or "Acme Inc" vs "Acme, Inc." These are the same
+       entity in different clothes, the realm of <span class="term">record linkage</span>. The tool is
+       <span class="hl">string similarity</span>:</p>
+    <div class="cardgrid cols-3">
+      <div class="ic-card bg-cyan"><h4 class="tx-cyan">Levenshtein</h4><p>Edit distance: how many single-character inserts, deletes, or swaps separate two strings. Often scaled to a 0 to 1 ratio.</p></div>
+      <div class="ic-card bg-purple"><h4 class="tx-purple">Jaro-Winkler</h4><p>A 0 to 1 score that rewards a shared prefix. Strong for short strings and names.</p></div>
+      <div class="ic-card bg-amber"><h4 class="tx-amber">Jaccard (tokens)</h4><p>Word-set overlap, order-independent. Good when word order varies.</p></div>
+    </div>
+    <div class="callout key">
+      <div class="cico">⚖️</div>
+      <div><div class="ctitle">Fuzzy matching is a precision/recall tradeoff</div>
+        <p>A loose similarity threshold catches more true duplicates (higher recall) but risks
+           <strong>false merges</strong>, combining two genuinely different people (lower precision). Always
+           <strong>review</strong> matches above the threshold; never auto-merge blindly. Production tools:
+           <code>rapidfuzz</code>, <code>recordlinkage</code>, <code>dedupe</code>, or OpenRefine's clustering.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 3: standardization ===== -->
+  <section id="standardize">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Standardizing Inconsistencies</h2></div>
+    <p>Casing and whitespace are <span class="hl">invisible</span> bugs: "Male", "male", and "male " print almost
+       the same but are three different values to a computer, so they split a <code>groupby</code> and break a
+       <code>merge</code>. The cure is one repeatable pattern.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 680 120" width="100%" font-family="Inter, sans-serif" aria-label="The standardization pattern: discover, define canonical, map, verify">
+        <g text-anchor="middle">
+          <rect x="20"  y="35" width="140" height="50" rx="10" fill="#e0f7fb" stroke="#0891b2" stroke-width="1.5"/>
+          <text x="90" y="58" font-size="12" fill="#0891b2" font-weight="800">Discover</text>
+          <text x="90" y="74" font-size="8.5" fill="#4a5578">value_counts()</text>
+          <rect x="194" y="35" width="140" height="50" rx="10" fill="#f0e9fe" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="264" y="58" font-size="12" fill="#7c3aed" font-weight="800">Define canonical</text>
+          <text x="264" y="74" font-size="8.5" fill="#4a5578">one true form</text>
+          <rect x="368" y="35" width="140" height="50" rx="10" fill="#fef3e2" stroke="#d97706" stroke-width="1.5"/>
+          <text x="438" y="58" font-size="12" fill="#d97706" font-weight="800">Map</text>
+          <text x="438" y="74" font-size="8.5" fill="#4a5578">strip · lower · replace</text>
+          <rect x="542" y="35" width="120" height="50" rx="10" fill="#e3f6ee" stroke="#059669" stroke-width="1.5"/>
+          <text x="602" y="58" font-size="12" fill="#059669" font-weight="800">Verify</text>
+          <text x="602" y="74" font-size="8.5" fill="#4a5578">value_counts()</text>
+          <g stroke="#cdd3e6" stroke-width="2" fill="#cdd3e6">
+            <line x1="160" y1="60" x2="192" y2="60"/><path d="M192,60 l-7,-4 l0,8 z"/>
+            <line x1="334" y1="60" x2="366" y2="60"/><path d="M366,60 l-7,-4 l0,8 z"/>
+            <line x1="508" y1="60" x2="540" y2="60"/><path d="M540,60 l-7,-4 l0,8 z"/>
+          </g>
+          <text x="340" y="22" font-size="11" fill="#1a2138" font-weight="700">The standardization pattern</text>
+        </g>
+      </svg>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Inconsistency</th><th>pandas fix</th><th>Watch out</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Casing</td><td><code>s.str.lower()</code> / <code>.str.title()</code></td><td>Unify before <code>groupby</code> or groups split</td></tr>
+          <tr><td class="nm">Leading/trailing space</td><td><code>s.str.strip()</code></td><td>"Acme " ≠ "Acme"; invisible in print</td></tr>
+          <tr><td class="nm">Inconsistent categories</td><td><code>s.replace({variant: canonical})</code></td><td><code>replace</code> leaves unmatched as-is; <code>map</code> turns them to <code>NaN</code></td></tr>
+          <tr><td class="nm">Dates (mixed)</td><td><code>pd.to_datetime(s, errors="coerce")</code></td><td>Bad values become <code>NaT</code>; target ISO 8601</td></tr>
+          <tr><td class="nm">Numbers as text</td><td>strip <code>$</code>,<code>,</code> then <code>pd.to_numeric(..., errors="coerce")</code></td><td>Count what you coerced to <code>NaN</code></td></tr>
+          <tr><td class="nm">ZIP / IDs</td><td>keep as string; <code>s.str.zfill(5)</code></td><td>Reading as int drops leading zeros (<code>02134</code>)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout note">
+      <div class="cico">🔗</div>
+      <div><div class="ctitle">Coercing creates missing values</div>
+        <p><code>errors="coerce"</code> quietly turns anything unparseable into <code>NaT</code> or <code>NaN</code>.
+           That is a deliberate, useful behavior, but it <em>creates missing data</em>, so always check
+           <code>.isna().sum()</code> afterward. Handling those gaps is exactly what Chapter 20 is about.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 4: validation ===== -->
+  <section id="validation">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Validation Rules: a Contract</h2></div>
+    <p>Cleaning once is good; <span class="hl">guaranteeing</span> the data is clean every time it loads is better.
+       Validation rules encode what valid data must look like, so bad data fails loudly instead of slipping through.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Rule type</th><th>Example</th><th>Check</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Range</td><td>age between 0 and 120</td><td><code>df["age"].between(0,120).all()</code></td></tr>
+          <tr><td class="nm">Type</td><td><code>qty</code> is an integer</td><td><code>is_integer_dtype(df["qty"])</code></td></tr>
+          <tr><td class="nm">Allowed value</td><td>gender ∈ {male, female, other}</td><td><code>df["gender"].isin(VALID).all()</code></td></tr>
+          <tr><td class="nm">Format / regex</td><td>valid email</td><td><code>df["email"].str.match(EMAIL_RE)</code></td></tr>
+          <tr><td class="nm">Uniqueness</td><td><code>customer_id</code> is a primary key</td><td><code>df["customer_id"].is_unique</code></td></tr>
+          <tr><td class="nm">Cross-field</td><td>start ≤ end</td><td><code>(df["start"] &lt;= df["end"]).all()</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">📜</div>
+      <div><div class="ctitle">Fail loudly, not silently</div>
+        <p>A rule set is a contract: validate on ingest <em>and</em> after cleaning. Prefer raising an error
+           (an assertion, or a schema tool like <strong>pandera</strong> or <strong>Great Expectations</strong>) over
+           quietly coercing bad values, silent coercion hides the very problems you are trying to catch. A
+           <code>validate()</code> that returns every violation turns one-off cleaning into a testable pipeline.</p></div>
+    </div>
+
+    <div class="callout note">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for data science</div>
+        <p>Dedup and standardization are prerequisites, not polish. <strong>Joins and merges fail on a stray space</strong>;
+           <code>groupby</code> counts split across casing variants; duplicated rows over-weight a mean and can leak
+           between train and test sets. Entity resolution underpins customer-360, fraud detection, and cleaning ML
+           training data. Codified rules are the bridge from "I cleaned it once" to "this dataset is valid every time."</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 5: In ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Duplicates in Machine Learning &amp; AI</h2></div>
+    <p>Duplicates are not just untidy, they actively distort a model. The most dangerous case is subtle: the same record
+       landing in both the training and test sets, which quietly inflates every score you report.</p>
+
+    <table class="disp-table">
+      <thead>
+        <tr><th>Duplicate issue</th><th>Where it shows up in ML</th><th>Why it matters</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="nm tx-cyan">Train/test leakage</td><td>A duplicated row split across train and test</td><td>The model is tested on data it trained on, so reported accuracy is a <strong>lie</strong></td></tr>
+        <tr><td class="nm tx-purple">Over-weighting</td><td>Repeated rows in the training set</td><td>Duplicated examples silently count more, biasing the model toward them</td></tr>
+        <tr><td class="nm tx-amber">Entity resolution</td><td>Near-duplicates (record linkage) across data sources</td><td>Matching &quot;J. Smith&quot; to &quot;John Smith&quot; is a whole modeling task of its own</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Deduplicate before you split</div>
+        <p>The order is not optional: remove duplicates <strong>before</strong> you split into train and test. Dedup
+           after splitting, and copies of the same row can end up on both sides, the single most common cause of a model
+           that scores beautifully in testing and fails in production.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 6: Real-World Example ===== -->
+  <section id="real-world">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Real-World Example: A Contact List with Duplicates</h2></div>
+    <p>This contact list has <strong>207 rows</strong> but only <strong>180 real people</strong>. Some rows are
+       <strong>exact</strong> copies, and <code>drop_duplicates()</code> catches those, leaving 192. But a dozen more are
+       <strong>near</strong>-duplicates, the same person whose name got re-cased or space-padded, which slip through an
+       exact match. The companion notebook shows how deduplicating on a business key (email) catches them.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · finding-and-removing-duplicates-and-inconsistencies--duplicate_contacts.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per contact (with duplicates): <code>record_id</code> (a row id, not a
+        person key), <code>full_name</code> (sometimes re-cased or padded), <code>email</code> (the reliable identity
+        key), <code>city</code>, and <code>signup_year</code>. It mixes exact and near-duplicates on purpose.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/finding-and-removing-duplicates-and-inconsistencies--duplicate_contacts.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 207 rows</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Bring it to life in Python</h3>
+          <p>The companion notebook drops exact duplicates with <code>subset</code> and <code>keep</code>, standardizes
+             a six-spelling category column down to two, coerces messy dates and text-numbers, scores near-duplicates
+             with a dependency-free similarity ratio, and runs a <code>validate()</code> rule checker.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/finding-and-removing-duplicates-and-inconsistencies.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/finding-and-removing-duplicates-and-inconsistencies.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/finding-and-removing-duplicates-and-inconsistencies.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>,
+      <code>matplotlib</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Key Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Order matters</strong>: profile, standardize, deduplicate, validate, document, standardize before dedup, validate after.</span></li>
+        <li><span class="ck">✓</span><span><strong>drop_duplicates</strong> with <code>subset</code> dedupes on a key; <code>keep</code> chooses which row survives; identical ≠ duplicate without a key.</span></li>
+        <li><span class="ck">✓</span><span><strong>Near-duplicates</strong> need string similarity (Levenshtein, Jaro-Winkler); fuzzy matching trades precision for recall, so review.</span></li>
+        <li><span class="ck">✓</span><span><strong>Standardize</strong> with discover → canonical → map → verify; casing and whitespace are invisible bugs; coercing creates missing values.</span></li>
+        <li><span class="ck">✓</span><span><strong>Validation rules</strong> are a contract that fails loudly; they turn cleaning into a repeatable, testable pipeline.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Practice Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them on paper or in Python before checking the solutions.</p>
+
+    <div class="challenges">
+      <div class="challenge">
+        <div class="cnum">1</div>
+        <div class="cbody">
+          <h4>Dedup on a key</h4>
+          <p>A table has an exact duplicate row and a customer who appears twice with different spend. Drop the exact
+             duplicate, then keep one row per <code>customer_id</code> (the most recent), and report rows removed.</p>
+          <div class="chint">Hint: <code>drop_duplicates()</code> then <code>drop_duplicates(subset=..., keep="last")</code>.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">2</div>
+        <div class="cbody">
+          <h4>Standardize a column</h4>
+          <p>A country column has many spellings of two countries. Standardize it to two canonical values and confirm
+             with <code>value_counts()</code>.</p>
+          <div class="chint">Hint: strip, lower, drop punctuation, then a mapping dict.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">3</div>
+        <div class="cbody">
+          <h4>Coerce formats</h4>
+          <p>A price column holds <code>"1,250"</code>, <code>"$90"</code>, and <code>"oops"</code>. Convert it to
+             numeric and report how many values could not be parsed.</p>
+          <div class="chint">Hint: regex-strip <code>$</code>,<code>,</code> then <code>pd.to_numeric(errors="coerce")</code>; count NaN.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">4</div>
+        <div class="cbody">
+          <h4>Score near-duplicates</h4>
+          <p>Using a normalized Levenshtein ratio, decide which of "Acme Inc", "Acme, Inc.", "Acme Incorporated",
+             "Beta LLC" are likely the same entity (similarity ≥ 0.85).</p>
+          <div class="chint">Hint: normalize first (lowercase, strip punctuation), then compare pairs.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">5</div>
+        <div class="cbody">
+          <h4>Write the rules</h4>
+          <p>Write a <code>validate()</code> that flags a duplicate <code>id</code>, an age outside 0 to 120, and a
+             <code>status</code> not in {active, inactive}. Run it and print every violation.</p>
+          <div class="chint">Hint: <code>is_unique</code>, <code>between</code>, <code>isin</code>; return a list of issues.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges in the same visual
+           style. Try them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/finding-and-removing-duplicates-and-inconsistencies--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/finding-and-removing-duplicates-and-inconsistencies--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/finding-and-removing-duplicates-and-inconsistencies--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">8</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on duplicates and inconsistencies. Answer them, hit <strong>Check Answers</strong>, and
+       keep refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <!-- ===== Chapter Nav ===== -->
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="the-data-cleaning-mindset.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 18 · Previous</span><br><span class="cn-title">The Data-Cleaning Mindset</span></span>
+    </a>
+    <a class="cn-btn next" href="handling-missing-data.html">
+      <span><span class="cn-dir">Chapter 20 · Next</span><br><span class="cn-title">Handling Missing Data</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 19 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<!-- ===== Quiz data for this chapter ===== -->
+<script>
+  window.QUIZ_ID = "ch19";
+  window.QUIZ_DATA = [
+    {
+      q: "In the cleaning pipeline, you should standardize…",
+      options: [
+        "After deduplicating",
+        "Before deduplicating, so variants like 'Acme ' and 'Acme' collapse together",
+        "Only if there are no duplicates",
+        "It does not matter when"
+      ],
+      answer: 1,
+      explain: "Standardize BEFORE dedup. Otherwise casing/whitespace variants survive as separate 'unique' records and the dedup misses them."
+    },
+    {
+      q: "pandas df.duplicated() …",
+      options: [
+        "Removes duplicate rows",
+        "Returns a boolean Series flagging duplicate rows, removing nothing",
+        "Counts missing values",
+        "Sorts the DataFrame"
+      ],
+      answer: 1,
+      explain: "duplicated() only flags (returns booleans) for discovery; drop_duplicates() is what actually removes the rows."
+    },
+    {
+      q: "To keep exactly one row per customer_id even when other columns differ, use…",
+      options: [
+        "drop_duplicates() with no arguments",
+        "drop_duplicates(subset='customer_id')",
+        "duplicated().sum()",
+        "dropna()"
+      ],
+      answer: 1,
+      explain: "subset= compares only the key column(s). Without subset, all columns must match, so rows differing on any field are NOT collapsed."
+    },
+    {
+      q: "df.drop_duplicates(keep=False) does what?",
+      options: [
+        "Keeps the first of each duplicate group",
+        "Keeps the last of each duplicate group",
+        "Removes EVERY row that participates in a duplicate group, keeping only originally-unique rows",
+        "Keeps nothing at all"
+      ],
+      answer: 2,
+      explain: "keep=False drops all members of any duplicate group. Handy with duplicated(keep=False) to isolate and inspect every duplicate."
+    },
+    {
+      q: "Why won't 'Acme Inc' and 'Acme, Inc.' be caught by drop_duplicates()?",
+      options: [
+        "Because pandas is broken",
+        "Because they are not byte-identical; near-duplicates need string-similarity matching",
+        "Because they are missing values",
+        "Because they are in different columns"
+      ],
+      answer: 1,
+      explain: "drop_duplicates only catches exact matches. Near-duplicates (different spelling/punctuation) require fuzzy matching like Levenshtein or Jaro-Winkler."
+    },
+    {
+      q: "The main risk of an overly loose fuzzy-matching threshold is…",
+      options: [
+        "It runs too slowly",
+        "False merges: combining two genuinely different entities (lower precision)",
+        "It deletes all the data",
+        "It only works on numbers"
+      ],
+      answer: 1,
+      explain: "Fuzzy matching is a precision/recall tradeoff. A loose threshold catches more true dupes but merges different real people. Review matches before merging."
+    },
+    {
+      q: "After pd.to_numeric(col, errors='coerce'), unparseable values become…",
+      options: [
+        "Zero",
+        "The column mean",
+        "NaN (missing), so you should count how many you coerced",
+        "An error that stops the program"
+      ],
+      answer: 2,
+      explain: "errors='coerce' silently turns bad values into NaN (dates into NaT). It creates missing data, so check .isna().sum(); that's the bridge to Chapter 20."
+    },
+    {
+      q: "A data validation rule set is best thought of as…",
+      options: [
+        "An optional nicety",
+        "A contract that should fail loudly when data is invalid, checked on ingest and after cleaning",
+        "A way to silently fix bad values",
+        "Only for numeric columns"
+      ],
+      answer: 1,
+      explain: "Validation rules (range, type, allowed-value, format, uniqueness, cross-field) codify valid data and should raise rather than silently coerce, turning cleaning into a testable pipeline."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

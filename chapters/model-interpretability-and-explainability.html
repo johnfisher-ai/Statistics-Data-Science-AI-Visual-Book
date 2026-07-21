@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 113 · Model Interpretability &amp; Explainability — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#eef2ff; border:1px solid #c7d2fe; border-left:4px solid #4338ca; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#3730a3; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/model-interpretability-and-explainability.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XVIII · Supervised Learning</span><span class="sep">/</span>
+      <span>Chapter 113</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XVIII · Supervised Learning</span> Opening the black box</div>
+    <h1>Model Interpretability &amp; <span class="accent">Explainability</span></h1>
+    <p class="dek">A model that predicts well but cannot say why is a liability, unauditable, undebuggable, and often
+       illegal. This chapter opens the black box: permutation importance and partial dependence for the global picture, and
+       SHAP and LIME to justify a single decision, so you can answer not just "what does the model predict?" but "why?"</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~20 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 113</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">The most accurate models, gradient-boosted forests, deep networks, are the least transparent: hundreds
+       of trees or millions of weights offer no readable rule. Yet a bank that denies a loan, a hospital that flags a
+       patient, or a court that scores a defendant must be able to <span class="hl">explain the decision</span>.
+       <span class="term">Interpretability</span> is how we get accuracy <em>and</em> accountability.</p>
+
+    <div class="def-card">
+      <div class="sigma">?</div>
+      <div class="def-body">
+        <span class="def-kw">Interpretability</span> methods explain a model's behavior. <span class="def-kw">Global</span>
+        methods (permutation <span class="def-kw">importance</span>, <span class="def-kw">partial dependence</span>)
+        describe the model overall; <span class="def-kw">local</span> methods (<span class="def-kw">SHAP</span>,
+        <span class="def-kw">LIME</span>) explain a single prediction as a set of per-feature contributions.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🔍</div>
+      <div><div class="ctitle">The chapter in one line</div>
+        <p>Explain a model two ways: <strong>globally</strong> (which features matter, and how, via permutation importance
+           and partial dependence) and <strong>locally</strong> (why this one prediction, via SHAP and LIME), because trust,
+           debugging, fairness, and the law all demand a reason, not just a number.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1 ===== -->
+  <section id="why">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Why Interpretability, and Two Kinds</h2></div>
+    <p>An unexplained model cannot be trusted, debugged, or defended. Interpretability serves four concrete needs:
+       <span class="hl">trust</span> (would you accept a diagnosis with no reasoning?), <span class="hl">debugging</span>
+       (is the model right for the wrong reason, leaning on a leaked or biased feature?), <span class="hl">fairness</span>
+       (does it discriminate?), and <span class="hl">regulation</span> (laws increasingly grant a right to an explanation).</p>
+
+    <p>Explanations come at two scales, and you need both.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 720 236" width="100%" font-family="Inter, sans-serif" aria-label="Global explanations describe the whole model with an importance bar chart and a partial-dependence curve; local explanations justify one prediction by decomposing it into feature contributions">
+        <text x="360" y="18" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">Two scales of explanation</text>
+        <!-- GLOBAL -->
+        <rect x="20" y="34" width="330" height="188" rx="12" fill="#eef2ff" stroke="#c7d2fe"/>
+        <text x="185" y="54" text-anchor="middle" font-size="10.5" fill="#3730a3" font-weight="800">GLOBAL &#183; the whole model</text>
+        <text x="185" y="68" text-anchor="middle" font-size="8" fill="#4338ca">which features matter, and how</text>
+        <text x="52" y="92" font-size="8" fill="#4a5578" font-weight="700">importance:</text>
+        <g><rect x="120" y="86" width="150" height="11" fill="#4338ca"/><text x="276" y="95" font-size="7.5" fill="#475569">debt-to-income</text>
+           <rect x="120" y="102" width="120" height="11" fill="#4f46e5"/><text x="246" y="111" font-size="7.5" fill="#475569">credit score</text>
+           <rect x="120" y="118" width="80" height="11" fill="#6366f1"/><text x="206" y="127" font-size="7.5" fill="#475569">late payments</text>
+           <rect x="120" y="134" width="26" height="11" fill="#c7d2fe"/><text x="152" y="143" font-size="7.5" fill="#94a3b8">income</text></g>
+        <text x="52" y="168" font-size="8" fill="#4a5578" font-weight="700">partial dependence:</text>
+        <path d="M120,206 C160,204 200,188 250,166 C290,150 320,148 336,148" fill="none" stroke="#3730a3" stroke-width="2"/>
+        <text x="228" y="216" text-anchor="middle" font-size="7" fill="#8b94b3">risk falls as credit score rises</text>
+        <!-- LOCAL -->
+        <rect x="366" y="34" width="334" height="188" rx="12" fill="#eef6ff" stroke="#bfdbfe"/>
+        <text x="533" y="54" text-anchor="middle" font-size="10.5" fill="#1d4ed8" font-weight="800">LOCAL &#183; one prediction</text>
+        <text x="533" y="68" text-anchor="middle" font-size="8" fill="#2563eb">why was THIS applicant denied?</text>
+        <text x="392" y="96" font-size="8" fill="#4a5578">base rate</text>
+        <rect x="392" y="100" width="40" height="14" fill="#cbd5e1"/><text x="412" y="146" text-anchor="middle" font-size="7" fill="#64748b">0.32</text>
+        <g>
+          <rect x="440" y="100" width="70" height="14" fill="#ef4444"/><text x="475" y="110" text-anchor="middle" font-size="7" fill="#fff">+ high DTI</text>
+          <rect x="512" y="100" width="60" height="14" fill="#ef4444"/><text x="542" y="110" text-anchor="middle" font-size="7" fill="#fff">+ big loan</text>
+          <rect x="574" y="100" width="30" height="14" fill="#60a5fa"/><text x="589" y="110" text-anchor="middle" font-size="7" fill="#fff">&#8722;emp</text>
+        </g>
+        <rect x="612" y="100" width="46" height="14" fill="#1d4ed8"/><text x="635" y="146" text-anchor="middle" font-size="7" fill="#1d4ed8" font-weight="700">0.86</text>
+        <path d="M392,128 L658,128" stroke="#94a3b8" stroke-width="1"/>
+        <text x="533" y="170" text-anchor="middle" font-size="8" fill="#4a5578">each feature pushes the prediction up (red) or down (blue)</text>
+        <text x="533" y="188" text-anchor="middle" font-size="8" fill="#4a5578">until it reaches this applicant's score</text>
+        <text x="533" y="208" text-anchor="middle" font-size="7.5" fill="#8b94b3">this is SHAP / LIME</text>
+      </svg>
+    </figure>
+
+    <p><span class="term">Global</span> explanations describe how the model behaves across <em>all</em> data, its overall
+       priorities and learned relationships. <span class="term">Local</span> explanations justify <em>one specific</em>
+       prediction. A loan applicant does not care which features matter on average; they want to know why <em>they</em> were
+       denied. We build both.</p>
+  </section>
+
+  <!-- ===== Section 2 ===== -->
+  <section id="global">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Global: Importance &amp; Partial Dependence</h2></div>
+    <p>Two global tools answer two questions. <span class="term">Permutation importance</span> answers <em>which</em>
+       features matter: it shuffles one feature's values, breaking its link to the target, and measures how far the model's
+       accuracy falls. A big drop means the model relies on it heavily. It is <span class="hl">model-agnostic</span> and
+       more trustworthy than a tree's built-in impurity importances. On the credit model, <strong>debt-to-income, credit
+       score, and late payments</strong> lead, precisely what a human analyst would expect.</p>
+
+    <p><span class="term">Partial dependence</span> answers <em>how</em> a feature acts: it sweeps one feature across its
+       range and plots the model's average predicted probability. In the notebook, predicted default <strong>falls as
+       credit score rises</strong> and <strong>climbs with debt-to-income</strong>, non-linear curves whose steepest
+       regions reveal the model's decision thresholds. (Its per-instance cousin, the <span class="term">ICE plot</span>,
+       draws one line per applicant to check whether the effect is the same for everyone.) Together they give the model's
+       overall logic; but they cannot explain a single denial. For that we go local.</p>
+  </section>
+
+  <!-- ===== Section 3 ===== -->
+  <section id="local">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Local: SHAP &amp; LIME</h2></div>
+    <p><span class="term">SHAP</span> (SHapley Additive exPlanations) borrows a fair-credit-assignment idea from game
+       theory: it splits each prediction into an <span class="hl">additive contribution from every feature</span>, in a
+       mathematically consistent way. A single applicant's prediction becomes a running total, start at the average, then
+       add each feature's push, up toward default or down toward repayment, until you reach their score.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 260" width="100%" font-family="Inter, sans-serif" aria-label="A SHAP waterfall for one applicant: starting from the base rate of 0.32, a large loan, high debt-to-income, and a low credit score each push the predicted default probability up in red, employment history pushes slightly down in blue, ending at 0.86">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Why this applicant was flagged: a SHAP waterfall</text>
+        <line x1="150" y1="44" x2="150" y2="238" stroke="#e2e8f0"/>
+        <!-- scale reference: x = prob mapped 0..1 -> 150..640 -->
+        <text x="150" y="252" text-anchor="middle" font-size="7.5" fill="#94a3b8">0.0</text><text x="640" y="252" text-anchor="middle" font-size="7.5" fill="#94a3b8">1.0</text>
+        <!-- base -->
+        <text x="144" y="60" text-anchor="end" font-size="8.5" fill="#475569" font-weight="700">base rate</text>
+        <rect x="150" y="52" width="157" height="16" fill="#cbd5e1"/><text x="312" y="64" font-size="8" fill="#64748b">0.32</text>
+        <line x1="307" y1="60" x2="307" y2="92" stroke="#94a3b8" stroke-dasharray="3 2"/>
+        <!-- + big loan -->
+        <text x="144" y="90" text-anchor="end" font-size="8.5" fill="#b91c1c" font-weight="700">loan amount high</text>
+        <rect x="307" y="82" width="120" height="16" fill="#ef4444"/><text x="432" y="94" font-size="8" fill="#b91c1c" font-weight="700">+0.25</text>
+        <line x1="427" y1="90" x2="427" y2="122" stroke="#94a3b8" stroke-dasharray="3 2"/>
+        <!-- + high DTI -->
+        <text x="144" y="120" text-anchor="end" font-size="8.5" fill="#b91c1c" font-weight="700">debt-to-income high</text>
+        <rect x="427" y="112" width="95" height="16" fill="#ef4444"/><text x="527" y="124" font-size="8" fill="#b91c1c" font-weight="700">+0.19</text>
+        <line x1="522" y1="120" x2="522" y2="152" stroke="#94a3b8" stroke-dasharray="3 2"/>
+        <!-- + low credit -->
+        <text x="144" y="150" text-anchor="end" font-size="8.5" fill="#b91c1c" font-weight="700">credit score low</text>
+        <rect x="522" y="142" width="78" height="16" fill="#ef4444"/><text x="605" y="154" font-size="8" fill="#b91c1c" font-weight="700">+0.16</text>
+        <line x1="600" y1="150" x2="600" y2="182" stroke="#94a3b8" stroke-dasharray="3 2"/>
+        <!-- - employment -->
+        <text x="144" y="180" text-anchor="end" font-size="8.5" fill="#1d4ed8" font-weight="700">employed 9 yrs</text>
+        <rect x="565" y="172" width="35" height="16" fill="#60a5fa"/><text x="558" y="184" text-anchor="end" font-size="8" fill="#1d4ed8" font-weight="700">&#8722;0.06</text>
+        <line x1="565" y1="180" x2="565" y2="210" stroke="#94a3b8" stroke-dasharray="3 2"/>
+        <!-- final -->
+        <text x="144" y="208" text-anchor="end" font-size="8.5" fill="#3730a3" font-weight="800">prediction</text>
+        <rect x="150" y="200" width="421" height="16" fill="#4338ca"/><text x="578" y="212" font-size="9" fill="#3730a3" font-weight="800">0.86 default</text>
+        <text x="340" y="234" text-anchor="middle" font-size="7.5" fill="#8b94b3">red pushes toward default, blue toward repayment; the pushes sum to the final score</text>
+      </svg>
+    </figure>
+
+    <p>The <span class="term">waterfall</span> above is the artifact you hand a customer or an auditor: not a bare denial,
+       but a ranked, quantitative reason, a large loan and high debt-to-income did most of the damage, only slightly offset
+       by a steady employment history. <span class="term">LIME</span> (Local Interpretable Model-agnostic Explanations)
+       reaches the same goal differently: it probes the black box with small perturbations around one applicant and fits a
+       simple <strong>linear model</strong> to that neighborhood. When SHAP and LIME <span class="hl">surface the same
+       drivers</span>, as they do here, you can trust the explanation.</p>
+  </section>
+
+  <!-- ===== Section 4: REAL-WORLD ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: Explaining a Credit Decision</h2></div>
+    <p>A lender trains a gradient-boosting model on past applicants and, by law, must give any rejected applicant the
+       reasons. Interpretability turns an opaque score into a defensible decision.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · model-interpretability-and-explainability--credit.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per applicant with <code>credit_score</code>, <code>debt_to_income</code>,
+        <code>income_k</code>, <code>loan_amount_k</code>, <code>num_late_payments</code>, and
+        <code>employment_years</code>, plus the label <code>default</code>.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/model-interpretability-and-explainability--credit.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 800 applicants</small></a>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Question</th><th>Tool</th><th>Answer on the credit model</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Which features matter overall?</td><td>permutation importance</td><td>debt-to-income, credit score, late payments</td></tr>
+          <tr><td class="nm">How does a feature act?</td><td>partial dependence</td><td>risk falls with credit score, rises with debt-to-income</td></tr>
+          <tr><td class="nm">Why was this applicant flagged (0.91)?</td><td>SHAP waterfall</td><td>a large loan and high debt-to-income drove the risk</td></tr>
+          <tr><td class="nm">A second opinion on that applicant?</td><td>LIME</td><td>agrees on the same key drivers</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The workflow is the point: <strong>global first</strong> to sanity-check that the model learned sensible
+       relationships (and is not leaning on a biased or leaked feature), then <strong>local</strong> to generate the
+       specific, ranked reason codes each decision requires. That is how a black-box model becomes something you can trust,
+       debug, and defend in front of a regulator.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Interpretability in Machine Learning &amp; AI</h2></div>
+    <p>Explainable AI (XAI) has grown from a nice-to-have into a requirement, technically and legally.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Tool (this chapter)</th><th>Where it is used</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Permutation importance</td><td>model debugging, feature engineering, leak detection</td></tr>
+          <tr><td class="nm">Partial dependence / ICE</td><td>validating that learned relationships make sense</td></tr>
+          <tr><td class="nm">SHAP</td><td>the industry-standard explainer; regulatory reason codes</td></tr>
+          <tr><td class="nm">LIME</td><td>model-agnostic local explanations for tabular, text, and images</td></tr>
+          <tr><td class="nm">Interpretability broadly</td><td>fairness audits, the legal "right to explanation"</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>The more powerful the model, the more it needs explaining, and the harder it gets. Regulations such as the
+           <strong>GDPR's right to explanation</strong> and fair-lending laws already require that automated decisions be
+           justifiable, so SHAP-style reason codes are now standard in banking and insurance. At the frontier, an entire
+           field of <strong>mechanistic interpretability</strong> tries to reverse-engineer what individual neurons and
+           attention heads inside large language models actually compute, work that is central to <strong>AI safety</strong>,
+           because we cannot align or trust a system we do not understand. The gap between a model's capability and our
+           ability to explain it is one of the defining problems of modern AI, and the tools in this chapter are where
+           learning to close it begins.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Explain a model in Python</h3>
+          <p>The companion notebook trains a credit-risk model, then explains it with <strong>permutation importance</strong>,
+             <strong>partial dependence plots</strong>, a <strong>SHAP</strong> summary (beeswarm) and a per-applicant
+             <strong>SHAP waterfall</strong>, and a <strong>LIME</strong> local explanation, nothing left as a black box.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/model-interpretability-and-explainability.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/model-interpretability-and-explainability.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/model-interpretability-and-explainability.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly. <strong>Open in Colab</strong> runs it live. To run
+      locally, install <code>numpy</code>, <code>pandas</code>, <code>scikit-learn</code>, <code>shap</code>,
+      <code>lime</code>, <code>matplotlib</code>, and <code>openpyxl</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Interpretability is not optional</strong>: it underpins trust, debugging, fairness, and legal compliance for deployed models.</span></li>
+        <li><span class="ck">✓</span><span><strong>Global explanations</strong> describe the whole model: permutation importance (which features matter) and partial dependence (how they act).</span></li>
+        <li><span class="ck">✓</span><span><strong>Permutation importance</strong> is model-agnostic and more reliable than a tree's built-in impurity importances.</span></li>
+        <li><span class="ck">✓</span><span><strong>SHAP</strong> decomposes any single prediction into additive, consistent per-feature contributions, a beeswarm globally, a waterfall for one decision.</span></li>
+        <li><span class="ck">✓</span><span><strong>LIME</strong> explains one prediction by fitting a simple linear model in its local neighborhood; when SHAP and LIME agree, trust the reason.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges. Try them with scikit-learn, shap, and lime before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Permutation importance</h4>
+        <p>Rank the features by permutation importance and name the most important.</p>
+        <div class="chint">Hint: <code>permutation_importance(model, X, y)</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Partial dependence direction</h4>
+        <p>Show the model's predicted risk falls as credit score rises.</p>
+        <div class="chint">Hint: <code>partial_dependence(model, X, ["credit_score"])</code>; cast to float.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Global SHAP importance</h4>
+        <p>Rank the features by mean absolute SHAP value.</p>
+        <div class="chint">Hint: <code>np.abs(shap_values.values).mean(axis=0)</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>SHAP for one applicant</h4>
+        <p>For the highest-risk applicant, find the feature contributing most to the default prediction.</p>
+        <div class="chint">Hint: the largest positive SHAP value.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>LIME agreement</h4>
+        <p>Explain the same applicant with LIME and compare its top driver to SHAP.</p>
+        <div class="chint">Hint: <code>LimeTabularExplainer(...).explain_instance(...)</code>.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code. Try
+           them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/model-interpretability-and-explainability--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/model-interpretability-and-explainability--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/model-interpretability-and-explainability--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on interpretability. Answer them, hit <strong>Check Answers</strong>, and keep refining until
+       you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next: a new kind of learning</div>
+      <p>That completes <strong>supervised learning</strong>, every chapter so far has had a labeled target. Next we drop
+         the labels. <strong>Chapter 114 &#183; Clustering</strong> opens Part XIX, <strong>Unsupervised Learning</strong>,
+         where the goal is to find structure, groups, patterns, and anomalies, with no answer key at all.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="model-pitfalls.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 112 · Previous</span><br><span class="cn-title">Model Pitfalls</span></span>
+    </a>
+    <a class="cn-btn next" href="clustering.html">
+      <span><span class="cn-dir">Chapter 114 · Next</span><br><span class="cn-title">Clustering</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 113 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch113";
+  window.QUIZ_DATA = [
+    {
+      q: "Model interpretability matters mainly for…",
+      options: ["Making models slower", "Trust, debugging, fairness, and regulatory compliance", "Increasing accuracy", "Reducing the number of features"],
+      answer: 1,
+      explain: "An unexplained model cannot be trusted, debugged, audited for bias, or defended when the law requires a reason."
+    },
+    {
+      q: "Global explanations describe ___, while local explanations describe ___.",
+      options: ["one prediction; the whole model", "the whole model's behavior; a single prediction", "the data; the code", "training; testing"],
+      answer: 1,
+      explain: "Global = overall model behavior (which features matter, how); local = why one specific prediction was made."
+    },
+    {
+      q: "Permutation importance measures a feature's importance by…",
+      options: ["Counting how often it is used", "Shuffling its values and measuring the drop in the model's accuracy", "Its correlation with the target", "Its variance"],
+      answer: 1,
+      explain: "Breaking a feature's link to the target (by shuffling) and seeing how much accuracy falls is model-agnostic and reliable."
+    },
+    {
+      q: "A partial dependence plot shows…",
+      options: ["The confusion matrix", "How the model's average prediction changes as one feature varies across its range", "The training loss", "The feature correlations"],
+      answer: 1,
+      explain: "PDP reveals the shape and direction of a feature's effect (e.g., risk falling as credit score rises)."
+    },
+    {
+      q: "SHAP explains a prediction by…",
+      options: ["Retraining the model", "Splitting it into additive per-feature contributions (game-theory Shapley values)", "Deleting features", "Averaging the data"],
+      answer: 1,
+      explain: "SHAP consistently attributes a prediction to each feature's contribution, summing from a base value to the final score."
+    },
+    {
+      q: "In a SHAP beeswarm plot, the color of each dot represents…",
+      options: ["The prediction error", "The feature's value (so you can read direction, high vs low)", "The class label", "The training epoch"],
+      answer: 1,
+      explain: "Coloring by feature value lets you see, e.g., that high debt-to-income (red) pushes toward the positive class."
+    },
+    {
+      q: "LIME explains a single prediction by…",
+      options: ["Looking inside the model's weights", "Fitting a simple linear model to the black box's behavior in the local neighborhood of that point", "Using the confusion matrix", "Shuffling the labels"],
+      answer: 1,
+      explain: "LIME is model-agnostic: it perturbs around one instance and fits an interpretable local surrogate."
+    },
+    {
+      q: "A per-applicant SHAP waterfall (or LIME explanation) is most useful as…",
+      options: ["A training speed-up", "The ranked, quantitative reason you give a customer or auditor for one decision", "A feature-selection method", "A loss function"],
+      answer: 1,
+      explain: "It turns 'the model said no' into specific reason codes, exactly what fairness and regulation demand."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 108 · Ensemble Methods — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#eef2ff; border:1px solid #c7d2fe; border-left:4px solid #4338ca; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#3730a3; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/ensemble-methods.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XVIII · Supervised Learning</span><span class="sep">/</span>
+      <span>Chapter 108</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XVIII · Supervised Learning</span> Strength in numbers</div>
+    <h1>Ensemble <span class="accent">Methods</span></h1>
+    <p class="dek">A single decision tree trailed the field in the last chapter, but trees have a superpower when you combine
+       them. This chapter builds the two great ensemble families, bagging and random forests (average many trees to cut
+       variance) and boosting (grow trees in sequence to cut bias), plus stacking, and shows why gradient-boosted trees are
+       the reigning champions of tabular machine learning.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~20 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 108</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">One expert can be wrong; a diverse committee usually is not. That is the whole idea of an
+       <span class="term">ensemble</span>: train many models and combine them, and the crowd's answer is
+       <span class="hl">more accurate and more stable</span> than any single member. Applied to decision trees, this simple
+       trick produces the strongest off-the-shelf models for tabular data.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#931;</div>
+      <div class="def-body">
+        An <span class="def-kw">ensemble</span> combines many base models into one predictor. <span class="def-kw">Bagging</span>
+        trains models in <span class="def-kw">parallel</span> on bootstrap resamples and averages them (cutting variance);
+        the <span class="def-kw">random forest</span> is bagging plus random feature subsets. <span class="def-kw">Boosting</span>
+        trains models in <span class="def-kw">sequence</span>, each fixing the last one's errors (cutting bias).
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🌳</div>
+      <div><div class="ctitle">The chapter in one line</div>
+        <p>A single tree overfits; combine many. <strong>Bagging / random forests</strong> average independent trees to
+           reduce variance, <strong>boosting</strong> chains trees to reduce bias, and both beat the lone tree, with
+           gradient boosting usually on top.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1 ===== -->
+  <section id="why">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Why Combine Models?</h2></div>
+    <p>Chapter 107 ended with a single decision tree trailing every other algorithm. The reason is a fundamental tension: a
+       <span class="hl">shallow tree underfits</span> (too simple to catch the pattern) while a <span class="hl">deep tree
+       overfits</span> (it memorizes noise). In the notebook, an unrestricted tree scores a perfect <strong>1.00 on its
+       training data but only 0.70 in cross-validation</strong>, worse than plain logistic regression.</p>
+
+    <p>Ensembles escape the trap by combining many trees so their individual errors cancel. There are two fundamentally
+       different ways to do it, and the distinction, <span class="term">parallel</span> versus
+       <span class="term">sequential</span>, is the key to the whole chapter.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 720 258" width="100%" font-family="Inter, sans-serif" aria-label="Bagging trains many trees in parallel on bootstrap samples and averages their votes to cut variance; boosting trains trees in sequence, each correcting the previous one's errors, to cut bias">
+        <text x="360" y="18" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">Two ways to combine trees</text>
+        <!-- BAGGING (left) -->
+        <text x="180" y="42" text-anchor="middle" font-size="10.5" fill="#3730a3" font-weight="800">BAGGING / RANDOM FOREST</text>
+        <text x="180" y="56" text-anchor="middle" font-size="8" fill="#4338ca">parallel &#183; independent &#183; cuts variance</text>
+        <rect x="40" y="68" width="70" height="26" rx="6" fill="#eef2ff" stroke="#4338ca"/><text x="75" y="85" text-anchor="middle" font-size="8" fill="#3730a3" font-weight="700">data</text>
+        <g stroke="#94a3b8" stroke-width="1.2">
+          <path d="M110,76 L150,84" marker-end="url(#e8)"/><path d="M110,81 L150,120" marker-end="url(#e8)"/><path d="M110,86 L150,156" marker-end="url(#e8)"/>
+        </g>
+        <text x="128" y="72" font-size="7" fill="#64748b">bootstrap samples</text>
+        <g font-size="7.5" text-anchor="middle">
+          <polygon points="170,78 158,98 182,98" fill="#c7d2fe" stroke="#4338ca"/><text x="170" y="112" fill="#4a5578">tree 1</text>
+          <polygon points="170,114 158,134 182,134" fill="#c7d2fe" stroke="#4338ca"/><text x="170" y="148" fill="#4a5578">tree 2</text>
+          <polygon points="170,150 158,170 182,170" fill="#c7d2fe" stroke="#4338ca"/><text x="170" y="184" fill="#4a5578">tree 3</text>
+        </g>
+        <g stroke="#94a3b8" stroke-width="1.2"><path d="M200,90 L250,120" marker-end="url(#e8)"/><path d="M200,124 L250,124" marker-end="url(#e8)"/><path d="M200,158 L250,128" marker-end="url(#e8)"/></g>
+        <rect x="252" y="108" width="72" height="34" rx="7" fill="#4338ca"/><text x="288" y="125" text-anchor="middle" font-size="8" fill="#fff" font-weight="800">vote /</text><text x="288" y="136" text-anchor="middle" font-size="8" fill="#fff" font-weight="800">average</text>
+        <text x="180" y="212" text-anchor="middle" font-size="8" fill="#64748b">many independent trees; their errors cancel</text>
+        <!-- divider -->
+        <line x1="362" y1="60" x2="362" y2="220" stroke="#e6e9f2"/>
+        <!-- BOOSTING (right) -->
+        <text x="540" y="42" text-anchor="middle" font-size="10.5" fill="#b45309" font-weight="800">BOOSTING</text>
+        <text x="540" y="56" text-anchor="middle" font-size="8" fill="#d97706">sequential &#183; each fixes the last &#183; cuts bias</text>
+        <g font-size="7.5" text-anchor="middle">
+          <polygon points="420,86 408,106 432,106" fill="#fed7aa" stroke="#d97706"/><text x="420" y="120" fill="#9a3412">tree 1</text>
+          <polygon points="510,86 498,106 522,106" fill="#fdba74" stroke="#d97706"/><text x="510" y="120" fill="#9a3412">tree 2</text>
+          <polygon points="600,86 588,106 612,106" fill="#fb923c" stroke="#c2410c"/><text x="600" y="120" fill="#9a3412">tree 3</text>
+        </g>
+        <g stroke="#d97706" stroke-width="1.3">
+          <path d="M434,96 L496,96" marker-end="url(#e8b)"/><path d="M524,96 L586,96" marker-end="url(#e8b)"/>
+        </g>
+        <text x="465" y="88" text-anchor="middle" font-size="6.8" fill="#c2410c">errors</text>
+        <text x="555" y="88" text-anchor="middle" font-size="6.8" fill="#c2410c">errors</text>
+        <g stroke="#94a3b8" stroke-width="1.2"><path d="M420,108 L505,150" marker-end="url(#e8)"/><path d="M510,108 L520,148" marker-end="url(#e8)"/><path d="M600,108 L535,150" marker-end="url(#e8)"/></g>
+        <rect x="500" y="150" width="80" height="32" rx="7" fill="#d97706"/><text x="540" y="170" text-anchor="middle" font-size="8" fill="#fff" font-weight="800">weighted sum</text>
+        <text x="540" y="212" text-anchor="middle" font-size="8" fill="#64748b">each new tree targets what is still wrong</text>
+        <defs>
+          <marker id="e8" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#94a3b8"/></marker>
+          <marker id="e8b" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#d97706"/></marker>
+        </defs>
+        <text x="360" y="240" text-anchor="middle" font-size="8" fill="#8b94b3">bagging reduces variance &#183; boosting reduces bias &#183; both beat one tree</text>
+      </svg>
+    </figure>
+  </section>
+
+  <!-- ===== Section 2 ===== -->
+  <section id="bagging">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Bagging &amp; Random Forests</h2></div>
+    <p><span class="term">Bagging</span> (bootstrap aggregating) trains each tree on a different random resample of the rows,
+       then averages their votes. Because the trees are trained independently, their random errors partly cancel, so the
+       average is <span class="hl">far more stable than any single tree</span>. The <span class="term">random forest</span>
+       adds a second source of randomness: at every split, each tree may only consider a random subset of the features. That
+       forces the trees to be more different from one another, which makes the averaging even more effective.</p>
+
+    <p>In the notebook, a random forest lifts cross-validated accuracy from the single tree's 0.70 to about <strong>0.78</strong>,
+       and its decision boundary is smooth where the single tree's was a jagged patchwork of overfit rectangles. Two bonuses
+       come for free: the <strong>out-of-bag (OOB) score</strong> is a validation estimate from the rows each tree did not
+       sample, and the <strong>feature importances</strong> rank which inputs matter, here satisfaction, monthly hours, and
+       evaluation lead, while the two planted <code>noise</code> columns are correctly pushed to near zero.</p>
+  </section>
+
+  <!-- ===== Section 3 ===== -->
+  <section id="boosting">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Boosting</h2></div>
+    <p><span class="term">Boosting</span> takes the opposite approach. Instead of many independent trees, it grows them
+       <span class="hl">one at a time, each new (shallow) tree focusing on the examples the previous ones got wrong</span>.
+       Where bagging attacks <em>variance</em>, boosting attacks <em>bias</em>, steadily turning a sequence of weak learners
+       into a strong one. The notebook's staged-accuracy curve shows test accuracy climbing as trees are added, then
+       leveling off (add too many and it eventually overfits, so the number of trees and the learning rate are the dials to
+       tune).</p>
+
+    <p>The classic algorithm is <span class="term">AdaBoost</span>; the modern default is <span class="term">gradient
+       boosting</span>, which fits each new tree to the <em>residual errors</em> of the running total. On this data,
+       gradient boosting is the single best model (~<strong>0.79</strong>). And the three names you will meet everywhere in
+       practice, <strong>XGBoost, LightGBM, and CatBoost</strong>, are all highly optimized gradient-boosting libraries;
+       they are the tools that win most tabular-data competitions.</p>
+  </section>
+
+  <!-- ===== Section 4: REAL-WORLD ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: Predicting Employee Attrition</h2></div>
+    <p>An HR team has 1,000 employees and wants to predict who will leave. The risk is deliberately nonlinear, high
+       performers who are overworked and never promoted, which is exactly the kind of interaction a single tree fumbles and
+       an ensemble nails.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · ensemble-methods--attrition.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per employee with <code>satisfaction</code>, <code>last_evaluation</code>,
+        <code>num_projects</code>, <code>avg_monthly_hours</code>, <code>tenure_years</code>, <code>salary_level</code>,
+        two junk <code>noise</code> columns, and the label <code>left</code> (1 = left, 0 = stayed).</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/ensemble-methods--attrition.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 1,000 employees</small></a>
+      </div>
+    </div>
+
+    <p>Racing every model with cross-validation puts the story in one picture:</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 600 268" width="100%" font-family="Inter, sans-serif" aria-label="A bar chart of 5-fold cross-validated accuracy: the single overfit tree is lowest at 0.70, logistic regression 0.77, then bagging, random forest, AdaBoost, gradient boosting, and stacking cluster near 0.78 to 0.79, all above the 0.60 baseline">
+        <text x="300" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Ensembles beat the single tree (5-fold CV accuracy)</text>
+        <line x1="150" y1="44" x2="150" y2="238" stroke="#94a3b8" stroke-width="1"/>
+        <!-- scale ref: x maps 0.55..0.85 to 150..560 -->
+        <line x1="187" y1="44" x2="187" y2="244" stroke="#e2e8f0" stroke-dasharray="4 3"/><text x="187" y="256" text-anchor="middle" font-size="7.5" fill="#94a3b8">0.60 baseline</text>
+        <g font-size="9" font-weight="700">
+          <text x="144" y="62" text-anchor="end" fill="#475569">single tree</text><rect x="150" y="52" width="205" height="18" fill="#cbd5e1"/><text x="362" y="66" font-size="8.5" fill="#475569" font-weight="700">0.70</text>
+          <text x="144" y="90" text-anchor="end" fill="#475569">logistic</text><rect x="150" y="80" width="301" height="18" fill="#cbd5e1"/><text x="458" y="94" font-size="8.5" fill="#475569" font-weight="700">0.77</text>
+          <text x="144" y="118" text-anchor="end" fill="#3730a3">bagging</text><rect x="150" y="108" width="315" height="18" fill="#6366f1"/><text x="472" y="122" font-size="8.5" fill="#3730a3" font-weight="700">0.78</text>
+          <text x="144" y="146" text-anchor="end" fill="#3730a3">random forest</text><rect x="150" y="136" width="315" height="18" fill="#4f46e5"/><text x="472" y="150" font-size="8.5" fill="#3730a3" font-weight="700">0.78</text>
+          <text x="144" y="174" text-anchor="end" fill="#3730a3">AdaBoost</text><rect x="150" y="164" width="329" height="18" fill="#4338ca"/><text x="486" y="178" font-size="8.5" fill="#3730a3" font-weight="700">0.79</text>
+          <text x="144" y="202" text-anchor="end" fill="#3730a3">gradient boosting</text><rect x="150" y="192" width="329" height="18" fill="#3730a3"/><text x="486" y="206" font-size="8.5" fill="#3730a3" font-weight="700">0.79</text>
+          <text x="144" y="230" text-anchor="end" fill="#3730a3">stacking</text><rect x="150" y="220" width="329" height="18" fill="#312e81"/><text x="486" y="234" font-size="8.5" fill="#3730a3" font-weight="700">0.79</text>
+        </g>
+      </svg>
+    </figure>
+
+    <p>The lone overfit tree sits at the bottom; every <strong>ensemble</strong> clusters at the top, with boosting and
+       <span class="term">stacking</span> (a meta-model that learns how much to trust each base model) edging out the
+       forest. The takeaway is not that one ensemble always wins, but that <span class="hl">combining many models beats
+       relying on one</span>, and for messy, interaction-heavy tabular data a tuned gradient-boosting model is usually the
+       best thing you can grab.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Ensembles in Machine Learning &amp; AI</h2></div>
+    <p>Ensembles are not a niche trick, they are the default winning strategy across applied machine learning.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Method (this chapter)</th><th>Where it dominates</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Random forest</td><td>Strong low-tuning baseline</td><td>the first model to try on tabular data; feature importances</td></tr>
+          <tr><td class="nm">Gradient boosting</td><td>State of the art on tables</td><td>XGBoost / LightGBM / CatBoost, most Kaggle tabular wins</td></tr>
+          <tr><td class="nm">Bagging / model averaging</td><td>Variance reduction</td><td>averaging several neural nets; snapshot ensembles</td></tr>
+          <tr><td class="nm">Boosting</td><td>Bias reduction, ranking</td><td>learning-to-rank in search, fraud and risk scoring</td></tr>
+          <tr><td class="nm">Stacking</td><td>Squeezing out the last %</td><td>competition-winning blended solutions</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>Two big lessons live here. First, on <strong>tabular data</strong>, ensembles of decision trees, especially
+           gradient boosting, still routinely <strong>beat deep neural networks</strong>; reaching for a giant model when a
+           boosted-tree ensemble would win is a common and expensive mistake. Second, the ensembling idea is
+           <strong>everywhere in deep learning too</strong>: averaging several trained networks, snapshot ensembles, and
+           even <strong>dropout</strong> (which randomly disables neurons during training) all act as implicit ensembles
+           that reduce variance. Whenever a system needs to be more accurate and more robust, combining diverse models is
+           one of the most reliable levers you have.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Build every ensemble in Python</h3>
+          <p>The companion notebook shows the single tree <strong>overfitting</strong>, then builds <strong>bagging</strong>
+             and a <strong>random forest</strong> (with OOB score and feature importances), contrasts their decision
+             boundaries, grows a <strong>gradient-boosting</strong> model with a staged-accuracy curve, blends a
+             <strong>stacking</strong> ensemble, and races them all, with every step narrated.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/ensemble-methods.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ensemble-methods.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ensemble-methods.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly. <strong>Open in Colab</strong> runs it live. To run
+      locally, install <code>numpy</code>, <code>pandas</code>, <code>scikit-learn</code>, <code>matplotlib</code>,
+      <code>seaborn</code>, and <code>openpyxl</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>A single tree overfits</strong> (perfect on training, poor on new data); ensembles combine many trees to fix it.</span></li>
+        <li><span class="ck">✓</span><span><strong>Bagging</strong> averages independent bootstrap-trained trees to cut <strong>variance</strong>; the <strong>random forest</strong> adds random feature subsets.</span></li>
+        <li><span class="ck">✓</span><span><strong>Boosting</strong> grows trees <strong>sequentially</strong>, each fixing prior errors, to cut <strong>bias</strong>; gradient boosting is the modern default.</span></li>
+        <li><span class="ck">✓</span><span><strong>XGBoost, LightGBM, CatBoost</strong> are optimized gradient boosters, the champions of tabular ML; <strong>stacking</strong> blends diverse models with a meta-learner.</span></li>
+        <li><span class="ck">✓</span><span><strong>Ensembles win</strong>: on tabular data boosted trees often beat deep nets, and ensembling (model averaging, dropout) pervades deep learning too.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges on the attrition table. Try them with scikit-learn before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>A single tree overfits</h4>
+        <p>Show a full tree scores near 1.0 on training but far less in cross-validation.</p>
+        <div class="chint">Hint: compare <code>.score</code> on train vs <code>cross_val_score</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Random forest &amp; importances</h4>
+        <p>Fit a random forest, report its CV accuracy, and name the top feature.</p>
+        <div class="chint">Hint: <code>rf.feature_importances_</code>; the noise columns should be near zero.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Bagging reduces variance</h4>
+        <p>Compare a single tree to a 300-tree bagging ensemble by CV accuracy.</p>
+        <div class="chint">Hint: <code>BaggingClassifier(n_estimators=300)</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Boosting vs the forest</h4>
+        <p>Compare gradient boosting to the random forest by CV accuracy.</p>
+        <div class="chint">Hint: <code>GradientBoostingClassifier()</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>The ladder</h4>
+        <p>Rank single tree, bagging, random forest, and gradient boosting by CV accuracy.</p>
+        <div class="chint">Hint: loop <code>cross_val_score(m, X, y, cv=5).mean()</code> and sort.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code. Try
+           them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/ensemble-methods--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ensemble-methods--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/ensemble-methods--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on ensemble methods. Answer them, hit <strong>Check Answers</strong>, and keep refining until
+       you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>The random forest ranked its features and flagged the junk ones. <strong>Chapter 109 &#183; Feature
+         Selection</strong> makes that a discipline, filter, wrapper, and embedded methods for keeping the inputs that
+         matter and dropping the ones that only add noise.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="core-classification-and-regression-algorithms.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 107 · Previous</span><br><span class="cn-title">Core Classification &amp; Regression Algorithms</span></span>
+    </a>
+    <a class="cn-btn next" href="feature-selection.html">
+      <span><span class="cn-dir">Chapter 109 · Next</span><br><span class="cn-title">Feature Selection</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 108 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch108";
+  window.QUIZ_DATA = [
+    {
+      q: "An ensemble method is…",
+      options: ["A single very deep model", "Combining many models into one stronger, more stable predictor", "A way to clean data", "A type of cross-validation"],
+      answer: 1,
+      explain: "Ensembles train many base models and combine them; the crowd is more accurate and stable than any one member."
+    },
+    {
+      q: "A single unrestricted decision tree tends to…",
+      options: ["Underfit everything", "Overfit, memorizing the training data (near-perfect train, weak test)", "Always win", "Ignore the features"],
+      answer: 1,
+      explain: "A deep tree can memorize noise: ~1.0 on training but much lower in cross-validation, the problem ensembles solve."
+    },
+    {
+      q: "Bagging reduces ___ by ___.",
+      options: ["bias; growing deeper trees", "variance; averaging many models trained on bootstrap resamples", "bias; using fewer features", "variance; using one big tree"],
+      answer: 1,
+      explain: "Averaging independent bootstrap-trained trees cancels their random errors, cutting variance."
+    },
+    {
+      q: "A random forest adds what to plain bagging?",
+      options: ["Sequential training", "A random subset of features considered at each split", "A neural network", "Removal of the trees"],
+      answer: 1,
+      explain: "Random feature selection at each split makes the trees more independent, so their average is even better."
+    },
+    {
+      q: "Boosting builds its trees…",
+      options: ["All at once, independently", "Sequentially, each new tree correcting the previous ones' errors", "By deleting bad trees", "Without any trees"],
+      answer: 1,
+      explain: "Boosting is sequential and bias-reducing: each weak learner focuses on what the running total still gets wrong."
+    },
+    {
+      q: "XGBoost, LightGBM, and CatBoost are…",
+      options: ["Deep learning frameworks", "Optimized gradient-boosting implementations", "Data-cleaning tools", "Clustering algorithms"],
+      answer: 1,
+      explain: "All three are fast, tuned gradient-boosting libraries, the tools that win most tabular-data competitions."
+    },
+    {
+      q: "Stacking combines base models by…",
+      options: ["Taking a simple majority vote only", "Training a meta-model on their (cross-validated) predictions", "Averaging their training scores", "Picking the single best one"],
+      answer: 1,
+      explain: "A meta-learner learns how much to trust each base model, blending diverse models' strengths."
+    },
+    {
+      q: "On messy tabular data, the models that most often win are…",
+      options: ["A single decision tree", "Gradient-boosted tree ensembles", "Plain linear regression", "K-nearest neighbors"],
+      answer: 1,
+      explain: "Gradient-boosted trees (XGBoost/LightGBM/CatBoost) are the reigning champions of tabular machine learning."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

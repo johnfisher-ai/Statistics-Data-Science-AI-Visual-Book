@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 115 · Dimensionality Reduction — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#eef2ff; border:1px solid #c7d2fe; border-left:4px solid #4338ca; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#3730a3; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/dimensionality-reduction.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XIX · Unsupervised Learning</span><span class="sep">/</span>
+      <span>Chapter 115</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XIX · Unsupervised Learning</span> Many columns into a few</div>
+    <h1>Dimensionality <span class="accent">Reduction</span></h1>
+    <p class="dek">Real datasets are wide: dozens of correlated columns that are impossible to plot, slow to model, and full
+       of redundant noise. Dimensionality reduction squeezes them down to a handful of informative axes, so you can see,
+       denoise, and speed up high-dimensional data. PCA is where it starts.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~20 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 115</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">You cannot plot eight columns at once, and a model given many correlated features is slower and easier
+       to overfit. But wide data is usually <span class="hl">not as high-dimensional as it looks</span>: a few underlying
+       factors drive all those columns. <span class="term">Dimensionality reduction</span> finds those factors and rewrites
+       the data in far fewer numbers, keeping the signal and dropping the redundancy.</p>
+
+    <div class="def-card">
+      <div class="sigma">⤢</div>
+      <div class="def-body">
+        <span class="def-kw">Dimensionality reduction</span> maps many features to a few while preserving most of the
+        information. <span class="def-kw">PCA</span> (principal component analysis) does it linearly, building new
+        perpendicular axes ranked by the <span class="def-kw">variance</span> they explain. It is unsupervised: no label,
+        just structure. Standardize the features first.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🗂️</div>
+      <div><div class="ctitle">The chapter in one line</div>
+        <p><strong>PCA</strong> replaces many correlated columns with a few <em>principal components</em>, ranked by
+           variance: read the <strong>scree plot</strong> to choose how many to keep, read the
+           <strong>loadings/biplot</strong> to interpret them, keep the top few to <strong>compress and denoise</strong>,
+           and reach for nonlinear <strong>t-SNE/UMAP</strong> when you only need a striking 2D picture.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1 ===== -->
+  <section id="why">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Why Reduce Dimensions?</h2></div>
+    <p>Three problems come with wide data. It is <span class="hl">impossible to visualize</span>, the eye handles two or
+       three dimensions, not twenty. It suffers the <span class="term">curse of dimensionality</span>, in high dimensions
+       points spread out until every pair looks equidistant, which weakens distance-based methods like clustering and
+       nearest neighbors. And it is <span class="hl">redundant</span>: correlated columns repeat the same information,
+       inflating model variance for no gain.</p>
+
+    <p>The key insight is that correlated columns are shadows of a smaller set of hidden factors. In a nutrition table,
+       calories, fat, and carbs all move together because they reflect a food's underlying <em>energy density</em>.
+       Dimensionality reduction recovers those factors as new axes. As with all variance- and distance-based methods, we
+       <span class="term">standardize</span> first so a large-unit column (sodium in milligrams) does not dominate purely
+       because of its scale.</p>
+  </section>
+
+  <!-- ===== Section 2 ===== -->
+  <section id="pca">
+    <div class="section-eyebrow"><div class="num">2</div><h2>PCA: New Axes Ranked by Variance</h2></div>
+    <p><span class="term">PCA</span> finds a new set of perpendicular axes, the <span class="term">principal
+       components</span>, oriented so the first points along the direction of <span class="hl">greatest variance</span> in
+       the data, the second along the greatest remaining variance perpendicular to it, and so on. Same data, rotated axes,
+       but now the information is <em>front-loaded</em>: the early components carry almost everything, the later ones carry
+       mostly noise.</p>
+
+    <p>The <span class="term">scree plot</span> shows how much variance each component explains, and how fast it adds up.
+       You keep enough components to cross a threshold (commonly 90%) and discard the rest.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 700 300" width="100%" font-family="Inter, sans-serif" aria-label="A scree plot: bars show each principal component's variance (PC1 42 percent, PC2 34 percent, PC3 19 percent, then tiny), and a cumulative line crosses the 90 percent threshold at the third component">
+        <text x="350" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">Scree plot: variance is front-loaded into the first few components</text>
+        <!-- axes -->
+        <line x1="70" y1="48" x2="70" y2="248" stroke="#94a3b8"/>
+        <line x1="70" y1="248" x2="650" y2="248" stroke="#94a3b8"/>
+        <text x="34" y="54" font-size="9" fill="#64748b">100%</text>
+        <text x="40" y="150" font-size="9" fill="#64748b">50%</text>
+        <text x="52" y="251" font-size="9" fill="#64748b">0%</text>
+        <!-- 90% threshold -->
+        <line x1="70" y1="68" x2="650" y2="68" stroke="#94a3b8" stroke-dasharray="5 4"/>
+        <text x="656" y="71" font-size="9" fill="#64748b">90%</text>
+        <!-- bars: PC1 42, PC2 34, PC3 19, then small. scale: 100% = 200px (from y248 up to y48) -->
+        <g>
+          <rect x="92"  y="164" width="52" height="84"  fill="#4338ca"/><text x="118" y="160" text-anchor="middle" font-size="9" fill="#3730a3" font-weight="700">42%</text>
+          <rect x="170" y="180" width="52" height="68"  fill="#4f46e5"/><text x="196" y="176" text-anchor="middle" font-size="9" fill="#3730a3" font-weight="700">34%</text>
+          <rect x="248" y="210" width="52" height="38"  fill="#6366f1"/><text x="274" y="206" text-anchor="middle" font-size="9" fill="#3730a3" font-weight="700">19%</text>
+          <rect x="326" y="244" width="52" height="4"   fill="#a5b4fc"/>
+          <rect x="404" y="245" width="52" height="3"   fill="#a5b4fc"/>
+          <rect x="482" y="246" width="52" height="2"   fill="#c7d2fe"/>
+          <rect x="560" y="246" width="52" height="2"   fill="#c7d2fe"/>
+        </g>
+        <!-- cumulative line: 42, 76, 95, 97, 98, 99, 99, 100  -> y = 248 - pct*2 -->
+        <polyline points="118,164 196,96 274,58 352,54 430,52 508,50 586,50 618,48" fill="none" stroke="#ef4444" stroke-width="2.4"/>
+        <g fill="#ef4444">
+          <circle cx="118" cy="164" r="3.5"/><circle cx="196" cy="96" r="3.5"/><circle cx="274" cy="58" r="4.5" stroke="#7f1d1d" stroke-width="1"/>
+          <circle cx="352" cy="54" r="3.5"/><circle cx="430" cy="52" r="3.5"/><circle cx="508" cy="50" r="3.5"/><circle cx="586" cy="50" r="3.5"/><circle cx="618" cy="48" r="3.5"/>
+        </g>
+        <text x="300" y="46" font-size="9.5" fill="#b91c1c" font-weight="700">cumulative: 3 components clear 90%</text>
+        <text x="360" y="270" text-anchor="middle" font-size="9" fill="#8b94b3">principal component (of 8) &#8594;</text>
+      </svg>
+    </figure>
+
+    <p>On the food data <strong>PC1 explains 42%</strong> of the variance and <strong>PC2 34%</strong>, so two numbers per
+       food keep <strong>76%</strong> of everything; three components reach <strong>95%</strong>. An eight-column table was
+       really only about three dimensions of information.</p>
+  </section>
+
+  <!-- ===== Section 3 ===== -->
+  <section id="loadings">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Loadings, Biplots &amp; Compression</h2></div>
+    <p>A principal component is a weighted blend of the original columns, and those weights, the
+       <span class="term">loadings</span>, are what make it interpretable. The <span class="term">biplot</span> draws each
+       original feature as an arrow: arrows pointing the same way are correlated, opposite arrows are anti-correlated, and a
+       point far along an arrow scores high on that feature.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 640 320" width="100%" font-family="Inter, sans-serif" aria-label="A biplot: nutrient arrows radiate from the origin over a cloud of food points; calories, carbs, and sugar point right along PC1, fiber and protein point left, and fat and saturated fat point up along PC2">
+        <text x="320" y="18" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">Biplot: the arrows tell you what each axis means</text>
+        <!-- point cloud -->
+        <g fill="#cbd5e1">
+          <circle cx="250" cy="150" r="3"/><circle cx="300" cy="130" r="3"/><circle cx="360" cy="120" r="3"/><circle cx="410" cy="150" r="3"/>
+          <circle cx="270" cy="200" r="3"/><circle cx="340" cy="210" r="3"/><circle cx="400" cy="195" r="3"/><circle cx="230" cy="180" r="3"/>
+          <circle cx="380" cy="160" r="3"/><circle cx="310" cy="175" r="3"/><circle cx="440" cy="175" r="3"/><circle cx="290" cy="235" r="3"/>
+          <circle cx="200" cy="140" r="3"/><circle cx="420" cy="120" r="3"/><circle cx="350" cy="250" r="3"/>
+        </g>
+        <!-- axes through center (320,170) -->
+        <line x1="120" y1="170" x2="560" y2="170" stroke="#e2e8f0"/>
+        <line x1="320" y1="40" x2="320" y2="300" stroke="#e2e8f0"/>
+        <text x="548" y="188" font-size="9" fill="#8b94b3">PC1 &#8594;</text>
+        <text x="326" y="52" font-size="9" fill="#8b94b3">PC2 &#8593;</text>
+        <!-- arrows: PC1 axis = carb/calorie load -->
+        <defs><marker id="ah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#4338ca"/></marker>
+              <marker id="ah2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#059669"/></marker></defs>
+        <!-- right (PC1+): calories, carbs, sugar -->
+        <line x1="320" y1="170" x2="470" y2="158" stroke="#4338ca" stroke-width="2" marker-end="url(#ah)"/><text x="476" y="156" font-size="9" fill="#3730a3" font-weight="700">carbs</text>
+        <line x1="320" y1="170" x2="455" y2="180" stroke="#4338ca" stroke-width="2" marker-end="url(#ah)"/><text x="460" y="192" font-size="9" fill="#3730a3" font-weight="700">calories</text>
+        <line x1="320" y1="170" x2="440" y2="205" stroke="#4338ca" stroke-width="2" marker-end="url(#ah)"/><text x="446" y="216" font-size="9" fill="#3730a3" font-weight="700">sugar</text>
+        <!-- left (PC1-): fiber, protein -->
+        <line x1="320" y1="170" x2="185" y2="150" stroke="#4338ca" stroke-width="2" marker-end="url(#ah)"/><text x="150" y="146" font-size="9" fill="#3730a3" font-weight="700">fiber</text>
+        <line x1="320" y1="170" x2="195" y2="128" stroke="#059669" stroke-width="2" marker-end="url(#ah2)"/><text x="160" y="122" font-size="9" fill="#065f46" font-weight="700">protein</text>
+        <!-- up (PC2+): fat, satfat -->
+        <line x1="320" y1="170" x2="352" y2="66" stroke="#059669" stroke-width="2" marker-end="url(#ah2)"/><text x="356" y="62" font-size="9" fill="#065f46" font-weight="700">fat</text>
+        <line x1="320" y1="170" x2="300" y2="72" stroke="#059669" stroke-width="2" marker-end="url(#ah2)"/><text x="256" y="68" font-size="9" fill="#065f46" font-weight="700">sat. fat</text>
+        <text x="320" y="312" text-anchor="middle" font-size="8.5" fill="#8b94b3">PC1 = carb/calorie load (right) vs fiber/protein (left) &#183; PC2 = fat/richness (up)</text>
+      </svg>
+    </figure>
+
+    <p>Here <strong>PC1</strong> is a "carb-and-calorie load" axis (high calories, carbs, and sugar; low fiber and protein)
+       and <strong>PC2</strong> is a "richness/fat" axis (high fat, saturated fat, and protein). Keeping only the top few
+       components is <span class="term">lossy compression</span>: rebuilding each food from its top 3 scores retains 95% of
+       the variance with tiny error. And because the discarded components are mostly noise, this step also
+       <span class="hl">denoises</span>, which is why PCA is a standard preprocessing move before clustering or supervised
+       models on wide data.</p>
+  </section>
+
+  <!-- ===== Section 4: REAL-WORLD ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: A 2D Map of Foods</h2></div>
+    <p>Nutrition labels carry many correlated numbers. PCA turns that wide table into a single, honest picture, and t-SNE
+       offers a nonlinear alternative when you only need the picture.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · dimensionality-reduction--foods.xlsx</div>
+      <p style="margin:0.5rem 0 0">180 packaged foods with eight nutrition columns, <code>calories</code>,
+        <code>fat_g</code>, <code>satfat_g</code>, <code>protein_g</code>, <code>carbs_g</code>, <code>sugar_g</code>,
+        <code>fiber_g</code>, <code>sodium_mg</code>, plus a <code>food_type</code> label used only to color plots (PCA
+        never sees it).</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/dimensionality-reduction--foods.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 180 foods</small></a>
+      </div>
+    </div>
+
+    <p>Projecting all 180 foods onto PC1 and PC2 gives a map where each food is one dot. Even though PCA is unsupervised,
+       the food categories land in distinct regions, the compression preserved the real structure. When straight axes are
+       not enough, <span class="term">t-SNE</span> and <span class="term">UMAP</span> take over:</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th></th><th>PCA</th><th>t-SNE / UMAP</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Type</td><td>linear (rotate &amp; stretch)</td><td>nonlinear (preserves local neighborhoods)</td></tr>
+          <tr><td class="nm">Axes</td><td>interpretable, have meaning</td><td>no units, not interpretable</td></tr>
+          <tr><td class="nm">Reversible?</td><td>yes, can compress &amp; reconstruct</td><td>no, visualization only</td></tr>
+          <tr><td class="nm">Best for</td><td>compressing, denoising, preprocessing</td><td>a crisp 2D picture of clusters</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Rule of thumb: reach for <strong>PCA</strong> to compress, denoise, and interpret; reach for
+       <strong>t-SNE/UMAP</strong> only to visualize. They answer different questions.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Dimensionality Reduction in Machine Learning &amp; AI</h2></div>
+    <p>Reducing dimensions is one of the most-used preprocessing steps in the entire ML pipeline.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Method / idea</th><th>Where it is used</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">PCA</td><td>preprocessing, compression, denoising, feature de-correlation before modeling</td></tr>
+          <tr><td class="nm">Scree / explained variance</td><td>deciding how many components (or features) to keep</td></tr>
+          <tr><td class="nm">t-SNE / UMAP</td><td>visualizing embeddings, images, single-cell genomics</td></tr>
+          <tr><td class="nm">Autoencoders</td><td>nonlinear neural compression; the deep-learning generalization of PCA</td></tr>
+          <tr><td class="nm">Embeddings</td><td>dense low-dimensional vectors for words, images, and users</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>Modern AI runs on <strong>embeddings</strong>, dense, low-dimensional vectors that represent words, images, or
+           users, and dimensionality reduction is the idea behind them. A neural <strong>autoencoder</strong> is essentially
+           a nonlinear PCA: it squeezes data through a narrow bottleneck and reconstructs it, and that bottleneck is a
+           learned low-dimensional code. When researchers want to <em>see</em> what a large language model has learned, they
+           run <strong>t-SNE or UMAP</strong> on its internal activations to reveal clusters of concepts. And beating the
+           <strong>curse of dimensionality</strong>, projecting to a compact, informative space before modeling, remains one
+           of the most reliable ways to make high-dimensional learning both faster and more accurate.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Reduce dimensions in Python</h3>
+          <p>The companion notebook runs <strong>PCA</strong> on the foods, reads the <strong>scree plot</strong>,
+             <strong>loadings</strong>, and <strong>biplot</strong>, uses the components to <strong>compress and
+             denoise</strong>, and contrasts the linear PCA with a nonlinear <strong>t-SNE</strong>, each cell explained.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/dimensionality-reduction.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/dimensionality-reduction.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/dimensionality-reduction.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly. <strong>Open in Colab</strong> runs it live. To run
+      locally, install <code>numpy</code>, <code>pandas</code>, <code>scikit-learn</code>, <code>seaborn</code>, and
+      <code>openpyxl</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Wide, correlated data</strong> is rarely as high-dimensional as it looks, a few latent factors drive many columns.</span></li>
+        <li><span class="ck">✓</span><span><strong>PCA</strong> builds perpendicular axes ranked by variance; the <strong>scree plot</strong> and the 90% cumulative line tell you how many to keep.</span></li>
+        <li><span class="ck">✓</span><span><strong>Loadings and biplots</strong> make the components interpretable, showing which original columns build each axis.</span></li>
+        <li><span class="ck">✓</span><span><strong>Keeping the top few components</strong> compresses and <strong>denoises</strong>, a standard preprocessing step (standardize first!).</span></li>
+        <li><span class="ck">✓</span><span><strong>PCA</strong> is linear, reversible, and interpretable; <strong>t-SNE/UMAP</strong> are nonlinear and for visualization only.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges. Try them with scikit-learn before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>How many components?</h4>
+        <p>Standardize, run PCA, and find how many components retain at least 90% of the variance.</p>
+        <div class="chint">Hint: <code>np.cumsum(pca.explained_variance_ratio_)</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Variance in 2D</h4>
+        <p>Report the share of total variance captured by the first two principal components.</p>
+        <div class="chint">Hint: <code>pca.explained_variance_ratio_[:2].sum()</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Read the loadings</h4>
+        <p>Identify which original nutrient loads most strongly on PC1.</p>
+        <div class="chint">Hint: <code>pca.components_[0]</code>; take the largest absolute value.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Compression error</h4>
+        <p>Keep 3 components, reconstruct the data, and report the reconstruction error.</p>
+        <div class="chint">Hint: <code>pca.inverse_transform(pca.transform(Xs))</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Nonlinear embedding</h4>
+        <p>Make a t-SNE embedding and note one way it differs from PCA.</p>
+        <div class="chint">Hint: <code>TSNE(n_components=2).fit_transform(Xs)</code>.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code. Try
+           them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/dimensionality-reduction--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/dimensionality-reduction--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/dimensionality-reduction--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on dimensionality reduction. Answer them, hit <strong>Check Answers</strong>, and keep
+       refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>Clustering grouped rows; PCA compressed columns. Next we look for <em>relationships</em> between items.
+         <strong>Chapter 116 &#183; Association Rule Mining</strong> uncovers the "customers who bought X also bought Y"
+         patterns behind market-basket analysis, using support, confidence, and lift.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="clustering.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 114 · Previous</span><br><span class="cn-title">Clustering</span></span>
+    </a>
+    <a class="cn-btn next" href="association-rule-mining.html">
+      <span><span class="cn-dir">Chapter 116 · Next</span><br><span class="cn-title">Association Rule Mining</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 115 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch115";
+  window.QUIZ_DATA = [
+    {
+      q: "The main goal of dimensionality reduction is to…",
+      options: ["Add more features", "Represent many correlated features with a few informative ones", "Label the data", "Increase variance"],
+      answer: 1,
+      explain: "It compresses wide, redundant data into a few axes that keep most of the information."
+    },
+    {
+      q: "PCA orders its principal components by…",
+      options: ["Alphabetical order", "The amount of variance each explains", "The number of features", "Correlation with the label"],
+      answer: 1,
+      explain: "PC1 captures the most variance, PC2 the next most (perpendicular to PC1), and so on."
+    },
+    {
+      q: "You should standardize features before PCA because…",
+      options: ["It creates labels", "Otherwise large-scale features dominate the variance purely by their units", "It removes outliers", "PCA needs a target"],
+      answer: 1,
+      explain: "PCA maximizes variance; without standardizing, a big-unit column like sodium would dominate for the wrong reason."
+    },
+    {
+      q: "A scree plot is used to…",
+      options: ["Interpret the axes", "Decide how many components to keep", "Cluster the data", "Detect outliers"],
+      answer: 1,
+      explain: "It shows variance per component and cumulatively; you keep enough to cross a threshold (e.g., 90%)."
+    },
+    {
+      q: "Loadings (and the biplot) tell you…",
+      options: ["The number of clusters", "Which original features build each principal component", "The reconstruction error", "The silhouette score"],
+      answer: 1,
+      explain: "Loadings are the weights of each original feature in a component, making the new axes interpretable."
+    },
+    {
+      q: "Keeping only the top few principal components…",
+      options: ["Adds noise", "Compresses the data and tends to denoise it", "Increases dimensions", "Requires labels"],
+      answer: 1,
+      explain: "The discarded components are mostly noise, so reconstructing from the top few compresses and denoises."
+    },
+    {
+      q: "A key difference between PCA and t-SNE/UMAP is that…",
+      options: ["PCA is nonlinear", "PCA is linear and interpretable; t-SNE/UMAP are nonlinear and for visualization only", "t-SNE is reversible", "They are identical"],
+      answer: 1,
+      explain: "t-SNE/UMAP preserve local neighborhoods for a crisp picture but have no interpretable, reversible axes."
+    },
+    {
+      q: "In modern AI, the idea behind dimensionality reduction shows up as…",
+      options: ["Bigger spreadsheets", "Embeddings and autoencoders (learned low-dimensional representations)", "More labels", "Slower models"],
+      answer: 1,
+      explain: "Embeddings are dense low-dimensional vectors; an autoencoder is essentially a nonlinear PCA."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

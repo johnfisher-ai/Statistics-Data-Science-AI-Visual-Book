@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 133 · Case Study: Energy Demand Forecasting — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .rw-card { background:#f0f9ff; border:1px solid #bae6fd; border-left:4px solid #0284c7; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#075985; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none; padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+    .step-h { display:flex; align-items:center; gap:0.6rem; margin:1.4rem 0 0.4rem; }
+    .step-h .sn { flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:#0284c7; color:#fff; font-weight:800; font-size:0.95rem; display:flex; align-items:center; justify-content:center; }
+    .step-h h3 { margin:0; font-size:1.02rem; color:var(--ink); }
+    .writeup { background:#f0f9ff; border:1px solid #bae6fd; border-radius:14px; padding:1.3rem 1.5rem; margin:1.3rem 0; }
+    .writeup h3 { margin-top:0; color:#075985; }
+    .writeup h4 { margin:1rem 0 0.3rem; color:#075985; font-size:0.92rem; }
+    .nb-fig { margin:1.4rem 0; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:1rem 1rem 0.6rem; }
+    .nb-fig img { display:block; width:100%; height:auto; border-radius:8px; }
+    .nb-fig figcaption { margin:0.75rem 0.2rem 0.3rem; font-size:0.85rem; color:var(--ink-soft); line-height:1.55; }
+    .nb-fig .cap-t { font-size:0.64rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#075985; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/case-study-energy-demand-forecasting.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXIII · Forecasting Case Study</span><span class="sep">/</span>
+      <span>Chapter 133</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XXIII · Putting It All Together</span> Two seasonal clocks at once</div>
+    <h1>Case Study: <span class="accent">Energy Demand Forecasting</span></h1>
+    <p class="dek">Electricity demand rises and falls with the day of the week and with the time of year, at the same time.
+       That double seasonality breaks the one-season tools. This case study separates the two cycles with MSTL and forecasts
+       both with a harmonic regression, then grades it out of sample.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~25 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Full notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 133</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">The retail case study had one seasonal rhythm. Electricity demand has <span class="hl">two at once</span>:
+       a <span class="hl">weekly</span> cycle (weekdays busy, weekends quiet) layered on a <span class="hl">yearly</span> one
+       (winter heating and summer cooling). That is the catch, because the workhorse models,
+       <span class="hl">Holt-Winters and SARIMA</span>, each support only <em>one</em> seasonal period. Getting both right
+       needs a different tool.</p>
+
+    <div class="def-card">
+      <div class="sigma">⚡</div>
+      <div class="def-body">
+        <span class="def-kw">Multiple seasonality</span> means a series repeats on more than one period at once (here 7 days
+        and 365 days). You separate the cycles with <span class="def-kw">MSTL</span> (multiple STL decomposition) and
+        forecast them together with a <span class="def-kw">harmonic regression</span>, day-of-week dummies plus yearly
+        <span class="def-kw">Fourier terms</span>, on a trend.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">&#128268;</div>
+      <div><div class="ctitle">Why one-season models fall short</div>
+        <p><strong>Holt-Winters and SARIMA take a single seasonal period.</strong> Set it to 7 and they nail the weekly
+           swing but drift off the yearly curve; set it to 365 and it is unwieldy and ignores the week. To capture
+           <strong>both</strong> at once, add <strong>Fourier terms</strong> for the long cycle to a model that already
+           handles the short one.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §1 method ===== -->
+  <section id="method">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The 12-Step Forecasting Method</h2></div>
+    <p>The same case-study discipline, aimed at a double-seasonal series. The companion notebook runs all twelve steps; the
+       sections below tell the story and show the plots.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 678 332" width="100%" font-family="Inter, sans-serif" aria-label="The twelve-step forecasting method as a snaking flow, adapted to a series with two seasonal cycles">
+        <text x="339" y="26" text-anchor="middle" font-size="13" fill="#1a2138" font-weight="800">The 12-step method: from a double-seasonal series to a deployed forecast</text>
+        <defs><marker id="m133" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#075985"/></marker></defs>
+        <path d="M165,84 L181,84" stroke="#075985" stroke-width="1.7" marker-end="url(#m133)"/>
+        <path d="M331,84 L347,84" stroke="#075985" stroke-width="1.7" marker-end="url(#m133)"/>
+        <path d="M497,84 L513,84" stroke="#075985" stroke-width="1.7" marker-end="url(#m133)"/>
+        <path d="M588,120 L588,150" stroke="#075985" stroke-width="1.7" marker-end="url(#m133)"/>
+        <path d="M513,186 L497,186" stroke="#075985" stroke-width="1.7" marker-end="url(#m133)"/>
+        <path d="M347,186 L331,186" stroke="#075985" stroke-width="1.7" marker-end="url(#m133)"/>
+        <path d="M181,186 L165,186" stroke="#075985" stroke-width="1.7" marker-end="url(#m133)"/>
+        <path d="M90,222 L90,252" stroke="#075985" stroke-width="1.7" marker-end="url(#m133)"/>
+        <path d="M165,288 L181,288" stroke="#075985" stroke-width="1.7" marker-end="url(#m133)"/>
+        <path d="M331,288 L347,288" stroke="#075985" stroke-width="1.7" marker-end="url(#m133)"/>
+        <path d="M497,288 L513,288" stroke="#075985" stroke-width="1.7" marker-end="url(#m133)"/>
+        <rect x="15" y="48" width="150" height="72" rx="10" fill="#f0f9ff" stroke="#bae6fd"/>
+        <circle cx="32" cy="66" r="11" fill="#0284c7"/><text x="32" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">1</text>
+        <text x="49" y="70" font-size="10.5" fill="#075985" font-weight="800">Define</text>
+        <text x="27" y="92" font-size="8.3" fill="#0369a1">daily demand + baseline</text>
+        <rect x="181" y="48" width="150" height="72" rx="10" fill="#f0f9ff" stroke="#bae6fd"/>
+        <circle cx="198" cy="66" r="11" fill="#0284c7"/><text x="198" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">2</text>
+        <text x="215" y="70" font-size="10.5" fill="#075985" font-weight="800">Collect</text>
+        <text x="193" y="92" font-size="8.3" fill="#0369a1">daily series</text>
+        <rect x="347" y="48" width="150" height="72" rx="10" fill="#f0f9ff" stroke="#bae6fd"/>
+        <circle cx="364" cy="66" r="11" fill="#0284c7"/><text x="364" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">3</text>
+        <text x="381" y="70" font-size="10.5" fill="#075985" font-weight="800">Inspect</text>
+        <text x="359" y="92" font-size="8.3" fill="#0369a1">two rhythms</text>
+        <rect x="513" y="48" width="150" height="72" rx="10" fill="#f0f9ff" stroke="#bae6fd"/>
+        <circle cx="530" cy="66" r="11" fill="#0284c7"/><text x="530" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">4</text>
+        <text x="547" y="70" font-size="10.5" fill="#075985" font-weight="800">Decompose</text>
+        <text x="525" y="92" font-size="8.3" fill="#0369a1">MSTL: 2 seasons</text>
+        <rect x="513" y="150" width="150" height="72" rx="10" fill="#f0f9ff" stroke="#bae6fd"/>
+        <circle cx="530" cy="168" r="11" fill="#0284c7"/><text x="530" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">5</text>
+        <text x="547" y="172" font-size="10.5" fill="#075985" font-weight="800">Stationarity</text>
+        <text x="525" y="194" font-size="8.3" fill="#0369a1">+ the challenge</text>
+        <rect x="347" y="150" width="150" height="72" rx="10" fill="#f0f9ff" stroke="#bae6fd"/>
+        <circle cx="364" cy="168" r="11" fill="#0284c7"/><text x="364" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">6</text>
+        <text x="381" y="172" font-size="10.5" fill="#075985" font-weight="800">Split + base</text>
+        <text x="359" y="194" font-size="8.3" fill="#0369a1">weekly naive</text>
+        <rect x="181" y="150" width="150" height="72" rx="10" fill="#f0f9ff" stroke="#bae6fd"/>
+        <circle cx="198" cy="168" r="11" fill="#0284c7"/><text x="198" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">7</text>
+        <text x="215" y="172" font-size="10.5" fill="#075985" font-weight="800">One season</text>
+        <text x="193" y="194" font-size="8.3" fill="#0369a1">Holt-Winters</text>
+        <rect x="15" y="150" width="150" height="72" rx="10" fill="#f0f9ff" stroke="#bae6fd"/>
+        <circle cx="32" cy="168" r="11" fill="#0284c7"/><text x="32" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">8</text>
+        <text x="49" y="172" font-size="10.5" fill="#075985" font-weight="800">Both seasons</text>
+        <text x="27" y="194" font-size="8.3" fill="#0369a1">harmonic + Fourier</text>
+        <rect x="15" y="252" width="150" height="72" rx="10" fill="#f0f9ff" stroke="#bae6fd"/>
+        <circle cx="32" cy="270" r="11" fill="#0284c7"/><text x="32" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">9</text>
+        <text x="49" y="274" font-size="10.5" fill="#075985" font-weight="800">Validate</text>
+        <text x="27" y="296" font-size="8.3" fill="#0369a1">MAPE panel</text>
+        <rect x="181" y="252" width="150" height="72" rx="10" fill="#f0f9ff" stroke="#bae6fd"/>
+        <circle cx="198" cy="270" r="11" fill="#0284c7"/><text x="198" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">10</text>
+        <text x="215" y="274" font-size="10.5" fill="#075985" font-weight="800">Interpret</text>
+        <text x="193" y="296" font-size="8.3" fill="#0369a1">residuals + effects</text>
+        <rect x="347" y="252" width="150" height="72" rx="10" fill="#f0f9ff" stroke="#bae6fd"/>
+        <circle cx="364" cy="270" r="11" fill="#0284c7"/><text x="364" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">11</text>
+        <text x="381" y="274" font-size="10.5" fill="#075985" font-weight="800">Deploy</text>
+        <text x="359" y="296" font-size="8.3" fill="#0369a1">refit + forecast + PI</text>
+        <rect x="513" y="252" width="150" height="72" rx="10" fill="#f0f9ff" stroke="#bae6fd"/>
+        <circle cx="530" cy="270" r="11" fill="#0284c7"/><text x="530" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">12</text>
+        <text x="547" y="274" font-size="10.5" fill="#075985" font-weight="800">Communicate</text>
+        <text x="525" y="296" font-size="8.3" fill="#0369a1">both rhythms + range</text>
+      </svg>
+    </figure>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · case-study-energy-demand-forecasting--energy_demand.xlsx</div>
+      <p style="margin:0.5rem 0 0">Daily electricity demand for a region, <strong>1,461 days</strong> (4 years, 2020 to
+        2023), in megawatts. It carries a slow upward trend, a strong <strong>weekly</strong> cycle (weekday vs weekend),
+        and a <strong>yearly</strong> cycle with winter and summer peaks. Two columns: <code>date</code> and
+        <code>demand_mw</code>. The last 60 days are the holdout.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/case-study-energy-demand-forecasting--energy_demand.xlsx" download>📊 Download dataset &nbsp;<small>XLSX · 1,461 days</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §2 inspect & decompose ===== -->
+  <section id="inspect">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Inspect &amp; Decompose the Two Seasons (Steps 1&#8211;5)</h2></div>
+
+    <div class="step-h"><span class="sn">1&#8211;2</span><h3>Define and collect</h3></div>
+    <p>A grid operator forecasts <strong>daily demand</strong> to schedule generation and avoid both shortfalls and waste.
+       Success: beat a seasonal-naive baseline and, crucially, capture <strong>both</strong> seasonal rhythms, missing the
+       weekend dip or the seasonal peak means mis-scheduling capacity.</p>
+
+    <div class="step-h"><span class="sn">3</span><h3>Inspect: two rhythms at once</h3></div>
+    <figure class="nb-fig">
+      <img src="../assets/img/case-study-energy-demand-forecasting--series.png" alt="Top: four years of demand showing a yearly cycle. Bottom: a four-week zoom showing the weekly weekday/weekend cycle.">
+      <figcaption><span class="cap-t">From the notebook · Step 3</span><br>
+        <strong>Zoom out for the year, in for the week.</strong> The full series (top) shows the slow <strong>yearly</strong>
+        cycle with winter and summer peaks; a four-week zoom (bottom) shows the sharp <strong>weekly</strong> cycle, weekdays
+        near 1,113 MW, weekends (shaded) dropping to about 911 MW. Both patterns are real and sizable, so a good model must
+        reproduce both.</figcaption>
+    </figure>
+
+    <div class="step-h"><span class="sn">4</span><h3>Decompose with MSTL</h3></div>
+    <figure class="nb-fig">
+      <img src="../assets/img/case-study-energy-demand-forecasting--mstl.png" alt="MSTL decomposition: observed, trend, a dense weekly seasonal component, a smooth yearly seasonal component, and small residuals">
+      <figcaption><span class="cap-t">From the notebook · Step 4</span><br>
+        <strong>Two seasons, separated at once.</strong> Ordinary decomposition handles one season; <strong>MSTL</strong>
+        peels off several. It splits the series into a trend, a dense <strong>weekly</strong> component (roughly 100 to
+        200 MW swing), a smooth <strong>yearly</strong> component (the winter-and-summer double peak), and a small residual. Both
+        swings are large, so a one-season model leaves real, systematic error behind.</figcaption>
+    </figure>
+
+    <div class="step-h"><span class="sn">5</span><h3>Stationarity, and the real challenge</h3></div>
+    <p>Unlike the retail series, this one is <strong>trend-stationary</strong> (ADF p &lt; 0.05): the trend is gentle, so we
+       model it directly rather than differencing. The genuine obstacle is the <strong>double seasonality</strong>, which is
+       what the next two steps tackle head-on.</p>
+  </section>
+
+  <!-- ===== §3 model & validate ===== -->
+  <section id="validate">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Baseline, One Season vs Two, &amp; Validate (Steps 6&#8211;10)</h2></div>
+
+    <div class="step-h"><span class="sn">6&#8211;7</span><h3>Baseline, then one seasonality</h3></div>
+    <p>We hold out the last <strong>60 days</strong>. The <strong>weekly seasonal-naive</strong> baseline (repeat last week)
+       scores about <strong>10.4% MAPE</strong>. <strong>Holt-Winters</strong> with a weekly period captures the
+       weekday/weekend swing and the trend, cutting that to about <strong>3.5%</strong>, but it has <em>no yearly term</em>,
+       so it slowly drifts off the seasonal calendar.</p>
+
+    <div class="step-h"><span class="sn">8</span><h3>Both seasonalities: harmonic regression</h3></div>
+    <p>The fix is a <strong>harmonic regression</strong>: a linear model with a trend, <strong>day-of-week dummies</strong>
+       for the weekly cycle, and <strong>Fourier terms</strong> (pairs of sines and cosines) for the yearly cycle. Fourier
+       terms are how you attach a long seasonal period to any model, a few harmonics trace the smooth annual curve. This
+       captures <strong>both</strong> rhythms.</p>
+
+    <div class="step-h"><span class="sn">9</span><h3>Validate on the holdout</h3></div>
+    <figure class="nb-fig">
+      <img src="../assets/img/case-study-energy-demand-forecasting--backtest.png" alt="Backtest: Holt-Winters gets the weekly zig-zag but drifts off the level; the harmonic regression tracks both the weekly and the yearly pattern">
+      <figcaption><span class="cap-t">From the notebook · Step 9</span><br>
+        <strong>Capturing both seasons wins.</strong> Holt-Winters (amber) gets the weekly zig-zag right but drifts off the
+        yearly level; the harmonic regression (blue) tracks both. The two-season model reaches about <strong>2.2%
+        MAPE</strong>, clearly beating the one-season Holt-Winters.</figcaption>
+    </figure>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/case-study-energy-demand-forecasting--accuracy.png" alt="MAPE bars: weekly seasonal-naive 10.4%, Holt-Winters one-season 3.5%, harmonic regression two-season 2.2%">
+      <figcaption><span class="cap-t">From the notebook · Step 9</span><br>
+        <strong>The full accuracy panel.</strong> Each step down the ladder captures more structure: the baseline (10.4%)
+        misses everything but the week, one-season Holt-Winters (3.5%) adds the trend, and the two-season harmonic regression
+        (2.2%, MASE ~0.2) captures the yearly cycle too, cutting the baseline error by nearly 80%.</figcaption>
+    </figure>
+
+    <div class="step-h"><span class="sn">10</span><h3>Interpret</h3></div>
+    <p>The winner's residuals are small (a Ljung-Box test flags only a little day-to-day autocorrelation, which a short AR
+       term would mop up, see Take It Further), and its coefficients are readable: the <strong>weekend effect</strong> is a
+       large negative shift (Saturday about 174 MW and Sunday about 213 MW below a Monday), while the Fourier terms trace the
+       annual curve. A model you can both trust and explain is exactly what a control room needs.</p>
+  </section>
+
+  <!-- ===== §4 deploy ===== -->
+  <section id="deploy">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Deploy the Forecast (Steps 11&#8211;12)</h2></div>
+
+    <figure style="margin:0.4rem 0 1.4rem;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.4rem 1.2rem">
+      <svg viewBox="0 0 680 176" width="100%" font-family="Inter, sans-serif" aria-label="A one-season model captures either the weekly or the yearly cycle; a harmonic regression with Fourier terms captures both at once">
+        <text x="340" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">One-season models pick a lane; Fourier terms take both</text>
+        <rect x="24" y="40" width="200" height="52" rx="10" fill="#fff7ed" stroke="#fdba74"/>
+        <text x="124" y="60" text-anchor="middle" font-size="9" fill="#c2410c" font-weight="800">Holt-Winters / SARIMA</text>
+        <text x="124" y="76" text-anchor="middle" font-size="7.8" fill="#9a3412">ONE seasonal period (7 or 365)</text>
+        <text x="124" y="87" text-anchor="middle" font-size="7.6" fill="#c2410c" font-weight="700">gets the week, drifts off the year</text>
+        <text x="255" y="70" text-anchor="middle" font-size="16" fill="#94a3b8">vs</text>
+        <rect x="290" y="40" width="366" height="52" rx="10" fill="#f0f9ff" stroke="#7dd3fc"/>
+        <text x="473" y="59" text-anchor="middle" font-size="9" fill="#0284c7" font-weight="800">Harmonic regression</text>
+        <text x="473" y="75" text-anchor="middle" font-size="8" fill="#075985">trend + day-of-week dummies (weekly) + Fourier terms (yearly)</text>
+        <text x="473" y="87" text-anchor="middle" font-size="7.6" fill="#0369a1" font-weight="700">captures BOTH seasons at once</text>
+        <rect x="24" y="108" width="632" height="52" rx="9" fill="#ecfdf5" stroke="#a7f3d0"/>
+        <text x="340" y="128" text-anchor="middle" font-size="8.6" fill="#047857" font-weight="800">Deploy: refit on all four years &#8594; forecast the next 30 days with a 95% interval, weekend dips and all</text>
+        <text x="340" y="146" text-anchor="middle" font-size="7.8" fill="#065f46">rerun every morning as yesterday's actuals arrive (MSTL and Prophet are other multiple-seasonality options)</text>
+      </svg>
+    </figure>
+
+    <div class="step-h"><span class="sn">11</span><h3>Refit on all data, forecast ahead</h3></div>
+    <figure class="nb-fig">
+      <img src="../assets/img/case-study-energy-demand-forecasting--forecast.png" alt="History followed by a 30-day forecast that reproduces the weekly dips, with a 95% interval band">
+      <figcaption><span class="cap-t">From the notebook · Step 11</span><br>
+        <strong>The deployed forecast.</strong> Refit on all four years, the model projects the next month day by day,
+        <em>weekend dips and all</em>, around an average near <strong>1,310 MW</strong>, with a 95% interval on each day. In
+        production it reruns every morning as new actuals land, so the grid team always has a fresh, calendar-aware forecast
+        with its uncertainty.</figcaption>
+    </figure>
+
+    <div class="step-h"><span class="sn">12</span><h3>Communicate</h3></div>
+    <p>The last step turns the model into guidance the control room can act on, the plain-English write-up below.</p>
+  </section>
+
+  <!-- ===== §5 writeup ===== -->
+  <section id="writeup-sec">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Communicate: the Plain-English Write-Up (Step 12)</h2></div>
+    <div class="writeup">
+      <h3>For the operations team</h3>
+      <p><strong>What is this?</strong> A day-by-day forecast of electricity demand for the next month, so the team can
+        schedule generation, buy power ahead, and hold the right reserve, with a sense of how sure we are.</p>
+
+      <h4>What goes in, and what comes out</h4>
+      <p><strong>Input:</strong> four years of daily demand. <strong>Output:</strong> a forecast for each of the next 30
+        days, each with a <em>range</em> (a best estimate plus a 95% band).</p>
+
+      <h4>The decisions we made, and why</h4>
+      <ul>
+        <li><span class="ck">✓</span><span>We <strong>handled two seasonal patterns at once</strong>. Demand follows both a weekly clock (weekdays high, weekends low) and a yearly clock (winter and summer peaks). Standard tools capture only one, so a model that missed the other would be systematically wrong.</span></li>
+        <li><span class="ck">✓</span><span>We <strong>added the yearly cycle with Fourier terms</strong>, a compact way to trace the smooth annual curve, on top of a model that already handled the week.</span></li>
+        <li><span class="ck">✓</span><span>We <strong>tested it on two unseen months</strong> before trusting it, and we report a <strong>range</strong>, because a single number would understate the day-to-day uncertainty.</span></li>
+      </ul>
+
+      <h4>How good is it, in plain terms</h4>
+      <p>Over the last two months the forecast was accurate to about <strong>2.2%</strong>, far better than repeating last
+        week (about 10%) and clearly better than a one-season model (about 3.5%). It captures the weekend drop and the
+        seasonal drift together.</p>
+
+      <h4>The bottom line</h4>
+      <p>Demand runs on <strong>two clocks</strong>: a weekly one (weekdays about 200 MW above weekends) and a yearly one
+        (winter and summer peaks). We forecast the next month to average around <strong>1,310 MW</strong>.
+        <strong>Schedule extra capacity for weekdays and the seasonal peak, pull back on weekends, plan against the daily
+        range, and the forecast refreshes every morning.</strong></p>
+    </div>
+  </section>
+
+  <!-- ===== notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body"><h3>Run the whole project in Python</h3><p>The companion notebook is the full 12-step workflow: it inspects the two rhythms, separates them with MSTL, checks stationarity, sets a weekly-naive baseline, fits a one-season Holt-Winters and a two-season harmonic regression (day-of-week dummies plus yearly Fourier terms), grades them on the holdout with MAE/RMSE/MAPE/MASE, reads the weekday effects, and refits to forecast the next 30 days with a prediction interval, every step explained.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/case-study-energy-demand-forecasting.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-energy-demand-forecasting.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-energy-demand-forecasting.ipynb" target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)"><strong>View</strong> opens the rendered notebook instantly.
+      <strong>Open in Colab</strong> runs it live. To run locally, install <code>numpy</code>, <code>pandas</code>,
+      <code>matplotlib</code>, <code>statsmodels</code>, and <code>openpyxl</code>.</p>
+  </section>
+
+  <!-- ===== takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Multiple seasonality is common</strong>: energy demand runs on a weekly and a yearly cycle at the same time.</span></li>
+        <li><span class="ck">✓</span><span><strong>MSTL separates the cycles</strong>: it decomposes a series into several seasonal components at once (here weekly + yearly).</span></li>
+        <li><span class="ck">✓</span><span><strong>One-season models fall short</strong>: Holt-Winters and SARIMA take a single period, so they capture the week but drift off the year.</span></li>
+        <li><span class="ck">✓</span><span><strong>Fourier terms handle the long cycle</strong>: a harmonic regression with day-of-week dummies + yearly Fourier terms captures both (2.2% vs 3.5% MAPE).</span></li>
+        <li><span class="ck">✓</span><span><strong>Deploy the same way</strong>: refit on all data, forecast ahead with a prediction interval, and refresh each morning.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== §6 take it further ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Take It Further</h2></div>
+    <p>Five ways to sharpen the multiple-seasonality forecast in the notebook:</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>How many harmonics?</h4>
+        <p>Vary the Fourier order K and pick by AIC and holdout error, too few underfits, too many overfits.</p>
+        <div class="chint">Hint: compare K = 1, 2, 3, 5, 8.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Rolling-origin backtest</h4>
+        <p>Re-forecast from several cutoffs and average, more trustworthy than one split.</p>
+        <div class="chint">Hint: slide the train window and average MAPE.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>How much does each season matter?</h4>
+        <p>Turn the weekly and yearly terms on and off; how much error does each remove?</p>
+        <div class="chint">Hint: fit trend-only, weekly-only, yearly-only, and both.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Dynamic regression</h4>
+        <p>Add an AR term on the residual errors to mop up the leftover day-to-day autocorrelation.</p>
+        <div class="chint">Hint: fit AutoReg on the regression residuals.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Does the interval hold?</h4>
+        <p>Backtest the 95% coverage, do about 95% of actual days land inside the band?</p>
+        <div class="chint">Hint: count actuals inside the prediction interval over several windows.</div></div></div>
+    </div>
+
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">📓</div>
+        <div class="nb-body"><h3>All five, worked in a companion notebook</h3><p>A second notebook, <strong>Take It Further</strong>, rebuilds the Chapter 133 forecast and works every extension with explanations, choosing the Fourier order, a rolling-origin backtest, measuring each seasonality's contribution, dynamic regression to clean the residuals, and a prediction-interval coverage check.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/case-study-energy-demand-forecasting--take-it-further.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-energy-demand-forecasting--take-it-further.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-energy-demand-forecasting--take-it-further.ipynb" target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §7 quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on multiple seasonality, MSTL, and harmonic regression. Answer them, hit <strong>Check Answers</strong>,
+       and keep refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>We have built forecasts three ways; now turn a forecast into a decision. <strong>Chapter 134 &#183; Case Study:
+         From Forecast to Decision</strong> compares competing forecasts and turns their prediction intervals into inventory
+         and staffing choices.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="case-study-financial-volatility-and-risk.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 132 · Previous</span><br><span class="cn-title">Financial Volatility &amp; Risk</span></span>
+    </a>
+    <a class="cn-btn next" href="case-study-from-forecast-to-decision.html">
+      <span><span class="cn-dir">Chapter 134 · Next</span><br><span class="cn-title">Case Study: From Forecast to Decision</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 133 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => { const h = document.documentElement; bar.style.width = ((h.scrollTop)/(h.scrollHeight-h.clientHeight)*100) + '%'; });
+</script>
+
+<script>
+  window.QUIZ_ID = "ch133";
+  window.QUIZ_DATA = [
+    {
+      q: "What makes electricity demand a 'multiple seasonality' problem?",
+      options: ["It has no seasonality", "It repeats on more than one period at once, a weekly cycle and a yearly cycle", "It only has a trend", "It is random"],
+      answer: 1,
+      explain: "Demand rises and falls with the day of the week AND the time of year simultaneously, two seasonal cycles at once."
+    },
+    {
+      q: "Why do Holt-Winters and SARIMA struggle here?",
+      options: ["They are too slow", "Each supports only one seasonal period, so it captures the week or the year, not both", "They cannot handle daily data", "They require a normal distribution"],
+      answer: 1,
+      explain: "A single-season model set to 7 gets the week but drifts off the year; you need a way to include both periods."
+    },
+    {
+      q: "MSTL is used to…",
+      options: ["Forecast the future", "Decompose a series into several seasonal components at once (here weekly + yearly)", "Test stationarity", "Compute VaR"],
+      answer: 1,
+      explain: "Multiple STL separates a series into trend plus more than one seasonal component, revealing both cycles."
+    },
+    {
+      q: "Fourier terms (pairs of sines and cosines) are used to…",
+      options: ["Remove the trend", "Model a long seasonal cycle (the yearly one) compactly, a few harmonics trace the annual curve", "Clean the data", "Split train and test"],
+      answer: 1,
+      explain: "Fourier terms are the standard way to attach a long or non-integer seasonal period to a model without a huge seasonal order."
+    },
+    {
+      q: "The harmonic regression combined…",
+      options: ["Only a trend", "A trend + day-of-week dummies (weekly) + yearly Fourier terms, capturing both seasons", "Only the yearly cycle", "A GARCH model"],
+      answer: 1,
+      explain: "Day-of-week dummies handle the weekly cycle and Fourier terms handle the yearly one, on top of a linear trend."
+    },
+    {
+      q: "On the holdout, the models scored ~10.4% (naive), ~3.5% (Holt-Winters), ~2.2% (harmonic). This shows…",
+      options: ["All models are equal", "Capturing both seasonalities beats capturing only one, which beats capturing none", "The naive model is best", "Seasonality does not matter"],
+      answer: 1,
+      explain: "Each added piece of seasonal structure lowers the error; the two-season model wins because it captures the yearly cycle too."
+    },
+    {
+      q: "Before forecasting the true future, we refit on all four years because…",
+      options: ["To make it slower", "Holding out was only for grading; the deployed forecast should use every available day", "To remove the weekly cycle", "It is required by law"],
+      answer: 1,
+      explain: "The train/test split selects the model; once chosen, refit on the full history so the shipped forecast uses all information."
+    },
+    {
+      q: "The overall lesson of the case study is…",
+      options: ["Always use SARIMA", "When a series has more than one seasonal cycle, use MSTL to see them and Fourier terms to model them all at once", "Seasonality can be ignored", "Only the trend matters"],
+      answer: 1,
+      explain: "Multiple seasonality needs multiple-season tools: MSTL for decomposition and Fourier terms (or Prophet/MSTL models) for forecasting."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

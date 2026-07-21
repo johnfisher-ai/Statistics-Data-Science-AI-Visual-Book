@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 41 · Distributions for Inference — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .disp-table code { font-size:0.82em; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/distributions-for-inference.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part VII · Probability Distributions</span><span class="sep">/</span>
+      <span>Chapter 41</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part VII · Probability Distributions</span> The tools of testing</div>
+    <h1>Distributions for <span class="accent">Inference</span></h1>
+    <p class="dek">Three distributions, the t, the chi-square, and the F, are the working tools behind real statistical
+       tests. Each is built from the normal, and each handles a job the normal alone cannot: small samples, variances,
+       and comparisons.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~16 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 41</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">The normal distribution is the star of inference, but it assumes you know the true standard deviation
+       &#963;, which you almost never do. Estimating &#963; from data, comparing variances, or testing categorical counts
+       each calls for a distribution purpose-built for the job. Meet the three workhorses.</p>
+
+    <div class="def-card">
+      <div class="sigma">t</div>
+      <div class="def-body">
+        The <span class="def-kw">t</span>, <span class="def-kw">chi-square</span>, and <span class="def-kw">F</span>
+        distributions are all derived from the normal. They power the t-test (means), chi-square tests (variances and
+        categorical data), and the F-test (comparing variances, ANOVA), with their shapes set by
+        <em>degrees of freedom</em>.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🎓</div>
+      <div><div class="ctitle">Degrees of freedom</div>
+        <p>Each of these distributions is indexed by its <strong>degrees of freedom</strong> (df), loosely, the number of
+           independent pieces of information available after estimating other quantities. Estimating the mean from a
+           sample of n "uses up" one piece, leaving n &#8722; 1 degrees of freedom, which is why so many formulas divide by
+           n &#8722; 1. The df controls each distribution's exact shape.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: t ===== -->
+  <section id="t">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Student's t: When &#963; Is Unknown</h2></div>
+    <p>When you replace the unknown population &#963; with the sample standard deviation s, you introduce extra
+       uncertainty. The <span class="term">t distribution</span> accounts for it: bell-shaped like the normal but with
+       <strong>heavier tails</strong>, and it converges to the normal as the sample grows.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 210" width="100%" font-family="Inter, sans-serif" aria-label="The t distribution with heavier tails than the normal, converging as degrees of freedom grow">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Student's t: heavier tails than the normal, fading as df grows</text>
+        <line x1="60" y1="170" x2="620" y2="170" stroke="#1a2138" stroke-width="1.1"/>
+        <!-- normal (dashed) -->
+        <path d="M90,170 C230,170 270,50 340,50 C410,50 450,170 590,170" fill="none" stroke="#1a2138" stroke-width="1.8" stroke-dasharray="5 4"/>
+        <text x="430" y="60" font-size="8.5" fill="#1a2138" font-weight="700">normal</text>
+        <!-- t df=3 (lower peak, fatter tails) -->
+        <path d="M70,168 C220,160 280,78 340,78 C400,78 460,160 610,168" fill="none" stroke="#db2777" stroke-width="2.2"/>
+        <text x="250" y="120" font-size="8.5" fill="#db2777" font-weight="800">t (df=3)</text>
+        <!-- arrows to tails -->
+        <text x="95" y="158" font-size="8" fill="#db2777">heavier tail</text>
+        <text x="585" y="158" text-anchor="end" font-size="8" fill="#db2777">heavier tail</text>
+      </svg>
+    </figure>
+
+    <p>Heavier tails mean the t demands stronger evidence: its 97.5% critical value is <strong>2.571</strong> at df = 5
+       and <strong>2.228</strong> at df = 10, versus the normal's 1.96. By df = 30 the gap nearly vanishes, and by df = 100
+       the t is essentially the normal. This is why the <span class="hl">t-test</span> is the default for a mean whenever
+       the sample is small and &#963; is estimated.</p>
+  </section>
+
+  <!-- ===== Section 2: chi-square ===== -->
+  <section id="chisquare">
+    <div class="section-eyebrow"><div class="num">2</div><h2>The Chi-Square Distribution</h2></div>
+    <p>Square a standard normal and add several together, and you get the <span class="term">chi-square
+       distribution</span>. With k degrees of freedom it is the sum of k squared standard normals, so it is positive,
+       right-skewed, and has mean equal to k.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 200" width="100%" font-family="Inter, sans-serif" aria-label="Chi-square density curves for several degrees of freedom, right-skewed with mean equal to df">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Chi-square: right-skewed, mean = degrees of freedom</text>
+        <line x1="60" y1="170" x2="620" y2="170" stroke="#1a2138" stroke-width="1.1"/>
+        <!-- df=2 (decay) -->
+        <path d="M60,55 C120,120 200,158 340,166 C460,170 540,170 620,170" fill="none" stroke="#db2777" stroke-width="2"/>
+        <text x="120" y="70" font-size="8.5" fill="#db2777" font-weight="800">df = 2</text>
+        <!-- df=4 (hump near left) -->
+        <path d="M60,170 C110,120 150,95 200,95 C280,95 360,150 620,168" fill="none" stroke="#d97706" stroke-width="2"/>
+        <text x="210" y="88" font-size="8.5" fill="#b45309" font-weight="800">df = 4</text>
+        <!-- df=8 (broader hump) -->
+        <path d="M60,170 C160,168 220,120 300,118 C420,116 480,160 620,168" fill="none" stroke="#0d9488" stroke-width="2.2"/>
+        <text x="330" y="110" font-size="8.5" fill="#0f766e" font-weight="800">df = 8</text>
+        <text x="345" y="190" text-anchor="middle" font-size="9" fill="#8b94b3">value &#8594;</text>
+      </svg>
+    </figure>
+
+    <p>Because it measures accumulated squared deviations, chi-square is the distribution for tests about
+       <strong>variance</strong> and, most famously, for categorical data: the <span class="hl">goodness-of-fit</span>
+       test (do observed counts match expected?) and the <span class="hl">test of independence</span> (are two
+       categorical variables related?). In the notebook, 120 die rolls give a chi-square statistic of 6.80 (df = 5,
+       p = 0.236), consistent with a fair die.</p>
+  </section>
+
+  <!-- ===== Section 3: F & family tree ===== -->
+  <section id="f-family">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The F Distribution and the Family Tree</h2></div>
+    <p><em>Skim-friendly:</em> on a first read you can take the family tree below as a picture and move on to the next
+       chapter, the algebra of how each distribution is built from normals is here for when you want the "why," but you
+       lose nothing essential by skipping it now.</p>
+    <p>The <span class="term">F distribution</span> is a ratio of two chi-squares, each divided by its degrees of
+       freedom. It is the natural tool for comparing two variances and is the engine of
+       <span class="hl">ANOVA</span> (analysis of variance, comparing several group means at once). And it completes a
+       tidy family tree: every distribution here descends from the normal.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 220" width="100%" font-family="Inter, sans-serif" aria-label="A family tree showing the t, chi-square, and F distributions all derived from the normal">
+        <text x="340" y="22" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">All three descend from the normal</text>
+        <!-- normal root -->
+        <rect x="285" y="40" width="110" height="40" rx="10" fill="#1e3a8a" />
+        <text x="340" y="65" text-anchor="middle" font-size="12" fill="#fff" font-weight="800">Normal Z</text>
+        <!-- arrows -->
+        <g stroke="#8b94b3" stroke-width="1.5" fill="none" marker-end="url(#a41)">
+          <path d="M300,80 C230,110 170,120 150,150"/><path d="M340,80 L340,150"/><path d="M395,80 C470,110 520,120 545,150"/>
+        </g>
+        <defs><marker id="a41" markerWidth="9" markerHeight="9" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8b94b3"/></marker></defs>
+        <!-- t -->
+        <rect x="70" y="152" width="170" height="56" rx="10" fill="#ecfdf5" stroke="#0d9488"/>
+        <text x="155" y="172" text-anchor="middle" font-size="11" fill="#0f766e" font-weight="800">t distribution</text>
+        <text x="155" y="190" text-anchor="middle" font-size="8.5" fill="#4a5578">Z / &#8730;(&#967;&#178;/df)</text>
+        <text x="155" y="202" text-anchor="middle" font-size="8" fill="#8b94b3">means, small samples</text>
+        <!-- chi-square -->
+        <rect x="258" y="152" width="164" height="56" rx="10" fill="#ecfdf5" stroke="#0d9488"/>
+        <text x="340" y="172" text-anchor="middle" font-size="11" fill="#0f766e" font-weight="800">chi-square</text>
+        <text x="340" y="190" text-anchor="middle" font-size="8.5" fill="#4a5578">sum of Z&#178;</text>
+        <text x="340" y="202" text-anchor="middle" font-size="8" fill="#8b94b3">variance, categorical</text>
+        <!-- F -->
+        <rect x="440" y="152" width="170" height="56" rx="10" fill="#ecfdf5" stroke="#0d9488"/>
+        <text x="525" y="172" text-anchor="middle" font-size="11" fill="#0f766e" font-weight="800">F distribution</text>
+        <text x="525" y="190" text-anchor="middle" font-size="8.5" fill="#4a5578">ratio of two &#967;&#178;</text>
+        <text x="525" y="202" text-anchor="middle" font-size="8" fill="#8b94b3">compare variances, ANOVA</text>
+      </svg>
+    </figure>
+
+    <p>The relationships are exact: <strong>Z&#178; is a chi-square with 1 df</strong>; a <strong>t</strong> is a normal
+       divided by the square root of a scaled chi-square; and an <strong>F</strong> is the ratio of two scaled
+       chi-squares. Understand the normal, and these three follow as consequences rather than new mysteries.</p>
+  </section>
+
+  <!-- ===== Section 4: choosing the test ===== -->
+  <section id="choosing">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Which Distribution for Which Test?</h2></div>
+    <p>In practice you pick the distribution by the question you are asking. This guide covers the great majority of the
+       tests you will meet in the inference chapters ahead.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Question</th><th>Distribution</th><th>Typical test</th></tr></thead>
+        <tbody>
+          <tr><td>Is a mean different from a value (small sample)?</td><td class="nm">t</td><td>one-sample t-test</td></tr>
+          <tr><td>Do two groups have different means?</td><td class="nm">t</td><td>two-sample / paired t-test</td></tr>
+          <tr><td>Do observed counts match expected?</td><td class="nm">chi-square</td><td>goodness-of-fit test</td></tr>
+          <tr><td>Are two categorical variables related?</td><td class="nm">chi-square</td><td>test of independence</td></tr>
+          <tr><td>Do several groups have equal means or variances?</td><td class="nm">F</td><td>ANOVA / variance ratio</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout note">
+      <div class="cico">🧭</div>
+      <div><div class="ctitle">The recurring pattern</div>
+        <p>Every one of these tests follows the same recipe: compute a statistic, locate it on the appropriate
+           distribution (set by the degrees of freedom), and read off a <strong>p-value</strong>, the probability of a
+           result this extreme if nothing is going on. The distributions in this chapter are simply the rulers against
+           which test statistics are measured. The full mechanics arrive in the inference Part.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Distributions for Inference in Machine Learning &amp; AI</h2></div>
+    <p>These distributions are not just for classical statistics; they are how careful practitioners decide whether a
+       model is <em>really</em> better, whether a feature <em>really</em> matters, and whether an A/B test result is
+       <em>real</em> rather than noise.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Distribution</th><th>In ML / AI it appears as</th><th>Concrete example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">t distribution</td><td>Comparing two models</td><td>paired t-test on cross-validation fold scores</td></tr>
+          <tr><td class="nm">t distribution</td><td>A/B testing</td><td>is variant B's conversion lift significant?</td></tr>
+          <tr><td class="nm">Chi-square</td><td>Feature selection &amp; fit</td><td>chi-square test between a categorical feature and the label</td></tr>
+          <tr><td class="nm">F distribution</td><td>Comparing many configs</td><td>ANOVA across hyperparameter groups</td></tr>
+          <tr><td class="nm">All three</td><td>Honest evaluation</td><td>turning a score gap into a p-value, not a guess</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>A new model that scores 1% higher might be a genuine improvement, or it might be the luck of one train/test
+           split. The disciplined answer is a <strong>significance test</strong>. A <strong>paired t-test</strong> across
+           cross-validation folds asks whether one model reliably beats another (in the notebook, a 3-point gain is
+           significant with p far below 0.05). <strong>Chi-square</strong> tests power classic <strong>feature
+           selection</strong> (does this categorical feature carry information about the label?) and validate that
+           generated data matches a target distribution. <strong>A/B tests</strong> behind every product decision are
+           t-tests or proportion tests in disguise. Treating a single benchmark number as truth, with no distribution
+           behind it, is how teams fool themselves; these three distributions are the antidote.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Run real tests in Python</h3>
+          <p>The companion notebook plots the t's heavy tails and its shrinking critical values, builds the chi-square
+             and t from squared and scaled normals to prove the family tree, runs a chi-square goodness-of-fit test on a
+             die, and finishes with a paired t-test comparing two models across cross-validation folds, the rigorous way
+             to claim one model beats another.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/distributions-for-inference.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/distributions-for-inference.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/distributions-for-inference.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>scipy</code>, and
+      <code>matplotlib</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>The t distribution</strong> handles means when &#963; is unknown: heavier tails than the normal, converging to it as df grows.</span></li>
+        <li><span class="ck">✓</span><span><strong>Chi-square</strong> is a sum of squared normals (mean = df); it tests variances and categorical counts (goodness-of-fit, independence).</span></li>
+        <li><span class="ck">✓</span><span><strong>The F distribution</strong> is a ratio of two chi-squares; it compares variances and powers ANOVA.</span></li>
+        <li><span class="ck">✓</span><span><strong>One family</strong>: Z&#178; is chi-square(1), t = Z/&#8730;(&#967;&#178;/df), F = ratio of &#967;&#178;'s; all descend from the normal, indexed by degrees of freedom.</span></li>
+        <li><span class="ck">✓</span><span><strong>In ML/AI</strong>: paired t-tests compare models, chi-square drives feature selection, and A/B tests are t-tests in disguise.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them with SciPy before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>t critical value</h4>
+        <p>For a 95% two-sided test with n = 10 (df = 9), find the critical t value and compare it to the normal's
+           1.96.</p>
+        <div class="chint">Hint: use the inverse CDF of the t at 0.975.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Chi-square mean</h4>
+        <p>A chi-square is the sum of df squared standard normals. Confirm by simulation that chi-square(5) has mean 5.</p>
+        <div class="chint">Hint: square standard normals, sum 5 of them, average over many trials.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>t confidence interval</h4>
+        <p>A sample of n = 10 has mean 50 and sample sd 8. Build a 95% confidence interval for the mean using the t.</p>
+        <div class="chint">Hint: x&#772; &#177; t(9) &#215; s/&#8730;n.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Goodness of fit</h4>
+        <p>Candy should be 25% of each of 4 colors. In 200 candies you observe [40, 55, 52, 53]. Test whether the colors
+           are equally likely.</p>
+        <div class="chint">Hint: chi-square with expected 50 each, df = 3.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Compare two models</h4>
+        <p>Two models are scored on 8 cross-validation folds. Use a paired t-test to decide whether model B is
+           significantly better.</p>
+        <div class="chint">Hint: <code>scipy.stats.ttest_rel(B, A)</code>; check p &lt; 0.05.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code.
+           Try them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/distributions-for-inference--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/distributions-for-inference--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/distributions-for-inference--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on the distributions for inference. Answer them, hit <strong>Check Answers</strong>, and
+       keep refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">🏁</div>
+    <div><div class="ctitle">That completes Part VII</div>
+      <p>You now have the full distribution toolkit: discrete and continuous families, the normal in depth, the sampling
+         distribution and CLT, and the t, chi-square, and F for inference. Next, <strong>Part VIII</strong> opens the
+         advanced track, <strong>Mathematical Statistics</strong>, before the book turns to estimation and hypothesis
+         testing.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="sampling-distributions-and-the-central-limit-theorem.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 40 · Previous</span><br><span class="cn-title">Sampling Distributions &amp; the CLT</span></span>
+    </a>
+    <a class="cn-btn next" href="joint-marginal-and-conditional-densities.html">
+      <span><span class="cn-dir">Chapter 42 · Next</span><br><span class="cn-title">Joint, Marginal &amp; Conditional Densities</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 41 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch41";
+  window.QUIZ_DATA = [
+    {
+      q: "Why do we use the t distribution instead of the normal for a small-sample mean?",
+      options: ["The data is not numeric", "We estimate σ with the sample sd, adding uncertainty that fattens the tails", "The t has no mean", "Normals only work for proportions"],
+      answer: 1,
+      explain: "Replacing the unknown σ with the sample standard deviation adds uncertainty. The t accounts for it with heavier tails, especially at low df."
+    },
+    {
+      q: "As the degrees of freedom increase, the t distribution…",
+      options: ["Becomes more skewed", "Approaches the normal distribution", "Becomes uniform", "Loses its mean"],
+      answer: 1,
+      explain: "With more data the extra uncertainty shrinks; by df ≈ 30 the t is close to normal, and by df = 100 essentially identical."
+    },
+    {
+      q: "A chi-square distribution with k degrees of freedom is…",
+      options: ["The ratio of two normals", "The sum of k squared standard normals", "Always symmetric", "The same as a t"],
+      answer: 1,
+      explain: "Chi-square(k) is the sum of k squared standard normals: positive, right-skewed, with mean equal to k."
+    },
+    {
+      q: "Which distribution is used to test whether observed categorical counts match expected ones?",
+      options: ["t", "Chi-square", "F", "Uniform"],
+      answer: 1,
+      explain: "The chi-square goodness-of-fit test compares observed and expected counts; chi-square also handles tests of independence."
+    },
+    {
+      q: "The F distribution arises as…",
+      options: ["A single squared normal", "A ratio of two (scaled) chi-square distributions", "The sum of two t's", "The log of a normal"],
+      answer: 1,
+      explain: "F is a ratio of two chi-squares each divided by its df. It compares variances and is the basis of ANOVA."
+    },
+    {
+      q: "Z² (a squared standard normal) follows which distribution?",
+      options: ["t with 1 df", "Chi-square with 1 df", "F", "Normal"],
+      answer: 1,
+      explain: "A single squared standard normal is exactly a chi-square with 1 degree of freedom, the simplest branch of the family tree."
+    },
+    {
+      q: "To decide whether model B truly beats model A across cross-validation folds, you would use…",
+      options: ["A bar chart only", "A paired t-test on the fold scores", "The largest single fold", "A chi-square on accuracy"],
+      answer: 1,
+      explain: "A paired t-test compares the two models fold by fold and yields a p-value, telling you whether the gap is real or sampling noise."
+    },
+    {
+      q: "In ML, a chi-square test is commonly used for…",
+      options: ["Initializing weights", "Feature selection between a categorical feature and the label", "Setting the learning rate", "Sorting the data"],
+      answer: 1,
+      explain: "Chi-square measures association between a categorical feature and the target, a classic, fast feature-selection screen."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

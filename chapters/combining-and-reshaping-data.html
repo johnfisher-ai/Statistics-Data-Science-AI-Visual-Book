@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 23 · Combining &amp; Reshaping Data — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#ecfeff; border:1px solid #a5f3fc; border-left:4px solid #0891b2; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#0e7490; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none; padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<!-- ============ TOP NAV ============ -->
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/combining-and-reshaping-data.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<!-- ============ HERO ============ -->
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part IV · Preparing Data for Analysis</span><span class="sep">/</span>
+      <span>Chapter 23</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part IV · Preparing Data</span> Getting data ready</div>
+    <h1>Combining &amp; <span class="accent">Reshaping Data</span></h1>
+    <p class="dek">Real analyses rarely start from one tidy table. They start from several files in the wrong shape,
+       with dates as text and two facts crammed in one column. This chapter is the plumbing that joins, reshapes,
+       and parses them into one analysis-ready table.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~13 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 23</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <!-- ===== Intro / Section 1: joins ===== -->
+  <section id="intro">
+    <p class="lead">You have two tables that share a column, customers and their orders, and you need them as one.
+       That is a <span class="term">join</span>, the single most common data-combining task and the pandas version
+       of a SQL <code>JOIN</code>.</p>
+
+    <div class="def-card">
+      <div class="sigma">⋈</div>
+      <div class="def-body">
+        A <span class="def-kw">join</span> (or <span class="def-kw">merge</span>) combines two tables by matching
+        rows on a shared <span class="def-kw">key</span>. <span class="def-kw">Concatenation</span> instead stacks
+        same-shaped tables; <span class="def-kw">reshaping</span> moves data between wide and long form.
+      </div>
+    </div>
+
+    <div class="section-eyebrow"><div class="num">1</div><h2>Joining Tables</h2></div>
+    <p>The key answers "which row here matches which row there?" The <code>how=</code> argument decides which rows
+       survive the join. These are the four standard types (with <code>cross</code> for every combination):</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 660 170" width="100%" font-family="Inter, sans-serif" aria-label="The four join types shown as overlapping circles">
+        <defs>
+          <clipPath id="jL"><circle cx="0" cy="70" r="34"/></clipPath>
+          <clipPath id="jR"><circle cx="34" cy="70" r="34"/></clipPath>
+        </defs>
+        <!-- inner -->
+        <g transform="translate(50,0)">
+          <circle cx="0" cy="70" r="34" fill="#eef1f8" stroke="#8b94b3"/><circle cx="34" cy="70" r="34" fill="#eef1f8" stroke="#8b94b3"/>
+          <g clip-path="url(#jL)"><circle cx="34" cy="70" r="34" fill="#0891b2"/></g>
+          <text x="17" y="128" text-anchor="middle" font-size="12" fill="#0891b2" font-weight="800">inner</text>
+          <text x="17" y="143" text-anchor="middle" font-size="8.5" fill="#8b94b3">matches only</text>
+        </g>
+        <!-- left -->
+        <g transform="translate(220,0)">
+          <circle cx="0" cy="70" r="34" fill="#e0f7fb" stroke="#0891b2"/><circle cx="34" cy="70" r="34" fill="#eef1f8" stroke="#8b94b3"/>
+          <text x="17" y="128" text-anchor="middle" font-size="12" fill="#0891b2" font-weight="800">left</text>
+          <text x="17" y="143" text-anchor="middle" font-size="8.5" fill="#8b94b3">all left rows</text>
+        </g>
+        <!-- right -->
+        <g transform="translate(390,0)">
+          <circle cx="0" cy="70" r="34" fill="#eef1f8" stroke="#8b94b3"/><circle cx="34" cy="70" r="34" fill="#e3f6ee" stroke="#059669"/>
+          <text x="17" y="128" text-anchor="middle" font-size="12" fill="#059669" font-weight="800">right</text>
+          <text x="17" y="143" text-anchor="middle" font-size="8.5" fill="#8b94b3">all right rows</text>
+        </g>
+        <!-- outer -->
+        <g transform="translate(560,0)">
+          <circle cx="0" cy="70" r="34" fill="#f0e9fe" stroke="#7c3aed"/><circle cx="34" cy="70" r="34" fill="#f0e9fe" stroke="#7c3aed"/>
+          <text x="17" y="128" text-anchor="middle" font-size="12" fill="#7c3aed" font-weight="800">outer</text>
+          <text x="17" y="143" text-anchor="middle" font-size="8.5" fill="#8b94b3">all rows, both</text>
+        </g>
+        <text x="330" y="20" text-anchor="middle" font-size="11" fill="#1a2138" font-weight="700">Which rows survive the join (left table ∪ right table)</text>
+      </svg>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>how=</th><th>Keeps</th><th>SQL</th><th>Use when</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">inner <em>(default)</em></td><td>Only keys in <strong>both</strong> tables</td><td>INNER JOIN</td><td>You want only matched records. <strong>Silently drops</strong> unmatched rows</td></tr>
+          <tr><td class="nm">left</td><td>All left rows; right cols NaN if no match</td><td>LEFT OUTER</td><td>Keep every left row (all orders, attach customer if known)</td></tr>
+          <tr><td class="nm">right</td><td>All right rows; left cols NaN if no match</td><td>RIGHT OUTER</td><td>Symmetric to left (people usually flip the tables)</td></tr>
+          <tr><td class="nm">outer</td><td>Union of keys from both</td><td>FULL OUTER</td><td>Keep everything; see all non-matches</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout note">
+      <div class="cico">💥</div>
+      <div><div class="ctitle">The fan-out trap, and how to catch it</div>
+        <p>If a key is duplicated on <em>both</em> sides, the merge produces every combination within that key,
+           <strong>multiplying rows</strong> and inflating any sum you compute next. Two defenses:
+           <code>validate="one_to_many"</code> (and friends) <strong>raises an error</strong> if the relationship is
+           wrong, and <code>indicator=True</code> adds a column showing where each row matched. Also clean your keys
+           first, a stray space (<code>"USA "</code> ≠ <code>"USA"</code>) or a dtype mismatch (<code>5</code> ≠
+           <code>"5"</code>) produces zero matches with no error.</p></div>
+    </div>
+    <p style="font-size:0.9rem;color:var(--ink-faint)">When the tables are the <em>same shape</em> (twelve monthly
+       files with identical columns), you don't join, you stack: <code>pd.concat([...], ignore_index=True)</code>
+       glues rows together. Merge matches on a key; concat stacks.</p>
+  </section>
+
+  <!-- ===== Section 2: reshaping ===== -->
+  <section id="reshape">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Reshaping: Wide &#8596; Long</h2></div>
+    <p>The same data can wear two shapes. <span class="hl">Long (tidy)</span> form, one row per observation, is what
+       plots and models want (Chapter 18). <span class="hl">Wide</span> form, a category spread across columns, is
+       what a human-readable report wants. You move between them constantly.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 210" width="100%" font-family="Inter, sans-serif" aria-label="Wide table with years as columns reshaped to a long tidy table and back">
+        <text x="150" y="20" text-anchor="middle" font-size="12" fill="#0891b2" font-weight="800">WIDE (years are columns)</text>
+        <g font-size="10.5">
+          <rect x="30" y="30" width="240" height="26" fill="#e0f7fb" stroke="#0891b2"/>
+          <text x="58" y="47" fill="#1a2138" font-weight="800">region</text><text x="150" y="47" fill="#1a2138" font-weight="800">2021</text><text x="215" y="47" fill="#1a2138" font-weight="800">2022</text>
+          <rect x="30" y="56" width="240" height="24" fill="#fff" stroke="#e6e9f2"/><text x="52" y="72" fill="#4a5578">North</text><text x="155" y="72" fill="#4a5578">120</text><text x="220" y="72" fill="#4a5578">135</text>
+          <rect x="30" y="80" width="240" height="24" fill="#fff" stroke="#e6e9f2"/><text x="52" y="96" fill="#4a5578">South</text><text x="160" y="96" fill="#4a5578">90</text><text x="222" y="96" fill="#4a5578">110</text>
+        </g>
+        <!-- arrows -->
+        <g stroke="#7c3aed" stroke-width="2" fill="#7c3aed"><line x1="285" y1="58" x2="345" y2="58"/><path d="M345,58 l-8,-4 l0,8 z"/></g>
+        <text x="315" y="50" text-anchor="middle" font-size="10.5" fill="#7c3aed" font-weight="800">melt</text>
+        <g stroke="#059669" stroke-width="2" fill="#059669"><line x1="345" y1="86" x2="285" y2="86"/><path d="M285,86 l8,-4 l0,8 z"/></g>
+        <text x="315" y="102" text-anchor="middle" font-size="10.5" fill="#059669" font-weight="800">pivot</text>
+        <!-- long table -->
+        <text x="500" y="20" text-anchor="middle" font-size="12" fill="#059669" font-weight="800">LONG / tidy (one obs per row)</text>
+        <g font-size="10.5">
+          <rect x="370" y="30" width="270" height="26" fill="#e3f6ee" stroke="#059669"/>
+          <text x="398" y="47" fill="#1a2138" font-weight="800">region</text><text x="495" y="47" fill="#1a2138" font-weight="800">year</text><text x="575" y="47" fill="#1a2138" font-weight="800">sales</text>
+          <g fill="#4a5578">
+            <rect x="370" y="56" width="270" height="22" fill="#fff" stroke="#e6e9f2"/><text x="392" y="71">North</text><text x="500" y="71">2021</text><text x="582" y="71">120</text>
+            <rect x="370" y="78" width="270" height="22" fill="#fff" stroke="#e6e9f2"/><text x="392" y="93">North</text><text x="500" y="93">2022</text><text x="582" y="93">135</text>
+            <rect x="370" y="100" width="270" height="22" fill="#fff" stroke="#e6e9f2"/><text x="394" y="115">South</text><text x="503" y="115">2021</text><text x="585" y="115">90</text>
+            <rect x="370" y="122" width="270" height="22" fill="#fff" stroke="#e6e9f2"/><text x="394" y="137">South</text><text x="503" y="137">2022</text><text x="582" y="137">110</text>
+          </g>
+        </g>
+        <text x="340" y="178" text-anchor="middle" font-size="10" fill="#8b94b3">melt unpivots wide → long; pivot / pivot_table spreads long → wide</text>
+      </svg>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Function</th><th>Direction</th><th>What it does</th><th>Gotcha</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">melt</td><td>wide → long</td><td>Collapse columns into name + value columns</td><td>Name <code>var_name</code> / <code>value_name</code></td></tr>
+          <tr><td class="nm">pivot</td><td>long → wide</td><td>Spread one column's values into new columns</td><td><strong>Fails on duplicate index/column pairs</strong></td></tr>
+          <tr><td class="nm">pivot_table</td><td>long → wide</td><td>Pivot <strong>with aggregation</strong> (default mean)</td><td>Use this when combos can repeat; <code>margins=True</code> adds totals</td></tr>
+          <tr><td class="nm">stack / unstack</td><td>cols ↔ index</td><td>Move a level between columns and the index</td><td>The index-level dual of melt / pivot</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== Section 3: dates ===== -->
+  <section id="dates">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Parsing Dates &amp; Times</h2></div>
+    <p>A date stored as text is nearly useless: it sorts alphabetically (<code>"10/2020"</code> before
+       <code>"9/2020"</code>), can't do arithmetic, and won't filter by range. <code>pd.to_datetime</code> turns it
+       into a real datetime, and then a world of operations opens up.</p>
+    <div class="cardgrid cols-2">
+      <div class="ic-card bg-cyan"><h4 class="tx-cyan">Parse it</h4><p><code>pd.to_datetime(s, errors="coerce", format="mixed")</code>; bad values become <code>NaT</code> (Chapter 19/20). Use <code>dayfirst=</code> for EU-style dates.</p></div>
+      <div class="ic-card bg-purple"><h4 class="tx-purple">Extract features</h4><p>The <code>.dt</code> accessor: <code>.dt.year</code>, <code>.dt.month</code>, <code>.dt.dayofweek</code>, <code>.dt.day_name()</code>, <code>.dt.quarter</code>, ready for Chapter 24.</p></div>
+      <div class="ic-card bg-amber"><h4 class="tx-amber">Resample a series</h4><p>With a datetime index, <code>df.resample("ME").sum()</code> rebins daily to monthly, the time-series version of <code>groupby</code>.</p></div>
+      <div class="ic-card bg-green"><h4 class="tx-green">Do date math</h4><p>Subtract two datetimes for a duration; <code>.dt.days</code> pulls out the day count.</p></div>
+    </div>
+    <div class="callout note">
+      <div class="cico">🗓️</div>
+      <div><div class="ctitle">Heads-up: modern pandas renamed the frequency codes</div>
+        <p>In current pandas (2.2+), the resample/<code>date_range</code> codes changed: use <strong><code>"ME"</code></strong>
+           for month-end (not the old <code>"M"</code>), <strong><code>"QE"</code></strong> for quarter, <strong><code>"YE"</code></strong>
+           for year, and <strong><code>"h"</code>, <code>"min"</code>, <code>"s"</code></strong> for hour/minute/second.
+           The old single letters now error, so older tutorials copied verbatim will break.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 4: text + workflow ===== -->
+  <section id="text">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Cleaning Text &amp; the Workflow</h2></div>
+    <p>The <span class="term">.str accessor</span> runs string operations across an entire column at once, no loop.
+       It carries the casing and whitespace fixes from Chapter 19 and adds the two workhorses of field-wrangling:
+       splitting and extracting.</p>
+    <div class="cardgrid cols-2">
+      <div class="ic-card bg-cyan"><h4 class="tx-cyan">Split a field</h4><p><code>s.str.split(",", expand=True)</code> turns "City, State" into two columns. Strip the pieces afterward.</p></div>
+      <div class="ic-card bg-purple"><h4 class="tx-purple">Extract with regex</h4><p><code>s.str.extract(r"(\d+)")</code> pulls the first capture group (a number, a code) into a column.</p></div>
+      <div class="ic-card bg-amber"><h4 class="tx-amber">Standardize</h4><p><code>s.str.strip().str.lower()</code> unifies casing and whitespace so joins and group-bys work.</p></div>
+      <div class="ic-card bg-green"><h4 class="tx-green">Pad codes</h4><p><code>s.str.zfill(6)</code> restores leading zeros stripped from IDs and ZIPs.</p></div>
+    </div>
+    <div class="callout note">
+      <div class="cico">🔤</div>
+      <div><div class="ctitle">One pandas gotcha worth knowing</div>
+        <p>Since pandas 2.0, <code>.str.replace</code> treats its pattern as a <strong>literal string by default</strong>
+           (<code>regex=False</code>). When you mean a regular expression, you must pass <code>regex=True</code>
+           explicitly, e.g. <code>s.str.replace(r"\D", "", regex=True)</code> to strip non-digits. Older code assumed
+           the opposite default.</p></div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🧭</div>
+      <div><div class="ctitle">The workflow</div>
+        <p><strong>Combine</strong> the raw tables (concat to stack, merge to join, validate the keys) →
+           <strong>reshape</strong> to tidy (melt, or pivot_table for summaries) → <strong>parse dates</strong> and
+           extract features → <strong>clean text</strong> with <code>.str</code>. The steps interleave, but the end
+           state is one analysis-ready table.</p></div>
+    </div>
+
+    <div class="callout note">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for data science</div>
+        <p>Most projects spend more effort getting data into one clean shape than on the modeling itself. A wrong
+           join can silently double your revenue totals; the right reshape makes a chart trivial; a parsed date
+           unlocks a dozen features. These are the unglamorous skills that decide whether everything downstream is
+           built on solid ground, and they lead straight into feature engineering (Chapter 24) and EDA (Chapter 25).</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 5: In ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Combining &amp; Reshaping in Machine Learning &amp; AI</h2></div>
+    <p>Before any model runs, someone has to assemble the training table, and that is joins and reshapes. Getting the
+       shape and the keys right is quietly where most data-science time actually goes.</p>
+
+    <table class="disp-table">
+      <thead>
+        <tr><th>Operation</th><th>Where it shows up in ML</th><th>Why it matters</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="nm tx-cyan">Merge / join</td><td>Building the feature table from many sources (a <strong>feature store</strong>)</td><td>Most features come from joining tables on a key; a wrong join type silently drops or duplicates rows</td></tr>
+        <tr><td class="nm tx-purple">Long (tidy) format</td><td>The input shape most modeling and plotting tools expect</td><td>One row per observation, one column per variable, is what pandas, seaborn, and estimators want</td></tr>
+        <tr><td class="nm tx-amber">Pivot / groupby-aggregate</td><td>Turning transactions into per-entity features</td><td>Aggregating a log into one row per customer is the core of tabular feature engineering</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Validate every join, and watch for time leakage</div>
+        <p>Two traps recur. A merge that unexpectedly fans out multiplies your rows, so check the count and use
+           <code>validate=</code>. And when you join time-stamped features, make sure you only attach information that
+           was <strong>known before</strong> the prediction moment, joining in a future value is a subtle but fatal
+           leak.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 6: Real-World Example ===== -->
+  <section id="real-world">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Real-World Example: Reshaping Store Sales</h2></div>
+    <p>This store-sales table arrives in <strong>long</strong> (tidy) format: <strong>48 rows</strong>, one per
+       store-month. <strong>Pivot</strong> it and you get a compact <strong>4-by-12</strong> report (stores down,
+       months across) that a human can read; <strong>melt</strong> it back and you have the tidy shape a model wants.
+       The companion notebook also <strong>merges</strong> it with a small store-to-region lookup to roll sales up by
+       region.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · combining-and-reshaping-data--store_sales_long.xlsx</div>
+      <p style="margin:0.5rem 0 0">Long format, one row per store-month: <code>month</code> (YYYY-MM),
+        <code>store</code> (four stores), and <code>units_sold</code>. Reshape it between long and wide, and combine it
+        with a lookup table, the two everyday moves of getting data into the right shape.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/combining-and-reshaping-data--store_sales_long.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 48 rows (long)</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Bring it to life in Python</h3>
+          <p>The companion notebook joins customers to orders (inner vs left), triggers and catches a many-to-many
+             fan-out with <code>validate=</code>, melts a wide table to long and pivots it back, parses mixed dates
+             and resamples a daily series to monthly, and splits and extracts fields with the <code>.str</code> accessor.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/combining-and-reshaping-data.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/combining-and-reshaping-data.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/combining-and-reshaping-data.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>,
+      <code>matplotlib</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Key Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>merge joins on a key</strong>; <code>how=</code> picks survivors (inner drops unmatched rows, left keeps all left rows); concat stacks same-shaped tables.</span></li>
+        <li><span class="ck">✓</span><span><strong>Duplicate keys cause a fan-out</strong> that multiplies rows; guard with <code>validate=</code> and clean keys first.</span></li>
+        <li><span class="ck">✓</span><span><strong>melt reshapes wide→long</strong> (for plots/models); <strong>pivot_table</strong> aggregates long→wide and survives duplicates (plain pivot does not).</span></li>
+        <li><span class="ck">✓</span><span><strong>to_datetime + .dt</strong> unlock sorting, features, and resample; current pandas uses <code>"ME"/"QE"/"YE"</code> codes.</span></li>
+        <li><span class="ck">✓</span><span><strong>The .str accessor</strong> cleans text in bulk (split, extract, strip); pass <code>regex=True</code> for patterns.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Practice Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them on paper or in Python before checking the solutions.</p>
+
+    <div class="challenges">
+      <div class="challenge">
+        <div class="cnum">1</div>
+        <div class="cbody">
+          <h4>Join two tables</h4>
+          <p>Join a products table to an orders table on <code>product_id</code>, once <code>how="inner"</code> and
+             once <code>how="left"</code>. Report the row counts and explain where NaN appears.</p>
+          <div class="chint">Hint: inner drops the unmatched order; left keeps it with NaN.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">2</div>
+        <div class="cbody">
+          <h4>Wide to long</h4>
+          <p>A wide table has one column per quarter. Melt it so each row is one (store, quarter, sales).</p>
+          <div class="chint">Hint: <code>melt(id_vars="store", var_name="quarter", value_name="sales")</code>.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">3</div>
+        <div class="cbody">
+          <h4>Long to a grid</h4>
+          <p>From a long log with repeated region-month pairs, build a region × month table of total amount with row
+             and column totals. Why <code>pivot_table</code> and not <code>pivot</code>?</p>
+          <div class="chint">Hint: <code>aggfunc="sum"</code>, <code>margins=True</code>; pivot fails on duplicate pairs.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">4</div>
+        <div class="cbody">
+          <h4>Parse &amp; extract dates</h4>
+          <p>Parse a messy <code>signup_date</code> column, count how many failed, then extract the month name and
+             day of week from the valid dates.</p>
+          <div class="chint">Hint: <code>to_datetime(errors="coerce", format="mixed")</code>; <code>.dt.month_name()</code>, <code>.dt.day_name()</code>.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">5</div>
+        <div class="cbody">
+          <h4>Clean text</h4>
+          <p>From entries like <code>"Order #1042 - Austin, TX"</code>, extract the numeric order id and split the
+             "City, State" part into two columns.</p>
+          <div class="chint">Hint: <code>str.extract(r"#(\d+)")</code> and <code>str.split(",", expand=True)</code>.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges in the same visual
+           style. Try them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/combining-and-reshaping-data--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/combining-and-reshaping-data--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/combining-and-reshaping-data--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">8</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on combining and reshaping. Answer them, hit <strong>Check Answers</strong>, and keep
+       refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <!-- ===== Chapter Nav ===== -->
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="transformations.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 22 · Previous</span><br><span class="cn-title">Transformations</span></span>
+    </a>
+    <a class="cn-btn next" href="feature-engineering.html">
+      <span><span class="cn-dir">Chapter 24 · Next</span><br><span class="cn-title">Feature Engineering</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 23 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<!-- ===== Quiz data for this chapter ===== -->
+<script>
+  window.QUIZ_ID = "ch23";
+  window.QUIZ_DATA = [
+    {
+      q: "A merge / join combines two tables by…",
+      options: [
+        "Stacking their rows on top of each other",
+        "Matching rows on a shared key column",
+        "Sorting both alphabetically",
+        "Deleting duplicate columns"
+      ],
+      answer: 1,
+      explain: "A join matches rows on a key (the pandas version of a SQL JOIN). Stacking same-shaped tables is concat, not merge."
+    },
+    {
+      q: "The DEFAULT pandas merge keeps…",
+      options: [
+        "All rows from both tables (outer)",
+        "Only keys present in BOTH tables (inner)",
+        "All left rows (left)",
+        "Every combination (cross)"
+      ],
+      answer: 1,
+      explain: "merge defaults to how='inner', which keeps only matching keys and silently drops unmatched rows, so check your row counts."
+    },
+    {
+      q: "You want to keep EVERY order, attaching customer info when it exists. Use…",
+      options: [
+        "how='inner'",
+        "how='left' (with orders on the left)",
+        "how='cross'",
+        "pd.concat"
+      ],
+      answer: 1,
+      explain: "A left join keeps all left (order) rows; unmatched ones get NaN in the customer columns, flagging orphaned orders instead of dropping them."
+    },
+    {
+      q: "Two tables both have duplicate keys. Merging them on that key will…",
+      options: [
+        "Raise an error automatically",
+        "Produce a many-to-many fan-out that multiplies rows",
+        "Keep only the first match",
+        "Do nothing"
+      ],
+      answer: 1,
+      explain: "Duplicate keys on both sides create every combination within each key, multiplying rows. Use validate= to assert the relationship and catch it."
+    },
+    {
+      q: "To turn a wide table (years as columns) into tidy/long form, use…",
+      options: [
+        "pivot_table",
+        "melt",
+        "merge",
+        "concat"
+      ],
+      answer: 1,
+      explain: "melt unpivots wide → long: it collapses the chosen columns into a name column and a value column, one observation per row."
+    },
+    {
+      q: "Your long data has duplicate index/column combinations and you want a summary grid. Use…",
+      options: [
+        "pivot (it handles duplicates)",
+        "pivot_table with an aggfunc",
+        "melt",
+        "stack"
+      ],
+      answer: 1,
+      explain: "Plain pivot raises a ValueError on duplicate pairs. pivot_table aggregates them (e.g., aggfunc='sum'); margins=True adds totals."
+    },
+    {
+      q: "Why convert a date STRING to a real datetime with pd.to_datetime?",
+      options: [
+        "It looks nicer",
+        "So it sorts chronologically, supports arithmetic, and filters by range",
+        "Strings cannot be stored in pandas",
+        "It deletes invalid rows"
+      ],
+      answer: 1,
+      explain: "Strings sort alphabetically and can't do date math. Real datetimes sort chronologically, subtract to durations, filter by range, and expose .dt features."
+    },
+    {
+      q: "In modern pandas, to strip non-digit characters with s.str.replace you must…",
+      options: [
+        "Do nothing; regex is the default",
+        "Pass regex=True, because the default is now regex=False (literal)",
+        "Use a for loop instead",
+        "Convert to integers first"
+      ],
+      answer: 1,
+      explain: "Since pandas 2.0, .str.replace treats the pattern literally unless you pass regex=True. So s.str.replace(r'\\D','',regex=True) strips non-digits."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

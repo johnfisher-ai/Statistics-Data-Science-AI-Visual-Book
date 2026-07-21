@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 101 · Case Study: Logistic Regression in Action — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#f0fdf4; border:1px solid #bbf7d0; border-left:4px solid #059669; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#047857; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#6ee7b7; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+    .step-h { display:flex; align-items:center; gap:0.6rem; margin:1.4rem 0 0.4rem; }
+    .step-h .sn { flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:#059669; color:#fff; font-weight:800;
+                  font-size:0.95rem; display:flex; align-items:center; justify-content:center; }
+    .step-h h3 { margin:0; font-size:1.02rem; color:var(--ink); }
+    .writeup { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:14px; padding:1.3rem 1.5rem; margin:1.3rem 0; }
+    .writeup h3 { margin-top:0; color:#047857; }
+    .nb-fig { margin:1.4rem 0; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:1rem 1rem 0.6rem; }
+    .nb-fig img { display:block; width:100%; height:auto; border-radius:8px; }
+    .nb-fig figcaption { margin:0.75rem 0.2rem 0.3rem; font-size:0.85rem; color:var(--ink-soft); line-height:1.55; }
+    .nb-fig .cap-t { font-size:0.64rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#047857; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/case-study-logistic-regression-in-action.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XVI · Regression Case Study</span><span class="sep">/</span>
+      <span>Chapter 101</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XVI · Regression Case Study</span> Classification, end to end</div>
+    <h1>Case Study: Logistic Regression <span class="accent">in Action</span></h1>
+    <p class="dek">The same 12-step method as the house-price study, but now the answer is yes or no: will a customer leave?
+       We take a messy telecom export all the way to a validated, threshold-tuned churn model, and turn its odds ratios
+       into a retention plan.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~26 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Full notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 101</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">A regression predicts a number; a <em>classifier</em> predicts a category. The pipeline is nearly
+       identical, but the finish line changes: instead of dollars and R&#178;, we deal in <span class="hl">probabilities,
+       odds ratios, a decision threshold, and the recall/precision trade-off</span>. This is that pipeline, on customer
+       churn.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#963;</div>
+      <div class="def-body">
+        A <span class="def-kw">logistic-regression case study</span> runs the same twelve steps as any data project, but
+        the model predicts the <span class="def-kw">probability</span> of a yes/no outcome. Its coefficients become
+        <span class="def-kw">odds ratios</span>, and its usefulness is judged by <span class="def-kw">AUC</span>, a
+        confusion matrix, and the <span class="def-kw">threshold</span> you choose for the decision.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🧭</div>
+      <div><div class="ctitle">Two new wrinkles</div>
+        <p>The target is <strong>imbalanced</strong> (only ~30% churn), so accuracy misleads, and it arrives in
+           <strong>eight different spellings</strong> of yes/no. Cleaning the <em>label</em> is as important as cleaning
+           the features.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: the method ===== -->
+  <section id="method">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Same 12-Step Method</h2></div>
+    <p>Classification does not need a new playbook, it needs the same one, with logistic-specific tools at the build and
+       validate steps.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 678 332" width="100%" font-family="Inter, sans-serif" aria-label="The twelve-step data-project method as a snaking flow: define, collect, inspect, clean, then down and back visualize, transform, analyze, build, then down validate, interpret, deploy, communicate">
+        <text x="339" y="26" text-anchor="middle" font-size="13" fill="#1a2138" font-weight="800">The 12-step method: from a raw file to a decision</text>
+        <defs><marker id="m100" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#047857"/></marker></defs>
+        <path d="M165,84.0 L181,84.0" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <path d="M331,84.0 L347,84.0" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <path d="M497,84.0 L513,84.0" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <path d="M588.0,120 L588.0,150" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <path d="M513,186.0 L497,186.0" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <path d="M347,186.0 L331,186.0" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <path d="M181,186.0 L165,186.0" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <path d="M90.0,222 L90.0,252" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <path d="M165,288.0 L181,288.0" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <path d="M331,288.0 L347,288.0" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <path d="M497,288.0 L513,288.0" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <rect x="15" y="48" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="32" cy="66" r="11" fill="#059669"/><text x="32" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">1</text>
+        <text x="49" y="70" font-size="10.5" fill="#047857" font-weight="800">Define</text>
+        <text x="27" y="92" font-size="8.3" fill="#4a5578">the objective</text>
+        <rect x="181" y="48" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="198" cy="66" r="11" fill="#059669"/><text x="198" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">2</text>
+        <text x="215" y="70" font-size="10.5" fill="#047857" font-weight="800">Collect</text>
+        <text x="193" y="92" font-size="8.3" fill="#4a5578">CSV/SQL/API</text>
+        <rect x="347" y="48" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="364" cy="66" r="11" fill="#059669"/><text x="364" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">3</text>
+        <text x="381" y="70" font-size="10.5" fill="#047857" font-weight="800">Inspect</text>
+        <text x="359" y="92" font-size="8.3" fill="#4a5578">shape, types, gaps</text>
+        <rect x="513" y="48" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="530" cy="66" r="11" fill="#059669"/><text x="530" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">4</text>
+        <text x="547" y="70" font-size="10.5" fill="#047857" font-weight="800">Clean</text>
+        <text x="525" y="92" font-size="8.3" fill="#4a5578">dupes, dates, missing</text>
+        <rect x="513" y="150" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="530" cy="168" r="11" fill="#059669"/><text x="530" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">5</text>
+        <text x="547" y="172" font-size="10.5" fill="#047857" font-weight="800">Visualize</text>
+        <text x="525" y="194" font-size="8.3" fill="#4a5578">hist, box, heatmap</text>
+        <rect x="347" y="150" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="364" cy="168" r="11" fill="#059669"/><text x="364" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">6</text>
+        <text x="381" y="172" font-size="10.5" fill="#047857" font-weight="800">Transform</text>
+        <text x="359" y="194" font-size="8.3" fill="#4a5578">log, encode, engineer</text>
+        <rect x="181" y="150" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="198" cy="168" r="11" fill="#059669"/><text x="198" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">7</text>
+        <text x="215" y="172" font-size="10.5" fill="#047857" font-weight="800">Analyze</text>
+        <text x="193" y="194" font-size="8.3" fill="#4a5578">correlation, outliers</text>
+        <rect x="15" y="150" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="32" cy="168" r="11" fill="#059669"/><text x="32" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">8</text>
+        <text x="49" y="172" font-size="10.5" fill="#047857" font-weight="800">Build</text>
+        <text x="27" y="194" font-size="8.3" fill="#4a5578">the regression</text>
+        <rect x="15" y="252" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="32" cy="270" r="11" fill="#059669"/><text x="32" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">9</text>
+        <text x="49" y="274" font-size="10.5" fill="#047857" font-weight="800">Validate</text>
+        <text x="27" y="296" font-size="8.3" fill="#4a5578">VIF, residuals, CV</text>
+        <rect x="181" y="252" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="198" cy="270" r="11" fill="#059669"/><text x="198" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">10</text>
+        <text x="215" y="274" font-size="10.5" fill="#047857" font-weight="800">Interpret</text>
+        <text x="193" y="296" font-size="8.3" fill="#4a5578">coefficients as dollars</text>
+        <rect x="347" y="252" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="364" cy="270" r="11" fill="#059669"/><text x="364" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">11</text>
+        <text x="381" y="274" font-size="10.5" fill="#047857" font-weight="800">Deploy</text>
+        <text x="359" y="296" font-size="8.3" fill="#4a5578">API, monitor, retrain</text>
+        <rect x="513" y="252" width="150" height="72" rx="10" fill="#dcfce7" stroke="#059669" stroke-width="1.8"/>
+        <circle cx="530" cy="270" r="11" fill="#059669"/><text x="530" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">12</text>
+        <text x="547" y="274" font-size="10.5" fill="#047857" font-weight="800">Communicate</text>
+        <text x="525" y="296" font-size="8.3" fill="#4a5578">plain-English write-up</text>
+      </svg>
+    </figure>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · telecom_churn.csv</div>
+      <p style="margin:0.5rem 0 0">760 customers with <code>gender</code>, <code>senior_citizen</code>,
+        <code>partner</code>, <code>tenure_months</code>, <code>contract</code>, <code>internet_service</code>,
+        <code>payment_method</code>, <code>monthly_charges</code>, <code>total_charges</code>, and the target
+        <code>churn</code>.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/telecom_churn.csv" download>📊 Download dataset &nbsp;<small>CSV · 775 rows</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Section 2: wrangle (steps 1-4) ===== -->
+  <section id="wrangle">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Define, Collect, Inspect, Clean (Steps 1&#8211;4)</h2></div>
+
+    <div class="step-h"><span class="sn">1</span><h3>Define the objective</h3></div>
+    <p>Predict which customers will <strong>churn</strong>, so a retention team can intervene first. Because a missed
+       churner (a lost customer) costs far more than a needless retention call, we will care most about <strong>recall</strong>,
+       and the decision threshold is a business lever, not a fixed 0.5.</p>
+
+    <div class="step-h"><span class="sn">2</span><h3>Collect the data</h3></div>
+    <p>Customer data lives in a CRM or billing warehouse; the readers are the same as any project
+       (<code>pd.read_sql</code>, <code>pd.read_csv</code>, an API via <code>pd.json_normalize</code>). Ours is a CSV
+       export.</p>
+
+    <div class="step-h"><span class="sn">3</span><h3>Inspect the data</h3></div>
+    <p><code>info()</code>, <code>value_counts()</code>, and the dtypes reveal the mess: the target in eight spellings,
+       categories in every case, and <code>total_charges</code> stored as <em>text</em> (because blank for brand-new
+       customers), plus 15 duplicate IDs.</p>
+
+    <div class="step-h"><span class="sn">4</span><h3>Clean the data</h3></div>
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Problem</th><th>Detail</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Inconsistent target</td><td>Yes / yes / Y / 1 and No / no / N / 0</td><td>upper-case, map to <strong>1 / 0</strong> (clean the label first)</td></tr>
+          <tr><td class="nm">Messy categories</td><td>gender &#215;5, contract &#215;6, senior 0/1 &amp; Yes/No</td><td>normalize case, map to one canonical spelling</td></tr>
+          <tr><td class="nm">Number stored as text</td><td><code>total_charges</code> blank for new customers</td><td><code>pd.to_numeric(errors="coerce")</code>, then impute (0 if brand-new, else tenure &#215; monthly)</td></tr>
+          <tr><td class="nm">Duplicates</td><td>15 repeated <code>customer_id</code></td><td>deduplicate</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>After cleaning, <strong>760 customers</strong> remain, with a churn rate of <strong>30%</strong>. The lesson unique
+       to classification: <span class="hl">clean the target label before anything else</span>, a model that thinks "Yes"
+       and "Y" are two different outcomes is doomed from the start.</p>
+  </section>
+
+  <!-- ===== Section 3: explore & transform (steps 5-7) ===== -->
+  <section id="explore">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Visualize, Transform, Analyze (Steps 5&#8211;7)</h2></div>
+
+    <div class="step-h"><span class="sn">5</span><h3>Visualize the data</h3></div>
+    <p>With a categorical target, the key picture is the <em>churn rate within each group</em>. Contract length jumps out
+       immediately:</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 254" width="100%" font-family="Inter, sans-serif" aria-label="A bar chart of churn rate by contract type: month-to-month customers churn far more than one-year or two-year contract customers">
+        <text x="340" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">Step 1: explore. Month-to-month customers churn far more</text>
+        <text x="340" y="37" text-anchor="middle" font-size="9" fill="#4a5578">A strong, obvious signal: contract length should be a powerful predictor</text>
+        <line x1="60" y1="58" x2="60" y2="196" stroke="#1a2138" stroke-width="1.1"/>
+        <line x1="60" y1="196" x2="654" y2="196" stroke="#1a2138" stroke-width="1.1"/>
+        <rect x="109.5" y="81.0" width="99.0" height="115.0" fill="#dc2626" opacity="0.85"/>
+        <text x="159.0" y="76.0" text-anchor="middle" font-size="9.5" fill="#dc2626" font-weight="800">39%</text>
+        <text x="159.0" y="212" text-anchor="middle" font-size="8.4" fill="#1a2138" font-weight="600">Month-to-month</text>
+        <rect x="307.5" y="123.2" width="99.0" height="72.8" fill="#d97706" opacity="0.85"/>
+        <text x="357.0" y="118.2" text-anchor="middle" font-size="9.5" fill="#d97706" font-weight="800">25%</text>
+        <text x="357.0" y="212" text-anchor="middle" font-size="8.4" fill="#1a2138" font-weight="600">One year</text>
+        <rect x="505.5" y="149.1" width="99.0" height="46.9" fill="#059669" opacity="0.85"/>
+        <text x="555.0" y="144.1" text-anchor="middle" font-size="9.5" fill="#059669" font-weight="800">16%</text>
+        <text x="555.0" y="212" text-anchor="middle" font-size="8.4" fill="#1a2138" font-weight="600">Two year</text>
+        <text x="18" y="127" text-anchor="middle" font-size="9" fill="#4a5578" transform="rotate(-90 18 127)">churn rate &#8594;</text>
+      </svg>
+    </figure>
+
+    <p>Month-to-month customers churn at <strong>39%</strong>, versus 25% on one-year and just <strong>16%</strong> on
+       two-year contracts, a massive, obvious signal. And the target is <span class="term">imbalanced</span> (30% churn),
+       which is why we will judge the model by AUC and recall, not accuracy: a lazy "nobody churns" model already scores
+       70%. The same breakdown by internet service and payment method fills in the rest of the picture:</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 262" width="100%" font-family="Inter, sans-serif" aria-label="Two bar charts of churn rate: by internet service (fiber optic churns most) and by payment method (a smaller spread)">
+        <text x="340" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">Churn rate by internet service and payment method</text>
+        <line x1="40" y1="52" x2="40" y2="202" stroke="#1a2138" stroke-width="1"/>
+        <line x1="40" y1="202" x2="300" y2="202" stroke="#1a2138" stroke-width="1"/>
+        <rect x="59.5" y="82.0" width="47.7" height="120.0" fill="#dc2626" opacity="0.85"/>
+        <text x="83.3" y="78.0" text-anchor="middle" font-size="8" fill="#dc2626" font-weight="800">37%</text>
+        <text x="83.3" y="215" text-anchor="middle" font-size="7" fill="#4a5578">Fiber optic</text>
+        <rect x="146.2" y="126.0" width="47.7" height="76.0" fill="#059669" opacity="0.85"/>
+        <text x="170.0" y="122.0" text-anchor="middle" font-size="8" fill="#059669" font-weight="800">23%</text>
+        <text x="170.0" y="215" text-anchor="middle" font-size="7" fill="#4a5578">DSL</text>
+        <rect x="232.8" y="114.5" width="47.7" height="87.5" fill="#d97706" opacity="0.85"/>
+        <text x="256.7" y="110.5" text-anchor="middle" font-size="8" fill="#d97706" font-weight="800">27%</text>
+        <text x="256.7" y="215" text-anchor="middle" font-size="7" fill="#4a5578">No</text>
+        <text x="170" y="229" text-anchor="middle" font-size="8.4" fill="#1a2138" font-weight="600">internet service</text>
+        <line x1="380" y1="52" x2="380" y2="202" stroke="#1a2138" stroke-width="1"/>
+        <line x1="380" y1="202" x2="640" y2="202" stroke="#1a2138" stroke-width="1"/>
+        <rect x="394.6" y="82.0" width="35.8" height="120.0" fill="#dc2626" opacity="0.85"/>
+        <text x="412.5" y="78.0" text-anchor="middle" font-size="8" fill="#dc2626" font-weight="800">36%</text>
+        <text x="412.5" y="215" text-anchor="middle" font-size="7" fill="#4a5578">Mailed chec</text>
+        <rect x="459.6" y="94.0" width="35.8" height="108.0" fill="#d97706" opacity="0.85"/>
+        <text x="477.5" y="90.0" text-anchor="middle" font-size="8" fill="#d97706" font-weight="800">32%</text>
+        <text x="477.5" y="215" text-anchor="middle" font-size="7" fill="#4a5578">Electronic </text>
+        <rect x="524.6" y="113.6" width="35.8" height="88.4" fill="#d97706" opacity="0.85"/>
+        <text x="542.5" y="109.6" text-anchor="middle" font-size="8" fill="#d97706" font-weight="800">26%</text>
+        <text x="542.5" y="215" text-anchor="middle" font-size="7" fill="#4a5578">Bank transf</text>
+        <rect x="589.6" y="121.2" width="35.8" height="80.8" fill="#059669" opacity="0.85"/>
+        <text x="607.5" y="117.2" text-anchor="middle" font-size="8" fill="#059669" font-weight="800">24%</text>
+        <text x="607.5" y="215" text-anchor="middle" font-size="7" fill="#4a5578">Credit card</text>
+        <text x="510" y="229" text-anchor="middle" font-size="8.4" fill="#1a2138" font-weight="600">payment method</text>
+      </svg>
+    </figure>
+
+    <p>The pattern is clear: <strong>fiber-optic customers churn most (37%)</strong>, well above DSL (23%) or no-internet
+       (27%), a group worth watching. Payment method matters less, a smaller spread, so it is a weaker signal than
+       contract or internet. Reading these group rates before modeling tells us which features should carry weight, and
+       lets us sanity-check the model's coefficients afterward.</p>
+
+    <div class="step-h"><span class="sn">6</span><h3>Transform features</h3></div>
+    <p>Logistic regression needs numbers, so the nominal categories (<code>contract</code>, <code>internet_service</code>,
+       <code>payment_method</code>) become <span class="term">dummy variables</span>, one level held out as the reference.
+       One trap: <code>total_charges</code> is essentially <code>tenure &#215; monthly_charges</code>, so keeping all three
+       would create multicollinearity. We flag it and confirm with VIF in step 9.</p>
+
+    <div class="step-h"><span class="sn">7</span><h3>Analyze patterns</h3></div>
+    <p>Churn rate by group and the numeric correlations confirm the story: tenure is protective (long-time customers
+       stay), monthly charges push the other way, and electronic-check payers churn a little more. A clear hypothesis for
+       the model to quantify.</p>
+  </section>
+
+  <!-- ===== Section 4: build & validate (steps 8-9) ===== -->
+  <section id="build">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Build and Validate (Steps 8&#8211;9)</h2></div>
+
+    <div class="step-h"><span class="sn">8</span><h3>Build the model</h3></div>
+    <p>One call fits a logistic regression of <code>churn</code> on tenure, monthly charges, contract, internet, payment,
+       and demographics. The coefficients are on the log-odds scale (we exponentiate them in step 10); the summary flags
+       contract, tenure, monthly charges, and fiber as strongly significant.</p>
+
+    <div class="step-h"><span class="sn">9</span><h3>Validate the model</h3></div>
+    <p>A classifier is judged on how well it <em>ranks</em> risk and on the <em>errors</em> it makes. Both, plus the
+       collinearity check:</p>
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Check</th><th>Result</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Multicollinearity (VIF)</td><td><code>total_charges</code> = 9.0</td><td>redundant (= tenure &#215; monthly); leave it out</td></tr>
+          <tr><td class="nm">Ranking (AUC)</td><td>0.81</td><td>the model ranks churners well above stayers</td></tr>
+          <tr><td class="nm">Overfitting (5-fold CV)</td><td>CV AUC = 0.79</td><td>close to training, not overfit</td></tr>
+          <tr><td class="nm">Errors at threshold 0.5</td><td>recall only 0.53</td><td>too many churners missed for a retention use</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The ROC curve shows the ranking quality at every threshold at once:</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 300" width="100%" font-family="Inter, sans-serif" aria-label="A ROC curve for the churn model with area under the curve about 0.81, well above the diagonal chance line, with operating points at thresholds 0.5 and 0.3">
+        <text x="340" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">ROC curve: the model ranks churners well (AUC = 0.81)</text>
+        <polygon points="56.0,248.0 56.0,248.0 56.0,247.1 56.0,242.9 56.9,242.9 56.9,240.3 57.8,240.3 57.8,237.8 58.7,237.8 58.7,225.0 59.6,225.0 59.6,224.2 60.5,224.2 60.5,220.8 61.3,220.8 61.3,219.9 62.2,219.9 62.2,215.7 63.1,215.7 63.1,214.8 64.9,214.8 64.9,211.4 66.7,211.4 66.7,207.2 68.5,207.2 68.5,204.6 69.4,204.6 69.4,200.4 70.3,200.4 70.3,199.5 71.1,199.5 71.1,198.6 72.0,198.6 72.0,196.1 72.9,196.1 72.9,194.4 73.8,194.4 73.8,193.5 75.6,193.5 75.6,190.1 76.5,190.1 76.5,185.0 77.4,185.0 77.4,184.2 80.1,184.2 80.1,181.6 81.8,181.6 81.8,180.8 83.6,180.8 83.6,175.7 86.3,175.7 86.3,174.0 88.1,174.0 88.1,171.4 89.0,171.4 89.0,170.6 90.7,170.6 90.7,169.7 91.6,169.7 91.6,168.9 92.5,168.9 92.5,163.8 93.4,163.8 93.4,162.1 94.3,162.1 94.3,157.0 95.2,157.0 95.2,153.6 97.0,153.6 97.0,151.0 97.9,151.0 97.9,150.1 98.8,150.1 98.8,146.7 99.7,146.7 99.7,145.9 101.4,145.9 101.4,145.0 103.2,145.0 103.2,143.3 104.1,143.3 104.1,139.9 105.9,139.9 105.9,138.2 109.5,138.2 109.5,135.7 110.3,135.7 110.3,134.8 113.0,134.8 113.0,133.1 115.7,133.1 115.7,131.4 116.6,131.4 116.6,130.6 117.5,130.6 117.5,129.7 120.2,129.7 120.2,128.9 122.8,128.9 122.8,128.0 124.6,128.0 124.6,127.2 125.5,127.2 125.5,126.3 126.4,126.3 126.4,124.6 127.3,124.6 127.3,123.8 130.0,123.8 130.0,121.2 132.6,121.2 132.6,120.4 137.1,120.4 137.1,119.5 138.0,119.5 138.0,118.7 142.4,118.7 142.4,117.8 143.3,117.8 143.3,116.1 145.1,116.1 145.1,115.3 150.4,115.3 150.4,114.4 153.1,114.4 153.1,113.6 154.9,113.6 154.9,112.7 155.8,112.7 155.8,111.9 158.5,111.9 158.5,111.0 159.4,111.0 159.4,110.2 160.2,110.2 160.2,108.5 164.7,108.5 164.7,107.6 165.6,107.6 165.6,106.8 170.9,106.8 170.9,105.9 175.4,105.9 175.4,105.1 179.0,105.1 179.0,104.2 179.8,104.2 179.8,103.4 182.5,103.4 182.5,102.5 190.5,102.5 190.5,101.6 195.0,101.6 195.0,100.8 207.5,100.8 207.5,99.9 211.0,99.9 211.0,99.1 211.9,99.1 211.9,98.2 212.8,98.2 212.8,96.5 221.7,96.5 221.7,95.7 226.2,95.7 226.2,94.8 228.0,94.8 228.0,94.0 228.8,94.0 228.8,93.1 232.4,93.1 232.4,92.3 241.3,92.3 241.3,91.4 244.9,91.4 244.9,90.6 246.7,90.6 246.7,89.7 253.8,89.7 253.8,88.9 254.7,88.9 254.7,88.0 256.5,88.0 256.5,86.3 258.3,86.3 258.3,85.5 260.9,85.5 260.9,84.6 263.6,84.6 263.6,82.9 275.2,82.9 275.2,82.1 277.9,82.1 277.9,81.2 285.9,81.2 285.9,80.4 287.7,80.4 287.7,79.5 290.3,79.5 290.3,78.7 297.5,78.7 297.5,77.8 298.3,77.8 298.3,77.0 304.6,77.0 304.6,76.1 307.3,76.1 307.3,74.4 309.0,74.4 309.0,73.6 331.3,73.6 331.3,72.7 348.2,72.7 348.2,71.0 351.8,71.0 351.8,70.2 353.6,70.2 353.6,69.3 360.7,69.3 360.7,67.6 365.2,67.6 365.2,66.8 374.1,66.8 374.1,65.9 379.4,65.9 379.4,65.1 385.7,65.1 385.7,64.2 388.3,64.2 388.3,63.4 391.0,63.4 391.0,62.5 407.9,62.5 407.9,61.7 411.5,61.7 411.5,60.8 421.3,60.8 421.3,59.1 424.9,59.1 424.9,58.3 425.8,58.3 425.8,57.4 428.4,57.4 428.4,56.6 442.7,56.6 442.7,55.7 458.7,55.7 458.7,54.9 472.1,54.9 472.1,54.0 530.0,54.0 530.0,248.0" fill="#6ee7b7" opacity="0.35"/>
+        <line x1="56" y1="54" x2="56" y2="248" stroke="#1a2138" stroke-width="1.1"/>
+        <line x1="56" y1="248" x2="530" y2="248" stroke="#1a2138" stroke-width="1.1"/>
+        <line x1="56.0" y1="248.0" x2="530.0" y2="54.0" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="5 4"/>
+        <polyline points="56.0,248.0 56.0,247.1 56.0,242.9 56.9,242.9 56.9,240.3 57.8,240.3 57.8,237.8 58.7,237.8 58.7,225.0 59.6,225.0 59.6,224.2 60.5,224.2 60.5,220.8 61.3,220.8 61.3,219.9 62.2,219.9 62.2,215.7 63.1,215.7 63.1,214.8 64.9,214.8 64.9,211.4 66.7,211.4 66.7,207.2 68.5,207.2 68.5,204.6 69.4,204.6 69.4,200.4 70.3,200.4 70.3,199.5 71.1,199.5 71.1,198.6 72.0,198.6 72.0,196.1 72.9,196.1 72.9,194.4 73.8,194.4 73.8,193.5 75.6,193.5 75.6,190.1 76.5,190.1 76.5,185.0 77.4,185.0 77.4,184.2 80.1,184.2 80.1,181.6 81.8,181.6 81.8,180.8 83.6,180.8 83.6,175.7 86.3,175.7 86.3,174.0 88.1,174.0 88.1,171.4 89.0,171.4 89.0,170.6 90.7,170.6 90.7,169.7 91.6,169.7 91.6,168.9 92.5,168.9 92.5,163.8 93.4,163.8 93.4,162.1 94.3,162.1 94.3,157.0 95.2,157.0 95.2,153.6 97.0,153.6 97.0,151.0 97.9,151.0 97.9,150.1 98.8,150.1 98.8,146.7 99.7,146.7 99.7,145.9 101.4,145.9 101.4,145.0 103.2,145.0 103.2,143.3 104.1,143.3 104.1,139.9 105.9,139.9 105.9,138.2 109.5,138.2 109.5,135.7 110.3,135.7 110.3,134.8 113.0,134.8 113.0,133.1 115.7,133.1 115.7,131.4 116.6,131.4 116.6,130.6 117.5,130.6 117.5,129.7 120.2,129.7 120.2,128.9 122.8,128.9 122.8,128.0 124.6,128.0 124.6,127.2 125.5,127.2 125.5,126.3 126.4,126.3 126.4,124.6 127.3,124.6 127.3,123.8 130.0,123.8 130.0,121.2 132.6,121.2 132.6,120.4 137.1,120.4 137.1,119.5 138.0,119.5 138.0,118.7 142.4,118.7 142.4,117.8 143.3,117.8 143.3,116.1 145.1,116.1 145.1,115.3 150.4,115.3 150.4,114.4 153.1,114.4 153.1,113.6 154.9,113.6 154.9,112.7 155.8,112.7 155.8,111.9 158.5,111.9 158.5,111.0 159.4,111.0 159.4,110.2 160.2,110.2 160.2,108.5 164.7,108.5 164.7,107.6 165.6,107.6 165.6,106.8 170.9,106.8 170.9,105.9 175.4,105.9 175.4,105.1 179.0,105.1 179.0,104.2 179.8,104.2 179.8,103.4 182.5,103.4 182.5,102.5 190.5,102.5 190.5,101.6 195.0,101.6 195.0,100.8 207.5,100.8 207.5,99.9 211.0,99.9 211.0,99.1 211.9,99.1 211.9,98.2 212.8,98.2 212.8,96.5 221.7,96.5 221.7,95.7 226.2,95.7 226.2,94.8 228.0,94.8 228.0,94.0 228.8,94.0 228.8,93.1 232.4,93.1 232.4,92.3 241.3,92.3 241.3,91.4 244.9,91.4 244.9,90.6 246.7,90.6 246.7,89.7 253.8,89.7 253.8,88.9 254.7,88.9 254.7,88.0 256.5,88.0 256.5,86.3 258.3,86.3 258.3,85.5 260.9,85.5 260.9,84.6 263.6,84.6 263.6,82.9 275.2,82.9 275.2,82.1 277.9,82.1 277.9,81.2 285.9,81.2 285.9,80.4 287.7,80.4 287.7,79.5 290.3,79.5 290.3,78.7 297.5,78.7 297.5,77.8 298.3,77.8 298.3,77.0 304.6,77.0 304.6,76.1 307.3,76.1 307.3,74.4 309.0,74.4 309.0,73.6 331.3,73.6 331.3,72.7 348.2,72.7 348.2,71.0 351.8,71.0 351.8,70.2 353.6,70.2 353.6,69.3 360.7,69.3 360.7,67.6 365.2,67.6 365.2,66.8 374.1,66.8 374.1,65.9 379.4,65.9 379.4,65.1 385.7,65.1 385.7,64.2 388.3,64.2 388.3,63.4 391.0,63.4 391.0,62.5 407.9,62.5 407.9,61.7 411.5,61.7 411.5,60.8 421.3,60.8 421.3,59.1 424.9,59.1 424.9,58.3 425.8,58.3 425.8,57.4 428.4,57.4 428.4,56.6 442.7,56.6 442.7,55.7 458.7,55.7 458.7,54.9 472.1,54.9 472.1,54.0 530.0,54.0" fill="none" stroke="#047857" stroke-width="2.8"/>
+        <circle cx="99.7" cy="145.9" r="5" fill="#2563eb" stroke="#fff"/>
+        <text x="108.7" y="148.9" font-size="8.4" fill="#2563eb" font-weight="700">threshold 0.5</text>
+        <text x="108.7" y="159.9" font-size="7.4" fill="#4a5578">recall 0.53</text>
+        <circle cx="190.5" cy="102.5" r="5" fill="#059669" stroke="#fff"/>
+        <text x="199.5" y="105.5" font-size="8.4" fill="#059669" font-weight="700">threshold 0.3</text>
+        <text x="199.5" y="116.5" font-size="7.4" fill="#4a5578">recall 0.75</text>
+        <text x="293" y="288" text-anchor="middle" font-size="9" fill="#4a5578">false positive rate &#8594;</text>
+        <text x="16" y="151" text-anchor="middle" font-size="9" fill="#4a5578" transform="rotate(-90 16 151)">recall (churners caught) &#8594;</text>
+      </svg>
+    </figure>
+
+    <p>Now the decision. At the default 0.5 threshold the model catches barely half the churners, useless when the goal is
+       retention. Because missing a churner costs more than a false alarm, we <span class="hl">lower the threshold to
+       0.3</span>, trading precision for recall:</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 262" width="100%" font-family="Inter, sans-serif" aria-label="Two confusion matrices: at threshold 0.5 the model catches 53 percent of churners, at 0.3 it catches 75 percent, the imbalance remedy of lowering the threshold">
+        <text x="340" y="19" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">Choosing the threshold: lower it to catch more churners</text>
+        <text x="198" y="50" text-anchor="middle" font-size="10" fill="#1a2138" font-weight="800">threshold 0.5</text>
+        <text x="198" y="63" text-anchor="middle" font-size="8" fill="#047857" font-weight="700">churners caught = 53%</text>
+        <text x="159" y="72" text-anchor="middle" font-size="7.6" fill="#4a5578">pred: stay</text>
+        <text x="237" y="72" text-anchor="middle" font-size="7.6" fill="#4a5578">pred: churn</text>
+        <text x="114" y="105" text-anchor="end" font-size="7.6" fill="#4a5578">actual stay</text>
+        <rect x="120" y="78" width="78" height="42" fill="#15803d" opacity="0.16" stroke="#15803d"/>
+        <text x="159" y="103" text-anchor="middle" font-size="13" fill="#1a2138" font-weight="800">483</text>
+        <rect x="198" y="78" width="78" height="42" fill="#d97706" opacity="0.16" stroke="#d97706"/>
+        <text x="237" y="103" text-anchor="middle" font-size="13" fill="#1a2138" font-weight="800">49</text>
+        <text x="114" y="147" text-anchor="end" font-size="7.6" fill="#4a5578">actual churn</text>
+        <rect x="120" y="120" width="78" height="42" fill="#dc2626" opacity="0.16" stroke="#dc2626"/>
+        <text x="159" y="145" text-anchor="middle" font-size="13" fill="#1a2138" font-weight="800">108</text>
+        <rect x="198" y="120" width="78" height="42" fill="#15803d" opacity="0.16" stroke="#15803d"/>
+        <text x="237" y="145" text-anchor="middle" font-size="13" fill="#1a2138" font-weight="800">120</text>
+        <text x="508" y="50" text-anchor="middle" font-size="10" fill="#1a2138" font-weight="800">threshold 0.3</text>
+        <text x="508" y="63" text-anchor="middle" font-size="8" fill="#047857" font-weight="700">churners caught = 75%</text>
+        <text x="469" y="72" text-anchor="middle" font-size="7.6" fill="#4a5578">pred: stay</text>
+        <text x="547" y="72" text-anchor="middle" font-size="7.6" fill="#4a5578">pred: churn</text>
+        <text x="424" y="105" text-anchor="end" font-size="7.6" fill="#4a5578">actual stay</text>
+        <rect x="430" y="78" width="78" height="42" fill="#15803d" opacity="0.16" stroke="#15803d"/>
+        <text x="469" y="103" text-anchor="middle" font-size="13" fill="#1a2138" font-weight="800">384</text>
+        <rect x="508" y="78" width="78" height="42" fill="#d97706" opacity="0.16" stroke="#d97706"/>
+        <text x="547" y="103" text-anchor="middle" font-size="13" fill="#1a2138" font-weight="800">148</text>
+        <text x="424" y="147" text-anchor="end" font-size="7.6" fill="#4a5578">actual churn</text>
+        <rect x="430" y="120" width="78" height="42" fill="#dc2626" opacity="0.16" stroke="#dc2626"/>
+        <text x="469" y="145" text-anchor="middle" font-size="13" fill="#1a2138" font-weight="800">57</text>
+        <rect x="508" y="120" width="78" height="42" fill="#15803d" opacity="0.16" stroke="#15803d"/>
+        <text x="547" y="145" text-anchor="middle" font-size="13" fill="#1a2138" font-weight="800">171</text>
+        <text x="340" y="252" text-anchor="middle" font-size="8.6" fill="#4a5578">A retention team pays a little to keep a customer, so missing a churner (bottom-left) costs more than a false alarm: lower the threshold.</text>
+      </svg>
+    </figure>
+
+    <p>Dropping the cutoff lifts recall from <strong>53% to 75%</strong>: the retention team now reaches three of every
+       four customers who would have left, at the cost of some unnecessary calls. That trade is exactly the business
+       decision a classifier exists to inform. Sweeping the threshold across its whole range shows the full trade-off:</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 290" width="100%" font-family="Inter, sans-serif" aria-label="Precision and recall plotted against the decision threshold: as the threshold falls, recall rises and precision falls; a chosen threshold of 0.3 is marked">
+        <text x="340" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">Precision vs recall: the threshold is a dial</text>
+        <text x="340" y="37" text-anchor="middle" font-size="9" fill="#4a5578">Lower the threshold to catch more churners (recall up), at the cost of more false alarms (precision down)</text>
+        <line x1="54" y1="52" x2="54" y2="240" stroke="#1a2138" stroke-width="1.1"/>
+        <line x1="54" y1="240" x2="530" y2="240" stroke="#1a2138" stroke-width="1.1"/>
+        <polyline points="54.0,63.5 62.1,66.8 70.1,70.1 78.2,71.0 86.3,71.8 94.3,75.9 102.4,78.4 110.5,80.9 118.5,86.6 126.6,88.3 134.7,89.9 142.7,93.2 150.8,96.5 158.9,97.4 166.9,97.4 175.0,99.0 183.1,101.5 191.2,103.1 199.2,108.1 207.3,110.5 215.4,111.4 223.4,114.7 231.5,116.3 239.6,122.1 247.6,124.6 255.7,128.7 263.8,128.7 271.8,132.0 279.9,134.5 288.0,140.2 296.0,142.7 304.1,145.2 312.2,155.9 320.2,162.5 328.3,165.0 336.4,166.6 344.4,169.9 352.5,175.7 360.6,179.0 368.6,183.1 376.7,183.9 384.8,188.9 392.8,192.2 400.9,196.3 409.0,200.4 417.1,203.7 425.1,205.4 433.2,207.8 441.3,212.8 449.3,216.1 457.4,217.7 465.5,217.7 473.5,222.7 481.6,227.6 489.7,231.8 497.7,231.8 505.8,232.6 513.9,233.4 521.9,234.2 530.0,235.9" fill="none" stroke="#059669" stroke-width="2.6"/>
+        <polyline points="54.0,169.5 62.1,167.6 70.1,166.0 78.2,163.5 86.3,161.1 94.3,160.2 102.4,158.3 110.5,154.8 118.5,153.7 126.6,152.6 134.7,149.7 142.7,147.8 150.8,146.0 158.9,143.8 166.9,141.7 175.0,138.6 183.1,135.4 191.2,133.1 199.2,130.6 207.3,127.8 215.4,126.3 223.4,124.3 231.5,121.0 239.6,118.9 247.6,116.4 255.7,114.4 263.8,112.5 271.8,111.1 279.9,109.2 288.0,108.5 296.0,106.4 304.1,106.5 312.2,107.8 320.2,109.1 328.3,107.4 336.4,106.1 344.4,102.2 352.5,103.0 360.6,98.0 368.6,99.0 376.7,98.0 384.8,96.1 392.8,94.6 400.9,93.5 409.0,92.1 417.1,92.3 425.1,88.2 433.2,84.0 441.3,84.9 449.3,79.6 457.4,76.3 465.5,70.8 473.5,75.5 481.6,83.3 489.7,83.3 497.7,83.3 505.8,70.8 513.9,72.9 521.9,75.5 530.0,52.0" fill="none" stroke="#2563eb" stroke-width="2.6"/>
+        <line x1="173.0" y1="52" x2="173.0" y2="240" stroke="#dc2626" stroke-width="1.3" stroke-dasharray="4 3"/>
+        <text x="173.0" y="48" text-anchor="middle" font-size="8" fill="#dc2626" font-weight="700">chosen 0.3</text>
+        <text x="538" y="99.0" font-size="9" fill="#059669" font-weight="700">recall</text>
+        <text x="538" y="75.5" font-size="9" fill="#2563eb" font-weight="700">precision</text>
+        <text x="114" y="255" text-anchor="middle" font-size="7.6" fill="#94a3b8">0.2</text>
+        <text x="233" y="255" text-anchor="middle" font-size="7.6" fill="#94a3b8">0.4</text>
+        <text x="352" y="255" text-anchor="middle" font-size="7.6" fill="#94a3b8">0.6</text>
+        <text x="470" y="255" text-anchor="middle" font-size="7.6" fill="#94a3b8">0.8</text>
+        <text x="292" y="278" text-anchor="middle" font-size="9" fill="#4a5578">decision threshold &#8594;</text>
+      </svg>
+    </figure>
+
+    <p>Read it as a dial. As the threshold drops (moving left), <span style="color:#059669;font-weight:700">recall</span>
+       climbs, more churners caught, while <span style="color:#2563eb;font-weight:700">precision</span> falls, more of the
+       flagged customers turn out to be false alarms. There is no single "best" point on this curve; the right threshold
+       depends on the cost of a missed churner versus a wasted call, which the companion notebook turns into a dollar
+       calculation.</p>
+  </section>
+
+  <!-- ===== Section 5: interpret & deploy (steps 10-11) ===== -->
+  <section id="interpret">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Interpret and Deploy (Steps 10&#8211;11)</h2></div>
+
+    <div class="step-h"><span class="sn">10</span><h3>Interpret the results</h3></div>
+    <figure class="nb-fig">
+      <img src="../assets/img/case-study-logistic-regression-in-action--oddsratios.png" alt="Odds-ratio forest plot showing which factors raise or lower churn risk">
+      <figcaption><span class="cap-t">From the notebook &#183; Step 10</span><br>Each factor's odds ratio with its confidence interval: bars to the right of 1 raise churn, to the left protect against it, the whole model's story in one plot.</figcaption>
+    </figure>
+    <p>Exponentiating each coefficient gives an <span class="term">odds ratio</span>, the factor by which the odds of
+       churn multiply. Below 1 protects; above 1 is a risk:</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 244" width="100%" font-family="Inter, sans-serif" aria-label="An odds-ratio forest plot for churn on a log scale: long contracts and longer tenure are strongly protective (odds ratio well below 1), while fiber internet and higher charges raise churn odds above 1">
+        <text x="340" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">What drives churn: odds ratios (log scale)</text>
+        <text x="340" y="37" text-anchor="middle" font-size="9" fill="#4a5578">OR &lt; 1 protects (green), OR &gt; 1 raises churn (red); the line at 1 is no effect</text>
+        <line x1="443.3" y1="54" x2="443.3" y2="208" stroke="#1a2138" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <text x="443" y="222" text-anchor="middle" font-size="8" fill="#4a5578">OR = 1</text>
+        <text x="244" y="52" text-anchor="middle" font-size="7.5" fill="#94a3b8">0.2</text>
+        <text x="357" y="52" text-anchor="middle" font-size="7.5" fill="#94a3b8">0.5</text>
+        <text x="443" y="52" text-anchor="middle" font-size="7.5" fill="#94a3b8">1</text>
+        <text x="529" y="52" text-anchor="middle" font-size="7.5" fill="#94a3b8">2</text>
+        <text x="579" y="52" text-anchor="middle" font-size="7.5" fill="#94a3b8">3</text>
+        <text x="166" y="73" text-anchor="end" font-size="9" fill="#1a2138" font-weight="700">Two-year contract</text>
+        <line x1="176.0" y1="70.2" x2="302.2" y2="70.2" stroke="#15803d" stroke-width="2.4"/>
+        <line x1="176.0" y1="66.2" x2="176.0" y2="74.2" stroke="#15803d" stroke-width="2"/>
+        <line x1="302.2" y1="66.2" x2="302.2" y2="74.2" stroke="#15803d" stroke-width="2"/>
+        <circle cx="239.1" cy="70.2" r="4.4" fill="#15803d" stroke="#fff"/>
+        <text x="310" y="73" text-anchor="start" font-size="8.4" fill="#15803d" font-weight="800">OR 0.19</text>
+        <text x="166" y="98" text-anchor="end" font-size="9" fill="#1a2138" font-weight="700">One-year contract</text>
+        <line x1="233.8" y1="94.5" x2="346.8" y2="94.5" stroke="#15803d" stroke-width="2.4"/>
+        <line x1="233.8" y1="90.5" x2="233.8" y2="98.5" stroke="#15803d" stroke-width="2"/>
+        <line x1="346.8" y1="90.5" x2="346.8" y2="98.5" stroke="#15803d" stroke-width="2"/>
+        <circle cx="290.3" cy="94.5" r="4.4" fill="#15803d" stroke="#fff"/>
+        <text x="355" y="98" text-anchor="start" font-size="8.4" fill="#15803d" font-weight="800">OR 0.29</text>
+        <text x="166" y="122" text-anchor="end" font-size="9" fill="#1a2138" font-weight="700">+12 months tenure</text>
+        <line x1="358.6" y1="118.8" x2="387.3" y2="118.8" stroke="#15803d" stroke-width="2.4"/>
+        <line x1="358.6" y1="114.8" x2="358.6" y2="122.8" stroke="#15803d" stroke-width="2"/>
+        <line x1="387.3" y1="114.8" x2="387.3" y2="122.8" stroke="#15803d" stroke-width="2"/>
+        <circle cx="372.9" cy="118.8" r="4.4" fill="#15803d" stroke="#fff"/>
+        <text x="395" y="122" text-anchor="start" font-size="8.4" fill="#15803d" font-weight="800">OR 0.57</text>
+        <text x="166" y="146" text-anchor="end" font-size="9" fill="#1a2138" font-weight="700">Electronic check</text>
+        <line x1="418.6" y1="143.2" x2="542.3" y2="143.2" stroke="#94a3b8" stroke-width="2.4"/>
+        <line x1="418.6" y1="139.2" x2="418.6" y2="147.2" stroke="#94a3b8" stroke-width="2"/>
+        <line x1="542.3" y1="139.2" x2="542.3" y2="147.2" stroke="#94a3b8" stroke-width="2"/>
+        <circle cx="480.4" cy="143.2" r="4.4" fill="#94a3b8" stroke="#fff"/>
+        <text x="550" y="146" text-anchor="start" font-size="8.4" fill="#94a3b8" font-weight="800">OR 1.35</text>
+        <text x="166" y="170" text-anchor="end" font-size="9" fill="#1a2138" font-weight="700">+$10 monthly charge</text>
+        <line x1="458.6" y1="167.5" x2="474.4" y2="167.5" stroke="#dc2626" stroke-width="2.4"/>
+        <line x1="458.6" y1="163.5" x2="458.6" y2="171.5" stroke="#dc2626" stroke-width="2"/>
+        <line x1="474.4" y1="163.5" x2="474.4" y2="171.5" stroke="#dc2626" stroke-width="2"/>
+        <circle cx="466.5" cy="167.5" r="4.4" fill="#dc2626" stroke="#fff"/>
+        <text x="482" y="170" text-anchor="start" font-size="8.4" fill="#dc2626" font-weight="800">OR 1.21</text>
+        <text x="166" y="195" text-anchor="end" font-size="9" fill="#1a2138" font-weight="700">Fiber-optic internet</text>
+        <line x1="527.2" y1="191.8" x2="634.0" y2="191.8" stroke="#dc2626" stroke-width="2.4"/>
+        <line x1="527.2" y1="187.8" x2="527.2" y2="195.8" stroke="#dc2626" stroke-width="2"/>
+        <line x1="634.0" y1="187.8" x2="634.0" y2="195.8" stroke="#dc2626" stroke-width="2"/>
+        <circle cx="580.6" cy="191.8" r="4.4" fill="#dc2626" stroke="#fff"/>
+        <text x="519" y="195" text-anchor="end" font-size="8.4" fill="#dc2626" font-weight="800">OR 3.03</text>
+      </svg>
+    </figure>
+
+    <p><span class="hl">Contract length is the biggest lever.</span> A two-year contract carries about <strong>80%
+       lower</strong> churn odds than month-to-month (odds ratio 0.19); a one-year contract about 70% lower. <strong>Tenure
+       protects</strong>, each extra year cuts the odds ~44%. On the risk side, <strong>fiber-optic internet triples</strong>
+       the odds versus DSL, and every extra $10 on the bill raises them ~20%.</p>
+    <p><b>Actionable retention plays:</b> (1) migrate month-to-month customers onto annual contracts, the single
+       highest-impact move; (2) watch new, high-bill, fiber customers in their first year; (3) build a weekly call list
+       from the model's probability at the 0.3 threshold.</p>
+
+    <div class="step-h"><span class="sn">11</span><h3>Deploy the model</h3></div>
+    <p><span class="term">Persist</span> the model and cleaning as one Pipeline; <span class="term">batch-score</span>
+       every active customer nightly, writing a churn probability and a risk flag into the CRM;
+       <span class="term">tune the threshold to the economics</span> (cheap offer, costly loss &#8594; low threshold, high
+       recall); <span class="term">monitor</span> precision, recall, and the churn base-rate for drift, and
+       <span class="term">retrain</span> quarterly. A guardrail worth stating: a churn model must support human judgment
+       and must not simply proxy protected attributes, log inputs for auditing and fairness review.</p>
+  </section>
+
+  <!-- ===== Section 6: writeup (step 12) ===== -->
+  <section id="writeup-sec">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Communicate: the Plain-English Write-Up (Step 12)</h2></div>
+    <div class="writeup">
+      <h3>For the retention manager</h3>
+      <p><strong>What we did.</strong> We took an export of past customers, cleaned it (removed duplicates, fixed the many
+        spellings of "yes/no" and of the plan names, and turned a text "total charges" field into real numbers), and built
+        a formula that scores each customer's chance of leaving.</p>
+      <p><strong>How good is it?</strong> Given two customers, the model ranks the riskier one correctly about
+        <strong>81 times out of 100</strong>. Tuned to prioritize catching leavers, it flags about
+        <strong>three-quarters</strong> of the customers who go on to churn.</p>
+      <p><strong>Who leaves, and what to do:</strong></p>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Month-to-month customers</strong> are by far the most likely to leave; moving them to a one- or two-year contract cuts their risk by roughly <strong>70&#8211;80%</strong>, the biggest win available.</span></li>
+        <li><span class="ck">✓</span><span><strong>Newer</strong>, <strong>higher-bill</strong>, and <strong>fiber-optic</strong> customers are higher risk, especially in year one.</span></li>
+        <li><span class="ck">✓</span><span>Use the score to build a weekly retention call list of the highest-risk customers.</span></li>
+      </ul>
+      <p><strong>The honest caveats.</strong> The model reflects past behavior and should be refreshed as prices and
+        competitors change; its score should support, not replace, a human decision.</p>
+      <p><strong>The takeaway: lock in month-to-month customers, and watch new high-bill fiber accounts.</strong></p>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Run the whole classification project in Python</h3>
+          <p>The companion notebook is the full 12-step pipeline: it loads and inspects the messy export, cleans the
+             eight-spelling target and the text-valued charges, visualizes churn by group and the class imbalance,
+             dummy-encodes the categories, fits the logistic regression, validates it (VIF, ROC/AUC, cross-validation,
+             confusion matrices, and a precision/recall threshold sweep), reads the odds ratios as a retention plan, and
+             closes with deployment and a plain-English write-up. Every table and chart is explained.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/case-study-logistic-regression-in-action.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-logistic-regression-in-action.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-logistic-regression-in-action.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly. <strong>Open in Colab</strong> runs it live. To run
+      locally, install <code>numpy</code>, <code>pandas</code>, <code>matplotlib</code>, <code>seaborn</code>,
+      <code>statsmodels</code>, and <code>scikit-learn</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Same 12-step method</strong> as regression, with logistic-specific tools: probabilities, odds ratios, AUC, a confusion matrix, and a chosen threshold.</span></li>
+        <li><span class="ck">✓</span><span><strong>Clean the label first</strong>: the target arrived in eight spellings of yes/no; a model cannot learn if "Yes" and "Y" look different.</span></li>
+        <li><span class="ck">✓</span><span><strong>Imbalance changes the metrics</strong>: with 30% churn, accuracy misleads, judge by AUC (0.81) and recall instead.</span></li>
+        <li><span class="ck">✓</span><span><strong>The threshold is a business decision</strong>: lowering it from 0.5 to 0.3 lifted recall from 53% to 75%, catching far more churners at the cost of some false alarms.</span></li>
+        <li><span class="ck">✓</span><span><strong>Odds ratios become actions</strong>: a two-year contract cuts churn odds ~80%, so the top retention play is migrating month-to-month customers to annual plans.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Take it further ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Take It Further</h2></div>
+    <p>Five ways to extend the churn study in the notebook:</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Cost-based threshold</h4>
+        <p>Given a $50 retention offer and a $600 lost-customer cost, find the threshold that minimizes expected cost.</p>
+        <div class="chint">Hint: sweep thresholds and compute cost = FN&#215;600 + FP&#215;50.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Handle the imbalance</h4>
+        <p>Refit with <code>class_weight="balanced"</code>; how do recall and the odds ratios change?</p>
+        <div class="chint">Hint: <code>LogisticRegression(class_weight="balanced")</code> (Ch 96).</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Add an interaction</h4>
+        <p>Does the tenure effect differ by contract type? Test <code>tenure_months : C(contract)</code>.</p>
+        <div class="chint">Hint: look at the interaction p-values.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Calibration check</h4>
+        <p>Bin predicted probabilities and compare to actual churn rates, is a predicted 30% really ~30%?</p>
+        <div class="chint">Hint: <code>sklearn.calibration.calibration_curve</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Score a new customer</h4>
+        <p>Build a one-row DataFrame for a new customer and print their churn probability and risk flag.</p>
+        <div class="chint">Hint: <code>model.predict(new_row)</code>, then compare to your threshold.</div></div></div>
+    </div>
+
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">📓</div>
+        <div class="nb-body">
+          <h3>All five, worked in a companion notebook</h3>
+          <p>A second notebook, <strong>Take It Further</strong>, recaps the Chapter 101 churn model and then works every
+             one of these five extensions with visuals and explanations, a cost-based threshold, class weighting for the
+             imbalance, a tenure-by-contract interaction, a calibration check, and scoring a new customer, closing with a
+             plain-English summary.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/case-study-logistic-regression-in-action--take-it-further.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-logistic-regression-in-action--take-it-further.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-logistic-regression-in-action--take-it-further.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">8</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on the classification case study. Answer them, hit <strong>Check Answers</strong>, and keep
+       refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">🏁</div>
+    <div><div class="ctitle">More case studies ahead</div>
+      <p>You have now run both a regression and a classification project end to end, from a dirty file to a deployed,
+         explained model. The case studies continue with <strong>Chapter 102 &#183; Forecasting Daily Bike-Share
+         Demand</strong>, a count-outcome project, and <strong>Chapter 103 &#183; Predicting Medical Charges</strong>, a
+         many-feature regularized model.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="case-study-predicting-ames-house-prices.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 100 · Previous</span><br><span class="cn-title">Predicting Ames House Prices</span></span>
+    </a>
+    <a class="cn-btn next" href="case-study-forecasting-daily-bike-share-demand.html">
+      <span><span class="cn-dir">Chapter 102 · Next</span><br><span class="cn-title">Forecasting Daily Bike-Share Demand</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 101 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch101";
+  window.QUIZ_DATA = [
+    {
+      q: "The churn target arrived as Yes / yes / Y / 1 and No / no / N / 0. The first cleaning step is to…",
+      options: ["Drop the column", "Standardize all spellings into a single 1/0 label", "Ignore it", "One-hot encode it"],
+      answer: 1,
+      explain: "Clean the label first: a model treats 'Yes' and 'Y' as different outcomes unless you map them to one 1/0 coding."
+    },
+    {
+      q: "With only 30% churn, plain accuracy is misleading because…",
+      options: ["Accuracy is always wrong", "A model that predicts 'nobody churns' already scores ~70%", "The data is too small", "Accuracy needs a threshold of 0"],
+      answer: 1,
+      explain: "Under class imbalance, a trivial majority-class model scores high accuracy; judge with AUC and recall instead."
+    },
+    {
+      q: "total_charges had a VIF of about 9. This means it…",
+      options: ["Is the most important predictor", "Is redundant (nearly tenure &#215; monthly charges); leave it out", "Has missing values", "Should be the target"],
+      answer: 1,
+      explain: "A high VIF signals multicollinearity; total_charges duplicates tenure &#215; monthly, so it is dropped."
+    },
+    {
+      q: "AUC = 0.81 tells you the model…",
+      options: ["Is 81% accurate", "Ranks a random churner above a random stayer about 81% of the time", "Has a threshold of 0.81", "Explains 81% of variance"],
+      answer: 1,
+      explain: "AUC is a threshold-free ranking score, the probability the model scores a positive above a negative."
+    },
+    {
+      q: "The team lowered the threshold from 0.5 to 0.3 in order to…",
+      options: ["Increase precision", "Increase recall, catch more churners, accepting more false alarms", "Reduce the AUC", "Remove outliers"],
+      answer: 1,
+      explain: "A lower threshold flags more customers as churn risks, raising recall at the cost of precision."
+    },
+    {
+      q: "An odds ratio of 0.19 for a two-year contract means it…",
+      options: ["Raises churn odds", "Multiplies churn odds by 0.19, about 80% lower than month-to-month", "Has no effect", "Multiplies odds by 19"],
+      answer: 1,
+      explain: "OR &lt; 1 is protective: a two-year contract cuts the odds of churn to ~19% of the month-to-month baseline."
+    },
+    {
+      q: "The single highest-impact retention action from the model is…",
+      options: ["Lowering everyone's bill", "Moving month-to-month customers onto annual contracts", "Removing fiber optic", "Calling every customer"],
+      answer: 1,
+      explain: "Contract length is the biggest lever; migrating month-to-month customers to annual plans cuts their churn odds most."
+    },
+    {
+      q: "What is the same between this chapter and the house-price study, and what is different?",
+      options: ["Everything is different", "The 12-step method is the same; the model, metrics (AUC/odds ratios/threshold), and target type differ", "Only the dataset differs", "Nothing is the same"],
+      answer: 1,
+      explain: "The pipeline is identical; classification swaps in logistic-specific tools for a yes/no outcome."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

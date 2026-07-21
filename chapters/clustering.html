@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 114 · Clustering — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#eef2ff; border:1px solid #c7d2fe; border-left:4px solid #4338ca; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#3730a3; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/clustering.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XIX · Unsupervised Learning</span><span class="sep">/</span>
+      <span>Chapter 114</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XIX · Unsupervised Learning</span> Finding groups with no labels</div>
+    <h1><span class="accent">Clustering</span></h1>
+    <p class="dek">Every model so far had an answer key. Clustering throws it away: hand the algorithm unlabeled data and ask
+       it to discover the natural groups on its own. We segment customers three ways, K-means, hierarchical, and DBSCAN,
+       and learn how to decide how many groups there really are.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~20 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 114</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Welcome to <span class="hl">unsupervised learning</span>, where the data has no labels and no target
+       to predict. The goal shifts from "predict Y from X" to "what structure is hidden in X?" The most common answer is
+       <span class="term">clustering</span>: partitioning observations into groups so that members of a group are similar
+       to each other and different from everyone else.</p>
+
+    <div class="def-card">
+      <div class="sigma">◕</div>
+      <div class="def-body">
+        <span class="def-kw">Clustering</span> groups unlabeled observations by similarity. There is no correct answer to
+        check against, so we judge clusters by how <span class="def-kw">tight</span> and
+        <span class="def-kw">well-separated</span> they are, and by whether they are <span class="def-kw">useful</span>.
+        Because clustering measures <span class="def-kw">distance</span>, features must be
+        <span class="def-kw">standardized</span> first.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🗂️</div>
+      <div><div class="ctitle">The chapter in one line</div>
+        <p>Discover the natural groups in unlabeled data: <strong>K-means</strong> partitions into <em>k</em> round
+           clusters (choose <em>k</em> with the <strong>elbow</strong> and <strong>silhouette</strong>),
+           <strong>hierarchical</strong> builds a dendrogram tree, and <strong>DBSCAN</strong> follows density and flags
+           outliers, then <strong>profile</strong> each group to give it business meaning.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1 ===== -->
+  <section id="what">
+    <div class="section-eyebrow"><div class="num">1</div><h2>From Labels to Groups</h2></div>
+    <p>Supervised learning learned a mapping from features to a known label. Clustering has <span class="hl">no
+       label</span> at all. We give it a table of customers, and it returns a group number for each one, groups it
+       invented by noticing which customers resemble each other. That makes clustering ideal for
+       <span class="hl">discovery</span>: customer segments, document topics, gene families, image regions, none of which
+       come pre-labeled.</p>
+
+    <p>Because every clustering method measures <span class="term">distance</span> between points, one preprocessing step
+       is non-negotiable: <span class="term">standardization</span>. If income runs into the tens of thousands and a
+       spending score runs 1 to 100, raw distance is almost entirely income, and the other features are ignored. Putting
+       each feature on a common z-score scale (mean 0, standard deviation 1) lets every feature contribute fairly. Skipping
+       this is the single most common clustering mistake.</p>
+  </section>
+
+  <!-- ===== Section 2 ===== -->
+  <section id="kmeans">
+    <div class="section-eyebrow"><div class="num">2</div><h2>K-means, and Choosing k</h2></div>
+    <p><span class="term">K-means</span> is the workhorse. You tell it how many clusters <em>k</em> you want; it places
+       <em>k</em> centers, assigns every point to its nearest center, moves each center to the mean of its members, and
+       repeats until nothing changes. It is fast and scales to millions of rows, but it assumes clusters are
+       <span class="hl">roughly round and similar in size</span>, and it makes you pick <em>k</em> up front.</p>
+
+    <p>How do you choose <em>k</em> when the data has more dimensions than you can plot? Two diagnostics, and you want them
+       to agree. The <span class="term">elbow</span> plot tracks total within-cluster distance (inertia) as <em>k</em>
+       grows; it always falls, but the <em>bend</em> marks the point where extra clusters stop helping. The
+       <span class="term">silhouette</span> score measures how much closer each point sits to its own cluster than to the
+       next-nearest one; higher is better, and it <em>peaks</em> at the right <em>k</em>.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 720 250" width="100%" font-family="Inter, sans-serif" aria-label="Two diagnostics for choosing k: the elbow plot of inertia bends sharply at k equals 4, and the silhouette score peaks at k equals 4">
+        <text x="360" y="18" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">Choosing k: the elbow bends and the silhouette peaks at the same place</text>
+        <!-- ELBOW -->
+        <g transform="translate(20,34)">
+          <rect x="0" y="0" width="330" height="196" rx="12" fill="#f7f8fc" stroke="#e6e9f2"/>
+          <text x="165" y="20" text-anchor="middle" font-size="10.5" fill="#3730a3" font-weight="800">Elbow: within-cluster inertia</text>
+          <line x1="42" y1="30" x2="42" y2="168" stroke="#94a3b8"/><line x1="42" y1="168" x2="308" y2="168" stroke="#94a3b8"/>
+          <polyline points="60,52 100,86 140,132 180,150 220,158 260,163 296,166" fill="none" stroke="#4338ca" stroke-width="2.6"/>
+          <circle cx="60" cy="52" r="3.5" fill="#4338ca"/><circle cx="100" cy="86" r="3.5" fill="#4338ca"/>
+          <circle cx="140" cy="132" r="5" fill="#ef4444"/><circle cx="180" cy="150" r="3.5" fill="#4338ca"/>
+          <circle cx="220" cy="158" r="3.5" fill="#4338ca"/><circle cx="260" cy="163" r="3.5" fill="#4338ca"/><circle cx="296" cy="166" r="3.5" fill="#4338ca"/>
+          <line x1="140" y1="30" x2="140" y2="168" stroke="#ef4444" stroke-dasharray="4 3"/>
+          <text x="140" y="122" text-anchor="middle" font-size="9" fill="#b91c1c" font-weight="700">the bend</text>
+          <text x="140" y="184" text-anchor="middle" font-size="9" fill="#b91c1c" font-weight="700">k = 4</text>
+          <text x="300" y="184" text-anchor="end" font-size="8" fill="#8b94b3">k &#8594;</text>
+        </g>
+        <!-- SILHOUETTE -->
+        <g transform="translate(370,34)">
+          <rect x="0" y="0" width="330" height="196" rx="12" fill="#f7f8fc" stroke="#e6e9f2"/>
+          <text x="165" y="20" text-anchor="middle" font-size="10.5" fill="#065f46" font-weight="800">Silhouette score (higher = better)</text>
+          <line x1="42" y1="30" x2="42" y2="168" stroke="#94a3b8"/><line x1="42" y1="168" x2="308" y2="168" stroke="#94a3b8"/>
+          <polyline points="60,96 100,88 140,58 180,90 220,104 260,120 296,140" fill="none" stroke="#059669" stroke-width="2.6"/>
+          <circle cx="60" cy="96" r="3.5" fill="#059669"/><circle cx="100" cy="88" r="3.5" fill="#059669"/>
+          <circle cx="140" cy="58" r="5" fill="#ef4444"/><circle cx="180" cy="90" r="3.5" fill="#059669"/>
+          <circle cx="220" cy="104" r="3.5" fill="#059669"/><circle cx="260" cy="120" r="3.5" fill="#059669"/><circle cx="296" cy="140" r="3.5" fill="#059669"/>
+          <line x1="140" y1="30" x2="140" y2="168" stroke="#ef4444" stroke-dasharray="4 3"/>
+          <text x="150" y="50" font-size="9" fill="#b91c1c" font-weight="700">peak 0.55</text>
+          <text x="140" y="184" text-anchor="middle" font-size="9" fill="#b91c1c" font-weight="700">k = 4</text>
+          <text x="300" y="184" text-anchor="end" font-size="8" fill="#8b94b3">k &#8594;</text>
+        </g>
+      </svg>
+    </figure>
+
+    <p>On the customer data both point to <strong>k = 4</strong> (silhouette 0.55), and that is the number we trust. When
+       the elbow and the silhouette disagree, treat it as a signal that the clusters are not clean, and look harder before
+       committing.</p>
+  </section>
+
+  <!-- ===== Section 3 ===== -->
+  <section id="beyond">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Beyond K-means: Hierarchical &amp; DBSCAN</h2></div>
+    <p>K-means is not the only tool, and its assumptions do not always hold. Two alternatives cover its blind spots.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 720 240" width="100%" font-family="Inter, sans-serif" aria-label="Three clustering methods: K-means assigns points to the nearest of k centroids; hierarchical clustering merges points into a dendrogram tree you cut at a chosen height; DBSCAN grows clusters from dense regions and labels sparse points as noise">
+        <text x="360" y="16" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">Three ways to cluster</text>
+        <!-- K-MEANS -->
+        <g transform="translate(14,30)">
+          <rect x="0" y="0" width="224" height="200" rx="12" fill="#eef2ff" stroke="#c7d2fe"/>
+          <text x="112" y="20" text-anchor="middle" font-size="10.5" fill="#3730a3" font-weight="800">K-means</text>
+          <text x="112" y="34" text-anchor="middle" font-size="8" fill="#4338ca">nearest of k centroids</text>
+          <circle cx="60" cy="70" r="4" fill="#6366f1"/><circle cx="72" cy="82" r="4" fill="#6366f1"/><circle cx="52" cy="88" r="4" fill="#6366f1"/><circle cx="66" cy="98" r="4" fill="#6366f1"/>
+          <path d="M62,84 l-6,-6 l12,0 z" fill="#ef4444"/><rect x="58" y="80" width="9" height="9" fill="#ef4444" transform="rotate(45 62 84)"/>
+          <circle cx="160" cy="120" r="4" fill="#059669"/><circle cx="172" cy="132" r="4" fill="#059669"/><circle cx="150" cy="134" r="4" fill="#059669"/><circle cx="166" cy="146" r="4" fill="#059669"/>
+          <rect x="158" y="128" width="9" height="9" fill="#ef4444" transform="rotate(45 162 132)"/>
+          <circle cx="150" cy="60" r="4" fill="#d97706"/><circle cx="162" cy="70" r="4" fill="#d97706"/><circle cx="140" cy="72" r="4" fill="#d97706"/>
+          <rect x="148" y="64" width="9" height="9" fill="#ef4444" transform="rotate(45 152 68)"/>
+          <text x="112" y="190" text-anchor="middle" font-size="7.5" fill="#8b94b3">fast; round, equal-size clusters; you pick k</text>
+        </g>
+        <!-- HIERARCHICAL -->
+        <g transform="translate(248,30)">
+          <rect x="0" y="0" width="224" height="200" rx="12" fill="#f0fdf4" stroke="#bbf7d0"/>
+          <text x="112" y="20" text-anchor="middle" font-size="10.5" fill="#065f46" font-weight="800">Hierarchical</text>
+          <text x="112" y="34" text-anchor="middle" font-size="8" fill="#059669">merge into a dendrogram</text>
+          <!-- mini dendrogram -->
+          <line x1="40" y1="160" x2="40" y2="120" stroke="#065f46" stroke-width="1.8"/><line x1="70" y1="160" x2="70" y2="120" stroke="#065f46" stroke-width="1.8"/>
+          <line x1="40" y1="120" x2="70" y2="120" stroke="#065f46" stroke-width="1.8"/><line x1="55" y1="120" x2="55" y2="90" stroke="#065f46" stroke-width="1.8"/>
+          <line x1="120" y1="160" x2="120" y2="132" stroke="#065f46" stroke-width="1.8"/><line x1="150" y1="160" x2="150" y2="132" stroke="#065f46" stroke-width="1.8"/>
+          <line x1="120" y1="132" x2="150" y2="132" stroke="#065f46" stroke-width="1.8"/><line x1="135" y1="132" x2="135" y2="90" stroke="#065f46" stroke-width="1.8"/>
+          <line x1="55" y1="90" x2="135" y2="90" stroke="#065f46" stroke-width="1.8"/><line x1="95" y1="90" x2="95" y2="60" stroke="#065f46" stroke-width="1.8"/>
+          <line x1="30" y1="105" x2="185" y2="105" stroke="#ef4444" stroke-dasharray="4 3"/>
+          <text x="192" y="108" font-size="7.5" fill="#b91c1c" font-weight="700">cut</text>
+          <text x="112" y="190" text-anchor="middle" font-size="7.5" fill="#8b94b3">no k up front; deterministic; slower</text>
+        </g>
+        <!-- DBSCAN -->
+        <g transform="translate(482,30)">
+          <rect x="0" y="0" width="224" height="200" rx="12" fill="#fef3f2" stroke="#fecaca"/>
+          <text x="112" y="20" text-anchor="middle" font-size="10.5" fill="#b91c1c" font-weight="800">DBSCAN</text>
+          <text x="112" y="34" text-anchor="middle" font-size="8" fill="#dc2626">dense cores + noise</text>
+          <ellipse cx="80" cy="95" rx="42" ry="30" fill="#c7d2fe" opacity="0.5"/>
+          <circle cx="66" cy="86" r="4" fill="#4338ca"/><circle cx="80" cy="80" r="4" fill="#4338ca"/><circle cx="92" cy="92" r="4" fill="#4338ca"/><circle cx="72" cy="100" r="4" fill="#4338ca"/><circle cx="88" cy="104" r="4" fill="#4338ca"/><circle cx="100" cy="98" r="4" fill="#4338ca"/>
+          <ellipse cx="150" cy="140" rx="34" ry="24" fill="#bbf7d0" opacity="0.6"/>
+          <circle cx="140" cy="134" r="4" fill="#059669"/><circle cx="152" cy="130" r="4" fill="#059669"/><circle cx="158" cy="144" r="4" fill="#059669"/><circle cx="146" cy="148" r="4" fill="#059669"/>
+          <text x="182" y="66" font-size="12" fill="#ef4444" font-weight="800">&#215;</text>
+          <text x="60" y="150" font-size="12" fill="#ef4444" font-weight="800">&#215;</text>
+          <text x="196" y="120" font-size="12" fill="#ef4444" font-weight="800">&#215;</text>
+          <text x="112" y="190" text-anchor="middle" font-size="7.5" fill="#8b94b3">finds k itself; any shape; flags outliers</text>
+        </g>
+      </svg>
+    </figure>
+
+    <p><span class="term">Hierarchical clustering</span> starts with every point alone and repeatedly merges the two
+       closest groups, recording the full history as a <span class="hl">dendrogram</span>. You read the tree and cut it at
+       a height that leaves the number of clusters you want, the tall gaps show the natural cut. It needs no <em>k</em> up
+       front and is deterministic, though it is slower on large data. On our customers it recovers <strong>exactly the same
+       four segments</strong> K-means found, independent confirmation the groups are real.</p>
+
+    <p><span class="term">DBSCAN</span> takes a completely different view: it grows clusters from
+       <span class="hl">dense regions</span> and leaves sparse points unassigned. A point with enough neighbors within a
+       radius seeds a cluster; points in no dense region are labeled <span class="hl">noise</span>. That gives it two
+       abilities K-means lacks: it discovers the number of clusters on its own and handles non-round shapes, and it
+       <strong>flags outliers</strong> instead of forcing them into a group. On our data it found the four segments and
+       isolated <strong>5 genuine outliers</strong> as noise.</p>
+  </section>
+
+  <!-- ===== Section 4: REAL-WORLD ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: Customer Segmentation</h2></div>
+    <p>The classic business use of clustering is <span class="hl">customer segmentation</span>: split a shapeless customer
+       list into a handful of actionable groups, each worth a different strategy. There is no "true" segment label, that
+       is exactly why clustering is the right tool.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · clustering--shoppers.xlsx</div>
+      <p style="margin:0.5rem 0 0">330 e-commerce customers with <code>annual_income_k</code>,
+        <code>spending_score</code>, <code>age</code>, and <code>web_visits_mo</code>. Note there is
+        <strong>no label column</strong>, the groups are hidden in the features for you to discover.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/clustering--shoppers.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 330 customers</small></a>
+      </div>
+    </div>
+
+    <p>Running K-means with <em>k</em> = 4, then profiling each cluster by its average feature values, turns four anonymous
+       cluster ids into a marketing plan:</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Segment</th><th>Income</th><th>Spending</th><th>Read on the group</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Premium</td><td>~89k</td><td>~83</td><td>high earners who spend freely, nurture with loyalty perks</td></tr>
+          <tr><td class="nm">Young Spenders</td><td>~28k</td><td>~76</td><td>low income but high spend and heavy browsing, upsell carefully</td></tr>
+          <tr><td class="nm">Savers</td><td>~90k</td><td>~20</td><td>high income, low spend, an untapped opportunity to win over</td></tr>
+          <tr><td class="nm">Budget-Conscious</td><td>~27k</td><td>~22</td><td>low income and low spend, serve efficiently, discount-driven</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>That final <strong>profiling</strong> step, describing each cluster in plain business terms, is what makes the whole
+       exercise pay off. The algorithm finds the groups; you give them meaning and a plan.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Clustering in Machine Learning &amp; AI</h2></div>
+    <p>Clustering is everywhere unlabeled data needs structure, which is almost everywhere.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Method / idea</th><th>Where it is used</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">K-means</td><td>customer segmentation, image color quantization, vector quantization</td></tr>
+          <tr><td class="nm">Hierarchical</td><td>gene-expression and phylogenetic trees, taxonomy building</td></tr>
+          <tr><td class="nm">DBSCAN</td><td>spatial/GPS clustering, outlier and fraud flagging, non-round shapes</td></tr>
+          <tr><td class="nm">Silhouette / elbow</td><td>validating how many groups the data really supports</td></tr>
+          <tr><td class="nm">Embeddings + clustering</td><td>grouping documents, images, and users by learned representations</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>Modern AI has supercharged clustering by changing <em>what</em> gets clustered. Instead of raw columns, systems
+           first map text, images, or audio into dense <strong>embedding</strong> vectors with a neural network, then
+           cluster those, which is how a search engine groups related documents, how a recommender finds "users like you,"
+           and how a labeling pipeline mines a huge unlabeled corpus for structure. Clustering embeddings is also central
+           to <strong>retrieval-augmented generation</strong> and semantic search behind large language models. And because
+           it needs no labels, clustering is a workhorse of <strong>exploratory analysis</strong>: the fastest way to ask
+           a brand-new dataset "what natural groups are in here?" before you have any idea what to predict.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Cluster customers in Python</h3>
+          <p>The companion notebook segments the shoppers with <strong>K-means</strong>, chooses <em>k</em> with the
+             <strong>elbow</strong> and <strong>silhouette</strong>, builds a <strong>dendrogram</strong>, runs
+             <strong>DBSCAN</strong> to flag outliers, and <strong>profiles</strong> every segment, each cell explained.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/clustering.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/clustering.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/clustering.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly. <strong>Open in Colab</strong> runs it live. To run
+      locally, install <code>numpy</code>, <code>pandas</code>, <code>scikit-learn</code>, <code>scipy</code>,
+      <code>seaborn</code>, and <code>openpyxl</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Clustering is unsupervised</strong>: no labels, no answer key, the goal is to discover the natural groups in the data.</span></li>
+        <li><span class="ck">✓</span><span><strong>Standardize first</strong>, distance-based clustering is dominated by the largest-scale feature otherwise.</span></li>
+        <li><span class="ck">✓</span><span><strong>K-means</strong> is fast but assumes round, equal-size clusters and needs <em>k</em>; choose it with the <strong>elbow</strong> and <strong>silhouette</strong> together.</span></li>
+        <li><span class="ck">✓</span><span><strong>Hierarchical</strong> gives a dendrogram (no <em>k</em> up front); <strong>DBSCAN</strong> follows density, finds <em>k</em> itself, and flags outliers as noise.</span></li>
+        <li><span class="ck">✓</span><span><strong>Profiling</strong> each cluster's feature means is what turns anonymous groups into decisions.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges. Try them with scikit-learn and scipy before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>K-means with k=4</h4>
+        <p>Standardize the features, fit K-means with 4 clusters, and report the cluster sizes.</p>
+        <div class="chint">Hint: <code>StandardScaler()</code> then <code>KMeans(n_clusters=4, n_init=10)</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Choose k</h4>
+        <p>Use the silhouette score across k = 2..8 to justify the number of clusters.</p>
+        <div class="chint">Hint: <code>silhouette_score(Xs, labels)</code>; pick the k that maximizes it.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Hierarchical agreement</h4>
+        <p>Cut a Ward dendrogram into 4 clusters and check it agrees with K-means.</p>
+        <div class="chint">Hint: <code>linkage(Xs,'ward')</code> then <code>fcluster(Z, 4, 'maxclust')</code>; crosstab.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>DBSCAN outliers</h4>
+        <p>Tune DBSCAN to flag the handful of genuine outliers as noise.</p>
+        <div class="chint">Hint: <code>DBSCAN(eps=0.85, min_samples=6)</code>; count labels equal to -1.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Name the premium segment</h4>
+        <p>Profile the clusters and identify the high-income, high-spending "Premium" group.</p>
+        <div class="chint">Hint: <code>df.groupby('cluster')[feat].mean()</code>.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code. Try
+           them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/clustering--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/clustering--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/clustering--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on clustering. Answer them, hit <strong>Check Answers</strong>, and keep refining until you
+       score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>Clustering found groups in the rows. Next we compress the <em>columns</em>. <strong>Chapter 115 &#183;
+         Dimensionality Reduction</strong> uses <strong>PCA</strong> to squeeze many correlated features into a few
+         informative axes, so you can visualize, denoise, and speed up high-dimensional data.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="model-interpretability-and-explainability.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 113 · Previous</span><br><span class="cn-title">Model Interpretability &amp; Explainability</span></span>
+    </a>
+    <a class="cn-btn next" href="dimensionality-reduction.html">
+      <span><span class="cn-dir">Chapter 115 · Next</span><br><span class="cn-title">Dimensionality Reduction</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 114 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch114";
+  window.QUIZ_DATA = [
+    {
+      q: "Clustering is a form of ___ learning.",
+      options: ["supervised", "unsupervised", "reinforcement", "semi-supervised"],
+      answer: 1,
+      explain: "Clustering works on unlabeled data, there is no target to predict; the goal is to discover natural groups."
+    },
+    {
+      q: "Why standardize features before clustering?",
+      options: ["To speed up training", "So distance is not dominated by the largest-scale feature", "To remove outliers", "To create labels"],
+      answer: 1,
+      explain: "Clustering is distance-based; without standardizing, a feature like income (in thousands) swamps a 1-100 score."
+    },
+    {
+      q: "K-means requires you to…",
+      options: ["Label the data first", "Choose the number of clusters k in advance", "Have round data only", "Remove all outliers"],
+      answer: 1,
+      explain: "K-means partitions into a fixed k clusters, so you must pick k up front (use the elbow and silhouette to choose it)."
+    },
+    {
+      q: "The elbow plot helps choose k by showing…",
+      options: ["The silhouette score", "Where the drop in within-cluster inertia sharply flattens", "The number of outliers", "The cluster labels"],
+      answer: 1,
+      explain: "Inertia always falls as k grows; the 'elbow' is where extra clusters stop meaningfully reducing it."
+    },
+    {
+      q: "A higher silhouette score means…",
+      options: ["More clusters", "Points sit closer to their own cluster than to the next-nearest one", "Lower inertia always", "Fewer features"],
+      answer: 1,
+      explain: "Silhouette measures separation; it peaks at the k that best balances tight, well-separated clusters."
+    },
+    {
+      q: "A dendrogram is the output of…",
+      options: ["K-means", "Hierarchical clustering", "DBSCAN", "PCA"],
+      answer: 1,
+      explain: "Hierarchical clustering merges points step by step into a tree (dendrogram) you cut at a chosen height."
+    },
+    {
+      q: "A key advantage of DBSCAN over K-means is that it…",
+      options: ["Is always faster", "Discovers the number of clusters itself and flags outliers as noise", "Requires labels", "Only finds round clusters"],
+      answer: 1,
+      explain: "DBSCAN grows clusters from dense regions, finds k on its own, handles odd shapes, and labels sparse points as noise."
+    },
+    {
+      q: "After clustering, 'profiling' means…",
+      options: ["Speeding up the code", "Summarizing each cluster's feature means to give it a business meaning", "Deleting small clusters", "Re-running with more k"],
+      answer: 1,
+      explain: "Profiling turns anonymous cluster ids into named, actionable segments, the step that makes clustering useful."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

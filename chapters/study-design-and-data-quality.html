@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 65 · Study Design &amp; Data Quality — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/study-design-and-data-quality.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part X · Sampling &amp; Data Collection</span><span class="sep">/</span>
+      <span>Chapter 65</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part X · Sampling &amp; Data Collection</span> Cause, confounding, and clean data</div>
+    <h1>Study Design &amp; <span class="accent">Data Quality</span></h1>
+    <p class="dek">How you collect data decides what you can conclude. Experiments establish cause; observation only shows
+       association. We watch confounding distort an effect, randomization fix it, Simpson's paradox reverse a conclusion,
+       and the dimensions that make data trustworthy.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~17 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 65</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Sampling decides <em>who</em> is in your data; study design decides <em>what the data can prove</em>. A
+       perfectly sampled, perfectly clean dataset can still lead you to a false conclusion if the study was designed to
+       only observe. This chapter is about turning data into trustworthy answers.</p>
+
+    <div class="def-card">
+      <div class="sigma">cause?</div>
+      <div class="def-body">
+        An <span class="def-kw">observational study</span> watches what happens and can show only
+        <span class="def-kw">association</span>. An <span class="def-kw">experiment</span> assigns the treatment, ideally
+        at random, and can establish <span class="def-kw">causation</span>, because randomization balances every
+        confounder, known and unknown.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🧪</div>
+      <div><div class="ctitle">The chapter in one line</div>
+        <p>Correlation is not causation, randomization is what bridges the gap, a lurking variable can even
+           <em>reverse</em> a conclusion (Simpson's paradox), and none of it matters if the data itself is dirty. Design
+           and quality come before analysis.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: observational vs experimental ===== -->
+  <section id="observe">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Observational vs Experimental Studies</h2></div>
+    <p>The deepest divide in data collection is whether you <span class="term">observe</span> or
+       <span class="term">intervene</span>. Observation is cheap and often the only option, but it is vulnerable to
+       <span class="term">confounding</span>: a lurking variable that drives both things you are comparing.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 170" width="100%" font-family="Inter, sans-serif" aria-label="A confounder drives both variables, creating a spurious correlation between them">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">A confounder fakes a correlation</text>
+        <!-- confounder triangle -->
+        <rect x="280" y="36" width="120" height="34" rx="8" fill="#fef3c7" stroke="#d97706"/>
+        <text x="340" y="58" text-anchor="middle" font-size="9.5" fill="#b45309" font-weight="800">Temperature</text>
+        <rect x="90" y="116" width="140" height="34" rx="8" fill="#e0f7fb" stroke="#0891b2"/>
+        <text x="160" y="138" text-anchor="middle" font-size="9.5" fill="#0e6a8f" font-weight="800">Ice-cream sales</text>
+        <rect x="450" y="116" width="140" height="34" rx="8" fill="#fde2e7" stroke="#e11d48"/>
+        <text x="520" y="138" text-anchor="middle" font-size="9.5" fill="#be123c" font-weight="800">Drownings</text>
+        <path d="M300,70 L180,114" stroke="#d97706" stroke-width="2" marker-end="url(#c1)"/>
+        <path d="M380,70 L500,114" stroke="#d97706" stroke-width="2" marker-end="url(#c1)"/>
+        <path d="M232,133 L448,133" stroke="#94a3b8" stroke-width="1.6" stroke-dasharray="5 4"/>
+        <defs><marker id="c1" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#d97706"/></marker></defs>
+        <text x="340" y="126" text-anchor="middle" font-size="8" fill="#94a3b8">spurious r = 0.58</text>
+        <text x="340" y="163" text-anchor="middle" font-size="8.5" fill="#8b94b3">control for temperature and the correlation drops to &#8722;0.03</text>
+      </svg>
+    </figure>
+
+    <p>The notebook makes the classic case concrete: ice-cream sales and drownings correlate at <strong>0.58</strong>, but
+       once temperature is held constant the correlation collapses to <strong>&#8722;0.03</strong>. Neither causes the other;
+       hot weather causes both. This is why an observational association, however strong, can never by itself prove
+       causation.</p>
+  </section>
+
+  <!-- ===== Section 2: randomization ===== -->
+  <section id="randomize">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Randomization &amp; Control</h2></div>
+    <p>An experiment <em>assigns</em> the treatment. The magic ingredient is <span class="term">random assignment</span>:
+       deciding each subject's group by a coin flip makes the treatment and control groups statistically identical on
+       every variable at once, so any difference in outcome must be the treatment's doing.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 180" width="100%" font-family="Inter, sans-serif" aria-label="Self-selection leaves the groups imbalanced on age, randomization balances them">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Randomization balances the confounder (true effect = 8.0)</text>
+        <!-- self-selected -->
+        <text x="180" y="44" text-anchor="middle" font-size="9.5" fill="#be123c" font-weight="800">Self-selected (observational)</text>
+        <rect x="60" y="54" width="110" height="40" rx="7" fill="#fde2e7" stroke="#e11d48"/><text x="115" y="72" text-anchor="middle" font-size="8.5" fill="#be123c" font-weight="700">treated</text><text x="115" y="86" text-anchor="middle" font-size="8" fill="#4a5578">age 55</text>
+        <rect x="190" y="54" width="110" height="40" rx="7" fill="#eef2ff" stroke="#64748b"/><text x="245" y="72" text-anchor="middle" font-size="8.5" fill="#475569" font-weight="700">control</text><text x="245" y="86" text-anchor="middle" font-size="8" fill="#4a5578">age 36</text>
+        <text x="180" y="112" text-anchor="middle" font-size="9" fill="#be123c" font-weight="800">estimate &#8722;1.5 (biased)</text>
+        <!-- randomized -->
+        <text x="500" y="44" text-anchor="middle" font-size="9.5" fill="#0f766e" font-weight="800">Randomized experiment</text>
+        <rect x="380" y="54" width="110" height="40" rx="7" fill="#d7f0e3" stroke="#0d9488"/><text x="435" y="72" text-anchor="middle" font-size="8.5" fill="#0f766e" font-weight="700">treated</text><text x="435" y="86" text-anchor="middle" font-size="8" fill="#4a5578">age 45</text>
+        <rect x="510" y="54" width="110" height="40" rx="7" fill="#d7f0e3" stroke="#0d9488"/><text x="565" y="72" text-anchor="middle" font-size="8.5" fill="#0f766e" font-weight="700">control</text><text x="565" y="86" text-anchor="middle" font-size="8" fill="#4a5578">age 45</text>
+        <text x="500" y="112" text-anchor="middle" font-size="9" fill="#0f766e" font-weight="800">estimate +8.0 (correct)</text>
+        <text x="340" y="150" text-anchor="middle" font-size="8.5" fill="#8b94b3">same data-generating effect; only the design differs</text>
+        <text x="340" y="166" text-anchor="middle" font-size="8" fill="#8b94b3">self-selection lets age contaminate the comparison; randomization removes it</text>
+      </svg>
+    </figure>
+
+    <p>In the notebook, when older subjects self-select into treatment the naive comparison gives <strong>&#8722;1.5</strong>,
+       badly wrong, because the treated group is 19 years older. Flip a coin instead and the groups match on age
+       (<strong>45 vs 45</strong>), so the estimate lands on the true effect of <strong>+8.0</strong>. A
+       <span class="hl">randomized controlled trial</span> with a control group and, ideally, blinding, is the gold
+       standard for establishing cause.</p>
+  </section>
+
+  <!-- ===== Section 3: Simpson ===== -->
+  <section id="simpson">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Confounding &amp; Simpson's Paradox</h2></div>
+    <p>Confounding has a spectacular extreme: an association can run one way overall and the
+       <span class="term">opposite way</span> in every subgroup. The real kidney-stone data of Charig et al. (1986) is the
+       textbook case.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 200" width="100%" font-family="Inter, sans-serif" aria-label="Treatment A beats B for small and large stones but loses overall">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Treatment A wins both subgroups, yet loses overall</text>
+        <line x1="60" y1="160" x2="640" y2="160" stroke="#8b94b3" stroke-width="1"/>
+        <!-- three groups, each with A (rose) and B (teal) -->
+        <!-- small -->
+        <rect x="90"  y="48"  width="40" height="112" fill="#e11d48"/><text x="110" y="42" text-anchor="middle" font-size="9" fill="#be123c" font-weight="800">93%</text>
+        <rect x="135" y="56"  width="40" height="104" fill="#0d9488"/><text x="155" y="50" text-anchor="middle" font-size="9" fill="#0f766e" font-weight="800">87%</text>
+        <text x="132" y="176" text-anchor="middle" font-size="8.5" fill="#1a2138">Small stones</text>
+        <!-- large -->
+        <rect x="290" y="72"  width="40" height="88" fill="#e11d48"/><text x="310" y="66" text-anchor="middle" font-size="9" fill="#be123c" font-weight="800">73%</text>
+        <rect x="335" y="78"  width="40" height="82" fill="#0d9488"/><text x="355" y="72" text-anchor="middle" font-size="9" fill="#0f766e" font-weight="800">69%</text>
+        <text x="332" y="176" text-anchor="middle" font-size="8.5" fill="#1a2138">Large stones</text>
+        <!-- overall -->
+        <rect x="490" y="66"  width="40" height="94" fill="#fda4af"/><text x="510" y="60" text-anchor="middle" font-size="9" fill="#be123c" font-weight="800">78%</text>
+        <rect x="535" y="54"  width="40" height="106" fill="#5eead4"/><text x="555" y="48" text-anchor="middle" font-size="9" fill="#0f766e" font-weight="800">83%</text>
+        <text x="532" y="176" text-anchor="middle" font-size="8.5" fill="#1a2138" font-weight="800">OVERALL (reversed)</text>
+        <!-- legend -->
+        <rect x="600" y="40" width="12" height="12" fill="#e11d48"/><text x="618" y="50" font-size="8" fill="#4a5578">A</text>
+        <rect x="600" y="58" width="12" height="12" fill="#0d9488"/><text x="618" y="68" font-size="8" fill="#4a5578">B</text>
+      </svg>
+    </figure>
+
+    <p>Treatment A succeeds more often for small stones (<strong>93% vs 87%</strong>) and for large stones
+       (<strong>73% vs 69%</strong>), yet B beats A overall (<strong>83% vs 78%</strong>). The cause is the confounder
+       <em>stone size</em>: doctors gave the tougher open surgery (A) to far more of the hard large-stone cases.
+       Aggregating across a confounder can flip the truth, so before trusting any overall comparison, ask what variable
+       might be hiding inside it.</p>
+  </section>
+
+  <!-- ===== Section 4: data quality ===== -->
+  <section id="quality">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Data Quality Dimensions</h2></div>
+    <p>Even a flawless design fails on dirty data. Quality is not one thing but several, and a dataset is only as
+       trustworthy as its weakest dimension.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Dimension</th><th>Question it answers</th><th>Example failure (from the audit)</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Completeness</td><td>Are values present?</td><td>a missing age (83% complete)</td></tr>
+          <tr><td class="nm">Uniqueness</td><td>Are records de-duplicated?</td><td>a duplicated id (83% unique)</td></tr>
+          <tr><td class="nm">Validity</td><td>Are values in the legal range?</td><td>an age of 200 (67% valid)</td></tr>
+          <tr><td class="nm">Consistency</td><td>Same units &amp; format throughout?</td><td>a height of 1.75 (meters, not cm)</td></tr>
+          <tr><td class="nm">Timeliness / format</td><td>Parseable and up to date?</td><td>an unreadable "bad-date"</td></tr>
+          <tr><td class="nm">Accuracy</td><td>Do values match reality?</td><td>a typo'd measurement (hard to detect)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The notebook audits a small dataset and scores each dimension separately, catching the missing value, the duplicate
+       row, the impossible age, the wrong-unit height, and the malformed date. Crucially, these are <em>different</em>
+       failures needing <em>different</em> checks: a single "percent clean" number would hide them. Profiling every
+       dimension is the first step of any serious analysis.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Study Design &amp; Data Quality in Machine Learning &amp; AI</h2></div>
+    <p>Machine learning is observational by default: models learn from whatever data they are fed, confounders and all.
+       The hardest failures in applied ML are design and data-quality failures, not modeling failures.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Idea (this chapter)</th><th>In ML / AI it appears as</th><th>The danger</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Confounding</td><td>Spurious features / shortcut learning</td><td>the model keys on a confounder, not the cause</td></tr>
+          <tr><td class="nm">Randomized experiment</td><td>A/B tests &amp; randomized rollouts</td><td>the only way to measure true causal lift</td></tr>
+          <tr><td class="nm">Simpson's paradox</td><td>Aggregate vs per-segment metrics</td><td>overall accuracy hides per-group failures</td></tr>
+          <tr><td class="nm">Data quality</td><td>Validation, profiling, leakage checks</td><td>garbage in, garbage out, at scale</td></tr>
+          <tr><td class="nm">Design &gt; sample size</td><td>Better data beats more data</td><td>more biased data does not help</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>The notebook's blunt finding, a confounded estimate is <strong>just as wrong with 40,000 rows as with
+           4,000</strong>, is the deepest lesson in applied ML: <strong>garbage in, garbage out</strong>, and scaling the
+           garbage does not help. Models exploit confounders as <em>shortcuts</em> (the famous case of a classifier that
+           detected the ruler in skin-cancer photos rather than the lesion). Establishing that a feature or intervention
+           truly <em>causes</em> an outcome requires a randomized <strong>A/B test</strong>, not an observational
+           correlation. <strong>Simpson's paradox</strong> warns that headline accuracy can mask severe per-segment
+           failures, the heart of fairness auditing. And <strong>data leakage</strong>, a validity failure where future
+           or target information sneaks into the features, is the most common cause of models that look brilliant in
+           development and collapse in production. Design and data quality are where real ML projects are won or lost.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>See design and quality in Python</h3>
+          <p>The companion notebook manufactures a spurious correlation and controls it away, contrasts a self-selected
+             estimate with a randomized one, reproduces Simpson's paradox from the real kidney-stone data, audits a
+             dataset across the quality dimensions, and shows confounding bias surviving a tenfold increase in data.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/study-design-and-data-quality.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/study-design-and-data-quality.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/study-design-and-data-quality.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, and
+      <code>matplotlib</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Observation shows association; experiments show causation</strong>, because a confounder can fake a correlation (r 0.58 &#8594; &#8722;0.03 once controlled).</span></li>
+        <li><span class="ck">✓</span><span><strong>Randomization</strong> balances all confounders: a self-selected estimate was &#8722;1.5, the randomized one +8.0 (the truth).</span></li>
+        <li><span class="ck">✓</span><span><strong>Simpson's paradox</strong>: A beat B in both subgroups (93/73 vs 87/69) yet lost overall (78% vs 83%), the confounder was stone size.</span></li>
+        <li><span class="ck">✓</span><span><strong>Data quality is multi-dimensional</strong>: completeness, uniqueness, validity, consistency, timeliness, accuracy, each needs its own check.</span></li>
+        <li><span class="ck">✓</span><span><strong>Design beats cleanup</strong>: a confounded estimate stayed wrong with 10&#215; the data; in ML, garbage in is garbage out at scale.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them with NumPy and pandas before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Spurious correlation from a confounder</h4>
+        <p>Let a confounder Z drive both X and Y. Show X and Y correlate, then control for Z and watch it vanish.</p>
+        <div class="chint">Hint: correlate the residuals after regressing each on Z.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Randomization balances a confounder</h4>
+        <p>Compare the treated/control means of a covariate under self-selection versus a coin-flip assignment.</p>
+        <div class="chint">Hint: self-selection leaves the groups imbalanced; randomization matches them.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Build your own Simpson's paradox</h4>
+        <p>Construct two treatments where X beats Y in each subgroup but loses overall.</p>
+        <div class="chint">Hint: give X mostly hard cases and Y mostly easy ones.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Data quality audit</h4>
+        <p>Audit a messy dataframe for completeness, uniqueness, and validity, and report each as a percentage.</p>
+        <div class="chint">Hint: <code>isna</code>, <code>nunique</code>, and <code>between</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Bias is a design flaw, not a sample-size one</h4>
+        <p>Show a confounded estimate stays biased as n grows from 2,000 to 50,000.</p>
+        <div class="chint">Hint: the offset from the true effect barely moves.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code. Try
+           them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/study-design-and-data-quality--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/study-design-and-data-quality--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/study-design-and-data-quality--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on study design and data quality. Answer them, hit <strong>Check Answers</strong>, and keep
+       refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">🧭</div>
+    <div><div class="ctitle">Up next</div>
+      <p>Good design assumes honest measurement, but collection itself can distort the data. <strong>Chapter 66</strong>
+         closes the Part with <strong>bias in data collection</strong>: selection, nonresponse, response, and the
+         survivorship bias of Wald's wartime airplanes.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="determining-sample-size.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 64 · Previous</span><br><span class="cn-title">Determining Sample Size</span></span>
+    </a>
+    <a class="cn-btn next" href="bias-in-data-collection.html">
+      <span><span class="cn-dir">Chapter 66 · Next</span><br><span class="cn-title">Bias in Data Collection</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 65 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch65";
+  window.QUIZ_DATA = [
+    {
+      q: "What can an observational study establish on its own?",
+      options: ["Causation", "Association, but not causation", "Nothing useful", "A randomized effect"],
+      answer: 1,
+      explain: "Observation can show that two things move together, but a confounder may be the real cause, so it cannot prove causation."
+    },
+    {
+      q: "A confounder is a variable that…",
+      options: ["Is always measured", "Influences both the supposed cause and the effect", "Only affects the outcome", "Is randomly assigned"],
+      answer: 1,
+      explain: "A confounder drives both variables, creating a spurious association. Temperature confounds ice-cream sales and drownings."
+    },
+    {
+      q: "Why does random assignment establish causation?",
+      options: ["It increases the sample size", "It balances all confounders (known and unknown) across groups on average", "It removes all variation", "It guarantees a large effect"],
+      answer: 1,
+      explain: "Randomization makes the groups statistically identical on every variable, so any outcome difference must be due to the treatment."
+    },
+    {
+      q: "In the notebook, the self-selected estimate was −1.5 while the randomized estimate was +8.0 because…",
+      options: ["The data was dirty", "Older subjects self-selected into treatment, confounding the comparison", "The sample was too small", "Randomization failed"],
+      answer: 1,
+      explain: "Self-selection made the treated group much older; only randomization balanced age and recovered the true +8.0 effect."
+    },
+    {
+      q: "Simpson's paradox is when…",
+      options: ["Two variables are unrelated", "A trend in subgroups reverses when the data is aggregated", "The mean equals the median", "A sample is too small"],
+      answer: 1,
+      explain: "An association can hold one way within every subgroup yet reverse overall, because a confounder is distributed unevenly across groups."
+    },
+    {
+      q: "In the kidney-stone data, Treatment A beat B in both subgroups but lost overall because…",
+      options: ["A was simply worse", "A was given to a far larger share of the hard (large-stone) cases", "The data was fabricated", "B had a bigger sample"],
+      answer: 1,
+      explain: "Allocation confounded the totals: A handled more difficult cases, dragging its overall rate below B despite winning each subgroup."
+    },
+    {
+      q: "Which is a DATA QUALITY (not study-design) problem?",
+      options: ["A confounder", "A height recorded in meters where the column is centimeters", "Self-selection into treatment", "Lack of a control group"],
+      answer: 1,
+      explain: "A wrong-unit value is a consistency (data-quality) failure. Confounding, self-selection, and missing controls are design problems."
+    },
+    {
+      q: "The lesson that a confounded estimate is just as wrong with 40,000 rows as with 4,000 means…",
+      options: ["More data always fixes bias", "Bias is a design flaw that more data cannot cure (garbage in, garbage out)", "Sample size is irrelevant", "Confounding only matters for small data"],
+      answer: 1,
+      explain: "Bias is systematic, so scaling up a flawed design just produces a more confident wrong answer; only better design or clean data helps."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

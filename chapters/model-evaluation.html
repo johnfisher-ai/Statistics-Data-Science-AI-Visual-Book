@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 111 · Model Evaluation — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#eef2ff; border:1px solid #c7d2fe; border-left:4px solid #4338ca; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#3730a3; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/model-evaluation.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XVIII · Supervised Learning</span><span class="sep">/</span>
+      <span>Chapter 111</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XVIII · Supervised Learning</span> Is it any good?</div>
+    <h1>Model <span class="accent">Evaluation</span></h1>
+    <p class="dek">A model has learned by minimizing a loss, but a low loss is not the same as a good model. This chapter is
+       how to judge one honestly: why accuracy is a trap on imbalanced data, the confusion matrix and the precision-recall
+       trade-off, the ROC curve and AUC, and the regression metrics MAE, MSE, RMSE, and R-squared, all on a fraud-detection
+       table.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~19 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 111</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Ask a beginner how good their model is and they say "95% accurate." Ask a professional and they ask
+       "accurate at <em>what</em>, and compared to <em>what</em>?" The single number can hide total failure, so real
+       evaluation uses <span class="hl">a small family of metrics</span>, each answering a different question.</p>
+
+    <div class="def-card">
+      <div class="sigma">✓</div>
+      <div class="def-body">
+        For classification, the <span class="def-kw">confusion matrix</span> yields <span class="def-kw">precision</span>
+        (of predicted positives, how many are right), <span class="def-kw">recall</span> (of actual positives, how many
+        we catch), and their balance <span class="def-kw">F1</span>; <span class="def-kw">ROC-AUC</span> scores ranking
+        regardless of threshold. For regression, <span class="def-kw">MAE / RMSE</span> give the typical error and
+        <span class="def-kw">R-squared</span> the variance explained.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🎯</div>
+      <div><div class="ctitle">The chapter in one line</div>
+        <p>Never trust accuracy alone on imbalanced data: read the confusion matrix, weigh precision against recall by the
+           cost of each error, use ROC-AUC or average precision to compare models, and for regression report RMSE (or MAE)
+           plus R-squared.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1 ===== -->
+  <section id="accuracy">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Why Accuracy Lies</h2></div>
+    <p>Accuracy is the fraction of predictions that are correct. It is fine when the classes are balanced, and
+       <span class="hl">dangerously misleading when they are not</span>, which is the case for most problems worth solving:
+       fraud, disease, defects, and churn are all rare.</p>
+
+    <p>The notebook's fraud data is only <strong>13% fraud</strong>. A lazy model that predicts "legitimate" for
+       <em>every</em> transaction is <strong>87% accurate</strong>, and catches <span class="hl">zero fraud</span>, a recall
+       of 0. Our real model scores almost the identical accuracy (87.3%), yet it is genuinely useful because it actually
+       flags fraud. Accuracy cannot tell the two apart, because the 87% majority swamps it. To see what a model does on the
+       cases that matter, we have to look at the minority class directly.</p>
+  </section>
+
+  <!-- ===== Section 2 ===== -->
+  <section id="confusion">
+    <div class="section-eyebrow"><div class="num">2</div><h2>The Confusion Matrix: Precision, Recall, F1</h2></div>
+    <p>Every classification metric is built from four counts, the <span class="term">confusion matrix</span>, which cross-tabulates
+       what the model predicted against the truth.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 660 300" width="100%" font-family="Inter, sans-serif" aria-label="A confusion matrix: rows are actual legit and fraud, columns are predicted legit and fraud; the four cells are true negative, false positive, false negative, true positive; precision is read down the predicted-fraud column, recall across the actual-fraud row">
+        <text x="330" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">Four outcomes, two key ratios</text>
+        <text x="230" y="50" text-anchor="middle" font-size="9" fill="#4a5578" font-weight="700">PREDICTED</text>
+        <text x="150" y="66" text-anchor="middle" font-size="8.5" fill="#64748b" font-weight="700">legit</text>
+        <text x="310" y="66" text-anchor="middle" font-size="8.5" fill="#64748b" font-weight="700">fraud</text>
+        <text x="46" y="130" text-anchor="middle" font-size="9" fill="#4a5578" font-weight="700" transform="rotate(-90 46 155)">ACTUAL</text>
+        <text x="66" y="118" text-anchor="end" font-size="8.5" fill="#64748b" font-weight="700">legit</text>
+        <text x="66" y="198" text-anchor="end" font-size="8.5" fill="#64748b" font-weight="700">fraud</text>
+        <!-- cells -->
+        <rect x="72" y="76" width="156" height="80" fill="#dcfce7" stroke="#fff" stroke-width="2"/><text x="150" y="112" text-anchor="middle" font-size="10" fill="#15803d" font-weight="800">True Negative</text><text x="150" y="128" text-anchor="middle" font-size="8" fill="#166534">legit, called legit</text>
+        <rect x="232" y="76" width="156" height="80" fill="#fee2e2" stroke="#fff" stroke-width="2"/><text x="310" y="112" text-anchor="middle" font-size="10" fill="#b91c1c" font-weight="800">False Positive</text><text x="310" y="128" text-anchor="middle" font-size="8" fill="#7f1d1d">false alarm</text>
+        <rect x="72" y="158" width="156" height="80" fill="#fef3c7" stroke="#fff" stroke-width="2"/><text x="150" y="194" text-anchor="middle" font-size="10" fill="#92400e" font-weight="800">False Negative</text><text x="150" y="210" text-anchor="middle" font-size="8" fill="#78350f">fraud missed</text>
+        <rect x="232" y="158" width="156" height="80" fill="#c7d2fe" stroke="#fff" stroke-width="2"/><text x="310" y="194" text-anchor="middle" font-size="10" fill="#3730a3" font-weight="800">True Positive</text><text x="310" y="210" text-anchor="middle" font-size="8" fill="#4338ca">fraud caught</text>
+        <!-- precision (column) -->
+        <path d="M310,244 L310,262" stroke="#4338ca" stroke-width="1.4" marker-end="url(#c11)"/>
+        <rect x="240" y="264" width="180" height="30" rx="7" fill="#eef2ff" stroke="#4338ca"/><text x="330" y="283" text-anchor="middle" font-size="9" fill="#3730a3" font-weight="700">precision = TP / (TP + FP)</text>
+        <!-- recall (row) -->
+        <path d="M394,198 L412,198" stroke="#4338ca" stroke-width="1.4" marker-end="url(#c11)"/>
+        <rect x="416" y="150" width="220" height="30" rx="7" fill="#eef2ff" stroke="#4338ca"/><text x="526" y="169" text-anchor="middle" font-size="9" fill="#3730a3" font-weight="700">recall = TP / (TP + FN)</text>
+        <text x="526" y="196" text-anchor="middle" font-size="8" fill="#4a5578">of all fraud, how much we caught</text>
+        <text x="526" y="88" text-anchor="middle" font-size="8.5" fill="#3730a3" font-weight="700">precision:</text>
+        <text x="526" y="104" text-anchor="middle" font-size="8" fill="#4a5578">of what we flagged,</text>
+        <text x="526" y="116" text-anchor="middle" font-size="8" fill="#4a5578">how much was real</text>
+        <text x="526" y="230" text-anchor="middle" font-size="8" fill="#8b94b3">F1 = harmonic mean</text>
+        <text x="526" y="242" text-anchor="middle" font-size="8" fill="#8b94b3">of precision &amp; recall</text>
+        <defs><marker id="c11" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#4338ca"/></marker></defs>
+      </svg>
+    </figure>
+
+    <p><span class="term">Precision</span> asks: <em>of the transactions we flagged, how many were really fraud?</em> (it
+       punishes false alarms). <span class="term">Recall</span> asks: <em>of all the fraud, how much did we catch?</em> (it
+       punishes misses). On the fraud model they are <strong>0.51 and 0.31</strong>, very different from the flattering 87%
+       accuracy. <span class="term">F1</span>, their harmonic mean, gives one balanced score. Which you optimize is a
+       <span class="hl">business decision</span>: a fraud team dreads missed fraud (recall), an email filter dreads blocking
+       real mail (precision).</p>
+  </section>
+
+  <!-- ===== Section 3 ===== -->
+  <section id="roc">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The Threshold, PR Curve &amp; ROC-AUC</h2></div>
+    <p>A classifier really outputs a <span class="hl">probability</span>; a <span class="term">threshold</span> turns it
+       into yes/no. The default 0.5 is rarely optimal. Lower it and you flag more, so <strong>recall rises and precision
+       falls</strong> (in the notebook, moving from 0.5 to 0.25 lifts recall from 0.31 to 0.43 while precision drops from
+       0.51 to 0.38). The <span class="term">precision-recall curve</span> traces every operating point, and you pick the
+       threshold from the cost of a miss versus a false alarm.</p>
+
+    <p>The notebook makes "by cost" concrete instead of hand-wavy: charge <strong>$500</strong> for a missed fraud and
+       <strong>$10</strong> to review a false alarm, then sweep every threshold and add up the bill. Expected cost bottoms
+       out near a threshold of <strong>0.02</strong> (about <strong>$2,900</strong> on the test set), roughly
+       <strong>7&#215; cheaper</strong> than blindly using 0.5 (about $20,170). The optimal threshold is simply the one
+       that minimizes expected cost, a business calculation, not a statistical default.</p>
+
+    <p>To compare models <em>independently of any threshold</em>, use the <span class="term">ROC curve</span> and its area,
+       <span class="term">AUC</span>.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 600 300" width="100%" font-family="Inter, sans-serif" aria-label="An ROC curve plotting true-positive rate against false-positive rate; it bows toward the top-left corner and the shaded area beneath it is the AUC of about 0.81, well above the diagonal that marks a random model at 0.5">
+        <text x="300" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">ROC curve: the area beneath is the AUC</text>
+        <line x1="80" y1="250" x2="520" y2="250" stroke="#94a3b8" stroke-width="1"/>
+        <line x1="80" y1="46" x2="80" y2="250" stroke="#94a3b8" stroke-width="1"/>
+        <text x="300" y="284" text-anchor="middle" font-size="9" fill="#4a5578" font-weight="700">false positive rate &#8594;</text>
+        <text x="44" y="148" text-anchor="middle" font-size="9" fill="#4a5578" font-weight="700" transform="rotate(-90 44 148)">true positive rate</text>
+        <!-- shaded AUC -->
+        <path d="M80,250 C130,150 210,86 320,66 C400,54 470,50 520,48 L520,250 Z" fill="#c7d2fe" fill-opacity="0.45"/>
+        <!-- ROC curve -->
+        <path d="M80,250 C130,150 210,86 320,66 C400,54 470,50 520,48" fill="none" stroke="#4338ca" stroke-width="2.6"/>
+        <!-- diagonal -->
+        <line x1="80" y1="250" x2="520" y2="48" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="5 4"/>
+        <text x="300" y="168" text-anchor="middle" font-size="9" fill="#64748b" transform="rotate(-25 300 168)">random model (AUC 0.5)</text>
+        <text x="360" y="120" text-anchor="middle" font-size="12" fill="#3730a3" font-weight="800">AUC &#8776; 0.81</text>
+        <text x="360" y="136" text-anchor="middle" font-size="8" fill="#4a5578">ranks a random fraud above a random legit 81% of the time</text>
+        <text x="96" y="240" font-size="7.5" fill="#64748b">strict threshold</text>
+        <text x="470" y="66" font-size="7.5" fill="#64748b">loose threshold</text>
+      </svg>
+    </figure>
+
+    <p>The <span class="term">ROC curve</span> plots the true-positive rate (recall) against the false-positive rate as the
+       threshold sweeps from strict to loose; the <span class="term">AUC</span> is the area beneath it, a single
+       <strong>threshold-free</strong> number equal to the probability the model ranks a random fraud above a random legit
+       transaction. 0.5 is a coin flip, 1.0 is perfect; our model scores about <strong>0.81</strong>. AUC is ideal for
+       comparing models, but when positives are very rare the <strong>precision-recall / average-precision</strong> view
+       often reflects real usefulness better.</p>
+  </section>
+
+  <!-- ===== Section 4: REAL-WORLD ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: Scoring the Fraud Model</h2></div>
+    <p>Put the whole toolkit on one table, and the difference between "looks great" and "actually works" becomes obvious.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · model-evaluation--transactions.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per transaction with <code>amount</code>, <code>hour</code>,
+        <code>account_age_days</code>, <code>txns_last_hour</code>, <code>foreign</code>, and
+        <code>high_risk_merchant</code>, plus the imbalanced label <code>is_fraud</code> (about 13% fraud).</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/model-evaluation--transactions.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 1,500 transactions</small></a>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Model / setting</th><th>Accuracy</th><th>Precision</th><th>Recall</th><th>AUC</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Flag nothing (baseline)</td><td>0.871</td><td>&#8212;</td><td>0.00</td><td>0.50</td></tr>
+          <tr><td class="nm">Gradient boosting @ 0.5</td><td>0.873</td><td>0.51</td><td>0.31</td><td>0.81</td></tr>
+          <tr><td class="nm">Gradient boosting @ 0.25</td><td>lower</td><td>0.38</td><td>0.43</td><td>0.81</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The baseline and the model have <em>the same accuracy</em>, yet one is worthless and the other catches a third of the
+       fraud, exactly what accuracy conceals. And when the target is a <strong>number</strong> instead of a class, the
+       parallel metrics take over: on a simple regression the notebook reports <strong>MAE = 2.29</strong> and
+       <strong>RMSE = 2.90</strong> (the typical error, in the target's units, with RMSE punishing big misses harder) and
+       <strong>R-squared = 0.85</strong> (the share of variance explained). Report an error metric <em>and</em> R-squared:
+       one gives the size of the typical miss, the other the proportion explained.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Evaluation in Machine Learning &amp; AI</h2></div>
+    <p>Choosing the metric is not a formality, it <span class="hl">defines what "good" means</span>, and different problems
+       demand different measures.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Situation</th><th>Reach for</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Balanced classes</td><td>accuracy, F1</td></tr>
+          <tr><td class="nm">Imbalanced classes (fraud, disease)</td><td>precision, recall, F1, average precision (PR-AUC)</td></tr>
+          <tr><td class="nm">Comparing / ranking models</td><td>ROC-AUC</td></tr>
+          <tr><td class="nm">Regression</td><td>RMSE or MAE, plus R-squared</td></tr>
+          <tr><td class="nm">Probabilities must be trustworthy</td><td>log loss, calibration curves</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>The metric <em>is</em> the product decision. A cancer-screening model is tuned for <strong>recall</strong> (never
+           miss a case, tolerate false alarms); a spam filter is tuned for <strong>precision</strong> (never trash real
+           mail). Picking the wrong one, most infamously reporting accuracy on imbalanced data, is a leading way that models
+           look great in a demo and fail in production. At the frontier the same logic scales into whole
+           <strong>benchmark suites</strong>: large language models are judged by families of task-specific metrics, and a
+           deep, active field of <strong>evaluation research</strong> exists precisely because "how good is it?" is never a
+           single number. Learning to choose and read the right metric is one of the most valuable skills in applied ML.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Evaluate a model in Python</h3>
+          <p>The companion notebook exposes how <strong>accuracy lies</strong> against a do-nothing baseline, draws the
+             <strong>confusion matrix</strong>, computes <strong>precision / recall / F1</strong>, sweeps the
+             <strong>threshold</strong> with a precision-recall curve, plots the <strong>ROC curve and AUC</strong> for two
+             models, and reports the <strong>regression metrics</strong> MAE / MSE / RMSE / R-squared, every cell
+             explained.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/model-evaluation.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/model-evaluation.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/model-evaluation.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly. <strong>Open in Colab</strong> runs it live. To run
+      locally, install <code>numpy</code>, <code>pandas</code>, <code>scikit-learn</code>, <code>matplotlib</code>,
+      <code>seaborn</code>, and <code>openpyxl</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Accuracy lies on imbalanced data</strong>: a do-nothing model scored 87% while catching zero fraud.</span></li>
+        <li><span class="ck">✓</span><span><strong>Precision</strong> (of flagged, how many real) and <strong>recall</strong> (of real, how many caught) come from the confusion matrix; <strong>F1</strong> balances them.</span></li>
+        <li><span class="ck">✓</span><span><strong>The threshold is a knob</strong>: lower it for more recall, raise it for more precision; pick it from the cost of each error.</span></li>
+        <li><span class="ck">✓</span><span><strong>ROC-AUC</strong> scores ranking regardless of threshold (0.5 random, 1 perfect); prefer <strong>average precision</strong> when positives are rare.</span></li>
+        <li><span class="ck">✓</span><span><strong>For regression</strong>: RMSE or MAE for the typical error size, plus R-squared for the share of variance explained.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges on the fraud table. Try them with scikit-learn before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Accuracy vs a do-nothing baseline</h4>
+        <p>Compare a most-frequent <code>DummyClassifier</code> to the real model on accuracy and recall.</p>
+        <div class="chint">Hint: <code>DummyClassifier(strategy="most_frequent")</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Precision, recall, F1</h4>
+        <p>From the confusion matrix, report the three classification scores.</p>
+        <div class="chint">Hint: <code>precision_score</code>, <code>recall_score</code>, <code>f1_score</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>The threshold trade-off</h4>
+        <p>Show recall rises and precision falls as the decision threshold is lowered.</p>
+        <div class="chint">Hint: <code>predict_proba</code>, then compare at 0.5, 0.3, 0.2.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>ROC-AUC comparison</h4>
+        <p>Compare the AUC of gradient boosting and logistic regression.</p>
+        <div class="chint">Hint: <code>roc_auc_score(y, model.predict_proba(X)[:,1])</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Regression metrics</h4>
+        <p>On a simple regression, report MAE, RMSE, and R-squared.</p>
+        <div class="chint">Hint: <code>mean_absolute_error</code>, <code>mean_squared_error</code>, <code>r2_score</code>.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code. Try
+           them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/model-evaluation--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/model-evaluation--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/model-evaluation--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on model evaluation. Answer them, hit <strong>Check Answers</strong>, and keep refining until
+       you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>You can now measure a model honestly, but good numbers hide traps. <strong>Chapter 112 &#183; Model
+         Pitfalls</strong> covers what goes wrong, overfitting and the bias-variance trade-off, imbalanced data and SMOTE,
+         and the cross-validation strategies that keep your estimates trustworthy.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="optimization-and-gradient-descent.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 110 · Previous</span><br><span class="cn-title">Optimization &amp; Gradient Descent</span></span>
+    </a>
+    <a class="cn-btn next" href="model-pitfalls.html">
+      <span><span class="cn-dir">Chapter 112 · Next</span><br><span class="cn-title">Model Pitfalls</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 111 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch111";
+  window.QUIZ_DATA = [
+    {
+      q: "On imbalanced data, accuracy is misleading because…",
+      options: ["It is hard to compute", "A model that always predicts the majority class scores high while catching none of the minority", "It requires probabilities", "It only works for regression"],
+      answer: 1,
+      explain: "With 13% fraud, predicting 'legit' for everyone is 87% accurate but has zero recall, useless yet high-scoring."
+    },
+    {
+      q: "Precision is…",
+      options: ["Of actual positives, the fraction caught", "Of predicted positives, the fraction that are actually positive (TP/(TP+FP))", "The overall accuracy", "The area under the ROC curve"],
+      answer: 1,
+      explain: "Precision measures false-alarm cost: of everything we flagged, how much was really positive."
+    },
+    {
+      q: "Recall is…",
+      options: ["Of predicted positives, the fraction correct", "Of actual positives, the fraction the model caught (TP/(TP+FN))", "The mean squared error", "The threshold"],
+      answer: 1,
+      explain: "Recall measures the cost of misses: of all the real positives, how many did we catch."
+    },
+    {
+      q: "Lowering the decision threshold of a classifier tends to…",
+      options: ["Raise precision and lower recall", "Raise recall and lower precision", "Raise both", "Change neither"],
+      answer: 1,
+      explain: "A lower threshold flags more cases, catching more positives (recall up) but with more false alarms (precision down)."
+    },
+    {
+      q: "ROC-AUC measures…",
+      options: ["Accuracy at threshold 0.5", "Threshold-free ranking quality: the chance the model ranks a random positive above a random negative", "The mean absolute error", "The number of features"],
+      answer: 1,
+      explain: "AUC summarizes performance across all thresholds; 0.5 is random, 1.0 is perfect. It is ideal for comparing models."
+    },
+    {
+      q: "When positives are very rare, the most informative curve is often…",
+      options: ["The ROC curve", "The precision-recall curve (and average precision)", "A histogram", "The learning curve"],
+      answer: 1,
+      explain: "With rare positives, precision-recall / average precision reflects real-world usefulness better than ROC-AUC."
+    },
+    {
+      q: "RMSE differs from MAE in that it…",
+      options: ["Ignores large errors", "Squares the errors before averaging (then takes the root), so it penalizes big misses more", "Is always smaller", "Only works for classification"],
+      answer: 1,
+      explain: "Squaring makes large errors dominate; the square root returns the score to the target's original units."
+    },
+    {
+      q: "R-squared reports…",
+      options: ["The average error in dollars", "The fraction of the target's variance the model explains (1 perfect, 0 = predicting the mean)", "The threshold", "The AUC"],
+      answer: 1,
+      explain: "R-squared is a unitless share-of-variance measure; report it alongside an error metric like RMSE or MAE."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

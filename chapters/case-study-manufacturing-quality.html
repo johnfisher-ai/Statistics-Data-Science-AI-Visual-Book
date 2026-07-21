@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 88 · Case Study: Manufacturing Quality — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#ecfeff; border:1px solid #a5f3fc; border-left:4px solid #0891b2; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#0e7490; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+    .report-card { background:#fff; border:1px solid #cffafe; border-left:5px solid #0e7490; border-radius:14px;
+                   padding:1.3rem 1.5rem; margin:1.3rem 0; box-shadow:0 6px 18px rgba(8,51,68,0.06); }
+    .report-card .rep-tag { font-size:0.7rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#0e7490; }
+    .report-card h3 { margin:0.25rem 0 0.7rem; font-size:1.12rem; color:var(--ink); }
+    .report-card p { color:var(--ink-soft); line-height:1.75; margin:0.55rem 0; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/case-study-manufacturing-quality.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XIII · Inference Case Studies</span><span class="sep">/</span>
+      <span>Chapter 88</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XIII · Case Study</span> When the average lies</div>
+    <h1>Case Study: <span class="accent">Manufacturing Quality</span></h1>
+    <p class="dek">A factory line that looks perfectly on-target on average is hiding two real problems. With a one-sample
+       test against spec, an ANOVA across lines, and a defect-by-shift chi-square, we expose a drifting line and a risky
+       night shift, and close Part XIII.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~14 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 88</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Quality control is inference under pressure: a wrong call ships defects or halts a healthy line. This
+       final case study shows the most important lesson of the Part, that a single summary number can hide real problems,
+       and how the right tests pull them into the light.</p>
+
+    <div class="def-card">
+      <div class="sigma">250g</div>
+      <div class="def-body">
+        <span class="def-kw">The scenario.</span> A plant fills packages to a <span class="def-kw">250 g target</span>
+        across three <span class="def-kw">lines</span> and two <span class="def-kw">shifts</span> (day/night), and logs
+        any <span class="def-kw">defects</span>. Quality wants to know if the process is healthy, and if not, where to
+        look.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🎯</div>
+      <div><div class="ctitle">The three questions</div>
+        <p>(1) Is the overall mean fill weight on the 250 g target? (2) Do the three lines differ in average weight?
+           (3) Is the defect rate associated with shift?</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1 ===== -->
+  <section id="data">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Data &amp; The Questions</h2></div>
+    <p>One row per sampled unit: its <code>line</code>, <code>shift</code>, measured <code>fill_weight_g</code>, and
+       whether a <code>defect</code> was found. The overall average weight is about <strong>249.85 g</strong>, reassuringly
+       close to 250.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · case-study-manufacturing-quality--manufacturing_quality.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per unit with <code>line</code> (three lines), <code>shift</code> (day/night),
+        <code>fill_weight_g</code>, <code>defect</code> (0/1), and <code>defect_type</code>.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/case-study-manufacturing-quality--manufacturing_quality.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 330 units</small></a>
+      </div>
+    </div>
+
+    <p>If you stopped at the overall average, you would sign off the process as healthy. That is the trap this chapter is
+       built to expose: an aggregate on target can hide one line running light, another running heavy, and defects
+       clustering in one shift. We test all three questions before concluding anything.</p>
+  </section>
+
+  <!-- ===== Section 2 ===== -->
+  <section id="choose">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Three Questions, Three Tests</h2></div>
+    <p>Each question's structure picks its tool: one mean vs a target, three groups compared, and a rate by category.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Question</th><th>Structure</th><th>Test</th><th>H&#8320; / H&#8321;</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">On the 250 g target?</td><td>one mean vs a value</td><td>one-sample t-test</td><td>&#956; = 250 / &#956; &#8800; 250</td></tr>
+          <tr><td class="nm">Do the lines differ?</td><td>3 independent groups, numeric</td><td>one-way ANOVA + Tukey</td><td>lines equal / a line differs</td></tr>
+          <tr><td class="nm">Defects tied to shift?</td><td>2 categorical variables</td><td>chi-square independence</td><td>independent / associated</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The subtle point is that Q1 and Q2 are <em>different questions</em>. The process can be on target
+       <span class="hl">on average</span> while individual lines drift in opposite directions and cancel out. A one-sample
+       test against the target will not catch that, only comparing the lines will. This is precisely the trap to check
+       for.</p>
+  </section>
+
+  <!-- ===== Section 3 ===== -->
+  <section id="analysis">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The Analysis &amp; Results</h2></div>
+    <p>The one-sample test checks the aggregate; ANOVA-plus-Tukey finds the drifting line; chi-square ties defects to
+       shift.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 176" width="100%" font-family="Inter, sans-serif" aria-label="Mean weight by line around the 250 gram target; Line-2 runs light while Lines 1 and 3 run slightly heavy, so the average looks on target">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">On target on average, but Line-2 is drifting light</text>
+        <line x1="90" y1="92" x2="600" y2="92" stroke="#ef4444" stroke-width="1.4" stroke-dasharray="5 4"/>
+        <text x="612" y="95" font-size="8.5" fill="#b91c1c" font-weight="700">250 g</text>
+        <rect x="150" y="74" width="90" height="18" fill="#67e8f9"/><text x="195" y="68" text-anchor="middle" font-size="9" fill="#0e7490" font-weight="700">250.5</text><text x="195" y="120" text-anchor="middle" font-size="9" fill="#475569">Line-1</text>
+        <rect x="300" y="92" width="90" height="30" fill="#0e7490"/><text x="345" y="136" text-anchor="middle" font-size="9" fill="#0e7490" font-weight="800">Line-2</text><text x="345" y="150" text-anchor="middle" font-size="8.5" fill="#0e7490">248.7 (light)</text>
+        <rect x="450" y="76" width="90" height="16" fill="#67e8f9"/><text x="495" y="70" text-anchor="middle" font-size="9" fill="#0e7490" font-weight="700">250.4</text><text x="495" y="120" text-anchor="middle" font-size="9" fill="#475569">Line-3</text>
+        <text x="195" y="135" text-anchor="middle" font-size="8.5" fill="#64748b">slightly heavy</text>
+      </svg>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Question</th><th>Result</th><th>Reading</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Q1 mean vs 250 g</td><td>249.85 g, t = &#8722;0.98, p &#8776; 0.33</td><td>on target (in aggregate)</td></tr>
+          <tr><td class="nm">Q2 ANOVA across lines</td><td>F = 15.7, p &#8776; 10&#8315;&#8311;</td><td>lines differ</td></tr>
+          <tr><td class="nm">Q2 Tukey</td><td>Line-2 vs Line-1 (&#8722;1.8 g) and vs Line-3 (&#8722;1.7 g) differ; 1 &#8776; 3</td><td>Line-2 is the culprit</td></tr>
+          <tr><td class="nm">Q3 defect &#215; shift</td><td>day 6.0% vs night 19.6%, &#967;&#178; = 12.8, p &#8776; 0.0003</td><td>night is worse</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The whole lesson in one dataset. The overall mean is statistically <strong>on target</strong> (p &#8776; 0.33), yet
+       the ANOVA says the lines differ (p &#8776; 10&#8315;&#8311;, &#951;&#178; &#8776; 0.09, a moderate effect) and Tukey
+       pins it on <strong>Line-2</strong>, running about 1.7 g light while Lines 1 and 3 sit slightly heavy, the errors
+       cancel in the average. Separately, defects are <strong>three times more common at night</strong>
+       (19.6% vs 6.0%, p &#8776; 0.0003). Two real, actionable problems hidden behind a healthy-looking headline.</p>
+
+    <p><strong>Assumptions, checked.</strong> Before trusting the line ANOVA we confirm its conditions:
+       <span class="term">Levene's test</span> (p &#8776; 0.79) for equal variance and a residual QQ plot with
+       <span class="term">Shapiro</span> (p &#8776; 0.58) for normal residuals, both pass, and a distribution-free
+       <span class="term">Kruskal-Wallis</span> cross-check agrees. Had a check failed, the remedy is Welch's ANOVA
+       for unequal variance or Kruskal-Wallis for non-normality.</p>
+  </section>
+
+  <!-- ===== Section 4: Report ===== -->
+  <section id="report">
+    <div class="section-eyebrow"><div class="num">4</div><h2>The Statistician's Report</h2></div>
+    <p>How to brief the plant manager, with the punchline first.</p>
+
+    <div class="report-card">
+      <div class="rep-tag">📋 Statistician's report &#183; to the plant manager</div>
+      <h3>Findings: on-target on average, but two real problems</h3>
+      <p><strong>What we found.</strong> Overall the line hits its 250 g target on average, so a single headline number
+        would say "all good." It is not. <strong>Line-2 is under-filling</strong> by about <strong>1.7 grams</strong>
+        while Lines 1 and 3 run slightly heavy, the over- and under-fills cancel out in the plant average but are real.
+        And <strong>defects are about three times more common on the night shift</strong> (about 20% vs 6%).</p>
+      <p><strong>How confident are we?</strong> The line difference is highly unlikely to be chance (less than 1 in a
+        million), and the careful pairwise comparison isolates Line-2. The night-shift defect difference is also clear
+        (about 1 in 3,000 by chance).</p>
+      <p><strong>What to do.</strong> (1) Recalibrate Line-2's filler, it risks under-weight complaints, while the heavy
+        lines give away product. (2) Investigate the night shift, staffing, fatigue, lighting, or maintenance timing,
+        because that defect rate is the bigger cost.</p>
+      <p><strong>Caveats.</strong> The on-target average is a warning to monitor each line separately, not just the plant
+        total, aggregates can mask offsetting drift. This is a one-time snapshot; set up ongoing control charts to catch
+        drift as it happens.</p>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">In the field</div>
+        <p>This is statistical process control, the ancestor of modern anomaly detection and monitoring. The "aggregate
+           hides the problem" trap is the same one that bites dashboards and ML metrics: a flat overall accuracy can hide
+           a subgroup the model fails on. Segment, then test.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Run the quality analysis in Python</h3>
+          <p>The companion notebook <strong>explores by line and by shift first</strong> (so the hidden problems surface), then uses <strong>statsmodels</strong> (<code>DescrStatsW</code>, <code>anova_lm</code>, <code>pairwise_tukeyhsd</code>) for the spec test, the ANOVA, and the post-hoc, and scipy for the defect-by-shift chi-square.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/case-study-manufacturing-quality.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-manufacturing-quality.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-manufacturing-quality.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, <code>scipy</code>,
+      <code>matplotlib</code>, <code>statsmodels</code>, and <code>openpyxl</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Aggregates can lie</strong>: the plant mean is on target (p &#8776; 0.33), yet the lines genuinely differ.</span></li>
+        <li><span class="ck">✓</span><span><strong>One mean vs a target</strong> &#8594; one-sample t; <strong>3 lines</strong> &#8594; ANOVA + Tukey to find the culprit (Line-2).</span></li>
+        <li><span class="ck">✓</span><span><strong>Defects by shift</strong> &#8594; chi-square: night 19.6% vs day 6.0% (p &#8776; 0.0003), a real, actionable gap.</span></li>
+        <li><span class="ck">✓</span><span><strong>Always segment</strong> before declaring a process healthy; monitor each line, not just the total.</span></li>
+        <li><span class="ck">✓</span><span><strong>Part XIII complete</strong>: five case studies, raw question to statistician's report, the whole inference playbook in action.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on this case study. Answer them, hit <strong>Check Answers</strong>, and keep refining until
+       you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">🏁</div>
+    <div><div class="ctitle">That completes Part XIII</div>
+      <p>Across five case studies you turned raw business questions, A/B tests, group comparisons, a clinical trial, a
+         survey, and a factory line, into the right test, run correctly and reported honestly. Next the book turns to
+         <strong>relationships between variables</strong>: <strong>Part XIV &#183; Correlation &amp; Association</strong>,
+         starting with covariance.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="case-study-a-customer-satisfaction-survey.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 87 · Previous</span><br><span class="cn-title">Case Study: A Customer Satisfaction Survey</span></span>
+    </a>
+    <a class="cn-btn next" href="covariance.html">
+      <span><span class="cn-dir">Chapter 89 · Next</span><br><span class="cn-title">Covariance</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 88 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch88";
+  window.QUIZ_DATA = [
+    {
+      q: "Testing whether the overall mean fill weight equals the 250 g target uses a…",
+      options: ["Two-sample t-test", "One-sample t-test", "Chi-square test", "ANOVA"],
+      answer: 1,
+      explain: "Comparing one group's mean to a fixed target value is the one-sample t-test."
+    },
+    {
+      q: "The overall mean was on target (p ≈ 0.33), yet the lines differed (ANOVA p ≈ 10⁻⁷). How can both be true?",
+      options: ["One result must be wrong", "One line runs light and others run heavy, so the errors cancel in the average", "The tests disagree randomly", "The target is wrong"],
+      answer: 1,
+      explain: "Offsetting drift (Line-2 light, Lines 1 & 3 heavy) averages out, so the aggregate looks fine."
+    },
+    {
+      q: "Comparing fill weight across the three lines uses…",
+      options: ["A one-sample t-test", "One-way ANOVA", "A two-proportion z-test", "Wilcoxon"],
+      answer: 1,
+      explain: "Three independent groups on a numeric outcome → one-way ANOVA (then Tukey for the culprit)."
+    },
+    {
+      q: "After a significant ANOVA, Tukey HSD was used to…",
+      options: ["Re-test the overall mean", "Identify which specific line differs, while controlling the error rate", "Compute the defect rate", "Check normality"],
+      answer: 1,
+      explain: "Tukey's post-hoc localizes the difference to Line-2 with the family-wise error controlled."
+    },
+    {
+      q: "Testing whether the defect rate depends on shift (day/night) uses a…",
+      options: ["Paired t-test", "Chi-square test of independence", "One-sample t-test", "ANOVA"],
+      answer: 1,
+      explain: "Two categorical variables (shift × defect) → the chi-square test of independence."
+    },
+    {
+      q: "The defect rate was 6.0% (day) vs 19.6% (night), p ≈ 0.0003. This means…",
+      options: ["Shifts are equally safe", "Defects are significantly more common at night, an actionable difference", "The test failed", "Night has fewer defects"],
+      answer: 1,
+      explain: "The night rate is about triple the day rate, and the association is highly unlikely to be chance."
+    },
+    {
+      q: "The big-picture lesson of this case study is…",
+      options: ["Averages are always enough", "A healthy-looking aggregate can hide real subgroup problems, so segment then test", "Never use the mean", "Defects don't matter"],
+      answer: 1,
+      explain: "The on-target average masked a drifting line and a risky shift; segmentation revealed both."
+    },
+    {
+      q: "This 'aggregate hides the problem' trap also appears in ML as…",
+      options: ["Faster training", "A flat overall accuracy hiding a subgroup the model fails on", "Larger datasets", "Lower learning rates"],
+      answer: 1,
+      explain: "Overall metrics can mask poor performance on a slice; the fix is the same, segment and test."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

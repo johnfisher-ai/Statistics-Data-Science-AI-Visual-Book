@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 11 · Shape of a Distribution — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.88rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.65rem 0.9rem; text-align:left; border-bottom:1px solid var(--line); }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.76rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#ecfeff; border:1px solid #a5f3fc; border-left:4px solid #0891b2; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#0e7490; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none; padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<!-- ============ TOP NAV ============ -->
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/shape-of-a-distribution.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<!-- ============ HERO ============ -->
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part II · Describing Data</span><span class="sep">/</span>
+      <span>Chapter 11</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part II · Describing Data</span> Summarizing a dataset</div>
+    <h1>Shape of a <span class="accent">Distribution</span></h1>
+    <p class="dek">Center tells you where the data sits. Spread tells you how wide it runs. Shape tells you what its
+       silhouette looks like: which way it leans, how heavy its tails are, and how many peaks it has.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~12 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 11</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <!-- ===== Intro ===== -->
+  <section id="intro">
+    <p class="lead">Two datasets can share the same mean and the same standard deviation and still look nothing alike.
+       The missing piece is <span class="term">shape</span>: the third descriptive pillar after center and spread.</p>
+
+    <div class="def-card">
+      <div class="sigma">∿</div>
+      <div class="def-body">
+        The <span class="def-kw">shape</span> of a distribution describes its silhouette through three questions:
+        is it <span class="def-kw">symmetric or skewed</span>, how heavy are its <span class="def-kw">tails
+        (kurtosis)</span>, and how many peaks does it have (<span class="def-kw">modality</span>)?
+      </div>
+    </div>
+    <div class="callout note">
+      <div class="cico">🧱</div>
+      <div><div class="ctitle">The third pillar</div>
+        <p>Chapter 8 gave you center, Chapter 9 gave you spread. Shape completes the trio. It is also what connects
+           back to position: skew is exactly what makes the median pull away from the mean.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: symmetry & skew ===== -->
+  <section id="skew">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Symmetry &amp; Skewness</h2></div>
+    <p>A <span class="hl">symmetric</span> distribution mirrors itself around its center. A
+       <span class="hl">skewed</span> one has one tail stretched longer than the other. The golden rule for naming
+       it: <strong>name the skew by the tail that stretches, not by where the bulk of the data sits.</strong></p>
+
+    <figure style="margin:1.5rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.4rem">
+      <svg viewBox="0 0 720 250" width="100%" font-family="Inter, sans-serif" aria-label="Left-skewed, symmetric, and right-skewed distributions with mean median mode markers">
+        <!-- baseline -->
+        <line x1="10" y1="192" x2="710" y2="192" stroke="#cdd3e6" stroke-width="1"/>
+        <!-- ===== Panel 1: LEFT skew (tail to the left) ===== -->
+        <path d="M20,190 C95,188 120,178 150,150 C170,130 185,80 210,78 C228,77 235,150 240,190" fill="#e6effe" stroke="#2563eb" stroke-width="2.5"/>
+        <!-- markers: mean < median < mode (mean leftmost) -->
+        <line x1="168" y1="192" x2="168" y2="118" stroke="#db2777" stroke-width="2"/>
+        <line x1="190" y1="192" x2="190" y2="96"  stroke="#059669" stroke-width="2"/>
+        <line x1="210" y1="192" x2="210" y2="80"  stroke="#d97706" stroke-width="2"/>
+        <text x="130" y="222" font-size="12" fill="#1a2138" font-weight="800" text-anchor="middle">Left-skewed</text>
+        <text x="130" y="238" font-size="9.5" fill="#8b94b3" text-anchor="middle">tail points left · mean &lt; median &lt; mode</text>
+        <!-- ===== Panel 2: SYMMETRIC ===== -->
+        <path d="M255,190 C330,188 345,80 360,78 C375,80 390,188 465,190" fill="#e0f7fb" stroke="#0891b2" stroke-width="2.5"/>
+        <line x1="360" y1="192" x2="360" y2="80" stroke="#1a2138" stroke-width="2"/>
+        <text x="360" y="222" font-size="12" fill="#1a2138" font-weight="800" text-anchor="middle">Symmetric</text>
+        <text x="360" y="238" font-size="9.5" fill="#8b94b3" text-anchor="middle">balanced · mean ≈ median ≈ mode</text>
+        <!-- ===== Panel 3: RIGHT skew (tail to the right) ===== -->
+        <path d="M480,190 C485,150 492,77 510,78 C535,80 550,130 570,150 C600,178 625,188 700,190" fill="#fef3e2" stroke="#d97706" stroke-width="2.5"/>
+        <!-- markers: mode < median < mean (mean rightmost) -->
+        <line x1="510" y1="192" x2="510" y2="80"  stroke="#d97706" stroke-width="2"/>
+        <line x1="530" y1="192" x2="530" y2="96"  stroke="#059669" stroke-width="2"/>
+        <line x1="552" y1="192" x2="552" y2="118" stroke="#db2777" stroke-width="2"/>
+        <text x="590" y="222" font-size="12" fill="#1a2138" font-weight="800" text-anchor="middle">Right-skewed</text>
+        <text x="590" y="238" font-size="9.5" fill="#8b94b3" text-anchor="middle">tail points right · mode &lt; median &lt; mean</text>
+        <!-- legend -->
+        <g font-size="10" font-weight="700">
+          <rect x="300" y="8" width="13" height="3" fill="#d97706"/><text x="318" y="12" fill="#4a5578">mode</text>
+          <rect x="360" y="8" width="13" height="3" fill="#059669"/><text x="378" y="12" fill="#4a5578">median</text>
+          <rect x="432" y="8" width="13" height="3" fill="#db2777"/><text x="450" y="12" fill="#4a5578">mean</text>
+        </g>
+      </svg>
+      <figcaption style="text-align:center;font-size:0.8rem;color:var(--ink-faint);margin-top:0.3rem">
+        The mean chases the tail: extreme values tug the mean toward the long side, while the median stays in the bulk.
+      </figcaption>
+    </figure>
+
+    <div class="callout key">
+      <div class="cico">🧲</div>
+      <div><div class="ctitle">The mean chases the tail</div>
+        <p>For a typical smooth, unimodal distribution, the ordering of the three centers signals the skew:
+           <strong>right skew → mode &lt; median &lt; mean</strong>, <strong>left skew → mean &lt; median &lt; mode</strong>.
+           A fast hand check is the gap <em>mean − median</em>: positive leans right, negative leans left.</p></div>
+    </div>
+
+    <div class="callout note">
+      <div class="cico">⚠️</div>
+      <div><div class="ctitle">It is a tendency, not a law</div>
+        <p>That mean-median-mode ordering "fails with surprising frequency," especially for discrete or multimodal
+           data. The statement that is always safe: positive skewness means the <em>right tail is longer or heavier</em>.
+           Treat the ordering as the usual companion, not a guarantee.</p></div>
+    </div>
+
+    <p>Software reports skew as a single number (the Fisher-Pearson moment coefficient). A common reading:</p>
+    <div class="cardgrid cols-3">
+      <div class="ic-card bg-cyan"><h4 class="tx-cyan">|skew| &lt; 0.5</h4><p>Fairly symmetric.</p></div>
+      <div class="ic-card bg-amber"><h4 class="tx-amber">0.5 to 1</h4><p>Moderately skewed.</p></div>
+      <div class="ic-card bg-pink"><h4 class="tx-pink">&#8805; 1</h4><p>Highly skewed.</p></div>
+    </div>
+    <p style="font-size:0.9rem;color:var(--ink-faint)">The sign gives direction (+ right, − left); the magnitude
+       gives severity. These cutoffs are heuristics, not hard law, and depend on sample size.</p>
+  </section>
+
+  <!-- ===== Section 2: modality ===== -->
+  <section id="modality">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Modality: Counting the Peaks</h2></div>
+    <p>Modality is simply how many peaks the distribution has. It is one of the most useful shape clues in practice.</p>
+    <div class="cardgrid cols-2">
+      <div class="ic-card bg-cyan"><h4 class="tx-cyan">Unimodal</h4><p>One clear peak. Most textbook distributions, including the bell curve.</p></div>
+      <div class="ic-card bg-purple"><h4 class="tx-purple">Bimodal</h4><p>Two distinct peaks, a strong hint of two mixed groups.</p></div>
+      <div class="ic-card bg-amber"><h4 class="tx-amber">Multimodal</h4><p>Three or more peaks.</p></div>
+      <div class="ic-card bg-green"><h4 class="tx-green">Uniform</h4><p>No peak; values roughly equally likely, like a fair die.</p></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">🔍</div>
+      <div><div class="ctitle">Two peaks usually mean two groups</div>
+        <p>A bimodal shape is the data telling you to disaggregate. Adult heights (men and women), exam scores
+           (studied vs. did not), restaurant traffic (lunch and dinner rushes): each is two subpopulations stacked
+           together. The overall mean lands in the empty valley between the humps and describes almost nobody.</p></div>
+    </div>
+    <p style="font-size:0.9rem;color:var(--ink-faint)">Careful with words here: the number of peaks ("modes" in the
+       shape sense) is not the same as the single <em>mode</em> statistic from Chapter 8.</p>
+  </section>
+
+  <!-- ===== Section 3: kurtosis ===== -->
+  <section id="kurtosis">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Kurtosis: It Is About the Tails</h2></div>
+    <p>Kurtosis is the most misunderstood shape statistic. For over a century textbooks called it "peakedness."
+       That framing is now considered wrong. <strong>Kurtosis measures tailedness</strong>: how outlier-prone a
+       distribution is, how much probability lives far from the center.</p>
+
+    <figure style="margin:1.5rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.4rem">
+      <svg viewBox="0 0 580 280" width="100%" font-family="Inter, sans-serif" aria-label="Platykurtic, mesokurtic, and leptokurtic curves emphasizing tail weight">
+        <line x1="30" y1="232" x2="550" y2="232" stroke="#cdd3e6" stroke-width="1"/>
+        <!-- platykurtic: low, broad, light tails -->
+        <path d="M40,230 C150,224 220,150 290,150 C360,150 430,224 540,230" fill="none" stroke="#d97706" stroke-width="2.5"/>
+        <!-- mesokurtic: normal -->
+        <path d="M55,231 C190,228 250,95 290,95 C330,95 390,228 525,231" fill="none" stroke="#0891b2" stroke-width="2.5"/>
+        <!-- leptokurtic: tall narrow peak AND heavier tails (rides above others far out) -->
+        <path d="M40,224 C160,214 270,48 290,48 C310,48 420,214 540,224" fill="none" stroke="#7c3aed" stroke-width="2.5"/>
+        <!-- tail emphasis -->
+        <ellipse cx="70" cy="222" rx="42" ry="20" fill="none" stroke="#db2777" stroke-width="1.6" stroke-dasharray="4 3"/>
+        <ellipse cx="510" cy="222" rx="42" ry="20" fill="none" stroke="#db2777" stroke-width="1.6" stroke-dasharray="4 3"/>
+        <text x="70" y="262" font-size="10.5" fill="#db2777" font-weight="800" text-anchor="middle">look here:</text>
+        <text x="510" y="262" font-size="10.5" fill="#db2777" font-weight="800" text-anchor="middle">the tails</text>
+        <!-- legend -->
+        <g font-size="11" font-weight="700">
+          <rect x="330" y="60" width="16" height="3" fill="#7c3aed"/><text x="352" y="64" fill="#4a5578">Leptokurtic · heavy tails (excess &gt; 0)</text>
+          <rect x="330" y="80" width="16" height="3" fill="#0891b2"/><text x="352" y="84" fill="#4a5578">Mesokurtic · normal (excess ≈ 0)</text>
+          <rect x="330" y="100" width="16" height="3" fill="#d97706"/><text x="352" y="104" fill="#4a5578">Platykurtic · light tails (excess &lt; 0)</text>
+        </g>
+      </svg>
+      <figcaption style="text-align:center;font-size:0.8rem;color:var(--ink-faint);margin-top:0.3rem">
+        The peaks differ too, but that is a distraction. What kurtosis actually pins down is the weight in the tails.
+      </figcaption>
+    </figure>
+
+    <div style="overflow-x:auto;margin:1.2rem 0">
+      <table class="disp-table">
+        <thead><tr><th>Type</th><th>Excess kurtosis</th><th>Tails</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td><b>Mesokurtic</b></td><td>≈ 0</td><td>Normal-like</td><td>The normal distribution</td></tr>
+          <tr><td><b>Leptokurtic</b></td><td>&gt; 0</td><td>Heavy, outlier-prone</td><td>Financial returns, t-distribution</td></tr>
+          <tr><td><b>Platykurtic</b></td><td>&lt; 0</td><td>Light, few outliers</td><td>The uniform distribution</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">3️⃣</div>
+      <div><div class="ctitle">Raw 3 vs. excess 0</div>
+        <p>A normal distribution has raw kurtosis <strong>3</strong>. Most software subtracts that to report
+           <strong>excess kurtosis</strong>, so a normal shape reads <strong>0</strong>. SciPy's
+           <code>kurtosis()</code> returns excess by default. Always state which convention you mean.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 4: reading shape + why it matters ===== -->
+  <section id="why">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Reading Shape, and Why It Matters</h2></div>
+    <p>Four views reveal shape, each with a catch:</p>
+    <div class="cardgrid cols-2">
+      <div class="ic-card bg-cyan"><div class="ic" style="background:#fff">📊</div><h4>Histogram</h4><p>The workhorse for modality and skew. But the bin width can hide or invent peaks, so try a few.</p></div>
+      <div class="ic-card bg-purple"><div class="ic" style="background:#fff">〰️</div><h4>Density / KDE</h4><p>A smoothed histogram, cleaner for comparing groups; the smoothing bandwidth is the knob here.</p></div>
+      <div class="ic-card bg-amber"><div class="ic" style="background:#fff">📦</div><h4>Box plot</h4><p>Asymmetric whiskers flag skew; far-out points flag heavy tails. It cannot show modality, though.</p></div>
+      <div class="ic-card bg-green"><div class="ic" style="background:#fff">📐</div><h4>Q-Q plot</h4><p>Points on the diagonal mean normal; a curved "banana" means skew; bowed-out ends mean heavy tails.</p></div>
+    </div>
+
+    <div class="callout note">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why shape matters for data science</div>
+        <p>Many classic methods assume roughly symmetric, light-tailed data: t-tests, ANOVA, linear regression
+           (normal residuals), and confidence intervals built on the normal curve. Skew makes the mean misleading,
+           so report the median for skewed quantities like income. Heavy tails mean outlier risk, which is central
+           to anomaly detection and financial risk models.</p></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">🪵</div>
+      <div><div class="ctitle">The log transform: a practical lever</div>
+        <p>For strictly positive, right-skewed data spanning orders of magnitude (income, prices, counts), a
+           <strong>log transform</strong> compresses the large values and pulls the tail in, often making the shape
+           nearly symmetric. Two limits: the log is undefined at zero or negatives (use <code>log1p</code> or a
+           shift), and your numbers now live on a log scale, so interpret accordingly.</p></div>
+    </div>
+
+    <p style="font-size:0.9rem;color:var(--ink-faint)">A natural next step from shape is putting any value on a
+       common scale. That is the <strong>z-score</strong>, the subject of Chapter 12 on standardization.</p>
+  </section>
+
+  <!-- ===== Section 5: In ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Distribution Shape in Machine Learning &amp; AI</h2></div>
+    <p>A feature's shape decides how you should treat it. Skew and heavy tails are the reasons behind some of the most
+       common preprocessing steps, and behind why some models struggle with raw data.</p>
+
+    <table class="disp-table">
+      <thead>
+        <tr><th>Shape feature</th><th>Where it shows up in ML</th><th>What you do about it</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="nm tx-cyan">Right skew</td><td>Skewed features (prices, counts, durations) break the symmetry many models expect</td><td>A <strong>log or power transform</strong> pulls the tail in and often improves the fit</td></tr>
+        <tr><td class="nm tx-purple">Heavy tails (high kurtosis)</td><td>Outlier-prone features and residuals inflate error and destabilize training</td><td>Use <strong>robust losses or scalers</strong>, or clip and winsorize the extremes</td></tr>
+        <tr><td class="nm tx-amber">Normality</td><td>Linear models, LDA, and many tests assume roughly normal residuals or features</td><td><strong>Check the shape first</strong> (a histogram or QQ plot) before trusting those assumptions</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">The log transform is a shape fix</div>
+        <p>When a practitioner reaches for <code>log1p</code> on a price or count column, they are correcting
+           <strong>skew</strong>, turning a long-tailed feature into a near-symmetric one so a model that assumes
+           symmetry can do its job. Reading the shape is what tells you the transform is needed in the first place.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 6: Real-World Example ===== -->
+  <section id="real-world">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Real-World Example: The Shape of Insurance Claims</h2></div>
+    <p>Insurance claims are a textbook heavy-tailed distribution: most are modest, a few are enormous. This set of
+       <strong>600 claims</strong> is strongly right-skewed (skewness about <strong>3.7</strong>) with fat tails (high
+       kurtosis), so the <strong>mean</strong> sits well above the <strong>median</strong>. The companion notebook
+       measures its skewness and kurtosis, and shows a <strong>log transform</strong> pulling it back toward symmetry.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · shape-of-a-distribution--insurance_claims.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per claim: <code>claim_id</code>, <code>region</code> (North, South, East,
+        West), and <code>claim_amount</code> in US dollars. The amount column is deliberately heavy-tailed, so it
+        shows positive skewness and high kurtosis clearly, and responds well to a log transform.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/shape-of-a-distribution--insurance_claims.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 600 claims</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Bring it to life in Python</h3>
+          <p>The companion notebook plots symmetric, skewed, and bimodal samples with their skew and kurtosis,
+             shows the mean chasing the tail, proves kurtosis is about tails not peaks, splits a bimodal mixture,
+             and tames a long tail with a log transform.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/shape-of-a-distribution.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/shape-of-a-distribution.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/shape-of-a-distribution.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>,
+      <code>scipy</code>, <code>matplotlib</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Key Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Shape</strong> is the third descriptive pillar: symmetry, tails, and modality.</span></li>
+        <li><span class="ck">✓</span><span><strong>Skewness</strong> is named by the stretched tail; the mean chases the tail, so mean &gt; median signals right skew.</span></li>
+        <li><span class="ck">✓</span><span><strong>Kurtosis is about tails</strong> (outlier-proneness), not peak height; normal excess kurtosis is 0.</span></li>
+        <li><span class="ck">✓</span><span><strong>A bimodal shape</strong> usually means two subpopulations are mixed; split them.</span></li>
+        <li><span class="ck">✓</span><span><strong>Shape drives method choice</strong>: report the median for skewed data, and a log transform can straighten a long right tail.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Practice Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them on paper or in Python before checking the solutions.</p>
+
+    <div class="challenges">
+      <div class="challenge">
+        <div class="cnum">1</div>
+        <div class="cbody">
+          <h4>Name the skew</h4>
+          <p>House prices have a mean of <code>420,000</code> and a median of <code>350,000</code>. Is the data
+             left- or right-skewed, and which number better describes a typical home?</p>
+          <div class="chint">Hint: the mean chases the tail. Which side is it pulled toward?</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">2</div>
+        <div class="cbody">
+          <h4>Measure the skew</h4>
+          <p>Generate <code>rng.exponential(scale=5, size=3000)</code>, compute its skewness with SciPy, and
+             classify it with the 0.5 / 1 rule of thumb.</p>
+          <div class="chint">Hint: <code>scipy.stats.skew</code>; sign gives direction, size gives severity.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">3</div>
+        <div class="cbody">
+          <h4>Kurtosis means tails</h4>
+          <p>Compute the excess kurtosis of a normal sample and a Laplace sample of the same size. Label each
+             mesokurtic / leptokurtic / platykurtic and say what it implies.</p>
+          <div class="chint">Hint: <code>scipy.stats.kurtosis</code> returns excess (normal ≈ 0).</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">4</div>
+        <div class="cbody">
+          <h4>Two peaks</h4>
+          <p>A step-count histogram shows peaks near 3,000 and 11,000 steps. What does this shape most likely mean,
+             and what should the analyst do?</p>
+          <div class="chint">Hint: where would a single overall average land?</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">5</div>
+        <div class="cbody">
+          <h4>Tame the tail</h4>
+          <p>For <code>rng.lognormal(mean=2, sigma=1, size=4000)</code>, report the skewness, apply a log transform,
+             and report it again. Explain what changed and give one caveat.</p>
+          <div class="chint">Hint: <code>np.log</code>; what happens to a long right tail?</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges in the same visual
+           style. Try them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/shape-of-a-distribution--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/shape-of-a-distribution--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/shape-of-a-distribution--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">8</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on shape. Answer them, hit <strong>Check Answers</strong>, and keep refining until you
+       score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <!-- ===== Chapter Nav ===== -->
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="measures-of-position.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 10 · Previous</span><br><span class="cn-title">Measures of Position</span></span>
+    </a>
+    <a class="cn-btn next" href="standardization-and-z-scores.html">
+      <span><span class="cn-dir">Chapter 12 · Next</span><br><span class="cn-title">Standardization (z-scores)</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 11 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<!-- ===== Quiz data for this chapter ===== -->
+<script>
+  window.QUIZ_ID = "ch11";
+  window.QUIZ_DATA = [
+    {
+      q: "The 'shape' of a distribution describes…",
+      options: [
+        "Only its average value",
+        "Its symmetry, tail weight, and number of peaks",
+        "How many data points it has",
+        "The units the data is measured in"
+      ],
+      answer: 1,
+      explain: "Shape is the third pillar after center and spread: symmetry/skew, kurtosis (tails), and modality (peaks)."
+    },
+    {
+      q: "A distribution has a long tail stretching to the right. It is…",
+      options: [
+        "Left-skewed",
+        "Right-skewed (positive skew)",
+        "Symmetric",
+        "Platykurtic"
+      ],
+      answer: 1,
+      explain: "Skew is named by the tail that stretches. A long right tail = right-skewed (positive), even though most data sits on the left."
+    },
+    {
+      q: "For a typical right-skewed distribution, the usual ordering is…",
+      options: [
+        "mean < median < mode",
+        "mode < median < mean",
+        "median < mode < mean",
+        "they are always exactly equal"
+      ],
+      answer: 1,
+      explain: "The mean chases the long right tail, so mode < median < mean. (A tendency, not an ironclad law.)"
+    },
+    {
+      q: "You compute mean = 80, median = 65 for a dataset. This suggests…",
+      options: [
+        "Left skew",
+        "Right skew",
+        "Perfect symmetry",
+        "Heavy tails only"
+      ],
+      answer: 1,
+      explain: "mean − median is positive, so the mean is pulled toward a longer right tail: right skew."
+    },
+    {
+      q: "Kurtosis primarily measures…",
+      options: [
+        "How pointy the peak is",
+        "Tailedness: how heavy the tails are / how outlier-prone the data is",
+        "The center of the data",
+        "The number of modes"
+      ],
+      answer: 1,
+      explain: "The modern, correct interpretation is tailedness, not peakedness. High kurtosis = heavy tails / more outliers."
+    },
+    {
+      q: "Using the 'excess kurtosis' convention (what SciPy returns), a normal distribution has kurtosis…",
+      options: [
+        "3",
+        "0",
+        "1",
+        "−3"
+      ],
+      answer: 1,
+      explain: "Raw kurtosis of a normal is 3; excess kurtosis subtracts 3, so a normal reads 0. Leptokurtic > 0, platykurtic < 0."
+    },
+    {
+      q: "A histogram of customer ages shows two clear peaks. The most likely explanation is…",
+      options: [
+        "A data entry error",
+        "Two subpopulations are mixed together",
+        "The data is perfectly normal",
+        "The mean equals the median"
+      ],
+      answer: 1,
+      explain: "A bimodal shape usually signals two mixed groups. The overall mean falls in the valley between them, so disaggregate."
+    },
+    {
+      q: "Your right-skewed, strictly positive income data violates a model's symmetry assumption. A common fix is…",
+      options: [
+        "Delete the median",
+        "Apply a log transform to pull in the long tail",
+        "Multiply every value by 100",
+        "Switch the axis labels"
+      ],
+      answer: 1,
+      explain: "A log transform compresses large values and reduces right skew. Caveat: it is undefined for zero/negative values and changes the scale."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

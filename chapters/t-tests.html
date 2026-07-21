@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 77 · t-Tests — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#eef2ff; border:1px solid #c7d2fe; border-left:4px solid #4f46e5; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#4338ca; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/t-tests.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XII · Hypothesis Testing &amp; Inference</span><span class="sep">/</span>
+      <span>Chapter 77</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XII · Hypothesis Testing &amp; Inference</span> The everyday means test</div>
+    <h1>t-<span class="accent">Tests</span></h1>
+    <p class="dek">Real samples are modest and the population &#963; is unknown, exactly where Student's t belongs. This
+       chapter builds the three workhorses, the one-sample, two-sample, and paired t-tests, shows why pairing is so
+       powerful, and answers three questions about a flipped-classroom study with the right test for each.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~17 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 77</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">You rarely know the population standard deviation, you estimate it from the sample. That extra
+       uncertainty is exactly what <span class="term">Student's t</span> distribution accounts for, with slightly heavier
+       tails than the normal. The t-test is the most used test in all of applied statistics.</p>
+
+    <div class="def-card">
+      <div class="sigma">t</div>
+      <div class="def-body">
+        A <span class="def-kw">t-test</span> compares means using the statistic t = (estimate &#8722; null) / standard
+        error, referenced against <span class="def-kw">Student's t</span> with n &#8722; 1 degrees of freedom. It comes in
+        three flavors: <span class="def-kw">one-sample</span> (a mean vs a value),
+        <span class="def-kw">two-sample</span> (two independent groups), and <span class="def-kw">paired</span> (matched
+        observations).
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">📏</div>
+      <div><div class="ctitle">The chapter in one line</div>
+        <p>Three designs, three t-tests: one mean vs a target, two independent groups (use Welch), or matched pairs
+           (analyze the differences). Picking the wrong one, especially ignoring pairing, can flip your conclusion.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1 ===== -->
+  <section id="onesample">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The One-Sample t-Test</h2></div>
+    <p>The one-sample t-test asks whether a single group's mean differs from a fixed value &#956;&#8320;. Because we
+       estimate &#963; with the sample sd s, we use Student's t rather than the normal, the price of that estimate is a
+       little extra width in the tails.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 140" width="100%" font-family="Inter, sans-serif" aria-label="The one-sample t statistic equals the sample mean minus the null value, divided by s over root n, with n minus one degrees of freedom">
+        <text x="340" y="28" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">One-sample t statistic</text>
+        <text x="340" y="74" text-anchor="middle" font-size="22" fill="#4338ca" font-weight="800">t = (x&#772; &#8722; &#956;&#8320;) &#247; ( s / &#8730;n )</text>
+        <text x="340" y="106" text-anchor="middle" font-size="10" fill="#4a5578">compare to Student's t with df = n &#8722; 1; heavier tails for small n</text>
+      </svg>
+    </figure>
+
+    <p>This is the test behind the factory short-fill of Chapter 74. With df = n &#8722; 1, small samples get fatter tails
+       (so a larger t is needed to reach significance), and as n grows the t distribution slides back toward the normal,
+       reconnecting with the z-test of the previous chapter.</p>
+  </section>
+
+  <!-- ===== Section 2 ===== -->
+  <section id="twosample">
+    <div class="section-eyebrow"><div class="num">2</div><h2>The Two-Sample t-Test</h2></div>
+    <p>To compare the means of <span class="term">two independent groups</span> we test H&#8320;: &#956;&#8320; =
+       &#956;&#8330;. The modern default is <span class="term">Welch's t-test</span>, which does <em>not</em> assume the
+       two groups have equal variances. It is almost never wrong, so reach for it first.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 168" width="100%" font-family="Inter, sans-serif" aria-label="Two independent groups, each with its own mean and spread, compared by Welch's t-test">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Two independent groups &#8212; Welch allows different spreads</text>
+        <path d="M60,140 C120,138 145,80 180,80 C215,80 240,138 300,140" fill="#e0e7ff" stroke="#4338ca" stroke-width="1.6"/>
+        <line x1="180" y1="84" x2="180" y2="140" stroke="#4338ca" stroke-width="1.3" stroke-dasharray="3 3"/>
+        <text x="180" y="155" text-anchor="middle" font-size="9" fill="#4338ca" font-weight="700">group A</text>
+        <path d="M360,140 C440,138 470,62 520,62 C570,62 600,138 660,140" fill="#ddd6fe" fill-opacity="0.75" stroke="#7c3aed" stroke-width="1.6"/>
+        <line x1="520" y1="66" x2="520" y2="140" stroke="#7c3aed" stroke-width="1.3" stroke-dasharray="3 3"/>
+        <text x="520" y="155" text-anchor="middle" font-size="9" fill="#6d28d9" font-weight="700">group B</text>
+        <path d="M180,48 L520,48" stroke="#94a3b8" stroke-width="1.4" marker-start="url(#d2)" marker-end="url(#d2)"/>
+        <defs><marker id="d2" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><circle cx="4" cy="4" r="3" fill="#94a3b8"/></marker></defs>
+        <text x="350" y="42" text-anchor="middle" font-size="9" fill="#475569" font-weight="700">is this gap real?</text>
+      </svg>
+    </figure>
+
+    <p>Welch's test adjusts the degrees of freedom for unequal spreads; the classic <span class="hl">pooled</span> t-test
+       (which assumes equal variances) is a special case you should use only with good reason. The same idea extends to a
+       one-sided alternative when you specifically predict which group is larger.</p>
+  </section>
+
+  <!-- ===== Section 3 ===== -->
+  <section id="paired">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The Paired t-Test</h2></div>
+    <p>When the two measurements are <span class="term">paired</span>, before and after on the same person, left and
+       right hands, matched cases, they are <em>not</em> independent. The trick: collapse each pair into its difference
+       and run a one-sample t-test on those differences. Pairing cancels the between-subject noise, making the test much
+       more powerful.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 150" width="100%" font-family="Inter, sans-serif" aria-label="Each subject has a before and after value; the paired test analyzes the within-subject differences">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Paired data: analyze the within-pair differences</text>
+        <g stroke="#cbd5e1" stroke-width="1">
+          <line x1="120" y1="50" x2="120" y2="120"/><line x1="200" y1="50" x2="200" y2="120"/>
+          <line x1="280" y1="50" x2="280" y2="120"/><line x1="360" y1="50" x2="360" y2="120"/>
+          <line x1="440" y1="50" x2="440" y2="120"/><line x1="520" y1="50" x2="520" y2="120"/>
+        </g>
+        <g fill="#818cf8"><circle cx="120" cy="58" r="4"/><circle cx="200" cy="62" r="4"/><circle cx="280" cy="55" r="4"/><circle cx="360" cy="66" r="4"/><circle cx="440" cy="60" r="4"/><circle cx="520" cy="57" r="4"/></g>
+        <g fill="#4338ca"><circle cx="120" cy="104" r="4"/><circle cx="200" cy="100" r="4"/><circle cx="280" cy="112" r="4"/><circle cx="360" cy="98" r="4"/><circle cx="440" cy="108" r="4"/><circle cx="520" cy="103" r="4"/></g>
+        <text x="585" y="61" font-size="8.5" fill="#6366f1" font-weight="700">before</text>
+        <text x="585" y="107" font-size="8.5" fill="#4338ca" font-weight="700">after</text>
+        <text x="340" y="140" text-anchor="middle" font-size="8.5" fill="#8b94b3">each line is one subject; the consistent drop is what the paired test sees</text>
+      </svg>
+    </figure>
+
+    <p>In the notebook the same numbers give a decisive paired result (t = &#8722;4.67, p &#8776; 0.00004) but a
+       <em>non</em>-significant result (p &#8776; 0.22) when the pairing is wrongly ignored, the within-subject signal is
+       drowned in between-subject variation. The design dictates the test.</p>
+  </section>
+
+  <!-- ===== Section 4: REAL-WORLD ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: Did the Flipped Classroom Work?</h2></div>
+    <p>A school recorded each student's <strong>pre</strong> and <strong>post</strong> test scores under two teaching
+       methods. One dataset answers three different questions, each a different t-test, the perfect illustration of
+       matching the test to the design.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · t-tests--class_scores.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per student with <code>pretest</code>, <code>posttest</code>, and the
+        <code>method</code> (traditional or flipped).</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/t-tests--class_scores.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 120 students</small></a>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Question</th><th>Test</th><th>Result</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Did students improve?</td><td>paired t (post vs pre)</td><td>gain &#8776; 8.0 pts, t = 15.78</td><td>yes, decisively</td></tr>
+          <tr><td class="nm">Flipped vs traditional?</td><td>two-sample (Welch)</td><td>74.2 vs 65.6, t = 4.41, p &#8776; 0.00002</td><td>flipped wins</td></tr>
+          <tr><td class="nm">Gain above a 5-pt target?</td><td>one-sample t (gain vs 5)</td><td>t = 5.95, p &#8776; 0.00000003</td><td>yes, exceeds 5</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>All three are decisive, and each needed its own test. The <strong>paired</strong> test exploits that each post
+       score has a matching pre score on the same student, isolating the ~8-point learning gain. The
+       <strong>two-sample</strong> Welch test compares the two independent method groups (74.2 vs 65.6). The
+       <strong>one-sample</strong> test checks the average gain against a policy target of 5 points. Same spreadsheet,
+       three questions, three correctly chosen t-tests.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>t-Tests in Machine Learning &amp; AI</h2></div>
+    <p>The paired t-test in particular is a staple of rigorous model comparison.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Idea (this chapter)</th><th>In ML / AI it becomes</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Paired t-test</td><td>Comparing two models on the same folds</td><td>model A vs B across CV folds</td></tr>
+          <tr><td class="nm">Two-sample t-test</td><td>Comparing a metric across two cohorts</td><td>latency on region 1 vs region 2</td></tr>
+          <tr><td class="nm">One-sample t-test</td><td>"Is mean error below a target?"</td><td>average loss vs an SLA threshold</td></tr>
+          <tr><td class="nm">Welch over pooled</td><td>Robust default for unequal variance</td><td>noisy vs stable model outputs</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>When you compare two models, evaluating both on the <em>same</em> cross-validation folds or the
+           <em>same</em> test examples makes the comparison <strong>paired</strong>, and a paired t-test on the per-fold
+           score differences is far more sensitive than treating the two score lists as independent. This is the standard
+           way to claim "model B beats model A" with statistical backing. The same caveats from Chapter 75 hold:
+           report the effect size (the mean improvement), watch for multiple comparisons across many benchmarks, and
+           remember that with skewed or heavy-tailed metrics a nonparametric test (Chapter 80) may be safer.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Run all three t-tests in Python</h3>
+          <p>The companion notebook builds the one-sample t by hand and with SciPy, contrasts Welch and pooled
+             two-sample tests, shows paired vs unpaired on the same data, and loads
+             <code>t-tests--class_scores.xlsx</code> to run all three tests on the classroom study.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/t-tests.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/t-tests.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/t-tests.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, <code>scipy</code>,
+      <code>matplotlib</code>, <code>statsmodels</code>, and <code>openpyxl</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>t-test</strong>: like z but with Student's t (df = n &#8722; 1), the right tool when &#963; is unknown and n is modest.</span></li>
+        <li><span class="ck">✓</span><span><strong>One-sample</strong> tests a mean vs a value; <strong>two-sample</strong> compares two independent groups (use Welch).</span></li>
+        <li><span class="ck">✓</span><span><strong>Paired</strong> analyzes within-pair differences; ignoring the pairing can hide a real effect.</span></li>
+        <li><span class="ck">✓</span><span><strong>Real data</strong>: students gained ~8 pts (paired), flipped beat traditional (Welch, p &#8776; 0.00002), gain exceeded a 5-pt target.</span></li>
+        <li><span class="ck">✓</span><span><strong>In ML/AI</strong>: compare two models on the same folds with a <em>paired</em> t-test on per-fold differences.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>One-sample t-test</h4>
+        <p>For a sample of 30 from N(48, 10), test H&#8320;: &#956; = 50 (two-sided).</p>
+        <div class="chint">Hint: <code>stats.ttest_1samp(x, 50)</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Welch two-sample t-test</h4>
+        <p>Compare N(50, 8, n = 40) and N(54, 14, n = 45) with Welch's test.</p>
+        <div class="chint">Hint: <code>equal_var=False</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Paired vs unpaired</h4>
+        <p>Make before ~ N(100, 15, n = 30) and after = before &#8722; N(4, 6). Compare paired and unpaired p-values.</p>
+        <div class="chint">Hint: <code>ttest_rel</code> vs <code>ttest_ind</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>One-sided two-sample</h4>
+        <p>Test H&#8321;: &#956;&#8330; &gt; &#956;&#8320; (one-sided) for two groups; halve the p-value only if the direction matches.</p>
+        <div class="chint">Hint: check the sign of the t statistic first.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Real data: three class tests</h4>
+        <p>Load <code>t-tests--class_scores.xlsx</code>; run the paired, two-sample (flipped vs traditional), and one-sample (gain vs 5) tests.</p>
+        <div class="chint">Hint: gain = posttest &#8722; pretest.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code. Try
+           them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/t-tests--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/t-tests--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/t-tests--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on t-tests. Answer them, hit <strong>Check Answers</strong>, and keep refining until you
+       score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>The two-sample t-test compares exactly two groups. <strong>Chapter 78 &#183; ANOVA</strong> extends the idea to
+         three or more groups at once, while keeping the overall error rate under control.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="z-tests.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 76 · Previous</span><br><span class="cn-title">z-Tests</span></span>
+    </a>
+    <a class="cn-btn next" href="anova.html">
+      <span><span class="cn-dir">Chapter 78 · Next</span><br><span class="cn-title">ANOVA</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 77 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch77";
+  window.QUIZ_DATA = [
+    {
+      q: "A t-test (rather than a z-test) is appropriate when…",
+      options: ["The population σ is known", "σ is unknown and estimated from the sample, especially with modest n", "The data are proportions", "n is in the millions"],
+      answer: 1,
+      explain: "Estimating σ with s adds uncertainty that Student's t captures via heavier tails; that's the t-test's job."
+    },
+    {
+      q: "The degrees of freedom for a one-sample t-test are…",
+      options: ["n", "n − 1", "n + 1", "2n"],
+      answer: 1,
+      explain: "One parameter (the mean) is estimated, leaving n − 1 degrees of freedom."
+    },
+    {
+      q: "For two independent groups with possibly different variances, the recommended default is…",
+      options: ["The pooled t-test", "Welch's t-test", "A paired t-test", "A z-test"],
+      answer: 1,
+      explain: "Welch's test does not assume equal variances and is almost never wrong, so it's the safe default."
+    },
+    {
+      q: "Before-and-after measurements on the SAME subjects should be analyzed with…",
+      options: ["A two-sample t-test", "A paired t-test on the differences", "A one-proportion z-test", "A chi-square test"],
+      answer: 1,
+      explain: "Paired data are not independent; collapse each pair to its difference and run a one-sample t on those."
+    },
+    {
+      q: "Why is the paired t-test often more powerful?",
+      options: ["It uses a larger α", "It cancels between-subject variation, isolating the within-pair effect", "It needs no assumptions", "It always halves the p-value"],
+      answer: 1,
+      explain: "Pairing removes person-to-person noise, so the consistent within-pair change stands out clearly."
+    },
+    {
+      q: "Treating paired data as if it were two independent samples tends to…",
+      options: ["Make the test more powerful", "Hide a real effect by inflating the noise", "Have no effect", "Always give the same p-value"],
+      answer: 1,
+      explain: "The between-subject variation swamps the within-pair signal, so a real effect can become non-significant."
+    },
+    {
+      q: "In the classroom study, comparing 'flipped' vs 'traditional' posttest scores is a…",
+      options: ["Paired t-test", "Two-sample (Welch) t-test", "One-sample t-test", "z-test for proportions"],
+      answer: 1,
+      explain: "Two independent groups of students are compared on posttest, that's the two-sample t-test."
+    },
+    {
+      q: "To claim model B beats model A across the same cross-validation folds, the right test is…",
+      options: ["Two independent-sample t-test", "A paired t-test on the per-fold score differences", "A one-proportion z-test", "No test is possible"],
+      answer: 1,
+      explain: "Same folds means paired scores; a paired t-test on the differences is the sensitive, correct choice."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 138 · Case Study: A Paired Pre/Post Study — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .rw-card { background:#ecfeff; border:1px solid #a5f3fc; border-left:4px solid #0891b2; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#0e7490; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none; padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+    .step-h { display:flex; align-items:center; gap:0.6rem; margin:1.4rem 0 0.4rem; }
+    .step-h .sn { flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:#0891b2; color:#fff; font-weight:800; font-size:0.95rem; display:flex; align-items:center; justify-content:center; }
+    .step-h h3 { margin:0; font-size:1.02rem; color:var(--ink); }
+    .writeup { background:#ecfeff; border:1px solid #a5f3fc; border-radius:14px; padding:1.3rem 1.5rem; margin:1.3rem 0; }
+    .writeup h3 { margin-top:0; color:#0e7490; }
+    .writeup h4 { margin:1rem 0 0.3rem; color:#0e7490; font-size:0.92rem; }
+    .nb-fig { margin:1.4rem 0; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:1rem 1rem 0.6rem; }
+    .nb-fig img { display:block; width:100%; height:auto; border-radius:8px; }
+    .nb-fig figcaption { margin:0.75rem 0.2rem 0.3rem; font-size:0.85rem; color:var(--ink-soft); line-height:1.55; }
+    .nb-fig .cap-t { font-size:0.64rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#0e7490; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/case-study-a-paired-pre-post-study.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXIV · Extended Case Studies</span><span class="sep">/</span>
+      <span>Chapter 138</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XXIV · Extended Case Study</span> Every subject as its own control</div>
+    <h1>Case Study: <span class="accent">A Paired Pre/Post Study</span></h1>
+    <p class="dek">Did a redesign make checkout faster? Forty-five users timed the same task on the old and new design.
+       Because each user is measured twice, a paired analysis cancels the huge differences in how fast people work, and
+       it detects an effect that a two-group comparison would call only marginal.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~20 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Full notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 138</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">When you can measure the <span class="hl">same subjects</span> under two conditions, you should. A
+       <span class="term">paired</span> (within-subject) design uses each person as their own control, so the enormous
+       person-to-person differences that would otherwise swamp your effect simply cancel. The analysis then works on the
+       within-person <span class="hl">differences</span>, tested with the paired t-test or, when those differences are not
+       bell-shaped, the Wilcoxon signed-rank test.</p>
+
+    <div class="def-card">
+      <div class="sigma">🔗</div>
+      <div class="def-body">
+        A <span class="def-kw">paired</span> design measures each subject <span class="def-kw">twice</span>, once per
+        condition, and analyzes the <span class="def-kw">difference</span> for each subject. The
+        <span class="def-kw">paired t-test</span> works on those differences; the
+        <span class="def-kw">Wilcoxon signed-rank</span> test is the distribution-free alternative when the differences
+        are skewed.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🎯</div>
+      <div><div class="ctitle">What this case study ties together</div>
+        <p>It applies the inference toolkit of <strong>Part XIII</strong> to a within-subject design: the
+           <strong>paired t-test</strong> and its <strong>Wilcoxon</strong> fallback, an <strong>effect size</strong>
+           beside the p-value, and the payoff of pairing, far more <strong>power</strong> than comparing two groups.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §1 setup + data ===== -->
+  <section id="setup">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Study, and the Data</h2></div>
+    <p>A team redesigned the checkout flow. To measure the effect cleanly, they had <strong>45 users</strong> complete the
+       same task on <em>both</em> the old and new design, counterbalancing which came first so that practice could not be
+       mistaken for a design effect. The outcome is task completion time in seconds.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · case-study-a-paired-pre-post-study--ux_redesign.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per user: <code>user_id</code>, <code>first_design</code> (which design they
+        saw first, for the counterbalancing check), and the two task times <code>old_design_seconds</code> and
+        <code>new_design_seconds</code>.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/case-study-a-paired-pre-post-study--ux_redesign.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 45 users</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §2 the pairing insight ===== -->
+  <section id="pairing">
+    <div class="section-eyebrow"><div class="num">2</div><h2>The Pairing Insight (Steps 3&#8211;4)</h2></div>
+    <p>Users differ enormously in baseline speed, with a standard deviation of about <strong>16 seconds</strong>, far
+       bigger than the effect we are hunting. In aggregate the two designs' time distributions overlap almost completely.
+       But connect each user's two times and the pattern is unmistakable: person after person gets faster. That is the
+       power of pairing, it tests the <em>change within each user</em>, where the big between-user spread cancels.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 210" width="100%" font-family="Inter, sans-serif" aria-label="Two number lines: raw task times for old and new overlap over a wide range, so the effect is buried, while the per-user differences cluster tightly below zero, so the effect is obvious">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Pairing moves the signal out of the noise</text>
+        <text x="30" y="58" font-size="9.5" fill="#4a5578" font-weight="700">Raw times</text>
+        <text x="30" y="72" font-size="8" fill="#8b94b3">(two groups)</text>
+        <line x1="120" y1="66" x2="640" y2="66" stroke="#e6e9f2"/>
+        <g fill="#94a3b8"><circle cx="180" cy="60" r="4"/><circle cx="250" cy="66" r="4"/><circle cx="320" cy="58" r="4"/><circle cx="400" cy="66" r="4"/><circle cx="470" cy="60" r="4"/><circle cx="540" cy="66" r="4"/><circle cx="600" cy="62" r="4"/></g>
+        <g fill="#0891b2"><circle cx="150" cy="72" r="4"/><circle cx="220" cy="66" r="4"/><circle cx="300" cy="72" r="4"/><circle cx="370" cy="66" r="4"/><circle cx="450" cy="72" r="4"/><circle cx="520" cy="66" r="4"/><circle cx="580" cy="70" r="4"/></g>
+        <text x="380" y="94" text-anchor="middle" font-size="9" fill="#be123c" font-weight="700">old and new overlap: the effect is buried in the between-user spread</text>
+        <line x1="120" y1="150" x2="640" y2="150" stroke="#1a2138"/>
+        <text x="30" y="150" font-size="9.5" fill="#4a5578" font-weight="700">Per-user</text>
+        <text x="30" y="164" font-size="8" fill="#8b94b3">differences</text>
+        <line x1="480" y1="120" x2="480" y2="164" stroke="#94a3b8" stroke-dasharray="3 2"/><text x="480" y="178" text-anchor="middle" font-size="8" fill="#8b94b3">0</text>
+        <g fill="#0891b2"><circle cx="300" cy="150" r="4"/><circle cx="330" cy="150" r="4"/><circle cx="350" cy="150" r="4"/><circle cx="375" cy="150" r="4"/><circle cx="400" cy="150" r="4"/><circle cx="420" cy="150" r="4"/><circle cx="310" cy="150" r="4"/><circle cx="360" cy="150" r="4"/><circle cx="470" cy="150" r="4"/><circle cx="500" cy="150" r="4"/></g>
+        <text x="360" y="200" text-anchor="middle" font-size="9" fill="#0e7490" font-weight="700">the differences cluster left of 0: nearly everyone is faster on the new design</text>
+      </svg>
+    </figure>
+  </section>
+
+  <!-- ===== §3 differences + tests ===== -->
+  <section id="tests">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The Differences, and the Right Test (Steps 5&#8211;7)</h2></div>
+
+    <div class="step-h"><span class="sn">5</span><h3>Compute the differences, and check their shape</h3></div>
+    <p>The mean improvement is about <strong>9 seconds</strong> faster on the new design. But the per-user differences are
+       <strong>not a clean bell</strong>: there is a big cluster of users who got much faster and a second cluster near
+       zero who barely changed. Shapiro-Wilk confirms it (p &#8776; 0.01, non-normal). Shape matters, because it decides
+       which test to trust.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/case-study-a-paired-pre-post-study--differences.png" alt="A histogram of per-user differences (new minus old): most users cluster well below zero (much faster), with a second smaller cluster near zero, a bimodal, non-normal shape">
+      <figcaption><span class="cap-t">From the notebook &#183; Step 5</span><br>Two clusters, not one bell: most users much faster, a minority barely changed. A bimodal difference like this is why the distribution-free Wilcoxon test is the honest choice here.</figcaption>
+    </figure>
+
+    <div class="step-h"><span class="sn">6&#8211;7</span><h3>Paired t-test, and the Wilcoxon fallback</h3></div>
+    <p>The <span class="term">paired t-test</span> is emphatic, <strong>t(44) = &#8722;6.17, p &#8776; 2&#215;10&#8315;&#8311;</strong>,
+       with a 95% confidence interval on the mean improvement of roughly <strong>&#8722;12 to &#8722;6 seconds</strong>.
+       Because the differences are non-normal we lead with the distribution-free <span class="term">Wilcoxon signed-rank</span>
+       test, which needs no bell-curve assumption and agrees decisively (<strong>p &#8776; 6&#215;10&#8315;&#8310;</strong>,
+       with 35 of 45 users faster). When a paired difference is skewed or bimodal, report Wilcoxon first and the t-test as
+       a familiar cross-check.</p>
+  </section>
+
+  <!-- ===== §4 effect size + why pairing wins ===== -->
+  <section id="power">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Effect Size, and Why Pairing Wins (Steps 8&#8211;9)</h2></div>
+    <p>The improvement is not just detectable, it is <strong>large</strong>: about 15% of the old completion time, a paired
+       effect size of <strong>Cohen's dz &#8776; &#8722;0.9</strong>. And now the payoff of the design. Analyze the very
+       same numbers as two independent groups and the effect nearly vanishes, <strong>t falls from &#8722;6.2 to
+       &#8722;2.6</strong> and the p-value climbs from 2&#215;10&#8315;&#8311; to 0.01. Nothing about the effect changed;
+       the unpaired test simply cannot see it through the between-user variance that pairing cancels.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 200" width="100%" font-family="Inter, sans-serif" aria-label="A bar chart of statistical power: the paired design detects the effect 100 percent of the time, while a between-subjects design of the same total size detects it only about 40 percent of the time">
+        <text x="340" y="22" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Same 45 users, same effect: pairing wins on power</text>
+        <line x1="150" y1="150" x2="640" y2="150" stroke="#1a2138" stroke-width="1.1"/>
+        <!-- scale: power 0..100% -> x width 0..440 (150..590); bar height maps power to y -->
+        <rect x="210" y="40" width="70" height="110" rx="4" fill="#0891b2"/>
+        <text x="245" y="34" text-anchor="middle" font-size="13" fill="#0e7490" font-weight="800">100%</text>
+        <text x="245" y="168" text-anchor="middle" font-size="9.5" fill="#1a2138" font-weight="700">Paired design</text>
+        <text x="245" y="182" text-anchor="middle" font-size="8" fill="#8b94b3">same users, both designs</text>
+        <rect x="430" y="106" width="70" height="44" rx="4" fill="#94a3b8"/>
+        <text x="465" y="100" text-anchor="middle" font-size="13" fill="#475569" font-weight="800">40%</text>
+        <text x="465" y="168" text-anchor="middle" font-size="9.5" fill="#1a2138" font-weight="700">Between-subjects design</text>
+        <text x="465" y="182" text-anchor="middle" font-size="8" fill="#8b94b3">different users per design</text>
+        <text x="70" y="80" font-size="9" fill="#8b94b3">power</text>
+        <text x="70" y="150" font-size="8" fill="#8b94b3">0%</text>
+      </svg>
+      <figcaption style="font-size:0.85rem;color:var(--ink-soft);margin-top:0.6rem">Simulated at this effect size and sample: the paired design detects the improvement virtually every time; a between-subjects design of the same total size misses it well over half the time.</figcaption>
+    </figure>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/case-study-a-paired-pre-post-study--paired.png" alt="Left: overlapping histograms of old and new task times. Right: each user's two times connected by a line, almost all sloping downward, with the group mean dropping from old to new">
+      <figcaption><span class="cap-t">From the notebook &#183; Step 3</span><br>The two designs overlap in aggregate (left), but connecting each user's pair (right) reveals the consistent within-user improvement that pairing tests directly.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== §5 nuance + communicate ===== -->
+  <section id="writeup-sec">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Nuance &amp; Communicate (Steps 10&#8211;12)</h2></div>
+    <p>Before the memo, two honest notes. The bimodal differences are a real split, <strong>most users improved a lot
+       while a sizable minority barely changed</strong>, worth a follow-up on who the non-responders are. And because
+       users did the task twice, the design counterbalanced the order; the Take It Further notebook confirms order did not
+       drive the result (p &#8776; 0.68).</p>
+
+    <div class="writeup">
+      <h3>Memo to the product team</h3>
+      <p>In a within-subject test, 45 users completed the checkout task about <strong>9 seconds faster on the new design
+         (roughly 15% quicker)</strong>, a large and statistically strong improvement (Wilcoxon p &#8776; 6&#215;10&#8315;&#8310;;
+         paired t p &#8776; 2&#215;10&#8315;&#8311;).</p>
+      <h4>Why the within-subject design</h4>
+      <p>Because each user tried both designs, the test controls for the large differences in how fast people work. That
+         is not a technicality: a simple two-group comparison of the same effect would have been only marginal, and a
+         fresh between-subjects study of the same size would have missed it more than half the time.</p>
+      <h4>One nuance</h4>
+      <p>The gain is concentrated: most users got much faster, but a sizable minority saw little change. Worth
+         investigating who they are before a full rollout.</p>
+      <h4>Recommendation</h4>
+      <p>Ship the new design, and follow up on the non-responders to see where it helps least.</p>
+    </div>
+  </section>
+
+  <!-- ===== notebook cta ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body"><h3>Run the whole analysis in Python</h3><p>The companion notebook is the full 12-step paired workflow: it plots the pairs, shows how the between-user spread swamps a group comparison, computes and shape-checks the differences, runs the paired t-test and the Wilcoxon signed-rank test with a confidence interval and Cohen's dz, contrasts paired against unpaired to show the power gain, and segments the responders, all library-first with scipy.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/case-study-a-paired-pre-post-study.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-a-paired-pre-post-study.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-a-paired-pre-post-study.ipynb" target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)"><strong>View</strong> opens the rendered notebook instantly.
+      <strong>Open in Colab</strong> runs it live. To run locally, install <code>numpy</code>, <code>pandas</code>,
+      <code>matplotlib</code>, <code>scipy</code>, and <code>openpyxl</code>.</p>
+  </section>
+
+  <!-- ===== takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Pair when you can</strong>: measuring each subject under both conditions cancels the between-subject variance that otherwise hides the effect.</span></li>
+        <li><span class="ck">✓</span><span><strong>Analyze the differences</strong>: the paired t-test and Wilcoxon signed-rank test both work on each subject's within-person change.</span></li>
+        <li><span class="ck">✓</span><span><strong>Match the test to the shape</strong>: the differences were bimodal (Shapiro p &#8776; 0.01), so Wilcoxon led and the t-test cross-checked.</span></li>
+        <li><span class="ck">✓</span><span><strong>Report the effect size</strong>: about 9 seconds (15%) faster, Cohen's dz &#8776; &#8722;0.9, a large effect, not just a significant one.</span></li>
+        <li><span class="ck">✓</span><span><strong>Pairing buys power</strong>: the same effect gave a paired t of &#8722;6.2 but an unpaired t of only &#8722;2.6, a between-subjects study would often have missed it.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== take it further ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Take It Further</h2></div>
+    <p>Five ways to pressure-test the finding in the companion notebook:</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Did the order matter?</h4>
+        <p>Check that users who saw the old design first improved by the same amount as those who saw the new one first.</p>
+        <div class="chint">Hint: compare the differences by <code>first_design</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>A ladder of paired tests</h4>
+        <p>Run the paired t-test, Wilcoxon, and the assumption-free sign test, and watch the verdict survive each.</p>
+        <div class="chint">Hint: <code>ttest_rel</code>, <code>wilcoxon</code>, <code>binomtest</code> on the count faster.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>A bootstrap interval</h4>
+        <p>Resample users to build a distribution-free confidence interval for the mean improvement.</p>
+        <div class="chint">Hint: resample the differences, take the 2.5th and 97.5th percentiles.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>The power of pairing</h4>
+        <p>Simulate the paired design against a between-subjects design at the same size and compare their power.</p>
+        <div class="chint">Hint: count how often each detects the effect over many simulated studies.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Who did not benefit?</h4>
+        <p>Split responders from non-responders and see whether baseline speed explains the difference.</p>
+        <div class="chint">Hint: plot each user's improvement against their baseline time.</div></div></div>
+    </div>
+
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">📓</div>
+        <div class="nb-body"><h3>All five, worked in a companion notebook</h3><p>A second notebook, <strong>Take It Further</strong>, rebuilds the Chapter 138 study and works every extension with visuals and explanations: a counterbalancing check, a robustness ladder from the sign test to the t-test, a bootstrap interval, a power-of-pairing simulation, and a responder analysis.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/case-study-a-paired-pre-post-study--take-it-further.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-a-paired-pre-post-study--take-it-further.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-a-paired-pre-post-study--take-it-further.ipynb" target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on paired designs, from the pairing insight to choosing the right test. Answer them, hit
+       <strong>Check Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>We compared two conditions on the same users. Next we <em>predict</em> a business quantity.
+         <strong>Chapter 139 &#183; Case Study: Customer Lifetime Value</strong> builds a regression pipeline with
+         diagnostics and SHAP to forecast how much a customer is worth.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="case-study-difference-in-differences.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 137 · Previous</span><br><span class="cn-title">Difference-in-Differences</span></span>
+    </a>
+    <a class="cn-btn next" href="case-study-customer-lifetime-value.html">
+      <span><span class="cn-dir">Chapter 139 · Next</span><br><span class="cn-title">Case Study: Customer Lifetime Value</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 138 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => { const h = document.documentElement; bar.style.width = ((h.scrollTop)/(h.scrollHeight-h.clientHeight)*100) + '%'; });
+</script>
+
+<script>
+  window.QUIZ_ID = "ch138";
+  window.QUIZ_DATA = [
+    {
+      q: "Why use a paired (within-subject) design here?",
+      options: ["It needs fewer users", "Measuring each user under both designs cancels the large between-user differences in speed, isolating the effect", "It avoids the need for a control", "Paired tests are always required"],
+      answer: 1,
+      explain: "Users vary a lot in baseline speed. Pairing tests each user's own change, so that between-user variance never enters the comparison."
+    },
+    {
+      q: "The paired analysis works on…",
+      options: ["The old times only", "The new times only", "Each user's difference (new minus old)", "The correlation of old and new"],
+      answer: 2,
+      explain: "A paired test reduces the two measurements to one per subject, the within-person difference, and tests whether those differences are centered at zero."
+    },
+    {
+      q: "The per-user differences were bimodal and failed a normality test (Shapiro p ≈ 0.01). The right response is…",
+      options: ["Use the paired t-test as the sole test", "Lead with the distribution-free Wilcoxon signed-rank test and report the t-test as a cross-check", "Give up", "Delete the non-responders"],
+      answer: 1,
+      explain: "The paired t-test assumes roughly normal differences. When they are skewed or bimodal, Wilcoxon (which uses ranks) is the honest primary test."
+    },
+    {
+      q: "Analyzing the same data as two independent groups gave t = -2.6 instead of the paired -6.2. Why?",
+      options: ["The effect changed", "The unpaired test cannot remove the between-user variance, so it sees the effect through much more noise", "A calculation error", "The sample got smaller"],
+      answer: 1,
+      explain: "Nothing about the effect changed; the unpaired test just carries all the between-user spread that pairing cancels, so its signal-to-noise is far worse."
+    },
+    {
+      q: "Cohen's dz ≈ -0.9 tells you…",
+      options: ["The result is not significant", "The effect is large, about 15% faster, not just statistically detectable", "The sample is biased", "Nothing useful"],
+      answer: 1,
+      explain: "The effect size reports magnitude beside the p-value; dz near 0.9 is a large paired effect, and the 9-second saving is practically meaningful."
+    },
+    {
+      q: "Why did the study counterbalance which design each user saw first?",
+      options: ["To save time", "So that practice with the task could not be mistaken for a design effect; the notebook confirms order did not drive the result", "To make the sample larger", "It is required by the paired t-test"],
+      answer: 1,
+      explain: "Doing the task twice means learning. Counterbalancing the order, then checking it, guards against attributing a practice effect to the redesign."
+    },
+    {
+      q: "A between-subjects study of the same size had only about 40% power here. That means…",
+      options: ["It is always better", "It would have failed to detect the real effect most of the time; pairing is far more efficient", "It has no bias", "It needs no control"],
+      answer: 1,
+      explain: "40% power means a 60% chance of missing a real effect. Pairing raised power to near 100% at the same sample size, the case for within-subject designs."
+    },
+    {
+      q: "The overall lesson of the case study is…",
+      options: ["Always collect more data", "When you can measure each subject under both conditions, pair them and analyze the differences, then match the test to their shape", "Bigger effects are always real", "Never counterbalance"],
+      answer: 1,
+      explain: "Pairing cancels between-subject noise for a large power gain; then use the paired t-test if the differences are normal, or Wilcoxon or the sign test if not."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

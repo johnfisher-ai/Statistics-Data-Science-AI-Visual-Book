@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 59 · Case Study: Survey Demographics (Chi-Square) — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:center; border-bottom:1px solid var(--line); }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .rh { font-weight:700; color:var(--ink); text-align:left; }
+    .disp-table .hot { color:#b45309; font-weight:800; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/case-study-survey-demographics-chi-square.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part IX · Probability &amp; Distributions Case Studies</span><span class="sep">/</span>
+      <span>Chapter 59</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part IX · Case Study</span> Chi-Square test of independence</div>
+    <h1>Survey Demographics: the <span class="accent">Chi-Square</span> Test</h1>
+    <p class="dek">Are two categorical variables related, or independent? The chi-square test compares the counts we observe
+       against the counts we would expect by chance. Subscription tier strongly drives satisfaction; region does not.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~13 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 59</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">The t-test compared <em>means</em>. But much of the world is categorical: tier, region, satisfaction,
+       yes/no. To ask whether two such variables are related, we count, and the
+       <span class="term">chi-square test of independence</span> turns those counts into a verdict.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#967;&#178;</div>
+      <div class="def-body">
+        The <span class="def-kw">chi-square statistic</span> sums the squared gap between observed and expected counts,
+        scaled by the expected: &#967;&#178; = &#931; (O &#8722; E)&#178; / E. Large &#967;&#178; means the
+        <span class="def-kw">observed pattern</span> is far from what <span class="def-kw">independence</span> would
+        predict. Degrees of freedom = (rows &#8722; 1)(cols &#8722; 1).
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">📋</div>
+      <div><div class="ctitle">The dataset</div>
+        <p><code>ab_survey_demographics.csv</code> holds 1,000 survey responses with <code>subscription_tier</code>
+           (Free / Standard / Premium), <code>demographic_region</code>, and <code>satisfaction_level</code>
+           (Low / Medium / High). We test which of these is genuinely linked to satisfaction.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: contingency ===== -->
+  <section id="contingency">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Contingency Table</h2></div>
+    <p>Chi-square works on <strong>counts</strong>, not averages. We cross-tabulate every respondent's tier against
+       their satisfaction level. The result is a contingency table, the raw material of the test.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>tier &#8595; / satisfaction &#8594;</th><th>Low</th><th>Medium</th><th>High</th></tr></thead>
+        <tbody>
+          <tr><td class="rh">Free</td><td>202</td><td>198</td><td>101</td></tr>
+          <tr><td class="rh">Standard</td><td>60</td><td>157</td><td>82</td></tr>
+          <tr><td class="rh">Premium</td><td>17</td><td>53</td><td class="hot">130</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>Premium</strong> users pile up in <em>High</em> satisfaction (130) while <strong>Free</strong> users pile
+       up in <em>Low</em> (202). The pattern looks real, but is it more than sampling noise? That is precisely the
+       question chi-square is built to answer.</p>
+  </section>
+
+  <!-- ===== Section 2: observed vs expected ===== -->
+  <section id="test">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Observed vs Expected</h2></div>
+    <p>If tier and satisfaction were <span class="hl">independent</span>, each cell's count would be
+       (row total &#215; column total) / grand total. Chi-square measures how far reality strays from that.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 200" width="100%" font-family="Inter, sans-serif" aria-label="Observed vs expected counts for the Low-satisfaction column showing big gaps">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Low-satisfaction counts: observed vs expected under independence</text>
+        <!-- axis -->
+        <line x1="70" y1="160" x2="640" y2="160" stroke="#8b94b3" stroke-width="1"/>
+        <!-- groups: Free, Standard, Premium. scale: 1 unit = 0.55px -->
+        <!-- Free obs 202 / exp 140 -->
+        <rect x="110" y="49" width="46" height="111" fill="#d97706"/><text x="133" y="44" text-anchor="middle" font-size="9" fill="#b45309" font-weight="800">202</text>
+        <rect x="162" y="83" width="46" height="77" fill="#fcd34d"/><text x="185" y="78" text-anchor="middle" font-size="9" fill="#8b94b3">140 exp</text>
+        <text x="159" y="176" text-anchor="middle" font-size="9" fill="#1a2138">Free</text>
+        <!-- Standard obs 60 / exp 83 -->
+        <rect x="290" y="127" width="46" height="33" fill="#d97706"/><text x="313" y="122" text-anchor="middle" font-size="9" fill="#b45309" font-weight="800">60</text>
+        <rect x="342" y="114" width="46" height="46" fill="#fcd34d"/><text x="365" y="109" text-anchor="middle" font-size="9" fill="#8b94b3">83 exp</text>
+        <text x="339" y="176" text-anchor="middle" font-size="9" fill="#1a2138">Standard</text>
+        <!-- Premium obs 17 / exp 56 -->
+        <rect x="470" y="151" width="46" height="9" fill="#d97706"/><text x="493" y="146" text-anchor="middle" font-size="9" fill="#b45309" font-weight="800">17</text>
+        <rect x="522" y="129" width="46" height="31" fill="#fcd34d"/><text x="545" y="124" text-anchor="middle" font-size="9" fill="#8b94b3">56 exp</text>
+        <text x="519" y="176" text-anchor="middle" font-size="9" fill="#1a2138">Premium</text>
+        <text x="612" y="196" text-anchor="end" font-size="8.5" fill="#8b94b3">amber = observed &#183; yellow = expected</text>
+      </svg>
+    </figure>
+
+    <p>The gaps are stark. <strong>Premium / Low</strong> has just <strong>17</strong> respondents where independence
+       predicts <strong>56</strong>; <strong>Free / Low</strong> has <strong>202</strong> where it predicts
+       <strong>140</strong>. Summing (O &#8722; E)&#178;/E across all nine cells gives</p>
+
+    <p style="text-align:center;font-size:1.05rem;margin:1rem 0">
+      &#967;&#178; = <strong>175.4</strong>, &nbsp; df = (3&#8722;1)(3&#8722;1) = 4, &nbsp; p &#8776; 10<sup>&#8722;37</sup>
+    </p>
+
+    <div class="callout note">
+      <div class="cico">&#10003;</div>
+      <div><div class="ctitle">Significance and strength are different questions</div>
+        <p>The tiny p-value says the link is <em>real</em>. <strong>Cramer's V &#8776; 0.30</strong> says it is
+           <em>moderately strong</em>, not just detectable. Always report an effect size alongside p: with 1,000
+           respondents even trivial associations can become significant.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 3: control ===== -->
+  <section id="control">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The Control: Region</h2></div>
+    <p>Significance is not automatic. A good test also <em>confirms independence</em> when there is nothing there. We run
+       the identical test on <code>demographic_region</code> against satisfaction.</p>
+
+    <p style="text-align:center;font-size:1.05rem;margin:1rem 0">
+      &#967;&#178; = <strong>4.8</strong>, &nbsp; df = 4, &nbsp; p &#8776; <strong>0.31</strong>
+    </p>
+
+    <p>Here the statistic is tiny and p &#8776; 0.31 sits far above 0.05, so we <strong>fail to reject</strong>
+       independence: satisfaction does not vary by region. This is the discipline of the chi-square test, it flags the
+       genuine association (tier) and clears the spurious one (region), rather than finding a pattern in everything.</p>
+
+    <div class="callout warn">
+      <div class="cico">!</div>
+      <div><div class="ctitle">Two cautions</div>
+        <p>Chi-square needs <strong>expected counts of at least ~5</strong> per cell, and "fail to reject" means
+           <em>no evidence of a link</em>, not proof of independence. Absence of evidence is not evidence of absence.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Run the survey analysis</h3>
+          <p>The companion notebook builds the contingency table, runs <code>scipy.stats.chi2_contingency</code> on tier
+             vs satisfaction (significant) and region vs satisfaction (not), prints the expected-count matrix, and
+             computes Cramer's V for effect size.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/case-study-survey-demographics-chi-square.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-survey-demographics-chi-square.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-survey-demographics-chi-square.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, <code>scipy</code>,
+      and <code>matplotlib</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Chi-square tests independence</strong> of two categorical variables from a contingency table of counts.</span></li>
+        <li><span class="ck">✓</span><span><strong>&#967;&#178; = &#931;(O &#8722; E)&#178;/E</strong>, where E = (row total &#215; col total)/grand total; df = (r&#8722;1)(c&#8722;1).</span></li>
+        <li><span class="ck">✓</span><span><strong>Tier &#215; satisfaction</strong>: &#967;&#178; = 175, p &#8776; 10<sup>&#8722;37</sup>, a real, moderate link (Cramer's V &#8776; 0.30).</span></li>
+        <li><span class="ck">✓</span><span><strong>Region &#215; satisfaction</strong>: &#967;&#178; = 4.8, p &#8776; 0.31, fail to reject, independent.</span></li>
+        <li><span class="ck">✓</span><span><strong>Report effect size</strong>, not just p; and keep expected cell counts &#8805; ~5 for the test to be valid.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on the chi-square case study. Answer them, hit <strong>Check Answers</strong>, and keep
+       refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="case-study-clinical-trial-efficacy-student-s-t.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 58 · Previous</span><br><span class="cn-title">Clinical Trial Efficacy (Student's t)</span></span>
+    </a>
+    <a class="cn-btn next" href="case-study-crop-yield-by-fertilizer-f-anova.html">
+      <span><span class="cn-dir">Chapter 60 · Next</span><br><span class="cn-title">Crop Yield by Fertilizer (F / ANOVA)</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 59 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch59";
+  window.QUIZ_DATA = [
+    {
+      q: "The chi-square test of independence is used to…",
+      options: ["Compare two means", "Test whether two categorical variables are related", "Fit a regression line", "Estimate a population total"],
+      answer: 1,
+      explain: "It works on counts in a contingency table and asks whether the two categorical variables are independent."
+    },
+    {
+      q: "The chi-square statistic is computed as…",
+      options: ["Σ(O − E)²/E", "Σ(O − E)", "O/E", "(x̄ − μ)/(s/√n)"],
+      answer: 0,
+      explain: "χ² = Σ(O − E)²/E sums the squared gaps between observed and expected counts, each scaled by the expected count."
+    },
+    {
+      q: "Under independence, the expected count in a cell is…",
+      options: ["The grand total / number of cells", "(row total × column total) / grand total", "The largest observed count", "Always 5"],
+      answer: 1,
+      explain: "Independence implies each cell's expected count is (row total × column total) / grand total."
+    },
+    {
+      q: "For a 3×3 table, the degrees of freedom are…",
+      options: ["9", "8", "4", "6"],
+      answer: 2,
+      explain: "df = (rows − 1)(cols − 1) = (3−1)(3−1) = 4."
+    },
+    {
+      q: "Tier × satisfaction gave χ² = 175, p ≈ 10⁻³⁷. This means…",
+      options: ["They are independent", "Satisfaction is strongly related to tier", "The test failed", "Premium users are unhappy"],
+      answer: 1,
+      explain: "A huge χ² with a vanishingly small p-value means we reject independence: tier and satisfaction are related."
+    },
+    {
+      q: "Region × satisfaction gave χ² = 4.8, p ≈ 0.31. The correct conclusion is…",
+      options: ["Region strongly affects satisfaction", "Fail to reject independence: no evidence of a link", "The data is wrong", "Region causes high satisfaction"],
+      answer: 1,
+      explain: "p ≈ 0.31 is well above 0.05, so we fail to reject independence; there is no evidence region relates to satisfaction."
+    },
+    {
+      q: "Why report Cramér's V alongside the p-value?",
+      options: ["It replaces the p-value", "It measures the strength of the association, which p alone does not", "It is required by scipy", "It computes degrees of freedom"],
+      answer: 1,
+      explain: "With large samples even trivial associations are significant; Cramér's V reports how strong the relationship is."
+    },
+    {
+      q: "A practical validity condition for the chi-square test is that…",
+      options: ["All observed counts are zero", "Expected counts are at least about 5 per cell", "The variables are numeric", "The sample is under 30"],
+      answer: 1,
+      explain: "The chi-square approximation is unreliable when expected cell counts fall much below ~5."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

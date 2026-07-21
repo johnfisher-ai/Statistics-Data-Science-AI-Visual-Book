@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 56 · Case Study: Regional Rainfall (Gamma) — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/case-study-regional-rainfall-gamma.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part IX · Probability &amp; Distributions Case Studies</span><span class="sep">/</span>
+      <span>Chapter 56</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part IX · Case Study</span> Gamma distribution</div>
+    <h1>Regional Rainfall: the <span class="accent">Gamma</span></h1>
+    <p class="dek">Seasonal rainfall is positive and right-skewed: usually moderate, occasionally a deluge. That is the
+       gamma distribution. From 1,000 seasonal totals we fit it by the method of moments and quantify flood risk from its
+       long tail.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~12 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 56</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">The exponential modeled one waiting time. Sum several of them, total rainfall accumulated from several
+       storm pulses, and you get the <span class="term">gamma</span>: strictly positive, right-skewed, and far more
+       flexible than the exponential it generalizes.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#915;</div>
+      <div class="def-body">
+        The <span class="def-kw">gamma</span> distribution has a <span class="def-kw">shape &#945;</span> and a
+        <span class="def-kw">scale &#946;</span>, with mean &#945;&#946; and variance &#945;&#946;&#178;. With &#945; = 1 it
+        is the exponential; larger &#945; adds a hump. It models positive, skewed quantities.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🌧️</div>
+      <div><div class="ctitle">The dataset</div>
+        <p><code>meteorology_regional_rainfall.csv</code> holds <code>rainfall_inches</code> for 1,000 station-seasons
+           (plus station and season). We fit a gamma and use its tail to estimate flood risk.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: fit ===== -->
+  <section id="fit">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Fit by the Method of Moments</h2></div>
+    <p>The gamma's two parameters fall straight out of the mean and variance: <strong>shape &#945; = mean&#178;/var =
+       2.93</strong> and <strong>scale &#946; = var/mean = 1.38</strong>. This <span class="hl">method of moments</span>
+       reproduces the sample mean (4.04) and variance (5.57) by construction.</p>
+
+    <p>Matching two moments is a start, not a verdict. The companion notebook <strong>validates the fit</strong> with a
+       gamma <span class="term">QQ plot</span> (points on the diagonal) and a formal <span class="term">Kolmogorov-Smirnov</span>
+       test (D &#8776; 0.02, p &#8776; 0.87, so we cannot reject the Gamma), so the distribution is a defensible model for
+       the rainfall totals rather than just a curve that happens to look right.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 200" width="100%" font-family="Inter, sans-serif" aria-label="The right-skewed gamma density of seasonal rainfall, with a hump and a long tail">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Rainfall: Gamma(shape 2.93, scale 1.38), humped and right-skewed</text>
+        <line x1="60" y1="170" x2="630" y2="170" stroke="#1a2138" stroke-width="1.1"/>
+        <path d="M65,170 C100,150 140,86 200,84 C260,82 320,140 420,160 C500,168 560,170 620,170 L65,170 Z" fill="#fde68a" fill-opacity="0.55" stroke="#d97706" stroke-width="2.4"/>
+        <line x1="200" y1="78" x2="200" y2="170" stroke="#0d9488" stroke-width="1.2" stroke-dasharray="3 3"/>
+        <text x="200" y="74" text-anchor="middle" font-size="8.5" fill="#0f766e">mode</text>
+        <line x1="255" y1="78" x2="255" y2="170" stroke="#db2777" stroke-width="1.4" stroke-dasharray="5 4"/>
+        <text x="255" y="74" text-anchor="middle" font-size="9" fill="#db2777" font-weight="800">mean &#8776; 4</text>
+        <text x="500" y="150" font-size="8.5" fill="#b45309" font-weight="700">long flood tail &#8594;</text>
+        <text x="345" y="190" text-anchor="middle" font-size="9" fill="#8b94b3">seasonal rainfall (inches) &#8594;</text>
+      </svg>
+    </figure>
+
+    <p>With shape &#8776; 2.9 the gamma is humped, not a pure exponential decay, and its skewness of 1.2 confirms the long
+       right tail. That asymmetry is exactly why a symmetric normal would mislead here: it would put real probability on
+       impossible <em>negative</em> rainfall and badly understate the wet extremes.</p>
+  </section>
+
+  <!-- ===== Section 2: flood risk ===== -->
+  <section id="risk">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Flood Risk in the Tail</h2></div>
+    <p>Flood planning is a <span class="hl">tail</span> question. P(rainfall &gt; threshold) gives the chance of an extreme
+       season, and its reciprocal is the <span class="term">return period</span>, the average wait between such events.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Threshold</th><th>P(exceed)</th><th>return period</th><th>observed</th></tr></thead>
+        <tbody>
+          <tr><td>&gt; 8 in</td><td class="nm">0.066</td><td>1-in-15 seasons</td><td>0.069</td></tr>
+          <tr><td>&gt; 10 in</td><td class="nm">0.023</td><td>1-in-44 seasons</td><td>0.021</td></tr>
+          <tr><td>&gt; 12 in</td><td class="nm">0.007</td><td>1-in-139 seasons</td><td>0.006</td></tr>
+          <tr><td>&gt; 15 in</td><td class="nm">0.001</td><td>1-in-832 seasons</td><td>0.001</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>A season above 8 inches is roughly a <strong>1-in-15</strong> event, above 12 inches about
+       <strong>1-in-139</strong>, the return periods engineers design drainage and levees against. The
+       <strong>99th-percentile</strong> season tops 11 inches; sizing infrastructure to the mean of 4 inches would ignore
+       exactly the floods that matter. The tail is the whole point.</p>
+  </section>
+
+  <!-- ===== Section 3: family ===== -->
+  <section id="family">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The Gamma Generalizes the Exponential</h2></div>
+    <p>The gamma's structure connects it to the previous chapter. A gamma with integer shape &#945; is the
+       <strong>sum of &#945; independent exponential waits</strong>. With &#945; = 1 it <em>is</em> the exponential; larger
+       &#945; stacks more waits and grows the hump.</p>
+
+    <div class="callout note">
+      <div class="cico">&#8721;</div>
+      <div><div class="ctitle">Rainfall as stacked pulses</div>
+        <p>In the notebook, the sum of three exponential waits matches a Gamma(shape 3), and our fitted shape (&#8776; 2.9)
+           is close, as if each wet season were a few independent rainfall pulses added together. This is the family link:
+           the <strong>exponential is a gamma with shape 1</strong>, and the gamma is the natural model for any positive
+           quantity built from several exponential-like contributions, rainfall, insurance claim totals, queue waiting
+           times, and more.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Run the rainfall analysis</h3>
+          <p>The companion notebook fits the gamma by the method of moments, overlays its density on the rainfall
+             histogram, computes exceedance probabilities and return periods from the tail, and rebuilds the gamma as a
+             sum of exponential waits, every number from code.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/case-study-regional-rainfall-gamma.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-regional-rainfall-gamma.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-regional-rainfall-gamma.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, <code>scipy</code>,
+      and <code>matplotlib</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Rainfall totals are gamma</strong>: positive, right-skewed, with shape &#945; and scale &#946;.</span></li>
+        <li><span class="ck">✓</span><span><strong>Method of moments</strong>: &#945; = mean&#178;/var = 2.93, &#946; = var/mean = 1.38, reproducing the data's mean and variance.</span></li>
+        <li><span class="ck">✓</span><span><strong>Flood risk is the tail</strong>: a &gt;8-inch season is 1-in-15, &gt;12 inches is 1-in-139; the 99th percentile tops 11 inches.</span></li>
+        <li><span class="ck">✓</span><span><strong>A normal would mislead</strong>, putting probability on negative rainfall and understating extremes.</span></li>
+        <li><span class="ck">✓</span><span><strong>Gamma generalizes the exponential</strong>: shape 1 is exponential; larger shape is a sum of exponential waits.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on the gamma case study. Answer them, hit <strong>Check Answers</strong>, and keep refining
+       until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="case-study-hardware-lifespans-exponential.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 55 · Previous</span><br><span class="cn-title">Hardware Lifespans (Exponential)</span></span>
+    </a>
+    <a class="cn-btn next" href="case-study-freight-weights-and-the-clt-central-limit-theorem.html">
+      <span><span class="cn-dir">Chapter 57 · Next</span><br><span class="cn-title">Freight Weights &amp; the CLT</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 56 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch56";
+  window.QUIZ_DATA = [
+    {
+      q: "Seasonal rainfall (positive, right-skewed) is well modeled by which distribution?",
+      options: ["Normal", "Gamma", "Binomial", "Poisson"],
+      answer: 1,
+      explain: "The gamma is strictly positive and right-skewed, ideal for totals like rainfall, claim amounts, or waiting times."
+    },
+    {
+      q: "The gamma's two parameters are…",
+      options: ["mean and variance", "shape α and scale β", "n and p", "λ alone"],
+      answer: 1,
+      explain: "Shape α and scale β set the gamma, with mean = αβ and variance = αβ²."
+    },
+    {
+      q: "The method-of-moments estimate of the shape is…",
+      options: ["mean/var", "mean²/var", "var/mean", "1/mean"],
+      answer: 1,
+      explain: "Solving mean = αβ and var = αβ² gives α = mean²/var (and β = var/mean). Here α ≈ 2.93."
+    },
+    {
+      q: "Why is a normal distribution a poor model for rainfall?",
+      options: ["Rainfall is discrete", "It is symmetric and allows negative values, but rainfall is positive and skewed", "Rainfall has no mean", "Normals are too flexible"],
+      answer: 1,
+      explain: "A normal would assign probability to impossible negative rainfall and understate the long right tail of wet seasons."
+    },
+    {
+      q: "A 'return period' of 1-in-44 seasons corresponds to an exceedance probability of…",
+      options: ["44", "about 1/44 ≈ 0.023", "0.5", "0.44"],
+      answer: 1,
+      explain: "The return period is the reciprocal of the exceedance probability: P(>10 in) ≈ 0.023, so ≈ 1-in-44 seasons."
+    },
+    {
+      q: "Flood infrastructure should be sized to…",
+      options: ["The mean rainfall (4 in)", "A high percentile / the tail (e.g. the 99th ≈ 11 in)", "The minimum", "Zero"],
+      answer: 1,
+      explain: "Designing to the average ignores the extreme seasons that cause floods; the tail (return periods) drives engineering."
+    },
+    {
+      q: "How does the gamma relate to the exponential?",
+      options: ["They are unrelated", "A gamma with shape 1 IS the exponential; integer shape α is a sum of α exponentials", "The gamma is discrete", "The exponential is a special normal"],
+      answer: 1,
+      explain: "The exponential is Gamma(shape = 1). Larger integer shapes are sums of that many exponential waits, adding a hump."
+    },
+    {
+      q: "A fitted shape of about 3 suggests rainfall behaves like…",
+      options: ["A single storm", "The sum of roughly three independent rainfall pulses", "A coin flip", "A normal distribution"],
+      answer: 1,
+      explain: "Gamma(shape 3) is the sum of three exponential waits, so a wet season acts like a few stacked rainfall contributions."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

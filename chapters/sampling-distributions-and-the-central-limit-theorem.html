@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 40 · Sampling Distributions &amp; the Central Limit Theorem — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .disp-table code { font-size:0.82em; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/sampling-distributions-and-the-central-limit-theorem.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part VII · Probability Distributions</span><span class="sep">/</span>
+      <span>Chapter 40</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part VII · Probability Distributions</span> The bridge to inference</div>
+    <h1>Sampling Distributions &amp; the <span class="accent">Central Limit Theorem</span></h1>
+    <p class="dek">A sample mean is not a fixed fact, it is a random variable with its own distribution. Understanding that
+       distribution, and the remarkable theorem that makes it normal, is what turns a single sample into a confident
+       statement about the world.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~16 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 40</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Every statistic you compute, a sample mean, a proportion, a difference, comes from <em>one</em> sample
+       out of countless possible ones. Draw a different sample and you would get a slightly different number. The pattern
+       in those differences is the single most important idea in statistics.</p>
+
+    <div class="def-card">
+      <div class="sigma">x&#772;</div>
+      <div class="def-body">
+        The <span class="def-kw">sampling distribution</span> of a statistic is the distribution of its values across all
+        possible samples. The <span class="def-kw">Central Limit Theorem</span> says the sampling distribution of the mean
+        becomes normal as the sample size grows, whatever the population's shape.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🎯</div>
+      <div><div class="ctitle">Statistic vs parameter</div>
+        <p>A <strong>parameter</strong> (like the true mean &#956;) is a fixed but usually unknown property of the whole
+           population. A <strong>statistic</strong> (like the sample mean x&#772;) is computed from data and varies from
+           sample to sample. Inference is the art of using the varying statistic to pin down the fixed parameter, and the
+           sampling distribution is what makes it possible.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: sampling distribution ===== -->
+  <section id="sampling">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Sampling Distribution of the Mean</h2></div>
+    <p>Imagine drawing many samples of the same size, computing each one's mean, and collecting all those means. They
+       form their own distribution, tighter than the population and centered on the true mean.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 220" width="100%" font-family="Inter, sans-serif" aria-label="A wide skewed population beside the narrow symmetric distribution of its sample means">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">A skewed population, but a tight, symmetric distribution of means</text>
+        <!-- population: skewed -->
+        <path d="M50,180 C70,60 110,60 160,110 C230,180 300,180 320,180 Z" fill="#d97706" fill-opacity="0.18" stroke="#d97706" stroke-width="2"/>
+        <line x1="40" y1="180" x2="330" y2="180" stroke="#1a2138" stroke-width="1.2"/>
+        <text x="185" y="198" text-anchor="middle" font-size="9" fill="#b45309" font-weight="700">population (one draw at a time)</text>
+        <!-- sampling dist: narrow bell, same center -->
+        <path d="M400,180 C470,180 480,55 510,55 C540,55 550,180 620,180 Z" fill="#0d9488" fill-opacity="0.20" stroke="#0d9488" stroke-width="2"/>
+        <line x1="390" y1="180" x2="640" y2="180" stroke="#1a2138" stroke-width="1.2"/>
+        <line x1="510" y1="55" x2="510" y2="180" stroke="#db2777" stroke-width="1.4" stroke-dasharray="4 3"/>
+        <text x="510" y="198" text-anchor="middle" font-size="9" fill="#0f766e" font-weight="700">means of samples (n = 30)</text>
+        <text x="510" y="46" text-anchor="middle" font-size="8.5" fill="#db2777" font-weight="800">same center &#956;</text>
+      </svg>
+    </figure>
+
+    <p>In the notebook, a heavily skewed population with mean 2 produces sample means that cluster in a tight bell, also
+       centered on 2, with a spread of just <strong>0.365</strong>. The means vary far less than individual values, which
+       is the whole reason a sample can tell you something reliable about a population.</p>
+  </section>
+
+  <!-- ===== Section 2: CLT ===== -->
+  <section id="clt">
+    <div class="section-eyebrow"><div class="num">2</div><h2>The Central Limit Theorem</h2></div>
+    <p>Here is the theorem that holds statistics together. No matter how strange the population's shape, the sampling
+       distribution of the mean approaches a <strong>normal</strong> distribution as the sample size n grows.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 210" width="100%" font-family="Inter, sans-serif" aria-label="The distribution of sample means becoming more bell-shaped as n increases from 1 to 30">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">As n grows, the distribution of means becomes normal</text>
+        <!-- n=1 skewed -->
+        <path d="M40,170 C55,70 80,70 110,110 C150,170 180,170 190,170 Z" fill="#0d9488" fill-opacity="0.22" stroke="#0d9488" stroke-width="1.8"/>
+        <line x1="35" y1="170" x2="195" y2="170" stroke="#1a2138"/><text x="115" y="188" text-anchor="middle" font-size="9" fill="#8b94b3">n = 1</text>
+        <!-- n=5 less skewed -->
+        <path d="M215,170 C245,90 250,80 280,80 C315,80 320,150 365,170 Z" fill="#0d9488" fill-opacity="0.22" stroke="#0d9488" stroke-width="1.8"/>
+        <line x1="210" y1="170" x2="370" y2="170" stroke="#1a2138"/><text x="290" y="188" text-anchor="middle" font-size="9" fill="#8b94b3">n = 5</text>
+        <!-- n=30 bell -->
+        <path d="M400,170 C450,170 460,60 485,60 C510,60 520,170 570,170 Z" fill="#0d9488" fill-opacity="0.28" stroke="#0d9488" stroke-width="1.8"/>
+        <line x1="395" y1="170" x2="575" y2="170" stroke="#1a2138"/><text x="485" y="188" text-anchor="middle" font-size="9" fill="#8b94b3">n = 30</text>
+        <path d="M590,150 L620,150" stroke="#db2777" stroke-width="1.6" fill="none" marker-end="url(#a40)"/>
+        <defs><marker id="a40" markerWidth="9" markerHeight="9" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#db2777"/></marker></defs>
+        <text x="615" y="135" text-anchor="end" font-size="8.5" fill="#db2777" font-weight="800">normal</text>
+      </svg>
+    </figure>
+
+    <p>By n = 30 the means of a moderately skewed population already trace a clean bell, the familiar
+       <strong>n &#8805; 30</strong> rule of thumb. Treat it as a floor, not a guarantee: genuinely heavy-tailed or
+       extremely skewed populations need more, sometimes n in the hundreds, before the bell is tight. Still, the pull
+       toward normality is relentless, which is why the normal distribution is
+       so ubiquitous: anything that is effectively an <em>average</em> of many small influences ends up normal. It is also
+       the license that lets statistical inference assume normality almost everywhere, even when the raw data is anything
+       but.</p>
+  </section>
+
+  <!-- ===== Section 3: standard error ===== -->
+  <section id="standard-error">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The Standard Error and the &#8730;n Law</h2></div>
+    <p>The spread of the sampling distribution has a name: the <span class="term">standard error</span>. For the mean it
+       is <strong>SE = &#963;/&#8730;n</strong>. The square root is the catch: precision improves only with the root of the
+       sample size.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 200" width="100%" font-family="Inter, sans-serif" aria-label="The standard error falling steeply then leveling off as sample size grows">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">SE = &#963;/&#8730;n: steep gains early, diminishing returns later</text>
+        <line x1="60" y1="170" x2="630" y2="170" stroke="#1a2138" stroke-width="1.2"/>
+        <line x1="60" y1="40" x2="60" y2="170" stroke="#1a2138" stroke-width="1.2"/>
+        <text x="50" y="48" text-anchor="end" font-size="8.5" fill="#8b94b3">SE</text>
+        <text x="345" y="192" text-anchor="middle" font-size="9" fill="#8b94b3">sample size n &#8594;</text>
+        <!-- 1/sqrt(n) curve -->
+        <path d="M70,52 C120,110 180,140 280,153 C400,164 520,167 620,168" fill="none" stroke="#0d9488" stroke-width="2.5"/>
+        <circle cx="110" cy="118" r="4" fill="#db2777"/><text x="118" y="112" font-size="8.5" fill="#db2777">n=50</text>
+        <circle cx="230" cy="150" r="4" fill="#db2777"/><text x="238" y="144" font-size="8.5" fill="#db2777">n=200</text>
+        <circle cx="450" cy="166" r="4" fill="#db2777"/><text x="458" y="160" font-size="8.5" fill="#db2777">n=800</text>
+      </svg>
+    </figure>
+
+    <p>To <em>halve</em> the standard error you must <em>quadruple</em> the sample (25 to 100 to 400 each halves it).
+       This diminishing return is the central economics of data: early data is enormously valuable, but past a point,
+       "just collect more" stops paying off. The same &#8730;n law governs how fast Monte Carlo estimates and poll
+       margins shrink.</p>
+  </section>
+
+  <!-- ===== Section 4: bridge to inference ===== -->
+  <section id="bridge">
+    <div class="section-eyebrow"><div class="num">4</div><h2>The Bridge to Inference</h2></div>
+    <p>Put the pieces together. The CLT says the sample mean is approximately normal; the standard error says how wide;
+       and the empirical rule (Chapter 39) says 95% of a normal sits within &#177;1.96 standard deviations. Combine them
+       and a single sample yields a <span class="hl">margin of error</span>.</p>
+
+    <div class="callout key">
+      <div class="cico">🧮</div>
+      <div><div class="ctitle">The 95% confidence interval</div>
+        <p style="font-size:1.02rem;text-align:center;margin:0.3rem 0">
+           <strong>x&#772; &#177; 1.96 &#215; SE</strong></p>
+        <p>Because the sample mean is normal with spread SE, this interval captures the true mean about <strong>95% of the
+           time</strong>. In the notebook, 20,000 simulated intervals contained the true mean 95.3% of the time, matching
+           the theory. This is the template for nearly every confidence interval and hypothesis test in the chapters
+           ahead.</p></div>
+    </div>
+
+    <p>That is the payoff of this Part: the leap from "here is my one sample" to "here is what I can responsibly claim
+       about the world, and how sure I am". The Central Limit Theorem is the plank that bridges probability and
+       inference.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Sampling &amp; the CLT in Machine Learning &amp; AI</h2></div>
+    <p>The sampling distribution is not a statistics-class abstraction; it runs quietly inside the training loop and
+       every reported metric. Whenever a machine-learning quantity is an <em>average</em>, the CLT and the standard error
+       describe its noise.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Idea (this chapter)</th><th>In ML / AI it appears as</th><th>Concrete example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Mean of a sample</td><td>The mini-batch gradient</td><td>an average of per-example gradients, so a sample mean</td></tr>
+          <tr><td class="nm">Standard error &#963;/&#8730;n</td><td>Gradient noise vs batch size</td><td>bigger batches give smoother updates (noise &#8733; 1/&#8730;batch)</td></tr>
+          <tr><td class="nm">Sampling distribution</td><td>Uncertainty in a reported metric</td><td>accuracy 0.92 on 2,000 examples is really 0.92 &#177; 0.012</td></tr>
+          <tr><td class="nm">CLT averaging</td><td>Ensembles and bagging</td><td>averaging many models reduces variance</td></tr>
+          <tr><td class="nm">&#8730;n diminishing returns</td><td>The economics of more data</td><td>quadrupling data only halves the error</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>A <strong>mini-batch gradient</strong> is the average of per-example gradients, which makes it a sample mean
+           with standard error &#963;/&#8730;(batch size). That single fact explains why larger batches give smoother,
+           less noisy updates, and why the extra noise of small batches can actually aid generalization. The same logic
+           makes <strong>ensembles</strong> work: averaging many models is averaging many estimates, so by the CLT their
+           combined variance drops. And it forces honesty about <strong>evaluation</strong>: a test accuracy is itself a
+           sample statistic, so "92%" without a margin of error is an incomplete claim, the SE tells you whether a 1%
+           improvement is real or just sampling noise. The sampling distribution is the difference between a result and a
+           reliable result.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Watch the CLT happen in Python</h3>
+          <p>The companion notebook builds the sampling distribution of the mean from a skewed population, animates the
+             Central Limit Theorem across n = 1, 2, 5, 30, measures the standard error and its &#8730;n law, verifies that
+             95% confidence intervals capture the true mean 95% of the time, and shows the very same math governing
+             mini-batch gradient noise and a reported accuracy's margin of error.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/sampling-distributions-and-the-central-limit-theorem.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/sampling-distributions-and-the-central-limit-theorem.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/sampling-distributions-and-the-central-limit-theorem.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code> and <code>matplotlib</code> and launch
+      <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>A statistic is random</strong>: the sampling distribution is how a statistic (like x&#772;) varies across samples; a parameter is fixed.</span></li>
+        <li><span class="ck">✓</span><span><strong>The Central Limit Theorem</strong>: the sampling distribution of the mean becomes normal as n grows, whatever the population's shape.</span></li>
+        <li><span class="ck">✓</span><span><strong>Standard error</strong> SE = &#963;/&#8730;n is the spread of the sample mean; halving it takes 4&#215; the data.</span></li>
+        <li><span class="ck">✓</span><span><strong>The 95% interval</strong> x&#772; &#177; 1.96 &#215; SE captures the true mean about 95% of the time, the template for inference.</span></li>
+        <li><span class="ck">✓</span><span><strong>In ML/AI</strong>: mini-batch gradients, ensemble variance, and a metric's margin of error are all sampling-distribution phenomena.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them on paper or with SciPy before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Standard error</h4>
+        <p>A population has standard deviation 20. Find the standard error of the sample mean for n = 100 and n = 400.</p>
+        <div class="chint">Hint: SE = &#963;/&#8730;n.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>CLT in action</h4>
+        <p>Daily sales have mean 500 and sd 120 (skewed). For a sample of 36 days, find P(sample mean &gt; 540).</p>
+        <div class="chint">Hint: the mean is approximately normal with SE = 120/&#8730;36 = 20; then use z.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>The &#8730;n law</h4>
+        <p>Your sample gives a standard error of 4 and you want to cut it to 1. By what factor must the sample size
+           grow?</p>
+        <div class="chint">Hint: SE &#8733; 1/&#8730;n, so dividing SE by 4 needs n &#215; 4&#178;.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Confidence interval</h4>
+        <p>A sample of 64 has mean 50 and population sd 16. Build an approximate 95% confidence interval for the true
+           mean.</p>
+        <div class="chint">Hint: x&#772; &#177; 1.96 &#215; SE, with SE = 16/&#8730;64.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>A poll's margin</h4>
+        <p>A poll of 1,000 finds 60% support. Find the standard error of the proportion and the 95% margin of error.</p>
+        <div class="chint">Hint: SE = &#8730;(p(1&#8722;p)/n); margin = 1.96 &#215; SE.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code.
+           Try them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/sampling-distributions-and-the-central-limit-theorem--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/sampling-distributions-and-the-central-limit-theorem--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/sampling-distributions-and-the-central-limit-theorem--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on sampling distributions and the CLT. Answer them, hit <strong>Check Answers</strong>, and
+       keep refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="the-normal-distribution-in-depth.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 39 · Previous</span><br><span class="cn-title">The Normal Distribution in Depth</span></span>
+    </a>
+    <a class="cn-btn next" href="distributions-for-inference.html">
+      <span><span class="cn-dir">Chapter 41 · Next</span><br><span class="cn-title">Distributions for Inference</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 40 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch40";
+  window.QUIZ_DATA = [
+    {
+      q: "A 'sampling distribution' is the distribution of…",
+      options: ["The raw data in one sample", "A statistic (like the mean) across many possible samples", "The population", "The errors of a model"],
+      answer: 1,
+      explain: "It is the distribution of a statistic, such as the sample mean, computed over all possible samples of a given size."
+    },
+    {
+      q: "The Central Limit Theorem says that as the sample size grows, the sampling distribution of the mean…",
+      options: ["Matches the population's shape", "Becomes normal, regardless of the population's shape", "Becomes uniform", "Has zero variance"],
+      answer: 1,
+      explain: "The CLT: averages of many independent draws are approximately normal, even if the population is skewed or strange."
+    },
+    {
+      q: "The standard error of the sample mean is…",
+      options: ["σ", "σ/√n", "σ²", "σ·n"],
+      answer: 1,
+      explain: "SE = σ/√n. It measures how much the sample mean varies from sample to sample, and shrinks as n grows."
+    },
+    {
+      q: "To cut the standard error in half, you must…",
+      options: ["Double the sample size", "Quadruple the sample size", "Halve the sample size", "Nothing; it cannot change"],
+      answer: 1,
+      explain: "Because SE ∝ 1/√n, halving it requires 2² = 4 times the data. Precision improves only with the square root of n."
+    },
+    {
+      q: "Why can we use the normal distribution for inference even when the data is skewed?",
+      options: ["Skewed data is actually normal", "The CLT makes the sampling distribution of the mean normal", "We delete the skew first", "We cannot; inference needs normal data"],
+      answer: 1,
+      explain: "Inference is about the sample mean, and the CLT makes the mean's distribution normal for large n, regardless of the raw data."
+    },
+    {
+      q: "An approximate 95% confidence interval for a mean is…",
+      options: ["x̄ ± SE", "x̄ ± 1.96 × SE", "x̄ ± σ", "x̄ ± n"],
+      answer: 1,
+      explain: "Since the mean is approximately normal, x̄ ± 1.96 × SE captures the true mean about 95% of the time."
+    },
+    {
+      q: "A mini-batch gradient in deep learning is best described as…",
+      options: ["The exact full-data gradient", "A sample mean of per-example gradients, with SE ∝ 1/√(batch size)", "Always zero", "Unrelated to statistics"],
+      answer: 1,
+      explain: "It averages per-example gradients, so it is a sample mean; its noise shrinks like 1/√(batch), which is why bigger batches are smoother."
+    },
+    {
+      q: "A model reports 92% accuracy on a test set. Why report a margin of error too?",
+      options: ["To look rigorous", "Because the accuracy is a sample statistic with its own standard error", "It is not necessary", "Because 92% is always wrong"],
+      answer: 1,
+      explain: "Test accuracy is itself a sample mean; its standard error tells you whether a small difference between models is real or just sampling noise."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

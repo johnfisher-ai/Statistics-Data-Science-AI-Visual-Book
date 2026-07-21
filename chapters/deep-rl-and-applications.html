@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 119 · Deep RL &amp; Applications — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#eef2ff; border:1px solid #c7d2fe; border-left:4px solid #4338ca; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#3730a3; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/deep-rl-and-applications.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XX · Reinforcement Learning</span><span class="sep">/</span>
+      <span>Chapter 119</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XX · Reinforcement Learning</span> Scaling up, and aligning AI</div>
+    <h1>Deep RL <span class="accent">&amp; Applications</span></h1>
+    <p class="dek">A lookup table cannot cope with a video screen or a robot's cameras. Deep reinforcement learning swaps
+       the table for a neural network, and the same ideas, taken to scale, beat world champions at Go and align the large
+       language models you use every day.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~22 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 119</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">The last chapter's Q-learning kept a table with one row per state. That works for a 25-cell maze and
+       collapses everywhere else: a chess position, a camera frame, and a robot's joint angles all have
+       <span class="hl">astronomically many states</span>. <span class="term">Deep reinforcement learning</span> replaces
+       the table with a <span class="hl">neural network</span> that generalizes across states, and that single change
+       unlocks the headline results of modern AI.</p>
+
+    <div class="def-card">
+      <div class="sigma">🧠</div>
+      <div class="def-body">
+        <span class="def-kw">Deep RL</span> uses neural networks as the agent's brain. <span class="def-kw">DQN</span>
+        learns a neural value function; <span class="def-kw">policy-gradient</span> methods learn the policy directly;
+        <span class="def-kw">actor-critic</span> combines them. <span class="def-kw">RLHF</span> uses these tools, plus a
+        learned <span class="def-kw">reward model</span>, to align large language models.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🕹️</div>
+      <div><div class="ctitle">The chapter in one line</div>
+        <p>Swap the Q-table for a <strong>neural network</strong>: <strong>DQN</strong> (value-based),
+           <strong>policy gradients</strong> (policy-based), and <strong>actor-critic</strong> (both) scale RL to huge
+           problems, and <strong>RLHF</strong>, a reward model learned from human preferences plus PPO, is how those ideas
+           align today's chatbots.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1 ===== -->
+  <section id="table-to-net">
+    <div class="section-eyebrow"><div class="num">1</div><h2>From Table to Network</h2></div>
+    <p>A Q-table stores a separate number for every state-action pair. Double the resolution of a camera and the table
+       explodes past the number of atoms in the universe, you can never fill it, let alone visit every entry. The escape is
+       <span class="term">function approximation</span>: instead of memorizing a value per state, train a
+       <span class="hl">neural network</span> that <em>reads the state and outputs the values</em>, so nearby states share
+       what they learn.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 240" width="100%" font-family="Inter, sans-serif" aria-label="A giant Q-table with one row per state is crossed out and replaced by a neural network that takes the state as input and outputs a Q-value for each action">
+        <text x="340" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">The core idea of deep RL: a function, not a table</text>
+        <!-- table (crossed out) -->
+        <g>
+          <rect x="30" y="46" width="150" height="150" rx="8" fill="#f7f8fc" stroke="#cbd5e1"/>
+          <text x="105" y="40" text-anchor="middle" font-size="9.5" fill="#64748b" font-weight="700">Q-table</text>
+          <line x1="30" y1="76" x2="180" y2="76" stroke="#e2e8f0"/><line x1="30" y1="100" x2="180" y2="100" stroke="#e2e8f0"/>
+          <line x1="30" y1="124" x2="180" y2="124" stroke="#e2e8f0"/><line x1="30" y1="148" x2="180" y2="148" stroke="#e2e8f0"/>
+          <line x1="30" y1="172" x2="180" y2="172" stroke="#e2e8f0"/><line x1="105" y1="46" x2="105" y2="196" stroke="#e2e8f0"/>
+          <text x="67" y="66" text-anchor="middle" font-size="7.5" fill="#94a3b8">state</text>
+          <text x="143" y="66" text-anchor="middle" font-size="7.5" fill="#94a3b8">Q values</text>
+          <text x="105" y="214" text-anchor="middle" font-size="7.5" fill="#b91c1c">one row per state: impossible at scale</text>
+          <line x1="34" y1="50" x2="176" y2="192" stroke="#ef4444" stroke-width="2.5"/><line x1="176" y1="50" x2="34" y2="192" stroke="#ef4444" stroke-width="2.5"/>
+        </g>
+        <!-- arrow -->
+        <text x="235" y="120" text-anchor="middle" font-size="22" fill="#4338ca">&#8594;</text>
+        <!-- neural net -->
+        <g>
+          <text x="300" y="66" text-anchor="middle" font-size="8.5" fill="#3730a3" font-weight="700">state s</text>
+          <circle cx="300" cy="95" r="8" fill="#c7d2fe"/><circle cx="300" cy="130" r="8" fill="#c7d2fe"/>
+          <!-- hidden -->
+          <g fill="#6366f1"><circle cx="390" cy="80" r="8"/><circle cx="390" cy="112" r="8"/><circle cx="390" cy="144" r="8"/>
+             <circle cx="470" cy="80" r="8"/><circle cx="470" cy="112" r="8"/><circle cx="470" cy="144" r="8"/></g>
+          <!-- outputs -->
+          <g fill="#4338ca"><circle cx="560" cy="80" r="8"/><circle cx="560" cy="104" r="8"/><circle cx="560" cy="128" r="8"/><circle cx="560" cy="152" r="8"/></g>
+          <!-- edges (sparse) -->
+          <g stroke="#e2e8f0" stroke-width="0.8">
+            <line x1="308" y1="95" x2="382" y2="80"/><line x1="308" y1="95" x2="382" y2="112"/><line x1="308" y1="130" x2="382" y2="112"/><line x1="308" y1="130" x2="382" y2="144"/>
+            <line x1="398" y1="80" x2="462" y2="80"/><line x1="398" y1="112" x2="462" y2="112"/><line x1="398" y1="144" x2="462" y2="144"/><line x1="398" y1="112" x2="462" y2="80"/>
+            <line x1="478" y1="80" x2="552" y2="80"/><line x1="478" y1="112" x2="552" y2="104"/><line x1="478" y1="112" x2="552" y2="128"/><line x1="478" y1="144" x2="552" y2="152"/>
+          </g>
+          <text x="435" y="176" text-anchor="middle" font-size="8" fill="#94a3b8">neural network</text>
+          <text x="595" y="84" font-size="7.5" fill="#3730a3">Q(s, up)</text>
+          <text x="595" y="108" font-size="7.5" fill="#3730a3">Q(s, right)</text>
+          <text x="595" y="132" font-size="7.5" fill="#3730a3">Q(s, down)</text>
+          <text x="595" y="156" font-size="7.5" fill="#3730a3">Q(s, left)</text>
+        </g>
+      </svg>
+    </figure>
+
+    <p>A <span class="term">Deep Q-Network (DQN)</span> is exactly this: a net that maps a state to one Q-value per action.
+       Training it naively is unstable, so DQN adds two fixes, <span class="term">experience replay</span> (train on random
+       past transitions to break correlations) and a <span class="term">target network</span> (a slow-moving copy that
+       provides a steady learning target). On our GridWorld the DQN reaches a return of <strong>9.3</strong>, matching the
+       tabular agent, but now it learns a <em>function</em> that would scale to a pixel screen. This is the algorithm that
+       first played Atari from raw images.</p>
+  </section>
+
+  <!-- ===== Section 2 ===== -->
+  <section id="families">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Three Families: Value, Policy &amp; Actor-Critic</h2></div>
+    <p>Deep RL splits into three approaches, and our GridWorld shows two of them solving the same maze.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Family</th><th>What it learns</th><th>Strength / cost</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Value-based (DQN)</td><td>Q(s, a), then act greedily</td><td>sample-efficient; needs discrete actions</td></tr>
+          <tr><td class="nm">Policy-based (REINFORCE)</td><td>the policy (action probabilities) directly</td><td>handles continuous actions; higher variance</td></tr>
+          <tr><td class="nm">Actor-critic (A2C, PPO, SAC)</td><td>a policy (actor) + a value (critic)</td><td>low-variance, stable; the modern default</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>A <span class="term">policy-gradient</span> method skips values and pushes up the probability of actions that led to
+       high reward. It also solves the maze (return <strong>9.2</strong>) but learns more noisily, policy gradients are
+       <span class="hl">high-variance</span>. The cure is to subtract a <span class="term">baseline</span> (a value
+       estimate) from the return. Promote that baseline into its own learned network and you get
+       <span class="term">actor-critic</span>: the <strong>actor</strong> chooses actions while the <strong>critic</strong>
+       scores states to steady the learning. <span class="term">PPO</span>, a robust actor-critic, is the algorithm behind
+       aligning language models, next.</p>
+  </section>
+
+  <!-- ===== Section 3 ===== -->
+  <section id="rlhf">
+    <div class="section-eyebrow"><div class="num">3</div><h2>RLHF: Aligning Language Models</h2></div>
+    <p>Why does a chatbot feel helpful and safe? A large part of the answer is
+       <span class="term">RLHF</span>, reinforcement learning from human feedback, which turns fuzzy human preferences into
+       a reward the model can be trained to maximize. It runs in three stages.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 210" width="100%" font-family="Inter, sans-serif" aria-label="The three stages of RLHF: supervised fine-tuning on example answers; a reward model trained on human preference comparisons; and PPO reinforcement learning that optimizes the model against the learned reward">
+        <text x="340" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">RLHF in three stages</text>
+        <!-- stage 1 -->
+        <rect x="24" y="50" width="196" height="120" rx="12" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="52" cy="76" r="12" fill="#4338ca"/><text x="52" y="80" text-anchor="middle" font-size="11" fill="#fff" font-weight="800">1</text>
+        <text x="72" y="72" font-size="11" fill="#3730a3" font-weight="800">Supervised</text>
+        <text x="72" y="86" font-size="11" fill="#3730a3" font-weight="800">fine-tuning</text>
+        <text x="120" y="118" text-anchor="middle" font-size="8.5" fill="#4a5578">learn from example</text>
+        <text x="120" y="131" text-anchor="middle" font-size="8.5" fill="#4a5578">answers written by</text>
+        <text x="120" y="144" text-anchor="middle" font-size="8.5" fill="#4a5578">humans</text>
+        <!-- stage 2 -->
+        <rect x="242" y="50" width="196" height="120" rx="12" fill="#eef6ff" stroke="#bfdbfe"/>
+        <circle cx="270" cy="76" r="12" fill="#2563eb"/><text x="270" y="80" text-anchor="middle" font-size="11" fill="#fff" font-weight="800">2</text>
+        <text x="290" y="72" font-size="11" fill="#1d4ed8" font-weight="800">Reward model</text>
+        <text x="360" y="100" text-anchor="middle" font-size="8.5" fill="#4a5578">humans rank pairs of</text>
+        <text x="360" y="113" text-anchor="middle" font-size="8.5" fill="#4a5578">responses; a model</text>
+        <text x="360" y="126" text-anchor="middle" font-size="8.5" fill="#4a5578">learns to predict the</text>
+        <text x="360" y="139" text-anchor="middle" font-size="8.5" fill="#4a5578">preferred one</text>
+        <text x="360" y="158" text-anchor="middle" font-size="8" fill="#1d4ed8" font-weight="700">(this chapter's demo)</text>
+        <!-- stage 3 -->
+        <rect x="460" y="50" width="196" height="120" rx="12" fill="#f0fdf4" stroke="#bbf7d0"/>
+        <circle cx="488" cy="76" r="12" fill="#059669"/><text x="488" y="80" text-anchor="middle" font-size="11" fill="#fff" font-weight="800">3</text>
+        <text x="508" y="72" font-size="11" fill="#065f46" font-weight="800">PPO fine-tune</text>
+        <text x="558" y="100" text-anchor="middle" font-size="8.5" fill="#4a5578">an actor-critic RL</text>
+        <text x="558" y="113" text-anchor="middle" font-size="8.5" fill="#4a5578">step tunes the model</text>
+        <text x="558" y="126" text-anchor="middle" font-size="8.5" fill="#4a5578">to maximize the</text>
+        <text x="558" y="139" text-anchor="middle" font-size="8.5" fill="#4a5578">learned reward</text>
+        <!-- arrows -->
+        <text x="230" y="114" text-anchor="middle" font-size="18" fill="#4338ca">&#8594;</text>
+        <text x="448" y="114" text-anchor="middle" font-size="18" fill="#2563eb">&#8594;</text>
+      </svg>
+    </figure>
+
+    <p>The middle stage is the clever one, and it is <span class="hl">just a classifier</span>. Humans compare pairs of
+       responses and pick the better one; a <span class="term">reward model</span> learns to predict those choices, giving
+       a single scalar "how good is this response?" for anything the model produces. Stage three then uses
+       <strong>PPO</strong> to push the language model toward high-reward responses, with a leash that keeps it from
+       drifting too far and gaming the score.</p>
+  </section>
+
+  <!-- ===== Section 4: REAL-WORLD ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: Building the Reward Model</h2></div>
+    <p>Let us build stage two ourselves, from real preference data. The insight: preferring A over B means
+       <span class="hl">reward(A) &gt; reward(B)</span>, which is exactly a <span class="term">Bradley-Terry</span> model,
+       fittable as a logistic regression on the difference between the two responses' features.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · deep-rl-and-applications--preferences.xlsx</div>
+      <p style="margin:0.5rem 0 0">600 human preference comparisons. Each row holds the rubric scores
+        (<code>helpfulness</code>, <code>factuality</code>, <code>conciseness</code>, <code>safety</code>) of a
+        <strong>chosen</strong> response and a <strong>rejected</strong> one. The true preference weights are hidden, the
+        reward model must recover them from the choices alone.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/deep-rl-and-applications--preferences.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 600 comparisons</small></a>
+      </div>
+    </div>
+
+    <p>Fitting the reward model on the feature differences recovers what humans value, from nothing but pairwise choices:</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Rubric feature</th><th>Learned reward weight</th><th>Reads as</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">safety</td><td>1.53</td><td>matters most</td></tr>
+          <tr><td class="nm">factuality</td><td>1.36</td><td>close second</td></tr>
+          <tr><td class="nm">helpfulness</td><td>1.11</td><td>important</td></tr>
+          <tr><td class="nm">conciseness</td><td>0.74</td><td>a modest plus</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The model reaches <strong>85% accuracy</strong> predicting held-out human judgments and correctly ranks the
+       preferred response about <strong>84%</strong> of the time, learning, with no access to the hidden weights, that
+       <strong>safety and factuality</strong> dominate. That scalar reward is precisely what PPO would then optimize. The
+       whole chapter meets here: a neural network, trained by an actor-critic method, against a reward learned from human
+       preference, that pipeline is a large part of why modern assistants are helpful and safe.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Deep RL Applications in Machine Learning &amp; AI</h2></div>
+    <p>Deep RL is behind many of the field's most visible milestones, and a growing share of production AI.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>System</th><th>What deep RL did</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">AlphaGo / AlphaZero</td><td>beat world champions at Go, chess, and shogi via self-play RL</td></tr>
+          <tr><td class="nm">Atari (DQN)</td><td>learned to play dozens of games from raw pixels, superhuman on many</td></tr>
+          <tr><td class="nm">Robotics &amp; control</td><td>locomotion, manipulation, and data-center cooling via policy methods</td></tr>
+          <tr><td class="nm">RLHF (ChatGPT, Claude)</td><td>aligned large language models to be helpful, harmless, and honest</td></tr>
+          <tr><td class="nm">Recommendation &amp; ops</td><td>long-horizon decisions in ads, logistics, and energy</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>Deep RL is where learning to <em>predict</em> becomes learning to <em>act</em>. It produced the first systems to
+           out-plan human experts (AlphaGo/AlphaZero) and, through <strong>RLHF</strong>, is now a standard step in building
+           the large language models at the center of AI. The frontier is active: researchers are refining preference
+           optimization (methods like <strong>DPO</strong> that skip the RL step), scaling <strong>RLAIF</strong> where the
+           feedback itself comes from AI, and using RL to teach models to <strong>reason</strong> through multi-step
+           problems. The four ideas from these two chapters, reward, policy, value, and exploration, remain the vocabulary
+           of it all, now expressed with neural networks at enormous scale.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Build deep RL in Python</h3>
+          <p>The companion notebook trains a <strong>DQN</strong> (with experience replay and a target network) and a
+             <strong>policy-gradient</strong> agent on the GridWorld with <code>torch</code>, explains
+             <strong>actor-critic</strong>, then fits the <strong>RLHF reward model</strong> from real preference data,
+             each cell explained.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/deep-rl-and-applications.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/deep-rl-and-applications.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/deep-rl-and-applications.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly. <strong>Open in Colab</strong> runs it live. To run
+      locally, install <code>numpy</code>, <code>pandas</code>, <code>torch</code>, <code>scikit-learn</code>,
+      <code>matplotlib</code>, and <code>openpyxl</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Deep RL</strong> replaces the Q-table with a <strong>neural network</strong>, so RL scales to huge and continuous state spaces.</span></li>
+        <li><span class="ck">✓</span><span><strong>DQN</strong> stabilizes neural Q-learning with <strong>experience replay</strong> and a <strong>target network</strong>; it mastered Atari from pixels.</span></li>
+        <li><span class="ck">✓</span><span><strong>Policy-gradient</strong> methods learn the policy directly (higher variance); <strong>actor-critic</strong> adds a value critic to steady them.</span></li>
+        <li><span class="ck">✓</span><span><strong>RLHF</strong> aligns LLMs in three stages: supervised fine-tuning, a <strong>reward model</strong> from human preferences, and <strong>PPO</strong>.</span></li>
+        <li><span class="ck">✓</span><span>The reward model is <strong>just a classifier</strong>, we fit one that recovered safety and factuality as the top human priorities.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges. Try them with torch and scikit-learn before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Train a DQN</h4>
+        <p>Train a neural Q-network with experience replay and a target network; report its evaluation return.</p>
+        <div class="chint">Hint: a small MLP, a replay buffer, and a periodically-copied target net.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Policy gradient</h4>
+        <p>Train a REINFORCE policy with a baseline; report its final return.</p>
+        <div class="chint">Hint: sample actions from <code>Categorical(logits=...)</code>; loss = -(logprob × advantage).</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Value vs policy</h4>
+        <p>State the key difference between DQN and policy-gradient methods.</p>
+        <div class="chint">Hint: what does each one learn, and which handles continuous actions?</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Reward model</h4>
+        <p>Fit the RLHF Bradley-Terry reward model and name the feature humans weight most.</p>
+        <div class="chint">Hint: logistic regression (no intercept) on <code>chosen - rejected</code> features.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Does it rank correctly?</h4>
+        <p>Report the fraction of held-out comparisons the reward model ranks the way humans did.</p>
+        <div class="chint">Hint: check whether reward(chosen) &#8722; reward(rejected) &gt; 0.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code. Try
+           them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/deep-rl-and-applications--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/deep-rl-and-applications--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/deep-rl-and-applications--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on deep RL and RLHF. Answer them, hit <strong>Check Answers</strong>, and keep refining until
+       you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next: put it all together</div>
+      <p>You have met every ML paradigm, supervised, unsupervised, and reinforcement. Part XXI turns theory into practice.
+         <strong>Chapter 120 &#183; Case Study: An End-to-End ML Project</strong> walks a real dataset from raw data
+         through splits, a baseline, cross-validation, and tuning, the full workflow, start to finish.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="reinforcement-learning-primer.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 118 · Previous</span><br><span class="cn-title">Reinforcement Learning Primer</span></span>
+    </a>
+    <a class="cn-btn next" href="case-study-an-end-to-end-ml-project.html">
+      <span><span class="cn-dir">Chapter 120 · Next</span><br><span class="cn-title">Case Study: An End-to-End ML Project</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 119 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch119";
+  window.QUIZ_DATA = [
+    {
+      q: "Why does tabular Q-learning fail on large problems?",
+      options: ["It is too accurate", "It needs one entry per state, which explodes for images or big state spaces", "It cannot use rewards", "It only works with labels"],
+      answer: 1,
+      explain: "A table stores a value per state; realistic state spaces are far too large to enumerate, so we approximate with a network."
+    },
+    {
+      q: "A Deep Q-Network (DQN) replaces the Q-table with…",
+      options: ["A bigger table", "A neural network that maps a state to its action-values", "A decision tree only", "A reward model"],
+      answer: 1,
+      explain: "The network reads the state and outputs a Q-value per action, generalizing across similar states."
+    },
+    {
+      q: "Experience replay and a target network are used in DQN to…",
+      options: ["Speed up the GPU", "Stabilize training (break correlations and give a steady target)", "Label the data", "Remove exploration"],
+      answer: 1,
+      explain: "Replay decorrelates consecutive samples; the target network provides a slow-moving, stable learning target."
+    },
+    {
+      q: "A policy-gradient method (e.g., REINFORCE) learns…",
+      options: ["A value table", "The policy (action probabilities) directly", "The reward model", "The environment dynamics"],
+      answer: 1,
+      explain: "It adjusts action probabilities to increase expected return, rather than learning values and acting greedily."
+    },
+    {
+      q: "Compared with DQN, policy-gradient methods tend to be…",
+      options: ["Lower variance", "Higher variance, but able to handle continuous/stochastic actions", "Unable to learn", "Label-dependent"],
+      answer: 1,
+      explain: "Direct policy optimization is noisier, which is why baselines and actor-critic methods are used to reduce variance."
+    },
+    {
+      q: "An actor-critic method uses…",
+      options: ["Only a policy", "An actor (policy) plus a critic (value estimate) to reduce variance", "Only a value table", "No neural networks"],
+      answer: 1,
+      explain: "The critic supplies a low-variance baseline that guides the actor; PPO is a popular actor-critic algorithm."
+    },
+    {
+      q: "In RLHF, the reward model is trained to…",
+      options: ["Generate text", "Predict which of two responses a human preferred", "Cluster responses", "Compress the model"],
+      answer: 1,
+      explain: "It learns a scalar reward from pairwise human preferences (a Bradley-Terry classifier), then PPO optimizes against it."
+    },
+    {
+      q: "The three stages of RLHF are…",
+      options: ["Split, train, test", "Supervised fine-tuning, reward modeling, PPO fine-tuning", "Cluster, reduce, detect", "Explore, exploit, repeat"],
+      answer: 1,
+      explain: "First imitate good answers, then learn a reward from human preferences, then optimize the model against that reward."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

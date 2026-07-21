@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 72 · Margin of Error — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#eff6ff; border:1px solid #bfdbfe; border-left:4px solid #2563eb; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#1d4ed8; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file.nb { background:#eef2ff; color:#1d4ed8; border-color:#c7d2fe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/margin-of-error.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XI · Estimation &amp; Confidence Intervals</span><span class="sep">/</span>
+      <span>Chapter 72</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XI · Estimation &amp; Confidence Intervals</span> The &#177; in every poll</div>
+    <h1>Margin <span class="accent">of Error</span></h1>
+    <p class="dek">The margin of error is the &#177; you see in every poll, the half-width of a confidence interval. We
+       unpack what drives it, confidence, variability, and sample size, watch it shrink like 1/&#8730;n, and report a real
+       customer survey the professional way.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~14 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 72</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">"52% support, &#177; 3 points." That little &#177; is the <em>margin of error</em>, and it is the most
+       widely seen, and most widely misunderstood, number in statistics. This chapter is a close look at exactly what it
+       is and what makes it big or small.</p>
+
+    <div class="def-card">
+      <div class="sigma">E = z&#183;SE</div>
+      <div class="def-body">
+        The <span class="def-kw">margin of error</span> is the half-width of a confidence interval: E = z&#183;SE. It
+        grows with the <span class="def-kw">confidence level</span> (bigger z) and with <span class="def-kw">variability</span>,
+        and shrinks with <span class="def-kw">sample size</span> as 1/&#8730;n.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">📐</div>
+      <div><div class="ctitle">It is just the half-width</div>
+        <p>Every interval in this Part is estimate &#177; margin. The margin of error <em>is</em> that &#177;. Understanding
+           it is understanding how precise an estimate really is, and how to report it honestly.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: what it is ===== -->
+  <section id="whatis">
+    <div class="section-eyebrow"><div class="num">1</div><h2>What the Margin of Error Is</h2></div>
+    <p>A confidence interval is <em>estimate &#177; margin</em>. That margin is the <span class="term">margin of
+       error</span>, E = z&#183;SE. When a poll reports "52% &#177; 3%", the 3 points is E, almost always at 95%
+       confidence.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 130" width="100%" font-family="Inter, sans-serif" aria-label="A poll estimate of 52% with a margin of error of plus or minus 3 points">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">"52% &#177; 3%" means estimate 52%, margin of error 3 points</text>
+        <line x1="80" y1="74" x2="600" y2="74" stroke="#cbd5e1" stroke-width="2"/>
+        <line x1="260" y1="74" x2="420" y2="74" stroke="#2563eb" stroke-width="6"/>
+        <circle cx="340" cy="74" r="7" fill="#1d4ed8"/>
+        <line x1="260" y1="62" x2="260" y2="86" stroke="#2563eb" stroke-width="2.5"/><line x1="420" y1="62" x2="420" y2="86" stroke="#2563eb" stroke-width="2.5"/>
+        <text x="340" y="56" text-anchor="middle" font-size="9.5" fill="#1d4ed8" font-weight="800">52%</text>
+        <path d="M340,100 L260,100" stroke="#8b94b3" stroke-width="1.2" marker-end="url(#m1)"/>
+        <path d="M340,100 L420,100" stroke="#8b94b3" stroke-width="1.2" marker-end="url(#m1)"/>
+        <defs><marker id="m1" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8b94b3"/></marker></defs>
+        <text x="300" y="114" text-anchor="middle" font-size="8.5" fill="#4a5578">E = 3 pts</text>
+        <text x="382" y="114" text-anchor="middle" font-size="8.5" fill="#4a5578">E = 3 pts</text>
+      </svg>
+    </figure>
+
+    <p>The margin of error tells you how precise the estimate is, nothing more and nothing less. It does <em>not</em>
+       describe error from bad questions, biased samples, or non-response, only the random sampling uncertainty. A small
+       margin on a biased sample is still wrong (recall Chapter 66); E measures precision, not accuracy.</p>
+  </section>
+
+  <!-- ===== Section 2: drivers ===== -->
+  <section id="drivers">
+    <div class="section-eyebrow"><div class="num">2</div><h2>The Three Drivers</h2></div>
+    <p>For a proportion, E = z&#183;&#8730;(p(1&#8722;p)/n). Three things move it.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Driver</th><th>Effect on E</th><th>From the notebook (n = 1,000, p = 0.5)</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Confidence level (z)</td><td>higher confidence &#8594; wider E</td><td>90% &#177;2.6 &#183; 95% &#177;3.1 &#183; 99% &#177;4.1 pts</td></tr>
+          <tr><td class="nm">Variability p(1&#8722;p)</td><td>most at p = 0.5</td><td>p=0.1 &#177;1.9 &#183; p=0.3 &#177;2.8 &#183; p=0.5 &#177;3.1 pts</td></tr>
+          <tr><td class="nm">Sample size n</td><td>more data &#8594; smaller E (1/&#8730;n)</td><td>only knob that helps without costing confidence</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Two of the three are trade-offs: you cannot lower the margin by lowering your confidence (that is cheating), and
+       you do not control how variable the population is, so planners assume the worst case <strong>p = 0.5</strong>, where
+       p(1&#8722;p) is largest. The only honest lever is <strong>sample size</strong>.</p>
+  </section>
+
+  <!-- ===== Section 3: 1/sqrt(n) ===== -->
+  <section id="sqrtn">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The 1/&#8730;n Law</h2></div>
+    <p>Because E is proportional to <span class="hl">1/&#8730;n</span>, precision is expensive: each halving of the margin
+       costs four times the sample.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 180" width="100%" font-family="Inter, sans-serif" aria-label="Margin of error falling as sample size grows, with diminishing returns">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Margin of error vs sample size (95%, worst case)</text>
+        <line x1="70" y1="155" x2="640" y2="155" stroke="#8b94b3" stroke-width="1"/>
+        <line x1="70" y1="35" x2="70" y2="155" stroke="#8b94b3" stroke-width="1"/>
+        <text x="355" y="174" text-anchor="middle" font-size="8.5" fill="#8b94b3">sample size n &#8594;</text>
+        <text x="58" y="44" text-anchor="end" font-size="8.5" fill="#8b94b3">E</text>
+        <path d="M90,50 C150,95 240,128 640,150" fill="none" stroke="#2563eb" stroke-width="2.5"/>
+        <g fill="#1d4ed8" font-size="8" text-anchor="middle">
+          <circle cx="110" cy="60" r="3"/><text x="110" y="52">n=250: &#177;6.2</text>
+          <circle cx="210" cy="100" r="3"/><text x="225" y="94">n=1000: &#177;3.1</text>
+          <circle cx="430" cy="135" r="3"/><text x="430" y="128">n=4000: &#177;1.6</text>
+        </g>
+        <text x="500" y="150" font-size="8.5" fill="#64748b" font-weight="700">diminishing returns</text>
+      </svg>
+    </figure>
+
+    <p>Going from &#177;6 to &#177;3 points is cheap; going from &#177;3 to &#177;1.5 costs four times as much again. This is
+       exactly why the classic national poll lands near <strong>n = 1,000</strong> (about &#177;3%): it is the sweet spot
+       where extra precision stops being worth the cost. The same curve governs how big a test set you need to certify a
+       model's accuracy.</p>
+  </section>
+
+  <!-- ===== Section 4: REAL-WORLD ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: Reporting a Survey</h2></div>
+    <p>A company surveyed <strong>900 customers</strong> and wants to announce the share who would recommend it, the kind
+       of number that goes in a press release or board deck. Reporting it <em>with</em> a margin of error is what makes it
+       credible.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · margin-of-error--customer_survey.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per respondent with a <code>rating_1_5</code> and a derived
+        <code>would_recommend</code> (top-2-box).</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/margin-of-error--customer_survey.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 900 responses</small></a>
+      </div>
+    </div>
+
+    <p>The result, reported the right way:</p>
+    <div class="callout note">
+      <div class="cico">📣</div>
+      <div><div class="ctitle">The honest headline</div>
+        <p><strong>"64% of customers would recommend us, &#177; 3.1 points (95% confidence)."</strong> The true rate is
+           very likely between <strong>61.2% and 67.5%</strong>. Reporting only "64%" would imply a precision the data does
+           not have.</p></div>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Lever</th><th>Setting</th><th>Margin of error</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Confidence</td><td>90% / 95% / 99%</td><td>&#177;2.6 / &#177;3.1 / &#177;4.1 pts</td></tr>
+          <tr><td class="nm">Sample size</td><td>n = 300 / 900 / 2,500</td><td>&#177;5.4 / &#177;3.1 / &#177;1.9 pts</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The levers are clear: demanding 99% confidence widens the margin to about &#177;4 points, and to roughly halve the
+       margin the company would need to survey nearly three times as many customers. Knowing these trade-offs is the
+       difference between quoting a number and defending it.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Margin of Error in Machine Learning &amp; AI</h2></div>
+    <p>The same &#177; belongs on every metric a model reports. A leaderboard number without a margin is a poll without one.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Idea (this chapter)</th><th>In ML / AI it becomes</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Margin of error</td><td>Error bars on a metric</td><td>accuracy 92% &#177; 1.5%</td></tr>
+          <tr><td class="nm">1/&#8730;n law</td><td>How big a test set you need</td><td>&#177;1% accuracy needs ~9,600 labeled items</td></tr>
+          <tr><td class="nm">Worst case p = 0.5</td><td>Conservative eval sizing</td><td>plan test-set size assuming 50% accuracy</td></tr>
+          <tr><td class="nm">Precision vs confidence</td><td>How tight a claim you can make</td><td>tighter bars require more eval data</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>A model's accuracy is a proportion, so it has a margin of error exactly like a poll. With a 400-item test set,
+           the 95% margin is roughly &#177;5 points, so "91%" and "94%" models are indistinguishable. The
+           <strong>1/&#8730;n law</strong> tells you the test set must <em>quadruple</em> to halve those error bars, which
+           is why certifying a 1% improvement requires on the order of <strong>10,000</strong> labeled examples. Reporting
+           a metric without its margin of error is the leaderboard equivalent of a poll with no &#177;.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Dissect the margin of error in Python</h3>
+          <p>The companion notebook computes E = z&#183;SE, varies all three drivers (confidence, variability, n), plots
+             the 1/&#8730;n curve, and loads <code>margin-of-error--customer_survey.xlsx</code> to report a real recommend rate with
+             its margin of error and a levers table.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/margin-of-error.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/margin-of-error.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/margin-of-error.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, <code>scipy</code>,
+      <code>matplotlib</code>, and <code>openpyxl</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Margin of error</strong> E = z&#183;SE is the &#177; half-width of a confidence interval, the precision of an estimate.</span></li>
+        <li><span class="ck">✓</span><span><strong>Three drivers</strong>: confidence (bigger z &#8594; wider), variability (worst at p=0.5), and sample size.</span></li>
+        <li><span class="ck">✓</span><span><strong>1/&#8730;n law</strong>: quadruple the sample to halve the margin; the classic poll (n&#8776;1,000) is &#177;3%.</span></li>
+        <li><span class="ck">✓</span><span><strong>Precision &#8800; accuracy</strong>: a small margin on a biased sample is still wrong; E ignores question and sampling bias.</span></li>
+        <li><span class="ck">✓</span><span><strong>Real survey</strong>: 64% would recommend &#177;3.1 points at 95%; in ML, a 400-item test set gives &#177;5 points, so report metric margins.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them with NumPy and SciPy before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Compute a margin of error</h4>
+        <p>A poll of 1,200 finds 47% support. Compute the 95% margin of error.</p>
+        <div class="chint">Hint: E = 1.96&#183;&#8730;(0.47&#183;0.53/1200).</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Worst-case margin</h4>
+        <p>Not knowing p, compute the worst-case 95% margin for n = 1,200 (use p = 0.5).</p>
+        <div class="chint">Hint: p(1&#8722;p) is largest at 0.5.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Confidence widens the margin</h4>
+        <p>For n = 1,000 and p = 0.5, tabulate the margin at 90%, 95%, and 99% confidence.</p>
+        <div class="chint">Hint: <code>stats.norm.ppf(0.5 + conf/2)</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Quadruple for half</h4>
+        <p>Confirm that going from n = 1,000 to n = 4,000 halves the margin of error.</p>
+        <div class="chint">Hint: the ratio should be about 0.5.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Real data: survey margin</h4>
+        <p>Load <code>margin-of-error--customer_survey.xlsx</code> and report the recommend rate with its 95% margin of error.</p>
+        <div class="chint">Hint: proportion of <code>would_recommend</code>, then z&#183;SE.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code. Try
+           them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/margin-of-error--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/margin-of-error--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/margin-of-error--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on the margin of error. Answer them, hit <strong>Check Answers</strong>, and keep refining
+       until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">🧭</div>
+    <div><div class="ctitle">Up next</div>
+      <p>Every interval so far relied on a formula. <strong>Chapter 73</strong> closes the Part with
+         <strong>resampling and simulation</strong>, the bootstrap, which builds a confidence interval for almost any
+         statistic, including ones with no formula at all, by letting the data resample itself.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="confidence-intervals-for-proportions-and-differences.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 71 · Previous</span><br><span class="cn-title">CIs for Proportions &amp; Differences</span></span>
+    </a>
+    <a class="cn-btn next" href="resampling-and-simulation.html">
+      <span><span class="cn-dir">Chapter 73 · Next</span><br><span class="cn-title">Resampling &amp; Simulation</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 72 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch72";
+  window.QUIZ_DATA = [
+    {
+      q: "The margin of error is…",
+      options: ["The whole confidence interval", "The half-width of a confidence interval, E = z·SE", "The sample mean", "The standard deviation"],
+      answer: 1,
+      explain: "E = z·SE is the ± half-width; the full interval is estimate ± E."
+    },
+    {
+      q: "Which change makes the margin of error LARGER?",
+      options: ["A bigger sample", "A higher confidence level (e.g., 99% vs 95%)", "Less variable data", "p further from 0.5"],
+      answer: 1,
+      explain: "Higher confidence uses a larger z, widening the margin. Bigger n and lower variability both shrink it."
+    },
+    {
+      q: "For a proportion, variability p(1−p) is largest when…",
+      options: ["p = 0", "p = 0.5", "p = 1", "p = 0.1"],
+      answer: 1,
+      explain: "p(1−p) peaks at p = 0.5, so planners assume 0.5 for the conservative (largest) margin."
+    },
+    {
+      q: "The margin of error is proportional to…",
+      options: ["n", "1/√n", "n²", "1/n²"],
+      answer: 1,
+      explain: "E ∝ 1/√n, so cutting the margin in half requires four times the sample size."
+    },
+    {
+      q: "A classic national poll reports about ±3% because it surveys roughly…",
+      options: ["100 people", "1,000 people", "1 million people", "50 people"],
+      answer: 1,
+      explain: "At n ≈ 1,000 the worst-case 95% margin is about ±3 points, the cost-effective sweet spot."
+    },
+    {
+      q: "A poll has a tiny margin of error but a biased sample. The result is…",
+      options: ["Definitely accurate", "Precise but possibly wrong, the margin ignores bias", "Always 50%", "Impossible"],
+      answer: 1,
+      explain: "Margin of error measures sampling precision only, not bias from coverage, non-response, or bad questions."
+    },
+    {
+      q: "In the survey, 64% would recommend with a ±3.1-point margin. The true rate is very likely…",
+      options: ["Exactly 64%", "Between about 61% and 67%", "Below 50%", "Unknowable"],
+      answer: 1,
+      explain: "The interval is 64% ± 3.1 points, roughly [61.2%, 67.5%] at 95% confidence."
+    },
+    {
+      q: "A model's accuracy on a 400-item test set has a 95% margin of about ±5 points. This means…",
+      options: ["91% and 94% models are clearly different", "91% and 94% are statistically indistinguishable on that test set", "The model is broken", "Accuracy is exact"],
+      answer: 1,
+      explain: "With a ±5-point margin, a 3-point gap is within noise; you'd need a much larger test set to tell them apart."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

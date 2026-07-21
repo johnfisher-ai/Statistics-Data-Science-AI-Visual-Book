@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 24 · Feature Engineering — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#ecfeff; border:1px solid #a5f3fc; border-left:4px solid #0891b2; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#0e7490; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none; padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<!-- ============ TOP NAV ============ -->
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/feature-engineering.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<!-- ============ HERO ============ -->
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part IV · Preparing Data for Analysis</span><span class="sep">/</span>
+      <span>Chapter 24</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part IV · Preparing Data</span> Getting data ready</div>
+    <h1>Feature <span class="accent">Engineering</span></h1>
+    <p class="dek">A model can only learn from the columns you give it. Feature engineering is the craft of turning raw
+       data into those columns: encoding categories, scaling numbers, binning, and combining, so the signal is in a
+       form the model can use.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~13 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 24</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <!-- ===== Intro / Section 1 ===== -->
+  <section id="intro">
+    <p class="lead">Everything in Part IV so far cleaned and reshaped the data. This chapter prepares it for a model:
+       turning columns into <span class="term">features</span>, the numeric inputs an algorithm actually learns from.
+       It is often the highest-leverage step in the whole pipeline.</p>
+
+    <div class="def-card">
+      <div class="sigma">𝑥</div>
+      <div class="def-body">
+        A <span class="def-kw">feature</span> is a measurable input column a model learns from.
+        <span class="def-kw">Feature engineering</span> transforms raw data into effective features by encoding,
+        scaling, binning, and combining.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">💬</div>
+      <div><div class="ctitle">Why it matters</div>
+        <p>Good features often beat a fancier algorithm. As Andrew Ng put it,
+           "applied machine learning is basically feature engineering." It is where domain knowledge pays off:
+           a well-chosen ratio (price per square foot), a date part (day of week), or a clean encoding can do more
+           than any amount of model tuning. It sits between cleaning (the earlier chapters) and modeling.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 2: encoding ===== -->
+  <section id="encoding">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Encoding Categorical Variables</h2></div>
+    <p>Most models need numbers, not strings, so categories have to be converted, and <em>how</em> you convert them
+       depends on whether the category has a real order (Chapter 5). The wrong encoding quietly lies to the model.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 660 210" width="100%" font-family="Inter, sans-serif" aria-label="One color column shown as label, one-hot, and target encodings">
+        <text x="330" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Three ways to encode one "color" column</text>
+        <!-- original -->
+        <g font-size="10.5">
+          <text x="55" y="32" text-anchor="middle" font-size="9" fill="#8b94b3" font-weight="700">raw</text>
+          <rect x="20" y="50" width="70" height="22" fill="#eef1f8" stroke="#cdd3e6"/><text x="55" y="65" text-anchor="middle" fill="#1a2138">red</text>
+          <rect x="20" y="72" width="70" height="22" fill="#fff" stroke="#cdd3e6"/><text x="55" y="87" text-anchor="middle" fill="#1a2138">green</text>
+          <rect x="20" y="94" width="70" height="22" fill="#fff" stroke="#cdd3e6"/><text x="55" y="109" text-anchor="middle" fill="#1a2138">blue</text>
+        </g>
+        <!-- label / ordinal -->
+        <g font-size="10.5">
+          <text x="160" y="32" text-anchor="middle" font-size="9" fill="#d97706" font-weight="700">label (integer)</text>
+          <rect x="130" y="50" width="60" height="22" fill="#fef3e2" stroke="#d97706"/><text x="160" y="65" text-anchor="middle" fill="#1a2138">0</text>
+          <rect x="130" y="72" width="60" height="22" fill="#fef3e2" stroke="#d97706"/><text x="160" y="87" text-anchor="middle" fill="#1a2138">1</text>
+          <rect x="130" y="94" width="60" height="22" fill="#fef3e2" stroke="#d97706"/><text x="160" y="109" text-anchor="middle" fill="#1a2138">2</text>
+          <text x="160" y="132" text-anchor="middle" font-size="8.5" fill="#db2777">implies order!</text>
+          <text x="160" y="144" text-anchor="middle" font-size="8.5" fill="#8b94b3">ok for ordinal only</text>
+        </g>
+        <!-- one-hot -->
+        <g font-size="10">
+          <text x="350" y="32" text-anchor="middle" font-size="9" fill="#0891b2" font-weight="700">one-hot (binary columns)</text>
+          <g fill="#1a2138" text-anchor="middle">
+            <text x="270" y="44" font-size="8" fill="#8b94b3">red</text><text x="350" y="44" font-size="8" fill="#8b94b3">green</text><text x="430" y="44" font-size="8" fill="#8b94b3">blue</text>
+            <rect x="245" y="50" width="50" height="22" fill="#e0f7fb" stroke="#0891b2"/><text x="270" y="65">1</text><rect x="325" y="50" width="50" height="22" fill="#fff" stroke="#cdd3e6"/><text x="350" y="65">0</text><rect x="405" y="50" width="50" height="22" fill="#fff" stroke="#cdd3e6"/><text x="430" y="65">0</text>
+            <rect x="245" y="72" width="50" height="22" fill="#fff" stroke="#cdd3e6"/><text x="270" y="87">0</text><rect x="325" y="72" width="50" height="22" fill="#e0f7fb" stroke="#0891b2"/><text x="350" y="87">1</text><rect x="405" y="72" width="50" height="22" fill="#fff" stroke="#cdd3e6"/><text x="430" y="87">0</text>
+            <rect x="245" y="94" width="50" height="22" fill="#fff" stroke="#cdd3e6"/><text x="270" y="109">0</text><rect x="325" y="94" width="50" height="22" fill="#fff" stroke="#cdd3e6"/><text x="350" y="109">0</text><rect x="405" y="94" width="50" height="22" fill="#e0f7fb" stroke="#0891b2"/><text x="430" y="109">1</text>
+          </g>
+          <text x="350" y="138" text-anchor="middle" font-size="8.5" fill="#0891b2">no false order · the nominal default</text>
+        </g>
+        <!-- target -->
+        <g font-size="10.5">
+          <text x="560" y="32" text-anchor="middle" font-size="9" fill="#7c3aed" font-weight="700">target (mean of y)</text>
+          <rect x="520" y="50" width="80" height="22" fill="#f0e9fe" stroke="#7c3aed"/><text x="560" y="65" text-anchor="middle" fill="#1a2138">0.31</text>
+          <rect x="520" y="72" width="80" height="22" fill="#f0e9fe" stroke="#7c3aed"/><text x="560" y="87" text-anchor="middle" fill="#1a2138">0.08</text>
+          <rect x="520" y="94" width="80" height="22" fill="#f0e9fe" stroke="#7c3aed"/><text x="560" y="109" text-anchor="middle" fill="#1a2138">0.52</text>
+          <text x="560" y="132" text-anchor="middle" font-size="8.5" fill="#7c3aed">one column, high cardinality</text>
+          <text x="560" y="144" text-anchor="middle" font-size="8.5" fill="#db2777">leakage risk: cross-fit it</text>
+        </g>
+        <text x="330" y="180" text-anchor="middle" font-size="9.5" fill="#8b94b3">Color is nominal, so one-hot is right; label encoding would invent a false order.</text>
+      </svg>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Method</th><th>When</th><th>Pros</th><th>Cons / risk</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Ordinal / label</td><td><strong>Ordinal</strong> data with real order (also fine for trees)</td><td>One compact column; keeps order</td><td><strong>False order on nominal data</strong>; <code>LabelEncoder</code> is for the target, not features</td></tr>
+          <tr><td class="nm">One-hot</td><td><strong>Nominal</strong>, low/medium cardinality</td><td>No false order; works for linear &amp; distance models</td><td>Column explosion at high cardinality; dummy-variable trap (use <code>drop='first'</code> for linear models)</td></tr>
+          <tr><td class="nm">Target / mean</td><td><strong>High-cardinality</strong> nominal</td><td>One column, scales to thousands of categories</td><td><strong>Target leakage</strong> if naive; must cross-fit or smooth</td></tr>
+          <tr><td class="nm">Frequency / hashing</td><td>Very high cardinality, quick</td><td>Compact, no target leakage</td><td>Collisions mix categories</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout note">
+      <div class="cico">🎯</div>
+      <div><div class="ctitle">Two encoding traps</div>
+        <p><strong>Label-encoding nominal data</strong> tells a linear/KNN/SVM model that blue (2) is twice green (1)
+           and farther from red (0), a fake distance; trees tolerate it, but everything else doesn't. And
+           <code>pd.get_dummies</code> is fine for quick exploration but <strong>forgets its categories</strong>, so
+           train and test can end up with mismatched columns. For real modeling use scikit-learn's
+           <code>OneHotEncoder</code> (with <code>handle_unknown='ignore'</code>) inside a pipeline.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 3: scaling + binning ===== -->
+  <section id="scale-bin">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Scaling &amp; Binning</h2></div>
+    <p>Two more workhorses, both met earlier in the book. <span class="hl">Scaling</span> (Chapter 12) puts numeric
+       features on a comparable footing; <span class="hl">binning</span> (Chapter 13) turns a continuous variable
+       into groups.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Scaler</th><th>Output</th><th>Outliers</th><th>Use when</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">StandardScaler</td><td>mean 0, sd 1 (z-score)</td><td>Sensitive</td><td>General default; roughly symmetric features</td></tr>
+          <tr><td class="nm">MinMaxScaler</td><td>bounded [0, 1]</td><td>Sensitive</td><td>Need a bounded range (neural-net inputs, pixels)</td></tr>
+          <tr><td class="nm">RobustScaler</td><td>median 0, scaled by IQR</td><td><strong>Robust</strong></td><td>Data with outliers (Chapter 21)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:0.9rem;color:var(--ink-faint)">Scale for <strong>distance- and gradient-based</strong> models
+       (KNN, K-means, SVM, neural nets, PCA, regularized regression). <strong>Tree-based models do not need scaling</strong>,
+       they split on thresholds, which monotonic scaling leaves unchanged.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Binning</th><th>Bins</th><th>How</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td class="nm"><code>pd.cut</code></td><td>Equal width</td><td>Equal-size intervals over the range (or custom edges)</td><td>Counts per bin vary</td></tr>
+          <tr><td class="nm"><code>pd.qcut</code></td><td>Equal frequency</td><td>Quantile-based; each bin has ~equal count</td><td>Widths vary (quartiles, deciles)</td></tr>
+          <tr><td class="nm"><code>KBinsDiscretizer</code></td><td>Configurable</td><td><code>strategy='uniform' / 'quantile' / 'kmeans'</code></td><td>Can one-hot the bins automatically</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout note">
+      <div class="cico">✂️</div>
+      <div><div class="ctitle">To bin or not to bin</div>
+        <p>Binning buys <strong>interpretability</strong> (age → child/adult/senior) and can inject simple
+           nonlinearity, but it <strong>loses resolution</strong> and the cut points are arbitrary. Modern
+           gradient-boosted models find their own splits, so for raw predictive power binning is often unnecessary,
+           reach for it mainly for reports and rules, not accuracy.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 4: choosing + pipeline ===== -->
+  <section id="pipeline">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Choosing the Encoding</h2></div>
+    <p>Picking an encoding comes down to a couple of questions about the category:</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 660 210" width="100%" font-family="Inter, sans-serif" aria-label="A decision flow for choosing a categorical encoding">
+        <rect x="250" y="12" width="160" height="34" rx="9" fill="#0a1230"/>
+        <text x="330" y="33" text-anchor="middle" font-size="11" fill="#fff" font-weight="800">A categorical feature</text>
+        <line x1="330" y1="46" x2="330" y2="62" stroke="#8b94b3" stroke-width="1.4"/>
+        <rect x="246" y="62" width="168" height="32" rx="9" fill="#fef3e2" stroke="#d97706"/>
+        <text x="330" y="82" text-anchor="middle" font-size="11" fill="#d97706" font-weight="800">Does it have a real order?</text>
+        <!-- yes -> ordinal -->
+        <g stroke="#cdd3e6" stroke-width="1.3" fill="none"><path d="M246,78 C120,90 100,100 100,128"/></g>
+        <text x="150" y="108" font-size="9.5" fill="#059669" font-weight="700">yes</text>
+        <rect x="22" y="128" width="156" height="40" rx="9" fill="#e3f6ee" stroke="#059669"/>
+        <text x="100" y="146" text-anchor="middle" font-size="11" fill="#059669" font-weight="800">Ordinal encoding</text>
+        <text x="100" y="161" text-anchor="middle" font-size="8.5" fill="#4a5578">state the order</text>
+        <!-- no -> cardinality -->
+        <g stroke="#cdd3e6" stroke-width="1.3" fill="none"><path d="M414,78 C540,90 560,100 560,108"/></g>
+        <text x="500" y="100" font-size="9.5" fill="#db2777" font-weight="700">no (nominal)</text>
+        <rect x="470" y="108" width="180" height="30" rx="9" fill="#eef1f8" stroke="#8b94b3"/>
+        <text x="560" y="127" text-anchor="middle" font-size="10.5" fill="#1a2138" font-weight="700">How many categories?</text>
+        <g stroke="#cdd3e6" stroke-width="1.3" fill="none"><path d="M500,138 L420,170"/><path d="M620,138 L640,170"/></g>
+        <rect x="300" y="172" width="170" height="32" rx="9" fill="#e0f7fb" stroke="#0891b2"/>
+        <text x="385" y="187" text-anchor="middle" font-size="10.5" fill="#0891b2" font-weight="800">few → one-hot</text>
+        <text x="385" y="199" text-anchor="middle" font-size="8" fill="#4a5578">no false order</text>
+        <rect x="500" y="172" width="156" height="32" rx="9" fill="#f0e9fe" stroke="#7c3aed"/>
+        <text x="578" y="187" text-anchor="middle" font-size="10.5" fill="#7c3aed" font-weight="800">many → target</text>
+        <text x="578" y="199" text-anchor="middle" font-size="8" fill="#4a5578">cross-fit it</text>
+      </svg>
+    </figure>
+  </section>
+
+  <!-- ===== Section 4: pipeline + created features ===== -->
+  <section id="created">
+    <div class="section-eyebrow"><div class="num">4</div><h2>The Pipeline &amp; Created Features</h2></div>
+
+    <div class="callout key">
+      <div class="cico">🚰</div>
+      <div><div class="ctitle">The rule that ties Part IV together: fit on train only</div>
+        <p>Every fitted transform, encoders, scalers, target encoding, imputers (Chapter 20), outlier fences
+           (Chapter 21), and transform parameters (Chapter 22), must learn its parameters from the
+           <strong>training data only</strong> and then be applied to the test data. A scikit-learn
+           <code>ColumnTransformer</code> applies different transforms to different columns, and wrapping it in a
+           <code>Pipeline</code> makes the fit-on-train-only rule automatic, even inside cross-validation. Leaking the
+           test set in is the most common way a model looks great in development and fails in the wild.</p></div>
+    </div>
+
+    <p>Beyond encoding and scaling, features are also <em>created</em>: ratios and differences (BMI, price per
+       square foot), interaction and polynomial terms, group aggregations (average purchase per customer), date
+       parts from a timestamp (Chapter 23), and text features like length or word count. This is where domain
+       knowledge turns raw columns into signal.</p>
+
+    <div class="callout note">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for data science</div>
+        <p>Models are commodities; features are not. The same algorithm with better features beats a fancier one with
+           worse features, which is why practitioners spend so much time here. This chapter is the introductory tour;
+           the machine-learning part returns to feature engineering in depth, with automatic feature learning and the
+           full encoder/scaler toolkit.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 5: In ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Feature Engineering in Machine Learning &amp; AI</h2></div>
+    <p>Feature engineering is where domain knowledge meets the model, and for classic tabular problems it is often the
+       single biggest lever on accuracy. scikit-learn packages the moves so they run inside a leakage-safe pipeline.</p>
+
+    <table class="disp-table">
+      <thead>
+        <tr><th>Move</th><th>The scikit-learn tool</th><th>What it produces</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="nm tx-cyan">Encode categories</td><td><code>OneHotEncoder</code>, <code>OrdinalEncoder</code>, <code>TargetEncoder</code></td><td>Numeric columns a model can read, one-hot for low cardinality, target encoding for high</td></tr>
+        <tr><td class="nm tx-purple">Derive &amp; transform</td><td><code>FunctionTransformer</code>, custom transformers</td><td>Calendar parts, ratios, and logs, wrapped so they run at train and predict time alike</td></tr>
+        <tr><td class="nm tx-amber">Route it all together</td><td><code>ColumnTransformer</code> inside a <code>Pipeline</code></td><td>Different treatment per column, fit on training data only, no leakage</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Engineer inside the pipeline, and beware leakage</div>
+        <p>Any feature that <em>learns</em> from the data, target encoding, an aggregate, a fitted transform, must be fit
+           on the <strong>training set only</strong>, or information leaks from test to train. And never build a feature
+           from information that would not exist at prediction time. Wrapping every step in a <code>ColumnTransformer</code>
+           and <code>Pipeline</code> is what makes this automatic and reproducible.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 6: Real-World Example ===== -->
+  <section id="real-world">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Real-World Example: From Raw Orders to Features</h2></div>
+    <p>Here is the raw material of feature engineering: <strong>600 orders</strong> with just five columns, a timestamp,
+       a customer, a category, and an amount. The companion notebook engineers <strong>ten</strong> features from them,
+       calendar parts (hour, day-of-week, is-weekend) from the timestamp, a <strong>log</strong> of the skewed amount,
+       one-hot columns for the category, and a per-customer <strong>order count</strong>, turning five raw columns into a
+       model-ready table.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · feature-engineering--raw_orders.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per order: <code>order_id</code>, <code>order_datetime</code>,
+        <code>customer_id</code> (repeats, so per-customer aggregates are possible), <code>product_category</code>, and
+        <code>amount</code>. It is deliberately <em>raw</em>, the useful features are the ones you derive from it.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/feature-engineering--raw_orders.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 600 orders</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Bring it to life in Python</h3>
+          <p>The companion notebook one-hot encodes a category two ways (and shows the cardinality explosion), encodes
+             an ordinal feature correctly while demonstrating the nominal trap, compares Standard, MinMax, and Robust
+             scalers against an outlier, bins a variable by width and by frequency, and assembles a leakage-safe
+             ColumnTransformer fit on training data only.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/feature-engineering.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/feature-engineering.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/feature-engineering.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>,
+      <code>scikit-learn</code>, <code>matplotlib</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Key Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Features are the model's inputs</strong>; good feature engineering often beats a fancier algorithm.</span></li>
+        <li><span class="ck">✓</span><span><strong>Encode by type</strong>: ordinal → ordinal encoding; low-cardinality nominal → one-hot; high-cardinality → target (cross-fit).</span></li>
+        <li><span class="ck">✓</span><span><strong>Don't label-encode nominal data</strong> (it invents false order); use <code>OneHotEncoder</code>, not raw <code>get_dummies</code>, for real ML.</span></li>
+        <li><span class="ck">✓</span><span><strong>Scale for distance/gradient models</strong> (not trees); <code>RobustScaler</code> resists outliers; bin mainly for interpretability.</span></li>
+        <li><span class="ck">✓</span><span><strong>Fit every transform on training data only</strong>; a <code>ColumnTransformer</code> in a <code>Pipeline</code> enforces it.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Practice Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them on paper or in Python before checking the solutions.</p>
+
+    <div class="challenges">
+      <div class="challenge">
+        <div class="cnum">1</div>
+        <div class="cbody">
+          <h4>One-hot a category</h4>
+          <p>One-hot encode a <code>color</code> column with <code>get_dummies</code>. How many columns result, and
+             why is one-hot (not integer labels) right for a nominal feature in a linear model?</p>
+          <div class="chint">Hint: one binary column per category; integers imply false order.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">2</div>
+        <div class="cbody">
+          <h4>Encode an ordinal</h4>
+          <p>Encode a <code>rating</code> column (Poor, Fair, Good, Excellent) so the order is preserved, and explain
+             why alphabetical label-encoding would be wrong.</p>
+          <div class="chint">Hint: <code>OrdinalEncoder(categories=[[...in order...]])</code>.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">3</div>
+        <div class="cbody">
+          <h4>Choose a scaler</h4>
+          <p>Scale <code>[20,22,21,23,22,24,1000]</code> with Standard, MinMax, and Robust scalers. Which keeps the
+             six normal values spread out, and why?</p>
+          <div class="chint">Hint: RobustScaler uses median &amp; IQR, unmoved by the 1000.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">4</div>
+        <div class="cbody">
+          <h4>Bin a variable</h4>
+          <p>Bin an income column into 4 groups two ways: equal-width (<code>pd.cut</code>) and equal-frequency
+             (<code>pd.qcut</code>). Show the counts and explain the difference.</p>
+          <div class="chint">Hint: cut → varying counts; qcut → roughly equal counts.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">5</div>
+        <div class="cbody">
+          <h4>Build a safe transformer</h4>
+          <p>Build a <code>ColumnTransformer</code> that scales numeric columns and one-hot encodes a categorical
+             one, fit it on a training split, and transform the test split. Why fit on train only?</p>
+          <div class="chint">Hint: leakage; the scaler stats and category list must come from train.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges in the same visual
+           style. Try them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/feature-engineering--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/feature-engineering--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/feature-engineering--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">8</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on feature engineering. Answer them, hit <strong>Check Answers</strong>, and keep
+       refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <!-- ===== Chapter Nav ===== -->
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="combining-and-reshaping-data.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 23 · Previous</span><br><span class="cn-title">Combining &amp; Reshaping Data</span></span>
+    </a>
+    <a class="cn-btn next" href="exploratory-data-analysis-eda.html">
+      <span><span class="cn-dir">Chapter 25 · Next</span><br><span class="cn-title">Exploratory Data Analysis (EDA)</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 24 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<!-- ===== Quiz data for this chapter ===== -->
+<script>
+  window.QUIZ_ID = "ch24";
+  window.QUIZ_DATA = [
+    {
+      q: "A 'feature' in feature engineering is…",
+      options: [
+        "A bug in the data",
+        "A measurable input column a model learns from",
+        "The model's accuracy",
+        "A type of chart"
+      ],
+      answer: 1,
+      explain: "Features are the numeric input columns a model learns from. Feature engineering turns raw data into effective features."
+    },
+    {
+      q: "You have a NOMINAL 'city' column for a linear model. The right encoding is…",
+      options: [
+        "Label/integer encoding (NY=0, LA=1, SF=2)",
+        "One-hot encoding (a binary column per city)",
+        "Leave it as text",
+        "Delete it"
+      ],
+      answer: 1,
+      explain: "Nominal categories have no order, so one-hot avoids implying one. Integer labels would tell a linear model SF (2) is 'twice' LA (1)."
+    },
+    {
+      q: "Ordinal encoding (mapping to integers) is APPROPRIATE when…",
+      options: [
+        "The categories have a real order, like S < M < L < XL",
+        "There are thousands of categories",
+        "The data is nominal",
+        "Never"
+      ],
+      answer: 0,
+      explain: "Integer codes are fine when the order is real (give OrdinalEncoder the order explicitly). On nominal data they invent a false order."
+    },
+    {
+      q: "Target (mean) encoding is useful for high-cardinality features but risks…",
+      options: [
+        "Using too little memory",
+        "Target leakage / overfitting if done naively",
+        "Changing the data type",
+        "Nothing; it is always safe"
+      ],
+      answer: 1,
+      explain: "Replacing a category with a statistic of the target leaks target information unless you cross-fit or smooth (sklearn's TargetEncoder does this)."
+    },
+    {
+      q: "Which model type does NOT need feature scaling?",
+      options: [
+        "K-nearest neighbors",
+        "Support vector machine",
+        "Tree-based models (decision trees, gradient boosting)",
+        "Neural networks"
+      ],
+      answer: 2,
+      explain: "Trees split on thresholds, which monotonic scaling doesn't change. Distance- and gradient-based models (KNN, SVM, NN) DO need scaling."
+    },
+    {
+      q: "Your data has an outlier and you must scale it. The best choice is…",
+      options: [
+        "MinMaxScaler",
+        "StandardScaler",
+        "RobustScaler (median & IQR)",
+        "No scaler can handle it"
+      ],
+      answer: 2,
+      explain: "RobustScaler centers on the median and scales by the IQR, both unmoved by a single extreme value, unlike StandardScaler and MinMaxScaler."
+    },
+    {
+      q: "pd.cut and pd.qcut differ in that…",
+      options: [
+        "cut makes equal-WIDTH bins; qcut makes equal-FREQUENCY bins",
+        "They are identical",
+        "qcut only works on text",
+        "cut deletes outliers"
+      ],
+      answer: 0,
+      explain: "pd.cut splits the range into equal-width intervals (counts vary); pd.qcut uses quantiles so each bin has roughly equal count (widths vary)."
+    },
+    {
+      q: "To avoid data leakage, a scaler or encoder should be fit on…",
+      options: [
+        "The full dataset before splitting",
+        "The test set",
+        "The training set only, then applied to test (e.g. via a ColumnTransformer in a Pipeline)",
+        "Each row separately"
+      ],
+      answer: 2,
+      explain: "Fitting on all data leaks test information. Learn parameters from train only and transform test, the same no-leakage rule across all of Part IV."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 35 · Random Variables &amp; Expectation — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .disp-table code { font-size:0.82em; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/random-variables-and-expectation.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part VI · Probability</span><span class="sep">/</span>
+      <span>Chapter 35</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part VI · Probability</span> Numbers from chance</div>
+    <h1>Random Variables &amp; <span class="accent">Expectation</span></h1>
+    <p class="dek">A random variable turns the outcome of a random experiment into a number, and once you have numbers you
+       can ask for their average and their spread. Expectation and variance are the two summaries that describe any random
+       variable, and the bridge from probability to statistics.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~15 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 35</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">So far an event was a yes-or-no affair: the sum is 7, or it is not. But often we care about a
+       <em>number</em> attached to the outcome, how many heads, what the total is, how much we win. A
+       <span class="term">random variable</span> is exactly that: a rule that assigns a number to every outcome.</p>
+
+    <div class="def-card">
+      <div class="sigma">X</div>
+      <div class="def-body">
+        A <span class="def-kw">random variable</span> is a function that maps each outcome of an experiment to a real
+        number. Its <span class="def-kw">expected value</span> E[X] is the long-run average of those numbers, and its
+        <span class="def-kw">variance</span> measures how far they typically spread from that average.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🔤</div>
+      <div><div class="ctitle">Discrete vs continuous</div>
+        <p>A <strong>discrete</strong> random variable takes separate, countable values (a die, a head count) and is
+           described by a <strong>probability mass function</strong> giving P(X = x). A <strong>continuous</strong> one
+           takes any value in a range (a height, a wait time) and is described by a density curve, the subject of the next
+           Part. This chapter builds the ideas on the cleaner discrete case; they carry straight over.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: random variables ===== -->
+  <section id="rv">
+    <div class="section-eyebrow"><div class="num">1</div><h2>From Outcomes to Numbers</h2></div>
+    <p>A random variable is a translation layer. The experiment produces a messy outcome (which faces came up, which
+       coins landed heads); the random variable reads off the single number we actually care about.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 230" width="100%" font-family="Inter, sans-serif" aria-label="A random variable mapping coin outcomes to the number of heads">
+        <text x="340" y="22" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">A random variable X maps each outcome to a number</text>
+        <!-- sample space -->
+        <rect x="40" y="48" width="170" height="160" rx="10" fill="#fafbfe" stroke="#cdd3e6"/>
+        <text x="125" y="68" text-anchor="middle" font-size="9" fill="#8b94b3" font-weight="700">outcomes (2 coin flips)</text>
+        <g font-size="13" fill="#1a2138" font-weight="700" text-anchor="middle">
+          <text x="125" y="98">HH</text><text x="125" y="128">HT</text><text x="125" y="158">TH</text><text x="125" y="188">TT</text>
+        </g>
+        <!-- arrows -->
+        <g stroke="#8b94b3" stroke-width="1.3" fill="none" marker-end="url(#a35)">
+          <path d="M215,93 L430,72"/><path d="M215,123 L430,128"/><path d="M215,153 L430,134"/><path d="M215,183 L430,190"/>
+        </g>
+        <defs><marker id="a35" markerWidth="9" markerHeight="9" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8b94b3"/></marker></defs>
+        <text x="320" y="46" text-anchor="middle" font-size="10" fill="#4f46e5" font-weight="800">X = number of heads</text>
+        <!-- number line -->
+        <line x1="450" y1="70" x2="450" y2="195" stroke="#4f46e5" stroke-width="2"/>
+        <g font-size="14" font-weight="800" fill="#4f46e5">
+          <circle cx="450" cy="190" r="4" fill="#4f46e5"/><text x="466" y="195">0</text>
+          <circle cx="450" cy="131" r="4" fill="#4f46e5"/><text x="466" y="136">1</text>
+          <circle cx="450" cy="72" r="4" fill="#4f46e5"/><text x="466" y="77">2</text>
+        </g>
+        <text x="560" y="131" font-size="9" fill="#8b94b3">two outcomes</text>
+        <text x="560" y="144" font-size="9" fill="#8b94b3">both map to 1</text>
+      </svg>
+    </figure>
+
+    <p>For two coin flips, X = number of heads sends HH to 2, both HT and TH to 1, and TT to 0. Collecting the
+       probabilities gives the <span class="hl">probability mass function</span>: P(X=0) = 1/4, P(X=1) = 1/2, P(X=2) = 1/4.
+       Like any distribution, the masses are non-negative and sum to 1.</p>
+  </section>
+
+  <!-- ===== Section 2: expectation ===== -->
+  <section id="expectation">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Expected Value: the Balance Point</h2></div>
+    <p>The <span class="term">expected value</span> E[X] is the probability-weighted average of the values a random
+       variable can take: <strong>E[X] = &#931; x &#183; P(X = x)</strong>. Physically it is the balance point of the
+       distribution, the spot where the bars would teeter on a fulcrum.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 250" width="100%" font-family="Inter, sans-serif" aria-label="The PMF of the dice sum balancing at its expected value of 7">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">The dice-sum distribution balances at its expected value</text>
+        <!-- bars: sums 2..12, heights p*900 -->
+        <g fill="#4f46e5">
+          <rect x="63"  y="165" width="34" height="25"  rx="2"/>
+          <rect x="112" y="140" width="34" height="50"  rx="2"/>
+          <rect x="161" y="115" width="34" height="75"  rx="2"/>
+          <rect x="210" y="90"  width="34" height="100" rx="2"/>
+          <rect x="259" y="65"  width="34" height="125" rx="2"/>
+          <rect x="308" y="40"  width="34" height="150" rx="2" fill="#4338ca"/>
+          <rect x="357" y="65"  width="34" height="125" rx="2"/>
+          <rect x="406" y="90"  width="34" height="100" rx="2"/>
+          <rect x="455" y="115" width="34" height="75"  rx="2"/>
+          <rect x="504" y="140" width="34" height="50"  rx="2"/>
+          <rect x="553" y="165" width="34" height="25"  rx="2"/>
+        </g>
+        <line x1="55" y1="190" x2="595" y2="190" stroke="#1a2138" stroke-width="1.5"/>
+        <g font-size="9" fill="#8b94b3" text-anchor="middle">
+          <text x="80" y="203">2</text><text x="129" y="203">3</text><text x="178" y="203">4</text><text x="227" y="203">5</text>
+          <text x="276" y="203">6</text><text x="325" y="203">7</text><text x="374" y="203">8</text><text x="423" y="203">9</text>
+          <text x="472" y="203">10</text><text x="521" y="203">11</text><text x="570" y="203">12</text>
+        </g>
+        <!-- fulcrum at x=325 (sum 7) -->
+        <path d="M325,192 L312,214 L338,214 Z" fill="#db2777"/>
+        <text x="325" y="234" text-anchor="middle" font-size="11" fill="#db2777" font-weight="800">E[X] = 7</text>
+      </svg>
+    </figure>
+
+    <p>For the sum of two dice, E[X] = 2(1/36) + 3(2/36) + ... + 12(1/36) = <strong>7</strong>. Notice 7 is not a value
+       you can roll on a single die, the expected value is an average, not a guaranteed outcome. And by the Law of Large
+       Numbers from Chapter 30, the mean of many simulated rolls settles right onto 7.</p>
+
+    <div class="callout note">
+      <div class="cico">➕</div>
+      <div><div class="ctitle">Linearity of expectation</div>
+        <p>The single most useful property: <strong>E[X + Y] = E[X] + E[Y]</strong>, always, even when X and Y are
+           dependent. And <strong>E[aX + b] = a&#183;E[X] + b</strong>. In a Secret Santa of n people, each matches their
+           own name with probability 1/n, so the expected number of self-matches is n &#215; (1/n) = 1, for <em>every</em>
+           n. Linearity lets you average first and worry about dependence never.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 3: variance ===== -->
+  <section id="variance">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Variance and Standard Deviation</h2></div>
+    <p>Expectation gives the center; <span class="term">variance</span> gives the spread. It is the expected squared
+       distance from the mean: <strong>Var(X) = E[(X &#8722; &#956;)&#178;]</strong>. Two distributions can share an
+       expected value yet feel completely different, and variance is what tells them apart.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 210" width="100%" font-family="Inter, sans-serif" aria-label="Two distributions with the same mean but different variance">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Same mean, different variance</text>
+        <!-- left: low variance -->
+        <text x="175" y="44" text-anchor="middle" font-size="10" fill="#4f46e5" font-weight="800">low variance</text>
+        <line x1="60" y1="170" x2="290" y2="170" stroke="#cdd3e6" stroke-width="1"/>
+        <line x1="175" y1="60" x2="175" y2="170" stroke="#8b94b3" stroke-width="1" stroke-dasharray="4 3"/>
+        <polyline points="120,170 150,150 168,95 175,72 182,95 200,150 230,170" fill="#4f46e5" fill-opacity="0.18" stroke="#4f46e5" stroke-width="2"/>
+        <text x="175" y="186" text-anchor="middle" font-size="9" fill="#8b94b3">&#956; (mean)</text>
+        <!-- right: high variance -->
+        <text x="500" y="44" text-anchor="middle" font-size="10" fill="#db2777" font-weight="800">high variance</text>
+        <line x1="370" y1="170" x2="640" y2="170" stroke="#cdd3e6" stroke-width="1"/>
+        <line x1="505" y1="60" x2="505" y2="170" stroke="#8b94b3" stroke-width="1" stroke-dasharray="4 3"/>
+        <polyline points="385,170 430,158 470,132 505,118 540,132 580,158 625,170" fill="#db2777" fill-opacity="0.16" stroke="#db2777" stroke-width="2"/>
+        <text x="505" y="186" text-anchor="middle" font-size="9" fill="#8b94b3">&#956; (same mean)</text>
+        <text x="340" y="205" text-anchor="middle" font-size="9" fill="#4a5578">Var(X) = E[(X &#8722; &#956;)&#178;] = E[X&#178;] &#8722; &#956;&#178;: the average squared distance from the mean</text>
+      </svg>
+    </figure>
+
+    <p>The shortcut <strong>Var(X) = E[X&#178;] &#8722; &#956;&#178;</strong> is usually easiest by hand. For the dice
+       sum, E[X&#178;] = 54.833 and &#956; = 7, so Var(X) = 54.833 &#8722; 49 = <strong>5.833</strong>, and the
+       <span class="hl">standard deviation</span> is &#8730;5.833 &#8776; <strong>2.42</strong>. Standard deviation is in
+       the same units as X, which is why it, not variance, is what we usually report.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Quantity</th><th>Definition</th><th>What it tells you</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Expected value E[X]</td><td>&#931; x &#183; P(X = x)</td><td>the center, the long-run average</td></tr>
+          <tr><td class="nm">Variance Var(X)</td><td>E[(X &#8722; &#956;)&#178;] = E[X&#178;] &#8722; &#956;&#178;</td><td>the spread, in squared units</td></tr>
+          <tr><td class="nm">Standard deviation SD(X)</td><td>&#8730;Var(X)</td><td>the spread, in the original units</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout note">
+      <div class="cico">📏</div>
+      <div><div class="ctitle">How constants behave</div>
+        <p>Shifting by a constant moves the center but not the spread: Var(X + b) = Var(X). Scaling stretches the spread
+           quadratically: <strong>Var(aX) = a&#178; Var(X)</strong>. So a payoff of 2X + 1 has the same shape as X, shifted
+           and stretched: its variance is 4 &#215; Var(X).</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 4: expectation in ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Expectation in Machine Learning &amp; AI</h2></div>
+    <p>Expectation is not a side topic in machine learning, it is the objective. Nearly every model is trained by pushing
+       down an <strong>expected loss</strong>, and several whole fields are built on averaging a random variable.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 160" width="100%" font-family="Inter, sans-serif" aria-label="Two models compared by expected loss, the lower one wins">
+        <text x="340" y="22" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Training minimizes expected loss (risk): the lower bar wins</text>
+        <text x="120" y="58" font-size="10" fill="#4a5578">Model A</text>
+        <rect x="118" y="64" width="360" height="22" rx="4" fill="#e6e9f2"/>
+        <rect x="118" y="64" width="208" height="22" rx="4" fill="#94a3b8"/>
+        <text x="486" y="80" font-size="10" fill="#1a2138" font-weight="700">E[loss] = 0.52</text>
+        <text x="120" y="110" font-size="10" fill="#4a5578">Model B</text>
+        <rect x="118" y="116" width="360" height="22" rx="4" fill="#ddd6fe"/>
+        <rect x="118" y="116" width="71" height="22" rx="4" fill="#4f46e5"/>
+        <text x="486" y="132" font-size="10" fill="#4f46e5" font-weight="800">E[loss] = 0.18 &#10003;</text>
+      </svg>
+    </figure>
+
+    <p>Cross-entropy loss, the workhorse objective for classifiers and language models, is literally an expected value:
+       the average of &#8722;log(p) on the true answer across the data. Lower expected loss means a better model, so
+       gradient descent is just a machine for driving an expectation down.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Idea (this chapter)</th><th>In ML / AI it becomes</th><th>Concrete example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Expected loss E[loss]</td><td>The training objective (risk)</td><td>minimize average cross-entropy over the data</td></tr>
+          <tr><td class="nm">Expected reward E[R]</td><td>The goal of reinforcement learning</td><td>an agent maximizes its long-run average reward</td></tr>
+          <tr><td class="nm">Estimating an expectation</td><td>Monte Carlo methods</td><td>average many samples to approximate E[X]</td></tr>
+          <tr><td class="nm">Variance</td><td>Risk, noise, and uncertainty</td><td>high-variance gradients make training unstable</td></tr>
+          <tr><td class="nm">Linearity of E</td><td>Why batch averages behave</td><td>the mean gradient equals the average of the gradients</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>The phrase "minimize the expected loss" hides a random variable: the loss is a number attached to a randomly
+           drawn example, and training drives down its <strong>expectation</strong>. Reinforcement learning swaps loss for
+           reward and <em>maximizes</em> E[R]. <strong>Monte Carlo</strong> estimation, the trick behind everything from
+           dropout to policy gradients, approximates an expectation by averaging samples, exactly what every simulation in
+           this chapter did. And <strong>variance</strong> reappears as the noise in those estimates, which is why variance
+           reduction is a research field of its own. Expectation and variance are the two numbers AI optimizes and fights.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Average random variables in Python</h3>
+          <p>The companion notebook builds the dice-sum PMF and plots it, computes E[X] = 7 and watches a running sample
+             mean converge to it, measures the variance two ways (5.833, so SD &#8776; 2.42), demonstrates linearity of
+             expectation on the dependent matching problem, and compares two models by their expected loss, the quantity
+             training minimizes.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/random-variables-and-expectation.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/random-variables-and-expectation.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/random-variables-and-expectation.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code> and <code>matplotlib</code> and launch
+      <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>A random variable</strong> maps each outcome to a number; a discrete one is described by its PMF, P(X = x).</span></li>
+        <li><span class="ck">✓</span><span><strong>Expected value</strong> E[X] = &#931; x P(x) is the probability-weighted average, the balance point, and the long-run mean.</span></li>
+        <li><span class="ck">✓</span><span><strong>Linearity</strong>: E[X + Y] = E[X] + E[Y] always, and E[aX + b] = a E[X] + b.</span></li>
+        <li><span class="ck">✓</span><span><strong>Variance</strong> Var(X) = E[X&#178;] &#8722; &#956;&#178; measures spread; SD = &#8730;Var is in the original units. Var(aX + b) = a&#178; Var(X).</span></li>
+        <li><span class="ck">✓</span><span><strong>In ML/AI</strong>, training minimizes an expected loss, RL maximizes expected reward, and Monte Carlo estimates expectations by averaging.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them on paper or in Python before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Build a PMF</h4>
+        <p>Let X = the number of heads in 3 fair coin flips. Write the PMF for X = 0, 1, 2, 3 and confirm it sums to 1.</p>
+        <div class="chint">Hint: counts 1, 3, 3, 1 over 8 (row 3 of Pascal's triangle).</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Expected value</h4>
+        <p>Using that PMF, compute E[X], then verify by simulating 100,000 sets of 3 flips.</p>
+        <div class="chint">Hint: for a fair coin, E[heads] = n/2.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Variance</h4>
+        <p>Find Var(X) and SD(X) for the head count, using the shortcut E[X&#178;] &#8722; (E[X])&#178;.</p>
+        <div class="chint">Hint: E[X&#178;] = 3, so Var = 3 &#8722; 1.5&#178;.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Linear transform</h4>
+        <p>A game pays 2X + 1 dollars, where X is one fair die. Find the expected payoff and its variance.</p>
+        <div class="chint">Hint: E[aX+b] = aE[X]+b; Var(aX+b) = a&#178;Var(X).</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Is the bet worth it?</h4>
+        <p>A $2 lottery ticket pays $100 with probability 0.01, otherwise nothing. Find the expected net gain. Should you
+           play?</p>
+        <div class="chint">Hint: E[net] = 100(0.01) &#8722; 2.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code.
+           Try them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/random-variables-and-expectation--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/random-variables-and-expectation--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/random-variables-and-expectation--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on random variables and expectation. Answer them, hit <strong>Check Answers</strong>, and
+       keep refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="bayes-theorem.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 34 · Previous</span><br><span class="cn-title">Bayes' Theorem &amp; the Law of Total Probability</span></span>
+    </a>
+    <a class="cn-btn next" href="probability-by-simulation.html">
+      <span><span class="cn-dir">Chapter 36 · Next</span><br><span class="cn-title">Probability by Simulation (Monte Carlo)</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 35 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch35";
+  window.QUIZ_DATA = [
+    {
+      q: "A random variable is…",
+      options: ["A probability between 0 and 1", "A rule that assigns a number to each outcome", "The same as the sample space", "An event that always happens"],
+      answer: 1,
+      explain: "A random variable is a function mapping each outcome of an experiment to a real number, for example X = the number of heads in two flips."
+    },
+    {
+      q: "The expected value E[X] of a discrete random variable is…",
+      options: ["The most likely value", "The largest value X can take", "Σ x · P(X = x), the probability-weighted average", "Always equal to the variance"],
+      answer: 2,
+      explain: "E[X] = Σ x · P(X = x). It is the balance point of the distribution and the long-run average, not necessarily an attainable value."
+    },
+    {
+      q: "For the sum of two fair dice, E[X] = 7. This means…",
+      options: ["You will usually roll exactly 7", "7 is the long-run average of the sum over many rolls", "7 is the most you can roll", "The dice are unfair"],
+      answer: 1,
+      explain: "The expected value is the average over many repetitions. Any single roll gives some value 2–12; their long-run mean is 7."
+    },
+    {
+      q: "Linearity of expectation says E[X + Y] = E[X] + E[Y]…",
+      options: ["Only when X and Y are independent", "Always, even when X and Y are dependent", "Only for dice", "Never"],
+      answer: 1,
+      explain: "Linearity holds unconditionally. That is what makes it so powerful: you can add expected values without checking for independence."
+    },
+    {
+      q: "Variance of a random variable is defined as…",
+      options: ["E[X] − μ", "E[(X − μ)²], the average squared distance from the mean", "√E[X]", "P(X = μ)"],
+      answer: 1,
+      explain: "Var(X) = E[(X − μ)²], equivalently E[X²] − μ². It measures spread in squared units; its square root is the standard deviation."
+    },
+    {
+      q: "Standard deviation is preferred over variance for reporting because…",
+      options: ["It is always smaller", "It is in the same units as X", "It is easier to square", "It ignores the mean"],
+      answer: 1,
+      explain: "Variance is in squared units; taking the square root returns to the original units of X, which is far more interpretable."
+    },
+    {
+      q: "If Y = 2X + 1, then Var(Y) equals…",
+      options: ["2 · Var(X)", "Var(X) + 1", "4 · Var(X)", "Var(X)"],
+      answer: 2,
+      explain: "Adding a constant does not change spread, but scaling does so quadratically: Var(aX + b) = a²Var(X), so Var(2X+1) = 4·Var(X)."
+    },
+    {
+      q: "In machine learning, training a model usually means…",
+      options: ["Maximizing the variance", "Minimizing an expected loss (risk)", "Setting all probabilities to 0.5", "Ignoring expectation entirely"],
+      answer: 1,
+      explain: "Training minimizes expected loss, the average loss over the data (for example cross-entropy). Reinforcement learning instead maximizes expected reward."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

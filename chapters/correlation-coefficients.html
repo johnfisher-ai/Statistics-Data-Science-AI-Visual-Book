@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 90 · Correlation Coefficients — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#faf5ff; border:1px solid #e9d5ff; border-left:4px solid #9333ea; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#7e22ce; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/correlation-coefficients.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XIV · Correlation &amp; Association</span><span class="sep">/</span>
+      <span>Chapter 90</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XIV · Correlation &amp; Association</span> The strength of a relationship</div>
+    <h1>Correlation <span class="accent">Coefficients</span></h1>
+    <p class="dek">Covariance gave the direction but an unreadable magnitude. Correlation fixes that: a single number on a
+       &#8722;1-to-1 ruler for how strongly two variables move together. We build Pearson's r and r-squared, Spearman's
+       rank correlation for curves and outliers, and partial correlation to control for a third variable.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~17 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 90</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">"How strongly are these two related?" is one of the most asked questions in all of data analysis, in
+       feature selection, in finance, in science. The answer is a <span class="term">correlation coefficient</span>, and
+       there is more than one, each right for a different shape of data.</p>
+
+    <div class="def-card">
+      <div class="sigma">r</div>
+      <div class="def-body">
+        <span class="def-kw">Pearson's r</span> is covariance standardized by the two standard deviations: r = cov(x,y) /
+        (s&#8339; s&#8336;), a unitless number in <span class="def-kw">[&#8722;1, 1]</span>. Sign is direction; magnitude
+        is strength. <span class="def-kw">Spearman's &#961;</span> is the same idea computed on the ranks, capturing any
+        monotonic relationship.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">📈</div>
+      <div><div class="ctitle">The chapter in one line</div>
+        <p>Pearson measures <em>linear</em> strength; Spearman measures <em>monotonic</em> strength (robust to curves and
+           outliers); partial correlation measures the link <em>after</em> removing a third variable.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1 ===== -->
+  <section id="pearson">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Pearson's r: Standardized Covariance</h2></div>
+    <p>Divide covariance by the spread of each variable and the units cancel, pinning the result into
+       <span class="hl">[&#8722;1, 1]</span>. Now &#177;1 is a perfect straight line, 0 is no linear relationship, and any
+       value in between is directly comparable across any pair of variables.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 170" width="100%" font-family="Inter, sans-serif" aria-label="A scale from minus one to plus one, with example scatterplots at strong negative, none, and strong positive correlation">
+        <text x="340" y="16" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Pearson's r lives on a fixed &#8722;1 to +1 ruler</text>
+        <line x1="60" y1="135" x2="620" y2="135" stroke="#1a2138" stroke-width="1.4"/>
+        <g font-size="9" fill="#4a5578" text-anchor="middle" font-weight="700">
+          <text x="60" y="152">&#8722;1</text><text x="200" y="152">&#8722;0.5</text><text x="340" y="152">0</text><text x="480" y="152">+0.5</text><text x="620" y="152">+1</text>
+        </g>
+        <g><line x1="200" y1="131" x2="200" y2="139" stroke="#4a5578"/><line x1="480" y1="131" x2="480" y2="139" stroke="#4a5578"/></g>
+        <g><rect x="86" y="44" width="74" height="58" rx="6" fill="#fff" stroke="#e9d5ff"/>
+          <g fill="#d97706"><circle cx="96" cy="56" r="2.5"/><circle cx="108" cy="66" r="2.5"/><circle cx="122" cy="78" r="2.5"/><circle cx="138" cy="88" r="2.5"/><circle cx="150" cy="96" r="2.5"/></g>
+          <text x="123" y="40" text-anchor="middle" font-size="8" fill="#b45309" font-weight="700">r &#8776; &#8722;0.9</text></g>
+        <g><rect x="303" y="44" width="74" height="58" rx="6" fill="#fff" stroke="#e9d5ff"/>
+          <g fill="#94a3b8"><circle cx="314" cy="60" r="2.5"/><circle cx="330" cy="88" r="2.5"/><circle cx="345" cy="54" r="2.5"/><circle cx="358" cy="92" r="2.5"/><circle cx="368" cy="70" r="2.5"/></g>
+          <text x="340" y="40" text-anchor="middle" font-size="8" fill="#64748b" font-weight="700">r &#8776; 0</text></g>
+        <g><rect x="520" y="44" width="74" height="58" rx="6" fill="#fff" stroke="#e9d5ff"/>
+          <g fill="#9333ea"><circle cx="530" cy="96" r="2.5"/><circle cx="544" cy="86" r="2.5"/><circle cx="558" cy="76" r="2.5"/><circle cx="572" cy="64" r="2.5"/><circle cx="584" cy="54" r="2.5"/></g>
+          <text x="557" y="40" text-anchor="middle" font-size="8" fill="#7e22ce" font-weight="700">r &#8776; +0.9</text></g>
+        <text x="340" y="166" text-anchor="middle" font-size="8" fill="#8b94b3">r = cov(x, y) &#247; (s&#8339; &#183; s&#8336;) &#183; scipy.stats.pearsonr(x, y)</text>
+      </svg>
+    </figure>
+
+    <p>The everyday companion is <span class="term">r&#178;</span>, the <span class="hl">share of variance explained</span>:
+       an r of 0.7 means about <strong>49%</strong> of one variable's variation is linearly shared with the other. It
+       reframes "how strong?" as "how much does knowing x tell me about y?", and is the same r&#178; that reappears in
+       regression (Chapter 92).</p>
+  </section>
+
+  <!-- ===== Section 2 ===== -->
+  <section id="interpret">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Interpreting r (and Its Traps)</h2></div>
+    <p>A correlation is a one-number summary, and like all summaries it can mislead. Three habits keep you honest:</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Rough guide (|r|)</th><th>Strength</th><th>but always&#8230;</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">0.0 &#8211; 0.1</td><td>negligible</td><td><strong>plot it first</strong>: Anscombe's quartet shows four very different clouds with the same r</td></tr>
+          <tr><td class="nm">0.1 &#8211; 0.3</td><td>weak</td><td><strong>r measures only linear</strong> association; a strong curve can give r &#8776; 0</td></tr>
+          <tr><td class="nm">0.3 &#8211; 0.5</td><td>moderate</td><td><strong>outliers</strong> can inflate or flip r dramatically</td></tr>
+          <tr><td class="nm">0.5 &#8211; 1.0</td><td>strong</td><td><strong>correlation is not causation</strong> (Chapter 91)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The thresholds are only rough rules of thumb, what counts as "strong" depends on the field. The non-negotiable
+       rule is the first one: <span class="hl">always look at the scatterplot</span> before trusting a single r, because
+       a curve, an outlier, or distinct subgroups can hide behind the same number.</p>
+  </section>
+
+  <!-- ===== Section 3 ===== -->
+  <section id="spearman">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Spearman &amp; Partial Correlation</h2></div>
+    <p>Two more coefficients handle the cases where Pearson stumbles. <span class="term">Spearman's &#961;</span> is
+       Pearson's r computed on the <span class="hl">ranks</span>, so it captures any monotonic relationship (even a curved
+       one) and barely flinches at outliers. <span class="term">Partial correlation</span> removes a third variable's
+       influence first.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 180" width="100%" font-family="Inter, sans-serif" aria-label="A curved monotonic relationship where Spearman beats Pearson, and a confounding diagram where partial correlation removes a shared driver z">
+        <text x="340" y="16" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">When Pearson stumbles: rank, or control for z</text>
+        <!-- curved monotonic -->
+        <line x1="60" y1="150" x2="300" y2="150" stroke="#cbd5e1"/><line x1="60" y1="40" x2="60" y2="150" stroke="#cbd5e1"/>
+        <path d="M70,142 C140,138 175,80 290,50" fill="none" stroke="#c084fc" stroke-width="1.5" stroke-dasharray="3 3"/>
+        <g fill="#9333ea"><circle cx="78" cy="140" r="3"/><circle cx="100" cy="132" r="3"/><circle cx="130" cy="116" r="3"/><circle cx="165" cy="92" r="3"/><circle cx="205" cy="70" r="3"/><circle cx="250" cy="56" r="3"/><circle cx="285" cy="50" r="3"/></g>
+        <text x="180" y="172" text-anchor="middle" font-size="8.5" fill="#7e22ce" font-weight="700">curved &amp; monotonic: Spearman &gt; Pearson</text>
+        <!-- confounding triangle -->
+        <text x="500" y="44" text-anchor="middle" font-size="9" fill="#1a2138" font-weight="800">partial correlation removes z</text>
+        <circle cx="500" cy="68" r="16" fill="#fef3c7" stroke="#d97706"/><text x="500" y="72" text-anchor="middle" font-size="10" fill="#b45309" font-weight="800">z</text>
+        <circle cx="430" cy="135" r="15" fill="#faf5ff" stroke="#9333ea"/><text x="430" y="139" text-anchor="middle" font-size="10" fill="#7e22ce" font-weight="800">x</text>
+        <circle cx="570" cy="135" r="15" fill="#faf5ff" stroke="#9333ea"/><text x="570" y="139" text-anchor="middle" font-size="10" fill="#7e22ce" font-weight="800">y</text>
+        <path d="M489,80 L443,122" stroke="#d97706" stroke-width="1.8" marker-end="url(#c90)"/>
+        <path d="M511,80 L557,122" stroke="#d97706" stroke-width="1.8" marker-end="url(#c90)"/>
+        <path d="M446,138 L554,138" stroke="#94a3b8" stroke-width="1.4" stroke-dasharray="5 4"/>
+        <defs><marker id="c90" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#d97706"/></marker></defs>
+        <text x="500" y="160" text-anchor="middle" font-size="8" fill="#8b94b3">corr(x,y) shrinks to ~0 once z is held constant</text>
+      </svg>
+    </figure>
+
+    <p>In the notebook, an outlier drags Pearson down to <strong>0.21</strong> while Spearman holds firm at
+       <strong>0.89</strong>; and when x and y are both driven by a hidden z, their raw correlation of 0.8 collapses to a
+       <strong>partial correlation near 0</strong> once z is controlled. That collapse, computed by correlating the
+       residuals after regressing out z, is the exact tool the next chapter uses to expose confounding.</p>
+  </section>
+
+  <!-- ===== Section 4: REAL-WORLD ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: A Fitness Correlation Matrix</h2></div>
+    <p>A gym has 200 members with seven numeric health measures. A <span class="term">correlation heatmap</span> shows
+       every pairwise relationship at a glance, the standard first read of any numeric dataset.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · correlation-coefficients--fitness.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per member with <code>age</code>, <code>height_cm</code>,
+        <code>weight_kg</code>, <code>body_fat_pct</code>, <code>weekly_exercise_hrs</code>, <code>resting_hr</code>, and
+        <code>vo2max</code> (aerobic fitness).</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/correlation-coefficients--fitness.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 200 members</small></a>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Pair (with VO2 max)</th><th>Pearson r</th><th>Reading</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">body fat %</td><td>&#8722;0.85</td><td>strong negative</td></tr>
+          <tr><td class="nm">resting heart rate</td><td>&#8722;0.77</td><td>strong negative</td></tr>
+          <tr><td class="nm">weekly exercise hours</td><td>+0.78</td><td>strong positive</td></tr>
+          <tr><td class="nm">age</td><td>&#8722;0.56</td><td>moderate negative</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The heatmap reads instantly: aerobic fitness falls with body fat and resting heart rate, and rises with exercise.
+       And because the exercise-to-fitness link has <em>diminishing returns</em> (a curve, not a line), <strong>Spearman
+       (&#8776; 0.81) edges out Pearson (&#8776; 0.78)</strong>, the rank measure rewards the monotonic trend the
+       straight-line measure slightly misses. The notebook draws the heatmap with <code>seaborn</code> and overlays a
+       LOWESS smooth to reveal the curve.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 524" width="100%" font-family="Inter, sans-serif" aria-label="A seven by seven Pearson correlation heatmap of fitness measures, purple for positive and orange for negative">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Fitness correlation matrix (Pearson r)</text>
+        <text x="179" y="72" text-anchor="start" font-size="8" fill="#4a5578" font-weight="700" transform="rotate(-32 179 72)">age</text>
+        <text x="237" y="72" text-anchor="start" font-size="8" fill="#4a5578" font-weight="700" transform="rotate(-32 237 72)">height</text>
+        <text x="295" y="72" text-anchor="start" font-size="8" fill="#4a5578" font-weight="700" transform="rotate(-32 295 72)">weight</text>
+        <text x="353" y="72" text-anchor="start" font-size="8" fill="#4a5578" font-weight="700" transform="rotate(-32 353 72)">body fat</text>
+        <text x="411" y="72" text-anchor="start" font-size="8" fill="#4a5578" font-weight="700" transform="rotate(-32 411 72)">exercise</text>
+        <text x="469" y="72" text-anchor="start" font-size="8" fill="#4a5578" font-weight="700" transform="rotate(-32 469 72)">rest HR</text>
+        <text x="527" y="72" text-anchor="start" font-size="8" fill="#4a5578" font-weight="700" transform="rotate(-32 527 72)">VO2 max</text>
+        <text x="142" y="116" text-anchor="end" font-size="8.5" fill="#1a2138" font-weight="700">age</text>
+        <rect x="150" y="84" width="58" height="58" fill="#6b21a8" stroke="#fff" stroke-width="1.5"/>
+        <text x="179" y="116" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">1.00</text>
+        <rect x="208" y="84" width="58" height="58" fill="#f8eee6" stroke="#fff" stroke-width="1.5"/>
+        <text x="237" y="116" text-anchor="middle" font-size="9" fill="#1a2138" font-weight="700">&#8722;0.10</text>
+        <rect x="266" y="84" width="58" height="58" fill="#d4bfe6" stroke="#fff" stroke-width="1.5"/>
+        <text x="295" y="116" text-anchor="middle" font-size="9" fill="#1a2138" font-weight="700">0.29</text>
+        <rect x="324" y="84" width="58" height="58" fill="#a578ca" stroke="#fff" stroke-width="1.5"/>
+        <text x="353" y="116" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">0.61</text>
+        <rect x="382" y="84" width="58" height="58" fill="#faf5f0" stroke="#fff" stroke-width="1.5"/>
+        <text x="411" y="116" text-anchor="middle" font-size="9" fill="#1a2138" font-weight="700">&#8722;0.06</text>
+        <rect x="440" y="84" width="58" height="58" fill="#cbb1e1" stroke="#fff" stroke-width="1.5"/>
+        <text x="469" y="116" text-anchor="middle" font-size="9" fill="#1a2138" font-weight="700">0.35</text>
+        <rect x="498" y="84" width="58" height="58" fill="#d59f75" stroke="#fff" stroke-width="1.5"/>
+        <text x="527" y="116" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">&#8722;0.56</text>
+        <text x="142" y="174" text-anchor="end" font-size="8.5" fill="#1a2138" font-weight="700">height</text>
+        <rect x="150" y="142" width="58" height="58" fill="#f8eee6" stroke="#fff" stroke-width="1.5"/>
+        <text x="179" y="174" text-anchor="middle" font-size="9" fill="#1a2138" font-weight="700">&#8722;0.10</text>
+        <rect x="208" y="142" width="58" height="58" fill="#6b21a8" stroke="#fff" stroke-width="1.5"/>
+        <text x="237" y="174" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">1.00</text>
+        <rect x="266" y="142" width="58" height="58" fill="#a375c9" stroke="#fff" stroke-width="1.5"/>
+        <text x="295" y="174" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">0.62</text>
+        <rect x="324" y="142" width="58" height="58" fill="#f9f6fc" stroke="#fff" stroke-width="1.5"/>
+        <text x="353" y="174" text-anchor="middle" font-size="9" fill="#1a2138" font-weight="700">0.04</text>
+        <rect x="382" y="142" width="58" height="58" fill="#fcf8f5" stroke="#fff" stroke-width="1.5"/>
+        <text x="411" y="174" text-anchor="middle" font-size="9" fill="#1a2138" font-weight="700">&#8722;0.04</text>
+        <rect x="440" y="142" width="58" height="58" fill="#ffffff" stroke="#fff" stroke-width="1.5"/>
+        <text x="469" y="174" text-anchor="middle" font-size="9" fill="#1a2138" font-weight="700">&#8722;0.00</text>
+        <rect x="498" y="142" width="58" height="58" fill="#fefdfd" stroke="#fff" stroke-width="1.5"/>
+        <text x="527" y="174" text-anchor="middle" font-size="9" fill="#1a2138" font-weight="700">&#8722;0.01</text>
+        <text x="142" y="232" text-anchor="end" font-size="8.5" fill="#1a2138" font-weight="700">weight</text>
+        <rect x="150" y="200" width="58" height="58" fill="#d4bfe6" stroke="#fff" stroke-width="1.5"/>
+        <text x="179" y="232" text-anchor="middle" font-size="9" fill="#1a2138" font-weight="700">0.29</text>
+        <rect x="208" y="200" width="58" height="58" fill="#a375c9" stroke="#fff" stroke-width="1.5"/>
+        <text x="237" y="232" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">0.62</text>
+        <rect x="266" y="200" width="58" height="58" fill="#6b21a8" stroke="#fff" stroke-width="1.5"/>
+        <text x="295" y="232" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">1.00</text>
+        <rect x="324" y="200" width="58" height="58" fill="#a87ccc" stroke="#fff" stroke-width="1.5"/>
+        <text x="353" y="232" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">0.59</text>
+        <rect x="382" y="200" width="58" height="58" fill="#e4c1a6" stroke="#fff" stroke-width="1.5"/>
+        <text x="411" y="232" text-anchor="middle" font-size="9" fill="#1a2138" font-weight="700">&#8722;0.36</text>
+        <rect x="440" y="200" width="58" height="58" fill="#c7abde" stroke="#fff" stroke-width="1.5"/>
+        <text x="469" y="232" text-anchor="middle" font-size="9" fill="#1a2138" font-weight="700">0.38</text>
+        <rect x="498" y="200" width="58" height="58" fill="#dcae8b" stroke="#fff" stroke-width="1.5"/>
+        <text x="527" y="232" text-anchor="middle" font-size="9" fill="#1a2138" font-weight="700">&#8722;0.47</text>
+        <text x="142" y="290" text-anchor="end" font-size="8.5" fill="#1a2138" font-weight="700">body fat</text>
+        <rect x="150" y="258" width="58" height="58" fill="#a578ca" stroke="#fff" stroke-width="1.5"/>
+        <text x="179" y="290" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">0.61</text>
+        <rect x="208" y="258" width="58" height="58" fill="#f9f6fc" stroke="#fff" stroke-width="1.5"/>
+        <text x="237" y="290" text-anchor="middle" font-size="9" fill="#1a2138" font-weight="700">0.04</text>
+        <rect x="266" y="258" width="58" height="58" fill="#a87ccc" stroke="#fff" stroke-width="1.5"/>
+        <text x="295" y="290" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">0.59</text>
+        <rect x="324" y="258" width="58" height="58" fill="#6b21a8" stroke="#fff" stroke-width="1.5"/>
+        <text x="353" y="290" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">1.00</text>
+        <rect x="382" y="258" width="58" height="58" fill="#d09364" stroke="#fff" stroke-width="1.5"/>
+        <text x="411" y="290" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">&#8722;0.63</text>
+        <rect x="440" y="258" width="58" height="58" fill="#a071c7" stroke="#fff" stroke-width="1.5"/>
+        <text x="469" y="290" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">0.64</text>
+        <rect x="498" y="258" width="58" height="58" fill="#bf6d2e" stroke="#fff" stroke-width="1.5"/>
+        <text x="527" y="290" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">&#8722;0.85</text>
+        <text x="142" y="348" text-anchor="end" font-size="8.5" fill="#1a2138" font-weight="700">exercise</text>
+        <rect x="150" y="316" width="58" height="58" fill="#faf5f0" stroke="#fff" stroke-width="1.5"/>
+        <text x="179" y="348" text-anchor="middle" font-size="9" fill="#1a2138" font-weight="700">&#8722;0.06</text>
+        <rect x="208" y="316" width="58" height="58" fill="#fcf8f5" stroke="#fff" stroke-width="1.5"/>
+        <text x="237" y="348" text-anchor="middle" font-size="9" fill="#1a2138" font-weight="700">&#8722;0.04</text>
+        <rect x="266" y="316" width="58" height="58" fill="#e4c1a6" stroke="#fff" stroke-width="1.5"/>
+        <text x="295" y="348" text-anchor="middle" font-size="9" fill="#1a2138" font-weight="700">&#8722;0.36</text>
+        <rect x="324" y="316" width="58" height="58" fill="#d09364" stroke="#fff" stroke-width="1.5"/>
+        <text x="353" y="348" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">&#8722;0.63</text>
+        <rect x="382" y="316" width="58" height="58" fill="#6b21a8" stroke="#fff" stroke-width="1.5"/>
+        <text x="411" y="348" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">1.00</text>
+        <rect x="440" y="316" width="58" height="58" fill="#c4793f" stroke="#fff" stroke-width="1.5"/>
+        <text x="469" y="348" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">&#8722;0.78</text>
+        <rect x="498" y="316" width="58" height="58" fill="#8c52bb" stroke="#fff" stroke-width="1.5"/>
+        <text x="527" y="348" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">0.78</text>
+        <text x="142" y="406" text-anchor="end" font-size="8.5" fill="#1a2138" font-weight="700">rest HR</text>
+        <rect x="150" y="374" width="58" height="58" fill="#cbb1e1" stroke="#fff" stroke-width="1.5"/>
+        <text x="179" y="406" text-anchor="middle" font-size="9" fill="#1a2138" font-weight="700">0.35</text>
+        <rect x="208" y="374" width="58" height="58" fill="#ffffff" stroke="#fff" stroke-width="1.5"/>
+        <text x="237" y="406" text-anchor="middle" font-size="9" fill="#1a2138" font-weight="700">&#8722;0.00</text>
+        <rect x="266" y="374" width="58" height="58" fill="#c7abde" stroke="#fff" stroke-width="1.5"/>
+        <text x="295" y="406" text-anchor="middle" font-size="9" fill="#1a2138" font-weight="700">0.38</text>
+        <rect x="324" y="374" width="58" height="58" fill="#a071c7" stroke="#fff" stroke-width="1.5"/>
+        <text x="353" y="406" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">0.64</text>
+        <rect x="382" y="374" width="58" height="58" fill="#c4793f" stroke="#fff" stroke-width="1.5"/>
+        <text x="411" y="406" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">&#8722;0.78</text>
+        <rect x="440" y="374" width="58" height="58" fill="#6b21a8" stroke="#fff" stroke-width="1.5"/>
+        <text x="469" y="406" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">1.00</text>
+        <rect x="498" y="374" width="58" height="58" fill="#c57b42" stroke="#fff" stroke-width="1.5"/>
+        <text x="527" y="406" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">&#8722;0.77</text>
+        <text x="142" y="464" text-anchor="end" font-size="8.5" fill="#1a2138" font-weight="700">VO2 max</text>
+        <rect x="150" y="432" width="58" height="58" fill="#d59f75" stroke="#fff" stroke-width="1.5"/>
+        <text x="179" y="464" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">&#8722;0.56</text>
+        <rect x="208" y="432" width="58" height="58" fill="#fefdfd" stroke="#fff" stroke-width="1.5"/>
+        <text x="237" y="464" text-anchor="middle" font-size="9" fill="#1a2138" font-weight="700">&#8722;0.01</text>
+        <rect x="266" y="432" width="58" height="58" fill="#dcae8b" stroke="#fff" stroke-width="1.5"/>
+        <text x="295" y="464" text-anchor="middle" font-size="9" fill="#1a2138" font-weight="700">&#8722;0.47</text>
+        <rect x="324" y="432" width="58" height="58" fill="#bf6d2e" stroke="#fff" stroke-width="1.5"/>
+        <text x="353" y="464" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">&#8722;0.85</text>
+        <rect x="382" y="432" width="58" height="58" fill="#8c52bb" stroke="#fff" stroke-width="1.5"/>
+        <text x="411" y="464" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">0.78</text>
+        <rect x="440" y="432" width="58" height="58" fill="#c57b42" stroke="#fff" stroke-width="1.5"/>
+        <text x="469" y="464" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">&#8722;0.77</text>
+        <rect x="498" y="432" width="58" height="58" fill="#6b21a8" stroke="#fff" stroke-width="1.5"/>
+        <text x="527" y="464" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">1.00</text>
+        <text x="150" y="508" font-size="8" fill="#b45309" font-weight="700">&#8722;1</text>
+        <rect x="172" y="500" width="3" height="9" fill="#b45309"/>
+        <rect x="175" y="500" width="3" height="9" fill="#b75911"/>
+        <rect x="178" y="500" width="3" height="9" fill="#b95f1a"/>
+        <rect x="181" y="500" width="3" height="9" fill="#bc6422"/>
+        <rect x="184" y="500" width="3" height="9" fill="#be6a2a"/>
+        <rect x="187" y="500" width="3" height="9" fill="#c17033"/>
+        <rect x="190" y="500" width="3" height="9" fill="#c3763b"/>
+        <rect x="193" y="500" width="3" height="9" fill="#c67c43"/>
+        <rect x="196" y="500" width="3" height="9" fill="#c8824c"/>
+        <rect x="199" y="500" width="3" height="9" fill="#cb8754"/>
+        <rect x="202" y="500" width="3" height="9" fill="#cd8d5c"/>
+        <rect x="205" y="500" width="3" height="9" fill="#d09365"/>
+        <rect x="208" y="500" width="3" height="9" fill="#d3996d"/>
+        <rect x="211" y="500" width="3" height="9" fill="#d59f75"/>
+        <rect x="214" y="500" width="3" height="9" fill="#d8a57e"/>
+        <rect x="217" y="500" width="3" height="9" fill="#daaa86"/>
+        <rect x="220" y="500" width="3" height="9" fill="#ddb08e"/>
+        <rect x="223" y="500" width="3" height="9" fill="#dfb697"/>
+        <rect x="226" y="500" width="3" height="9" fill="#e2bc9f"/>
+        <rect x="229" y="500" width="3" height="9" fill="#e4c2a7"/>
+        <rect x="232" y="500" width="3" height="9" fill="#e7c8b0"/>
+        <rect x="235" y="500" width="3" height="9" fill="#e9cdb8"/>
+        <rect x="238" y="500" width="3" height="9" fill="#ecd3c0"/>
+        <rect x="241" y="500" width="3" height="9" fill="#eed9c9"/>
+        <rect x="244" y="500" width="3" height="9" fill="#f1dfd1"/>
+        <rect x="247" y="500" width="3" height="9" fill="#f4e5d9"/>
+        <rect x="250" y="500" width="3" height="9" fill="#f6ebe2"/>
+        <rect x="253" y="500" width="3" height="9" fill="#f9f0ea"/>
+        <rect x="256" y="500" width="3" height="9" fill="#fbf6f2"/>
+        <rect x="259" y="500" width="3" height="9" fill="#fefcfb"/>
+        <rect x="262" y="500" width="3" height="9" fill="#fcfbfe"/>
+        <rect x="265" y="500" width="3" height="9" fill="#f7f4fb"/>
+        <rect x="268" y="500" width="3" height="9" fill="#f2ecf8"/>
+        <rect x="271" y="500" width="3" height="9" fill="#ede5f5"/>
+        <rect x="274" y="500" width="3" height="9" fill="#e8ddf2"/>
+        <rect x="277" y="500" width="3" height="9" fill="#e3d6ef"/>
+        <rect x="280" y="500" width="3" height="9" fill="#deceec"/>
+        <rect x="283" y="500" width="3" height="9" fill="#d9c7e9"/>
+        <rect x="286" y="500" width="3" height="9" fill="#d4bfe6"/>
+        <rect x="289" y="500" width="3" height="9" fill="#cfb8e3"/>
+        <rect x="292" y="500" width="3" height="9" fill="#cab0e0"/>
+        <rect x="295" y="500" width="3" height="9" fill="#c5a8dd"/>
+        <rect x="298" y="500" width="3" height="9" fill="#c0a1da"/>
+        <rect x="301" y="500" width="3" height="9" fill="#bb99d7"/>
+        <rect x="304" y="500" width="3" height="9" fill="#b692d4"/>
+        <rect x="307" y="500" width="3" height="9" fill="#b18ad1"/>
+        <rect x="310" y="500" width="3" height="9" fill="#ac83ce"/>
+        <rect x="313" y="500" width="3" height="9" fill="#a77bcb"/>
+        <rect x="316" y="500" width="3" height="9" fill="#a274c8"/>
+        <rect x="319" y="500" width="3" height="9" fill="#9d6cc5"/>
+        <rect x="322" y="500" width="3" height="9" fill="#9865c3"/>
+        <rect x="325" y="500" width="3" height="9" fill="#935dc0"/>
+        <rect x="328" y="500" width="3" height="9" fill="#8e56bd"/>
+        <rect x="331" y="500" width="3" height="9" fill="#894eba"/>
+        <rect x="334" y="500" width="3" height="9" fill="#8447b7"/>
+        <rect x="337" y="500" width="3" height="9" fill="#7f3fb4"/>
+        <rect x="340" y="500" width="3" height="9" fill="#7a38b1"/>
+        <rect x="343" y="500" width="3" height="9" fill="#7530ae"/>
+        <rect x="346" y="500" width="3" height="9" fill="#7029ab"/>
+        <rect x="349" y="500" width="3" height="9" fill="#6b21a8"/>
+        <text x="356" y="508" font-size="8" fill="#7e22ce" font-weight="700">+1</text>
+        <text x="262" y="520" text-anchor="middle" font-size="7.5" fill="#64748b">orange = negative &#183; purple = positive</text>
+      </svg>
+    </figure>
+
+    <p>How to read it: each cell is the Pearson r between its row and column variable. The grid is symmetric, the diagonal is 1.00, and the color is the key, <strong>purple for positive, orange for negative</strong>, with deeper shades meaning stronger links. Read down the VO2-max row and the story jumps out: aerobic fitness is deep orange with <strong>body fat (&#8722;0.85)</strong> and <strong>resting heart rate (&#8722;0.77)</strong> and deep purple with <strong>exercise (+0.78)</strong>, while height is near white (&#8776; 0). Why it matters: one glance ranks every relationship in the dataset by strength and direction, which is how analysts decide which variables carry signal, which are redundant (note body fat, weight, and resting heart rate all cluster together), and where to look next.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Correlation in Machine Learning &amp; AI</h2></div>
+    <p>The correlation matrix is one of the first things a data scientist computes on a new dataset.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Idea (this chapter)</th><th>In ML / AI it becomes</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Correlation with the target</td><td>Quick feature screening</td><td>which inputs relate to what we predict</td></tr>
+          <tr><td class="nm">Correlation between features</td><td>Multicollinearity detection</td><td>drop one of two near-duplicate features</td></tr>
+          <tr><td class="nm">Spearman / rank</td><td>Monotonic, robust association</td><td>ordinal features, heavy-tailed data</td></tr>
+          <tr><td class="nm">Correlation heatmap</td><td>The standard EDA visual</td><td><code>sns.heatmap(df.corr())</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>A correlation heatmap is the fastest way to understand a fresh dataset: it surfaces which features carry signal
+           about the target and which features are <strong>redundant with each other</strong>. That second point is
+           <strong>multicollinearity</strong>, two highly correlated inputs confuse a linear model's coefficients, so one
+           is often dropped or combined. Just remember the chapter's warnings: r only sees linear structure (use Spearman
+           or a scatter for curves), and a high correlation is evidence of association, never proof of cause, the subject
+           of the next chapter.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Compute every correlation in Python</h3>
+          <p>The companion notebook plots r across strengths with <code>scipy</code>, shows Spearman beating Pearson on a
+             curve and an outlier, demonstrates partial correlation by regressing out a third variable, and loads
+             <code>correlation-coefficients--fitness.xlsx</code> for a <code>seaborn</code> correlation heatmap.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/correlation-coefficients.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/correlation-coefficients.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/correlation-coefficients.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, <code>scipy</code>,
+      <code>matplotlib</code>, <code>seaborn</code>, <code>statsmodels</code>, and <code>openpyxl</code> and launch
+      <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Pearson's r</strong> = standardized covariance in [&#8722;1, 1]: sign is direction, magnitude is linear strength.</span></li>
+        <li><span class="ck">✓</span><span><strong>r&#178;</strong> is the share of variance explained (r = 0.7 &#8594; ~49%); always plot the scatter before trusting one r.</span></li>
+        <li><span class="ck">✓</span><span><strong>Spearman's &#961;</strong> uses ranks, so it captures monotonic (curved) links and resists outliers and ordinal data.</span></li>
+        <li><span class="ck">✓</span><span><strong>Partial correlation</strong> removes a third variable's influence (correlate the residuals), the key to spotting confounding.</span></li>
+        <li><span class="ck">✓</span><span><strong>In ML/AI</strong>: the correlation heatmap screens features and flags multicollinearity, the standard first look at a dataset.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them with SciPy and pandas before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Pearson r and r&#178;</h4>
+        <p>For a pair with &#961; = 0.6, compute Pearson's r and report r&#178; as a percentage.</p>
+        <div class="chint">Hint: <code>scipy.stats.pearsonr</code>; r&#178; is the variance explained.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Spearman beats Pearson on a curve</h4>
+        <p>For y = x&#179;, show Spearman's &#961; is near 1 but Pearson's r is lower.</p>
+        <div class="chint">Hint: <code>scipy.stats.spearmanr</code> works on ranks.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Outlier robustness</h4>
+        <p>Add one outlier to a clean linear pair; compare Pearson and Spearman.</p>
+        <div class="chint">Hint: one bad point can flip Pearson but not the ranks.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Partial correlation</h4>
+        <p>Make x and y both driven by z; show the partial correlation controlling for z collapses toward 0.</p>
+        <div class="chint">Hint: correlate the residuals from regressing x on z and y on z.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Real data: correlation matrix</h4>
+        <p>Load <code>correlation-coefficients--fitness.xlsx</code> and print every variable's correlation with <code>vo2max</code>, sorted.</p>
+        <div class="chint">Hint: <code>df.corr()["vo2max"].sort_values()</code>.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code. Try
+           them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/correlation-coefficients--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/correlation-coefficients--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/correlation-coefficients--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on correlation coefficients. Answer them, hit <strong>Check Answers</strong>, and keep
+       refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>You can now measure how strongly two variables move together. <strong>Chapter 91 &#183; Correlation vs.
+         Causation</strong> delivers the most important caveat in all of statistics, and shows how confounding,
+         spuriousness, and reverse causation fool the unwary.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="covariance.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 89 · Previous</span><br><span class="cn-title">Covariance</span></span>
+    </a>
+    <a class="cn-btn next" href="correlation-vs-causation.html">
+      <span><span class="cn-dir">Chapter 91 · Next</span><br><span class="cn-title">Correlation vs. Causation</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 90 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch90";
+  window.QUIZ_DATA = [
+    {
+      q: "Pearson's r is best described as…",
+      options: ["The covariance in the original units", "Covariance standardized by the two standard deviations, giving a value in [−1, 1]", "The slope of a regression line", "The difference of the means"],
+      answer: 1,
+      explain: "r = cov(x,y)/(sₓ·s_y); dividing by the spreads makes it unitless and bounded in [−1, 1]."
+    },
+    {
+      q: "An r of 0.7 means r² ≈ …, which represents…",
+      options: ["0.7; the slope", "0.49; about 49% of the variance is linearly shared", "1.4; double the strength", "0.3; the unexplained part"],
+      answer: 1,
+      explain: "r² = 0.49: roughly 49% of one variable's variance is explained by a linear relationship with the other."
+    },
+    {
+      q: "Pearson's r measures which kind of relationship?",
+      options: ["Any relationship", "Only linear association", "Only monotonic association", "Only causal relationships"],
+      answer: 1,
+      explain: "Pearson captures linear association; a strong curve can give r near 0 even when the variables are clearly related."
+    },
+    {
+      q: "The single most important habit before trusting a correlation is to…",
+      options: ["Increase the sample size", "Plot the scatterplot", "Square the value", "Take the log"],
+      answer: 1,
+      explain: "Anscombe's quartet shows wildly different data with identical r; always look at the scatter first."
+    },
+    {
+      q: "Spearman's rank correlation is preferred when…",
+      options: ["The relationship is perfectly linear", "The relationship is monotonic but curved, there are outliers, or the data are ordinal", "You want the slope", "The sample is tiny"],
+      answer: 1,
+      explain: "Computed on ranks, Spearman captures monotonic (curved) links and resists outliers; it also suits ordinal data."
+    },
+    {
+      q: "An outlier dragged Pearson to 0.21 while Spearman stayed at 0.89. This shows…",
+      options: ["Spearman is wrong", "Spearman (rank-based) is robust to outliers, while Pearson is sensitive to them", "The data have no relationship", "Pearson is always better"],
+      answer: 1,
+      explain: "Ranks limit the influence of any single extreme point, so Spearman is far more robust than Pearson."
+    },
+    {
+      q: "Partial correlation between x and y, controlling for z, is computed by…",
+      options: ["Averaging x, y, and z", "Correlating the residuals of x and y after regressing each on z", "Multiplying the three correlations", "Dropping z from the data"],
+      answer: 1,
+      explain: "Regress out z from both x and y, then correlate what's left, the part of each not explained by z."
+    },
+    {
+      q: "Two features in a model with correlation 0.95 is a sign of…",
+      options: ["A great model", "Multicollinearity, the features are redundant and can destabilize a linear model's coefficients", "Causation", "Missing data"],
+      answer: 1,
+      explain: "Highly correlated inputs carry overlapping information; this multicollinearity confuses coefficient estimates, so one is often dropped."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

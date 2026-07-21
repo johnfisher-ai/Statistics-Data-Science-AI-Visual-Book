@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 46 · Estimation Theory — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .disp-table code { font-size:0.82em; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/estimation-theory.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part VIII · Mathematical Statistics</span><span class="sep">/</span>
+      <span>Chapter 46</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part VIII · Mathematical Statistics</span> From data to parameters</div>
+    <h1>Estimation <span class="accent">Theory</span></h1>
+    <p class="dek">How do you turn a sample into a best guess of an unknown parameter, and how do you know how good that
+       guess is? Bias, variance, maximum likelihood, and the bias-variance trade-off are the answers, and they are also
+       the deep theory of how machine-learning models are fit.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~17 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 46</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Statistics begins with an unknown, the true mean, the true rate, the true effect, and a sample of
+       data. <span class="term">Estimation theory</span> is the study of how to turn that data into a best guess of the
+       unknown, and how to measure the quality of the guess. It is the formal foundation of everything that fits a model
+       to data.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#952;&#770;</div>
+      <div class="def-body">
+        An <span class="def-kw">estimator</span> is a rule for guessing a parameter &#952; from data. We judge it by its
+        <span class="def-kw">bias</span> (does it center on the truth?), its <span class="def-kw">variance</span> (how
+        much does it jump?), and their combination, the mean squared error: <strong>MSE = bias&#178; + variance</strong>.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🎯</div>
+      <div><div class="ctitle">The capstone of Part VIII</div>
+        <p>This chapter ties the advanced track together. The conditional expectation, moments, and inequalities of the
+           last chapters all feed into one practical question, how to estimate parameters well, and the answer turns out
+           to be the very definition of training a machine-learning model.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: estimators ===== -->
+  <section id="estimators">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Estimators and Their Properties</h2></div>
+    <p>An estimator is itself a random variable: feed it different samples and it returns different values. Two properties
+       summarize its quality. <span class="term">Bias</span> is how far its average sits from the truth;
+       <span class="term">variance</span> is how much it scatters. The classic picture is a dartboard.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 220" width="100%" font-family="Inter, sans-serif" aria-label="Four dartboards showing combinations of low and high bias and variance">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Bias and variance, the dartboard view (bullseye = the true parameter)</text>
+        <!-- 4 boards -->
+        <g>
+          <!-- low bias low var -->
+          <circle cx="120" cy="110" r="42" fill="none" stroke="#cdd3e6"/><circle cx="120" cy="110" r="26" fill="none" stroke="#cdd3e6"/><circle cx="120" cy="110" r="7" fill="#ddd6fe"/>
+          <g fill="#7c3aed"><circle cx="118" cy="108" r="2.6"/><circle cx="123" cy="112" r="2.6"/><circle cx="117" cy="113" r="2.6"/><circle cx="122" cy="106" r="2.6"/></g>
+          <text x="120" y="172" text-anchor="middle" font-size="8.5" fill="#1a2138" font-weight="700">low bias</text>
+          <text x="120" y="184" text-anchor="middle" font-size="8.5" fill="#1a2138" font-weight="700">low variance &#10003;</text>
+          <!-- low bias high var -->
+          <circle cx="270" cy="110" r="42" fill="none" stroke="#cdd3e6"/><circle cx="270" cy="110" r="26" fill="none" stroke="#cdd3e6"/><circle cx="270" cy="110" r="7" fill="#ddd6fe"/>
+          <g fill="#7c3aed"><circle cx="255" cy="98" r="2.6"/><circle cx="288" cy="120" r="2.6"/><circle cx="268" cy="130" r="2.6"/><circle cx="282" cy="95" r="2.6"/><circle cx="252" cy="118" r="2.6"/></g>
+          <text x="270" y="172" text-anchor="middle" font-size="8.5" fill="#1a2138" font-weight="700">low bias</text>
+          <text x="270" y="184" text-anchor="middle" font-size="8.5" fill="#1a2138" font-weight="700">high variance</text>
+          <!-- high bias low var -->
+          <circle cx="420" cy="110" r="42" fill="none" stroke="#cdd3e6"/><circle cx="420" cy="110" r="26" fill="none" stroke="#cdd3e6"/><circle cx="420" cy="110" r="7" fill="#ddd6fe"/>
+          <g fill="#db2777"><circle cx="448" cy="86" r="2.6"/><circle cx="452" cy="90" r="2.6"/><circle cx="446" cy="92" r="2.6"/><circle cx="451" cy="84" r="2.6"/></g>
+          <text x="420" y="172" text-anchor="middle" font-size="8.5" fill="#1a2138" font-weight="700">high bias</text>
+          <text x="420" y="184" text-anchor="middle" font-size="8.5" fill="#1a2138" font-weight="700">low variance</text>
+          <!-- high bias high var -->
+          <circle cx="570" cy="110" r="42" fill="none" stroke="#cdd3e6"/><circle cx="570" cy="110" r="26" fill="none" stroke="#cdd3e6"/><circle cx="570" cy="110" r="7" fill="#ddd6fe"/>
+          <g fill="#db2777"><circle cx="592" cy="84" r="2.6"/><circle cx="600" cy="100" r="2.6"/><circle cx="585" cy="78" r="2.6"/><circle cx="604" cy="92" r="2.6"/><circle cx="596" cy="76" r="2.6"/></g>
+          <text x="570" y="172" text-anchor="middle" font-size="8.5" fill="#1a2138" font-weight="700">high bias</text>
+          <text x="570" y="184" text-anchor="middle" font-size="8.5" fill="#1a2138" font-weight="700">high variance</text>
+        </g>
+      </svg>
+    </figure>
+
+    <p>The sample mean is <strong>unbiased</strong>: in the notebook its estimates center exactly on the true value 10,
+       with a spread (standard error) of 0.47. The ideal estimator is the top-left dartboard, low bias and low variance,
+       but as the next sections show, the two often trade off against each other.</p>
+  </section>
+
+  <!-- ===== Section 2: MSE ===== -->
+  <section id="mse">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Bias, Variance, and Mean Squared Error</h2></div>
+    <p>The single number that combines both is the <span class="term">mean squared error</span>, and it splits cleanly:
+       <strong>MSE = bias&#178; + variance</strong>. A great estimator can sometimes accept a little bias to win a large
+       reduction in variance, lowering the total error.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 150" width="100%" font-family="Inter, sans-serif" aria-label="A bar showing mean squared error split into bias squared and variance">
+        <text x="340" y="22" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">MSE = bias&#178; + variance</text>
+        <rect x="80" y="55" width="240" height="40" fill="#c4b5fd"/><text x="200" y="80" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">bias&#178;</text>
+        <rect x="320" y="55" width="280" height="40" fill="#7c3aed"/><text x="460" y="80" text-anchor="middle" font-size="12" fill="#fff" font-weight="800">variance</text>
+        <line x1="80" y1="105" x2="600" y2="105" stroke="#1a2138" stroke-width="1.5"/>
+        <text x="340" y="124" text-anchor="middle" font-size="10" fill="#4a5578">total expected squared error of the estimate</text>
+        <text x="340" y="138" text-anchor="middle" font-size="8.5" fill="#8b94b3">a little bias can buy a big drop in variance, lowering the total</text>
+      </svg>
+    </figure>
+
+    <p>Not every natural estimator is unbiased. Estimating a variance by dividing the squared deviations by n
+       <em>under</em>-estimates it (by the factor (n&#8722;1)/n, since the data hugs the sample mean), which is exactly why
+       the sample variance divides by <strong>n &#8722; 1</strong>, Bessel's correction. In the notebook the /n version
+       averages to 3.2 against a true 4, while /(n&#8722;1) lands on 4.</p>
+  </section>
+
+  <!-- ===== Section 3: MLE ===== -->
+  <section id="mle">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Maximum Likelihood Estimation</h2></div>
+    <p>How do you build a good estimator in the first place? The dominant recipe is <span class="term">maximum
+       likelihood</span>: choose the parameter that makes the observed data most probable. In practice you maximize the
+       <strong>log-likelihood</strong>, and the peak is the estimate.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 200" width="100%" font-family="Inter, sans-serif" aria-label="A log-likelihood curve peaking at the maximum-likelihood estimate">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Maximum likelihood: climb the log-likelihood to its peak</text>
+        <line x1="60" y1="170" x2="620" y2="170" stroke="#1a2138" stroke-width="1"/>
+        <line x1="60" y1="35" x2="60" y2="170" stroke="#1a2138" stroke-width="1"/>
+        <text x="345" y="190" text-anchor="middle" font-size="9" fill="#8b94b3">parameter value &#8594;</text>
+        <text x="50" y="44" text-anchor="end" font-size="8.5" fill="#8b94b3">log L</text>
+        <!-- concave curve peaking -->
+        <path d="M80,165 C200,120 290,55 340,52 C390,55 480,120 600,165" fill="none" stroke="#7c3aed" stroke-width="2.5"/>
+        <line x1="340" y1="52" x2="340" y2="170" stroke="#db2777" stroke-width="1.4" stroke-dasharray="5 4"/>
+        <circle cx="340" cy="52" r="4" fill="#db2777"/>
+        <text x="340" y="44" text-anchor="middle" font-size="9.5" fill="#db2777" font-weight="800">MLE = argmax</text>
+      </svg>
+    </figure>
+
+    <p>For exponential data the log-likelihood peaks at rate = 1/mean; in the notebook the grid search and the closed form
+       agree at 0.52 (true 0.5). Maximum likelihood is the workhorse of statistics, and almost every estimator you already
+       know, the sample mean, the sample proportion, least-squares coefficients, is an MLE in disguise.</p>
+  </section>
+
+  <!-- ===== Section 4: how good ===== -->
+  <section id="quality">
+    <div class="section-eyebrow"><div class="num">4</div><h2>How Good Can an Estimator Be?</h2></div>
+    <p>Estimation theory also says when to <em>stop</em> improving. Two ideas set the standards.
+       <span class="term">Consistency</span> means the estimate converges to the truth as data accumulates;
+       <span class="term">efficiency</span> means it achieves the lowest possible variance.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Property</th><th>Meaning</th><th>For the MLE</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Unbiased</td><td>centers on the true value</td><td>often (exactly or asymptotically)</td></tr>
+          <tr><td class="nm">Consistent</td><td>converges to the truth as n &#8594; &#8734;</td><td>yes, under mild conditions</td></tr>
+          <tr><td class="nm">Efficient</td><td>lowest possible variance</td><td>asymptotically efficient (hits the Cramer-Rao bound)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>In the notebook the MLE of a rate marches from 0.56 at n = 10 to 0.500 at n = 100,000, its scatter shrinking like
+       1/&#8730;n, the visible signature of consistency. There is even a hard floor on variance, the
+       <span class="hl">Cramer-Rao lower bound</span>, set by the <span class="hl">Fisher information</span> in the data;
+       no unbiased estimator can beat it, and for large samples the MLE reaches it. Estimation theory thus tells you both
+       how to estimate and how well it is possible to do.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Estimation Theory in Machine Learning &amp; AI</h2></div>
+    <p>This is the chapter where mathematical statistics <em>becomes</em> machine learning. Training a model is parameter
+       estimation, and the two pillars, maximum likelihood and the bias-variance trade-off, are the theory behind every
+       fit.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 200" width="100%" font-family="Inter, sans-serif" aria-label="A U-shaped test-error curve: underfitting at low complexity, overfitting at high complexity">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">The bias-variance trade-off: test error is U-shaped in model complexity</text>
+        <line x1="70" y1="165" x2="620" y2="165" stroke="#1a2138" stroke-width="1"/>
+        <line x1="70" y1="35" x2="70" y2="165" stroke="#1a2138" stroke-width="1"/>
+        <text x="345" y="185" text-anchor="middle" font-size="9" fill="#8b94b3">model complexity (e.g. polynomial degree) &#8594;</text>
+        <text x="60" y="44" text-anchor="end" font-size="8.5" fill="#8b94b3">test error</text>
+        <!-- bias curve (decreasing) -->
+        <path d="M90,60 C160,110 240,140 600,158" fill="none" stroke="#c4b5fd" stroke-width="1.8" stroke-dasharray="4 3"/>
+        <text x="120" y="56" font-size="8.5" fill="#8b5cf6">bias&#178; (falls)</text>
+        <!-- variance curve (increasing) -->
+        <path d="M90,160 C320,156 420,120 560,50" fill="none" stroke="#db2777" stroke-width="1.8" stroke-dasharray="4 3"/>
+        <text x="500" y="60" font-size="8.5" fill="#db2777">variance (rises)</text>
+        <!-- total U -->
+        <path d="M90,72 C220,120 300,118 340,116 C420,112 500,95 580,55" fill="none" stroke="#7c3aed" stroke-width="2.6"/>
+        <circle cx="330" cy="116" r="4.5" fill="#7c3aed"/>
+        <text x="330" y="106" text-anchor="middle" font-size="9" fill="#7c3aed" font-weight="800">sweet spot</text>
+        <text x="120" y="150" font-size="8" fill="#8b94b3">underfit</text>
+        <text x="540" y="150" font-size="8" fill="#8b94b3">overfit</text>
+      </svg>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Idea (this chapter)</th><th>In ML / AI it becomes</th><th>Concrete example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Maximum likelihood</td><td>The training objective</td><td>cross-entropy = Bernoulli NLL; MSE = Gaussian NLL</td></tr>
+          <tr><td class="nm">Bias-variance trade-off</td><td>Underfitting vs overfitting</td><td>model capacity, the U-shaped test-error curve</td></tr>
+          <tr><td class="nm">A little bias for less variance</td><td>Regularization</td><td>ridge/lasso, weight decay, early stopping</td></tr>
+          <tr><td class="nm">MLE + a prior</td><td>MAP estimation</td><td>regularized loss = MLE with a prior penalty</td></tr>
+          <tr><td class="nm">Consistency &amp; efficiency</td><td>Why more (clean) data helps</td><td>estimates tighten like 1/&#8730;n</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>Training a model <em>is</em> estimation. Minimizing <strong>cross-entropy</strong> is maximizing a Bernoulli
+           likelihood; minimizing <strong>squared error</strong> is maximizing a Gaussian likelihood, so "fit the
+           parameters" literally means "find the maximum-likelihood estimate". The <strong>bias-variance trade-off</strong>
+           is the master diagnostic of model capacity: in the notebook a degree-1 polynomial underfits (test error 0.48,
+           high bias), a degree-5 fits well (0.02), and a degree-12 overfits catastrophically (test error 83, runaway
+           variance). <strong>Regularization</strong>, ridge, lasso, weight decay, early stopping, is the deliberate
+           injection of a little bias to slash variance, and adding a prior turns MLE into <strong>MAP estimation</strong>,
+           which is exactly a regularized loss. Every lever you pull when training a model is an idea from this chapter.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Estimate and diagnose in Python</h3>
+          <p>The companion notebook measures an estimator's bias and variance, demonstrates Bessel's n&#8722;1 correction,
+             finds a maximum-likelihood estimate by climbing the log-likelihood, watches the MLE converge as n grows
+             (consistency), and traces the bias-variance trade-off across polynomial degrees, the U-shaped test-error
+             curve at the heart of overfitting.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/estimation-theory.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/estimation-theory.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/estimation-theory.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code> and <code>matplotlib</code> and launch
+      <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>An estimator</strong> is a rule for guessing a parameter; judge it by bias (off-center?) and variance (jumpy?).</span></li>
+        <li><span class="ck">✓</span><span><strong>MSE = bias&#178; + variance</strong>; a little bias can buy a big drop in variance. The sample variance divides by n &#8722; 1 to stay unbiased.</span></li>
+        <li><span class="ck">✓</span><span><strong>Maximum likelihood</strong> picks the parameter that makes the data most probable; most familiar estimators are MLEs.</span></li>
+        <li><span class="ck">✓</span><span><strong>Good estimators</strong> are consistent (converge as n grows) and efficient (hit the Cramer-Rao variance floor).</span></li>
+        <li><span class="ck">✓</span><span><strong>In ML/AI</strong>: training is MLE (cross-entropy, MSE), the bias-variance trade-off is overfitting vs underfitting, and regularization is bias-for-variance.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them with NumPy before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Unbiased?</h4>
+        <p>Is the sample mean unbiased for the population mean? Simulate samples of size 20 from Normal(50, 10) and
+           check.</p>
+        <div class="chint">Hint: average many sample means and compare to 50.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Bessel's correction</h4>
+        <p>For samples of size 4 from Normal(0, 3) (variance 9), compare the variance estimator with /n to the one with
+           /(n&#8722;1).</p>
+        <div class="chint">Hint: <code>np.var(ddof=0)</code> vs <code>ddof=1</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>MLE</h4>
+        <p>Compute the maximum-likelihood estimate of an exponential rate from a sample (true rate 0.4).</p>
+        <div class="chint">Hint: the MLE is 1/mean.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Consistency</h4>
+        <p>Show the estimate of a normal mean gets more accurate as n grows from 10 to 10,000.</p>
+        <div class="chint">Hint: the sd of the estimate shrinks like 2/&#8730;n.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>MSE decomposition</h4>
+        <p>For a biased estimator (the sample mean shrunk by 10%), compute bias, variance, and verify
+           MSE = bias&#178; + variance.</p>
+        <div class="chint">Hint: bias &#8776; &#8722;0.1&#956;; check the identity numerically.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code.
+           Try them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/estimation-theory--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/estimation-theory--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/estimation-theory--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on estimation theory. Answer them, hit <strong>Check Answers</strong>, and keep refining
+       until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">🏁</div>
+    <div><div class="ctitle">That completes Part VIII</div>
+      <p>You have built the advanced machinery: joint and conditional densities, transformations, conditional
+         expectation, moments and inequalities, and now estimation theory, the bridge to model fitting. Next,
+         <strong>Part IX</strong> returns to practical ground with <strong>Sampling &amp; Data Collection</strong>: how
+         to gather data worth analyzing in the first place.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="moments-mgfs-and-inequalities.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 45 · Previous</span><br><span class="cn-title">Moments, MGFs &amp; Inequalities</span></span>
+    </a>
+    <a class="cn-btn next" href="the-probability-distribution-framework.html">
+      <span><span class="cn-dir">Chapter 47 · Next</span><br><span class="cn-title">The Probability Distribution Framework</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 46 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch46";
+  window.QUIZ_DATA = [
+    {
+      q: "An estimator's BIAS is…",
+      options: ["How much it scatters from sample to sample", "How far its average value sits from the true parameter", "Its largest possible value", "The sample size"],
+      answer: 1,
+      explain: "Bias is the difference between the estimator's expected value and the true parameter. An unbiased estimator centers on the truth."
+    },
+    {
+      q: "Mean squared error decomposes as…",
+      options: ["bias − variance", "bias² + variance", "bias × variance", "variance only"],
+      answer: 1,
+      explain: "MSE = bias² + variance. Both an off-center estimator and a jumpy one inflate the error; the identity separates the two sources."
+    },
+    {
+      q: "Why does the sample variance divide by n − 1 instead of n?",
+      options: ["To make it larger for fun", "Dividing by n is biased low; n − 1 (Bessel's correction) makes it unbiased", "n − 1 is faster to compute", "It does not matter"],
+      answer: 1,
+      explain: "Using the sample mean makes deviations too small, so /n underestimates the variance by (n−1)/n. Dividing by n − 1 corrects the bias."
+    },
+    {
+      q: "Maximum likelihood estimation chooses the parameter that…",
+      options: ["Has the smallest value", "Makes the observed data most probable", "Is exactly zero", "Ignores the data"],
+      answer: 1,
+      explain: "The MLE maximizes the likelihood (usually the log-likelihood) of the observed data. For an exponential, it works out to 1/mean."
+    },
+    {
+      q: "An estimator is CONSISTENT if…",
+      options: ["It is always unbiased", "It converges to the true value as the sample size grows", "It has zero variance", "It equals the median"],
+      answer: 1,
+      explain: "Consistency means the estimate homes in on the truth as n → ∞, with its scatter shrinking (typically like 1/√n)."
+    },
+    {
+      q: "In machine learning, minimizing cross-entropy loss is equivalent to…",
+      options: ["Maximizing a Bernoulli likelihood", "Maximizing the variance", "Minimizing the sample size", "Computing the median"],
+      answer: 0,
+      explain: "Cross-entropy is the negative log-likelihood of Bernoulli/categorical data, so minimizing it is maximum likelihood. (MSE is the Gaussian case.)"
+    },
+    {
+      q: "The bias-variance trade-off explains overfitting because a very flexible model has…",
+      options: ["High bias, low variance", "Low bias but high variance (it chases the noise)", "Zero error", "No parameters"],
+      answer: 1,
+      explain: "A high-capacity model fits the training noise: low bias but high variance, so test error rises. The U-shaped curve has its minimum at moderate complexity."
+    },
+    {
+      q: "Regularization (ridge, weight decay, early stopping) works by…",
+      options: ["Removing all bias", "Accepting a little bias to substantially reduce variance", "Increasing the variance", "Deleting the data"],
+      answer: 1,
+      explain: "Regularization deliberately adds bias to cut variance, lowering overall error. Adding a prior turns MLE into MAP, which is exactly a regularized loss."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

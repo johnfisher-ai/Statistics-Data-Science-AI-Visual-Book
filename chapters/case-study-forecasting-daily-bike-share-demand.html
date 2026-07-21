@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 102 · Case Study: Forecasting Daily Bike-Share Demand — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#f0fdf4; border:1px solid #bbf7d0; border-left:4px solid #059669; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#047857; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none; padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#6ee7b7; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+    .step-h { display:flex; align-items:center; gap:0.6rem; margin:1.4rem 0 0.4rem; }
+    .step-h .sn { flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:#059669; color:#fff; font-weight:800; font-size:0.95rem; display:flex; align-items:center; justify-content:center; }
+    .step-h h3 { margin:0; font-size:1.02rem; color:var(--ink); }
+    .writeup { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:14px; padding:1.3rem 1.5rem; margin:1.3rem 0; }
+    .writeup h3 { margin-top:0; color:#047857; }
+    .nb-fig { margin:1.4rem 0; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:1rem 1rem 0.6rem; }
+    .nb-fig img { display:block; width:100%; height:auto; border-radius:8px; }
+    .nb-fig figcaption { margin:0.75rem 0.2rem 0.3rem; font-size:0.85rem; color:var(--ink-soft); line-height:1.55; }
+    .nb-fig .cap-t { font-size:0.64rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#047857; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/case-study-forecasting-daily-bike-share-demand.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XVI · Regression Case Study</span><span class="sep">/</span>
+      <span>Chapter 102</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XVI · Regression Case Study</span> Counting the demand</div>
+    <h1>Case Study: Forecasting Daily <span class="accent">Bike-Share Demand</span></h1>
+    <p class="dek">The third capstone, and the one where the answer is a count: how many bikes will be rented today? Same
+       12-step method, a messy daily-operations file to clean, and the signature hazard of count models to diagnose and
+       fix, overdispersion.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~26 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Full notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 102</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Ames predicted a <em>number</em> (price), churn predicted a <em>yes/no</em>. This one predicts a
+       <span class="hl">count</span>, whole, non-negative, unbounded, which needs its own model. Fit a straight line to
+       daily rentals and it will happily forecast negative demand; the right tool is Poisson regression, and it has one
+       famous failure to watch.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#955;</div>
+      <div class="def-body">
+        A <span class="def-kw">count-regression case study</span> models a non-negative count with a
+        <span class="def-kw">Poisson</span> (log-link) regression, whose coefficients exponentiate to
+        <span class="def-kw">rate ratios</span>. When the counts vary more than Poisson allows,
+        <span class="def-kw">overdispersion</span>, the fix is a <span class="def-kw">negative binomial</span> model.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🧭</div>
+      <div><div class="ctitle">The count-model twist</div>
+        <p>Everything from steps 1&#8211;7 is the familiar pipeline. The new content lands at steps 8&#8211;9: choose a
+           <strong>Poisson</strong> family, then discover the daily counts are <strong>wildly overdispersed</strong> and
+           switch to a <strong>negative binomial</strong>.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §1 method ===== -->
+  <section id="method">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The 12-Step Method</h2></div>
+    <p>The same repeatable loop, now applied to a count outcome. The companion notebook runs all twelve steps in code; the
+       sections below narrate the story with the key numbers and pictures.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 678 332" width="100%" font-family="Inter, sans-serif" aria-label="The twelve-step data-project method as a snaking flow: define, collect, inspect, clean, then down and back visualize, transform, analyze, build, then down validate, interpret, deploy, communicate">
+        <text x="339" y="26" text-anchor="middle" font-size="13" fill="#1a2138" font-weight="800">The 12-step method: from a raw file to a decision</text>
+        <defs><marker id="m100" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#047857"/></marker></defs>
+        <path d="M165,84.0 L181,84.0" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <path d="M331,84.0 L347,84.0" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <path d="M497,84.0 L513,84.0" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <path d="M588.0,120 L588.0,150" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <path d="M513,186.0 L497,186.0" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <path d="M347,186.0 L331,186.0" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <path d="M181,186.0 L165,186.0" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <path d="M90.0,222 L90.0,252" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <path d="M165,288.0 L181,288.0" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <path d="M331,288.0 L347,288.0" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <path d="M497,288.0 L513,288.0" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <rect x="15" y="48" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="32" cy="66" r="11" fill="#059669"/><text x="32" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">1</text>
+        <text x="49" y="70" font-size="10.5" fill="#047857" font-weight="800">Define</text>
+        <text x="27" y="92" font-size="8.3" fill="#4a5578">the objective</text>
+        <rect x="181" y="48" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="198" cy="66" r="11" fill="#059669"/><text x="198" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">2</text>
+        <text x="215" y="70" font-size="10.5" fill="#047857" font-weight="800">Collect</text>
+        <text x="193" y="92" font-size="8.3" fill="#4a5578">CSV/SQL/API</text>
+        <rect x="347" y="48" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="364" cy="66" r="11" fill="#059669"/><text x="364" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">3</text>
+        <text x="381" y="70" font-size="10.5" fill="#047857" font-weight="800">Inspect</text>
+        <text x="359" y="92" font-size="8.3" fill="#4a5578">shape, types, gaps</text>
+        <rect x="513" y="48" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="530" cy="66" r="11" fill="#059669"/><text x="530" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">4</text>
+        <text x="547" y="70" font-size="10.5" fill="#047857" font-weight="800">Clean</text>
+        <text x="525" y="92" font-size="8.3" fill="#4a5578">dupes, dates, missing</text>
+        <rect x="513" y="150" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="530" cy="168" r="11" fill="#059669"/><text x="530" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">5</text>
+        <text x="547" y="172" font-size="10.5" fill="#047857" font-weight="800">Visualize</text>
+        <text x="525" y="194" font-size="8.3" fill="#4a5578">hist, box, heatmap</text>
+        <rect x="347" y="150" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="364" cy="168" r="11" fill="#059669"/><text x="364" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">6</text>
+        <text x="381" y="172" font-size="10.5" fill="#047857" font-weight="800">Transform</text>
+        <text x="359" y="194" font-size="8.3" fill="#4a5578">log, encode, engineer</text>
+        <rect x="181" y="150" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="198" cy="168" r="11" fill="#059669"/><text x="198" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">7</text>
+        <text x="215" y="172" font-size="10.5" fill="#047857" font-weight="800">Analyze</text>
+        <text x="193" y="194" font-size="8.3" fill="#4a5578">correlation, outliers</text>
+        <rect x="15" y="150" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="32" cy="168" r="11" fill="#059669"/><text x="32" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">8</text>
+        <text x="49" y="172" font-size="10.5" fill="#047857" font-weight="800">Build</text>
+        <text x="27" y="194" font-size="8.3" fill="#4a5578">the regression</text>
+        <rect x="15" y="252" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="32" cy="270" r="11" fill="#059669"/><text x="32" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">9</text>
+        <text x="49" y="274" font-size="10.5" fill="#047857" font-weight="800">Validate</text>
+        <text x="27" y="296" font-size="8.3" fill="#4a5578">VIF, residuals, CV</text>
+        <rect x="181" y="252" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="198" cy="270" r="11" fill="#059669"/><text x="198" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">10</text>
+        <text x="215" y="274" font-size="10.5" fill="#047857" font-weight="800">Interpret</text>
+        <text x="193" y="296" font-size="8.3" fill="#4a5578">coefficients as dollars</text>
+        <rect x="347" y="252" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="364" cy="270" r="11" fill="#059669"/><text x="364" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">11</text>
+        <text x="381" y="274" font-size="10.5" fill="#047857" font-weight="800">Deploy</text>
+        <text x="359" y="296" font-size="8.3" fill="#4a5578">API, monitor, retrain</text>
+        <rect x="513" y="252" width="150" height="72" rx="10" fill="#dcfce7" stroke="#059669" stroke-width="1.8"/>
+        <circle cx="530" cy="270" r="11" fill="#059669"/><text x="530" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">12</text>
+        <text x="547" y="274" font-size="10.5" fill="#047857" font-weight="800">Communicate</text>
+        <text x="525" y="296" font-size="8.3" fill="#4a5578">plain-English write-up</text>
+      </svg>
+    </figure>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · bike_share.csv</div>
+      <p style="margin:0.5rem 0 0">Two years of daily records: <code>date</code>, <code>season</code>,
+        <code>weather</code>, <code>temp_c</code>, <code>humidity</code>, <code>windspeed</code>, <code>workingday</code>,
+        <code>holiday</code>, and the target <code>rentals</code> (a daily count).</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/bike_share.csv" download>📊 Download dataset &nbsp;<small>CSV · 745 rows</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §2 wrangle ===== -->
+  <section id="wrangle">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Define, Collect, Inspect, Clean (Steps 1&#8211;4)</h2></div>
+
+    <div class="step-h"><span class="sn">1</span><h3>Define the objective</h3></div>
+    <p>Predict the <strong>daily rental count</strong> and identify its drivers, so operations can pre-position bikes,
+       schedule staff, and time maintenance. Because rentals are counts, ordinary linear regression is wrong (it can
+       predict negative demand); the right family is Poisson.</p>
+
+    <div class="step-h"><span class="sn">2</span><h3>Collect the data</h3></div>
+    <p>A CSV pull from the bike-system database. As always, other sources (SQL, an API, a spreadsheet) would use the same
+       one-line pandas readers, then land in a DataFrame.</p>
+
+    <div class="step-h"><span class="sn">3</span><h3>Inspect the data</h3></div>
+    <p><code>info()</code> and <code>value_counts()</code> reveal the mess: <code>season</code> and <code>weather</code>
+       in mixed case, <code>workingday</code> as 0/1 and Yes/No, three date formats, duplicate days, missing weather
+       readings, and a few rows with no <code>rentals</code>.</p>
+
+    <div class="step-h"><span class="sn">4</span><h3>Clean the data</h3></div>
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Problem</th><th>Detail</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Missing target</td><td>5 rows with no <code>rentals</code></td><td>drop</td></tr>
+          <tr><td class="nm">Duplicate days</td><td>14 repeated dates</td><td>deduplicate</td></tr>
+          <tr><td class="nm">Messy categories</td><td>season &#215;12, weather &#215;8, workingday 0/1 + Yes/No</td><td>normalize case, map to one scheme</td></tr>
+          <tr><td class="nm">Three date formats</td><td><code>date</code></td><td><code>pd.to_datetime(format="mixed")</code>, then engineer month &amp; weekend</td></tr>
+          <tr><td class="nm">Missing weather</td><td>humidity 18, windspeed 9</td><td>impute the median</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>After cleaning, <strong>726 days</strong> remain with no missing modeling values, and we have engineered
+       <code>month</code> and <code>is_weekend</code> from the parsed dates.</p>
+  </section>
+
+  <!-- ===== §3 explore ===== -->
+  <section id="explore">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Visualize, Transform, Analyze (Steps 5&#8211;7)</h2></div>
+
+    <div class="step-h"><span class="sn">5</span><h3>Visualize the data</h3></div>
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 262" width="100%" font-family="Inter, sans-serif" aria-label="Bar chart of average rentals by weather (clear best, heavy rain worst) and a scatter of rentals against temperature rising then leveling">
+        <text x="340" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">Step 1: explore. Weather and temperature drive demand</text>
+        <line x1="44" y1="52" x2="44" y2="202" stroke="#1a2138" stroke-width="1.1"/>
+        <line x1="44" y1="202" x2="304" y2="202" stroke="#1a2138" stroke-width="1.1"/>
+        <rect x="58.6" y="77.0" width="35.8" height="125.0" fill="#059669" opacity="0.85"/>
+        <text x="76.5" y="73.0" text-anchor="middle" font-size="8" fill="#059669" font-weight="800">1711</text>
+        <text x="76.5" y="215" text-anchor="middle" font-size="7" fill="#4a5578">Clear</text>
+        <rect x="123.6" y="91.4" width="35.8" height="110.6" fill="#d97706" opacity="0.85"/>
+        <text x="141.5" y="87.4" text-anchor="middle" font-size="8" fill="#d97706" font-weight="800">1515</text>
+        <text x="141.5" y="215" text-anchor="middle" font-size="7" fill="#4a5578">Mist</text>
+        <rect x="188.6" y="132.9" width="35.8" height="69.1" fill="#dc2626" opacity="0.85"/>
+        <text x="206.5" y="128.9" text-anchor="middle" font-size="8" fill="#dc2626" font-weight="800">945</text>
+        <text x="206.5" y="215" text-anchor="middle" font-size="7" fill="#4a5578">Light Rain</text>
+        <rect x="253.6" y="175.1" width="35.8" height="26.9" fill="#7f1d1d" opacity="0.85"/>
+        <text x="271.5" y="171.1" text-anchor="middle" font-size="8" fill="#7f1d1d" font-weight="800">369</text>
+        <text x="271.5" y="215" text-anchor="middle" font-size="7" fill="#4a5578">Heavy Rain</text>
+        <text x="174" y="229" text-anchor="middle" font-size="8.4" fill="#1a2138" font-weight="600">avg rentals by weather</text>
+        <line x1="400" y1="52" x2="400" y2="202" stroke="#1a2138" stroke-width="1.1"/>
+        <line x1="400" y1="202" x2="650" y2="202" stroke="#1a2138" stroke-width="1.1"/>
+        <circle cx="436.9" cy="186.1" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="583.2" cy="181.9" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="548.6" cy="160.2" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="438.5" cy="187.4" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="407.1" cy="180.0" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="516.4" cy="166.6" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="455.8" cy="184.9" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="465.3" cy="180.7" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="571.4" cy="185.5" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="593.4" cy="130.3" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="548.6" cy="184.9" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="615.4" cy="123.6" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="490.4" cy="168.9" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="509.3" cy="180.0" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="510.8" cy="177.5" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="458.2" cy="185.6" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="606.0" cy="149.1" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="597.3" cy="160.4" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="512.4" cy="183.0" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="561.9" cy="180.5" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="598.9" cy="189.4" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="613.8" cy="183.5" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="628.0" cy="144.8" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="632.7" cy="167.8" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="625.6" cy="156.2" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="599.7" cy="154.8" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="542.3" cy="141.6" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="612.3" cy="142.5" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="474.7" cy="186.4" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="536.0" cy="122.8" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="590.3" cy="151.1" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="467.6" cy="187.5" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="628.0" cy="125.1" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="440.1" cy="182.9" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="584.0" cy="134.6" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="570.6" cy="154.8" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="562.7" cy="179.0" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="539.2" cy="172.6" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="599.7" cy="156.8" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="521.9" cy="149.3" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="503.0" cy="189.0" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="594.2" cy="95.0" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="459.0" cy="179.8" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="450.3" cy="199.0" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="608.3" cy="169.7" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="488.1" cy="186.8" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="446.4" cy="188.7" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="588.7" cy="168.7" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="476.3" cy="173.7" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="478.6" cy="189.3" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="613.1" cy="130.0" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="520.3" cy="175.4" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="468.4" cy="186.7" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="487.3" cy="175.7" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="470.8" cy="179.5" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="590.3" cy="174.5" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="499.8" cy="170.4" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="617.0" cy="166.2" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="598.9" cy="160.7" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="426.7" cy="189.4" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="482.5" cy="171.0" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="466.8" cy="189.7" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="532.9" cy="175.7" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="575.3" cy="189.2" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="509.3" cy="184.9" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="436.9" cy="181.2" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="489.6" cy="161.4" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="424.4" cy="193.3" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="620.1" cy="175.3" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="465.3" cy="189.8" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="578.5" cy="166.7" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="466.0" cy="197.7" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="448.0" cy="186.7" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="503.8" cy="182.1" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="596.5" cy="150.9" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="598.9" cy="166.8" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="598.9" cy="154.8" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="625.6" cy="145.1" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="478.6" cy="193.8" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="539.2" cy="171.9" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="500.6" cy="175.4" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="519.5" cy="192.6" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="625.6" cy="171.4" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="613.1" cy="128.7" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="473.1" cy="175.3" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="576.9" cy="176.0" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="447.2" cy="185.1" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="539.9" cy="122.1" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="463.7" cy="187.3" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="612.3" cy="124.7" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="439.3" cy="197.6" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="522.6" cy="177.9" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="569.8" cy="122.3" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="573.7" cy="136.1" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="463.7" cy="179.6" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="521.1" cy="186.5" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="440.9" cy="189.5" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="418.1" cy="199.5" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="606.0" cy="137.8" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="526.6" cy="192.7" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="584.0" cy="115.8" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="605.2" cy="147.5" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="626.4" cy="96.4" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="438.5" cy="189.8" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="580.0" cy="183.9" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="433.8" cy="191.0" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="574.5" cy="175.1" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="447.2" cy="182.1" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="613.8" cy="148.7" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="478.6" cy="172.8" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="440.1" cy="187.2" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="524.2" cy="172.5" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="576.9" cy="168.2" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="601.3" cy="166.2" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="619.3" cy="77.7" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="612.3" cy="173.9" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="464.5" cy="182.0" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="591.0" cy="155.6" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="618.6" cy="174.1" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="459.0" cy="189.3" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="591.0" cy="166.6" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="505.3" cy="183.0" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="519.5" cy="192.3" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="453.5" cy="195.9" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="531.3" cy="159.3" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="521.9" cy="198.0" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="505.3" cy="185.8" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="617.0" cy="177.4" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="501.4" cy="177.0" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="465.3" cy="179.2" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="450.3" cy="177.7" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="572.2" cy="147.6" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="556.4" cy="176.3" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="444.0" cy="197.6" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="481.8" cy="193.1" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="498.3" cy="173.5" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="590.3" cy="157.5" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="613.8" cy="90.5" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="514.0" cy="171.3" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="441.7" cy="191.7" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="554.9" cy="186.0" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="577.7" cy="99.0" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="566.7" cy="143.9" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="569.8" cy="177.7" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="473.9" cy="189.0" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="429.1" cy="194.4" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="448.7" cy="188.7" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="536.0" cy="168.4" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="516.4" cy="188.5" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="416.5" cy="185.8" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="520.3" cy="187.9" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="606.0" cy="183.4" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="620.9" cy="159.0" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="593.4" cy="163.3" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="457.4" cy="187.5" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="506.9" cy="166.9" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="506.1" cy="169.4" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="477.0" cy="186.4" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="555.7" cy="145.5" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="514.8" cy="182.3" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="632.7" cy="175.1" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="428.3" cy="190.9" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="486.5" cy="161.7" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="613.1" cy="179.9" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="503.0" cy="179.4" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="470.8" cy="188.0" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="538.4" cy="137.5" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="650.0" cy="106.5" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="499.8" cy="178.4" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="462.9" cy="182.7" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="458.2" cy="191.9" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="556.4" cy="168.6" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="559.6" cy="149.0" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="602.8" cy="158.5" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="462.9" cy="185.4" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="639.0" cy="162.5" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="470.8" cy="183.7" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="495.1" cy="170.5" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="588.7" cy="168.5" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="539.2" cy="194.2" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="507.7" cy="180.7" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="615.4" cy="154.4" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="489.6" cy="171.0" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="559.6" cy="176.1" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="609.9" cy="137.1" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="494.3" cy="179.8" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="439.3" cy="186.4" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="525.8" cy="172.5" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="444.0" cy="197.4" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="582.4" cy="147.2" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="469.2" cy="166.9" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="578.5" cy="186.2" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="576.9" cy="91.5" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="532.9" cy="169.7" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="481.0" cy="161.5" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="518.7" cy="183.0" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="492.8" cy="175.6" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="529.7" cy="161.1" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="509.3" cy="164.8" r="2" fill="#059669" opacity="0.4"/>
+        <circle cx="627.2" cy="127.5" r="2" fill="#059669" opacity="0.4"/>
+        <text x="525" y="229" text-anchor="middle" font-size="8.4" fill="#1a2138" font-weight="600">rentals vs temperature (&#176;C)</text>
+      </svg>
+    </figure>
+    <p>Demand tracks the weather and the temperature. Average rentals fall from about <strong>1,700 on clear days</strong>
+       to under <strong>400 in heavy rain</strong>, and rise with temperature (the scatter climbs, then flattens in the
+       heat). The count distribution is right-skewed, and its spread grows with its level, the first hint of trouble.</p>
+
+    <div class="step-h"><span class="sn">6</span><h3>Transform features</h3></div>
+    <p>We engineer calendar features (month, weekend) from the date, enter <code>weather</code> and <code>season</code> as
+       <span class="term">dummy variables</span>, and add a <span class="term">squared temperature term</span> to capture
+       the rise-then-flatten shape. The outcome is a count, so the model family is <strong>Poisson with a log link</strong>.</p>
+
+    <div class="step-h"><span class="sn">7</span><h3>Analyze patterns</h3></div>
+    <p>Quantifying the hint: the daily rentals have a <strong>variance-to-mean ratio in the hundreds</strong>, when a
+       Poisson model assumes it is about 1. That is <span class="hl">overdispersion</span>, and step 9 must deal with it.</p>
+  </section>
+
+  <!-- ===== §4 build & validate ===== -->
+  <section id="build">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Build and Validate (Steps 8&#8211;9)</h2></div>
+
+    <div class="step-h"><span class="sn">8</span><h3>Build the model</h3></div>
+    <p>A Poisson GLM of <code>rentals</code> on temperature (and its square), humidity, windspeed, weather, season,
+       working day, and holiday. It fits well, but its <strong>Pearson chi-square / df is about 255</strong> (it should be
+       near 1), the overdispersion alarm.</p>
+
+    <div class="step-h"><span class="sn">9</span><h3>Validate the model</h3></div>
+    <p>Bin the data and the variance sits far above the mean, Poisson's core assumption is badly violated:</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 290" width="100%" font-family="Inter, sans-serif" aria-label="Variance versus mean for binned daily rentals sits far above the Poisson equal line, showing extreme overdispersion that needs a negative binomial model">
+        <text x="340" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">Overdispersion: variance dwarfs the mean</text>
+        <text x="340" y="37" text-anchor="middle" font-size="9" fill="#4a5578">Poisson assumes variance = mean (grey line); the counts vary far more, so we switch to negative binomial</text>
+        <line x1="64" y1="54" x2="64" y2="238" stroke="#1a2138" stroke-width="1.1"/>
+        <line x1="64" y1="238" x2="654" y2="238" stroke="#1a2138" stroke-width="1.1"/>
+        <line x1="64.0" y1="238.0" x2="654.0" y2="237.7" stroke="#94a3b8" stroke-width="1.6" stroke-dasharray="5 4"/>
+        <text x="654" y="232" text-anchor="end" font-size="8.5" fill="#94a3b8">Poisson: variance = mean</text>
+        <circle cx="140.7" cy="232.0" r="4.5" fill="#059669" stroke="#fff"/>
+        <circle cx="177.5" cy="230.4" r="4.5" fill="#059669" stroke="#fff"/>
+        <circle cx="203.6" cy="228.8" r="4.5" fill="#059669" stroke="#fff"/>
+        <circle cx="252.8" cy="223.3" r="4.5" fill="#059669" stroke="#fff"/>
+        <circle cx="285.4" cy="215.6" r="4.5" fill="#059669" stroke="#fff"/>
+        <circle cx="310.5" cy="208.1" r="4.5" fill="#059669" stroke="#fff"/>
+        <circle cx="363.8" cy="179.5" r="4.5" fill="#059669" stroke="#fff"/>
+        <circle cx="462.7" cy="139.2" r="4.5" fill="#059669" stroke="#fff"/>
+        <circle cx="436.6" cy="175.1" r="4.5" fill="#059669" stroke="#fff"/>
+        <circle cx="600.4" cy="62.8" r="4.5" fill="#059669" stroke="#fff"/>
+        <text x="359" y="278" text-anchor="middle" font-size="9" fill="#4a5578">mean rentals in the bin &#8594;</text>
+        <text x="18" y="146" text-anchor="middle" font-size="9" fill="#4a5578" transform="rotate(-90 18 146)">variance in the bin &#8594;</text>
+      </svg>
+    </figure>
+
+    <p>The remedy is the <span class="term">negative binomial</span>, which adds a dispersion parameter so variance can
+       exceed the mean. It is a spectacular improvement here, the <strong>AIC drops from about 183,000 to 11,000</strong>.
+       VIFs are ~1 (no multicollinearity), and the negative-binomial forecast tracks actual demand closely (pseudo-R&#178;
+       &#8776; 0.66):</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 320" width="100%" font-family="Inter, sans-serif" aria-label="Predicted versus actual daily rentals cluster along the diagonal, showing the negative-binomial model predicts demand well">
+        <text x="340" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">The model in action: predicted vs actual daily rentals</text>
+        <text x="340" y="37" text-anchor="middle" font-size="9" fill="#4a5578">Pseudo-R&#178; = 0.66; closer to the dashed line is a better forecast</text>
+        <line x1="64" y1="50" x2="64" y2="268" stroke="#1a2138" stroke-width="1.1"/>
+        <line x1="64" y1="268" x2="654" y2="268" stroke="#1a2138" stroke-width="1.1"/>
+        <line x1="64.0" y1="268.0" x2="654.0" y2="50.0" stroke="#047857" stroke-width="2" stroke-dasharray="6 4"/>
+        <text x="648" y="64" text-anchor="end" font-size="8.5" fill="#047857" font-weight="700">perfect forecast</text>
+        <circle cx="282.5" cy="209.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="143.7" cy="230.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="251.5" cy="209.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="248.6" cy="219.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="175.6" cy="239.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="265.6" cy="202.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="96.1" cy="251.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="300.4" cy="199.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="172.6" cy="246.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="124.6" cy="238.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="121.6" cy="251.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="230.4" cy="195.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="285.2" cy="207.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="108.5" cy="251.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="121.8" cy="247.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="137.4" cy="242.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="216.1" cy="219.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="176.2" cy="242.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="222.2" cy="209.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="358.1" cy="177.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="113.3" cy="236.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="87.4" cy="241.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="277.8" cy="209.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="378.2" cy="164.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="186.2" cy="192.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="187.1" cy="206.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="191.5" cy="227.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="115.3" cy="250.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="206.1" cy="219.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="181.1" cy="236.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="306.4" cy="175.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="198.4" cy="199.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="87.2" cy="255.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="164.1" cy="247.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="204.3" cy="180.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="220.5" cy="213.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="113.0" cy="241.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="372.5" cy="157.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="120.7" cy="242.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="123.4" cy="245.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="132.5" cy="223.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="160.2" cy="253.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="262.4" cy="216.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="105.2" cy="243.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="187.2" cy="212.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="234.5" cy="219.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="224.9" cy="210.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="139.1" cy="233.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="398.0" cy="195.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="324.0" cy="198.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="88.5" cy="249.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="210.9" cy="223.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="320.1" cy="204.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="231.6" cy="228.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="242.4" cy="191.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="201.4" cy="215.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="509.7" cy="177.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="165.0" cy="242.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="636.8" cy="173.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="92.2" cy="241.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="276.1" cy="179.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="138.4" cy="247.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="523.3" cy="199.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="198.4" cy="194.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="183.2" cy="222.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="250.2" cy="184.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="249.2" cy="202.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="126.5" cy="237.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="193.5" cy="218.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="487.4" cy="162.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="266.5" cy="205.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="378.6" cy="171.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="181.1" cy="228.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="303.6" cy="192.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="120.9" cy="241.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="395.1" cy="160.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="141.2" cy="216.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="202.9" cy="214.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="130.6" cy="249.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="253.6" cy="227.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="144.8" cy="233.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="78.4" cy="255.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="189.3" cy="211.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="248.2" cy="184.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="167.3" cy="238.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="124.9" cy="227.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="171.0" cy="213.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="255.8" cy="198.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="107.4" cy="245.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="265.6" cy="183.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="342.5" cy="210.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="235.3" cy="222.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="182.4" cy="238.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="153.3" cy="233.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="288.1" cy="227.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="182.4" cy="226.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="185.5" cy="238.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="111.9" cy="237.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="167.9" cy="245.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="165.1" cy="236.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="234.9" cy="216.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="96.7" cy="249.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="381.2" cy="159.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="140.1" cy="233.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="362.6" cy="180.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="168.2" cy="214.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="202.6" cy="224.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="193.2" cy="228.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="166.6" cy="230.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="109.7" cy="247.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="147.0" cy="227.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="174.0" cy="234.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="133.4" cy="249.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="80.2" cy="255.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="234.0" cy="210.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="153.0" cy="235.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="150.7" cy="228.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="173.8" cy="223.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="111.1" cy="232.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="126.7" cy="239.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="147.4" cy="244.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="340.5" cy="176.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="96.5" cy="255.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="120.0" cy="251.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="97.2" cy="255.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="95.3" cy="240.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="171.7" cy="219.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="144.8" cy="248.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="80.7" cy="254.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="268.5" cy="170.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="95.7" cy="209.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="178.6" cy="173.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="174.1" cy="187.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="130.6" cy="235.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="175.6" cy="219.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="422.8" cy="194.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="132.5" cy="218.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="157.1" cy="238.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="197.7" cy="191.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="91.2" cy="248.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="349.9" cy="176.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="171.2" cy="220.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="152.9" cy="225.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="71.8" cy="262.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="314.5" cy="204.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="168.4" cy="198.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="271.8" cy="181.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="111.5" cy="237.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="155.8" cy="223.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="139.4" cy="241.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="126.7" cy="237.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="147.7" cy="183.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="106.0" cy="245.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="77.2" cy="253.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="163.7" cy="218.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="159.8" cy="247.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="190.7" cy="190.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="287.7" cy="186.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="120.2" cy="249.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="87.3" cy="262.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="157.4" cy="227.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="211.0" cy="204.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="157.9" cy="241.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="217.0" cy="210.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="234.5" cy="195.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="81.0" cy="250.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="421.7" cy="215.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="383.8" cy="187.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="151.5" cy="229.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="97.5" cy="254.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="99.8" cy="242.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="337.5" cy="181.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="138.0" cy="166.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="290.5" cy="202.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="309.7" cy="184.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="250.4" cy="209.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="231.9" cy="179.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="126.8" cy="242.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="159.9" cy="234.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="111.5" cy="220.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="365.9" cy="177.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="122.1" cy="248.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="138.6" cy="180.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="258.2" cy="189.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="132.3" cy="246.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="143.9" cy="230.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="270.1" cy="226.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="145.4" cy="230.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="215.4" cy="243.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="117.6" cy="246.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="190.6" cy="241.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="76.2" cy="254.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="154.6" cy="224.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="541.5" cy="170.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="186.7" cy="181.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="91.3" cy="247.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="232.5" cy="192.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="308.9" cy="218.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="207.5" cy="191.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="283.7" cy="204.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="130.7" cy="220.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="158.1" cy="238.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="162.7" cy="247.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="126.9" cy="214.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="118.3" cy="231.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="158.6" cy="223.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="95.8" cy="244.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="166.2" cy="237.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="296.3" cy="219.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="86.6" cy="252.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="552.1" cy="195.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="178.2" cy="219.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="264.6" cy="184.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="125.3" cy="242.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="164.1" cy="217.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="164.4" cy="229.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="247.0" cy="195.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="126.2" cy="229.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="168.0" cy="220.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="268.2" cy="189.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="269.0" cy="172.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="91.3" cy="244.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="125.9" cy="234.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="272.1" cy="164.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="351.2" cy="207.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="108.6" cy="251.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="199.5" cy="225.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="316.2" cy="174.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="109.9" cy="254.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="239.4" cy="217.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="161.5" cy="206.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="123.8" cy="239.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="373.2" cy="175.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="99.7" cy="247.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="150.7" cy="223.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="321.5" cy="176.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="129.9" cy="240.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="275.4" cy="210.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="192.7" cy="236.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="76.8" cy="248.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="362.5" cy="195.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="101.2" cy="225.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <text x="359" y="308" text-anchor="middle" font-size="9" fill="#4a5578">actual rentals &#8594;</text>
+        <text x="18" y="159" text-anchor="middle" font-size="9" fill="#4a5578" transform="rotate(-90 18 159)">predicted rentals &#8594;</text>
+      </svg>
+    </figure>
+
+    <p>Same rate ratios as the Poisson fit, but now with <span class="hl">honest standard errors</span>. This is the count
+       analog of the log transform in the house-price study: diagnose the violation, switch to the right model, re-check.</p>
+  </section>
+
+  <!-- ===== §5 interpret & deploy ===== -->
+  <section id="interpret">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Interpret and Deploy (Steps 10&#8211;11)</h2></div>
+
+    <div class="step-h"><span class="sn">10</span><h3>Interpret the results</h3></div>
+    <figure class="nb-fig">
+      <img src="../assets/img/case-study-forecasting-daily-bike-share-demand--overdispersion.png" alt="Overdispersion diagnostic and the count model demand forecast">
+      <figcaption><span class="cap-t">From the notebook &#183; Step 10</span><br>The variance-versus-mean overdispersion check (why negative binomial beats plain Poisson here) alongside the fitted demand forecast.</figcaption>
+    </figure>
+    <p>Exponentiating each coefficient gives a <span class="term">rate ratio</span>, the multiplier on expected demand:</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 262" width="100%" font-family="Inter, sans-serif" aria-label="Rate-ratio forest plot for daily bike rentals on a log scale: heavy rain, light rain and holidays cut demand sharply, warm days and working days raise it">
+        <text x="340" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">What moves demand: rate ratios (log scale)</text>
+        <text x="340" y="37" text-anchor="middle" font-size="9" fill="#4a5578">RR &lt; 1 means fewer rentals, RR &gt; 1 more; the line at 1 is no effect</text>
+        <line x1="524.6" y1="54" x2="524.6" y2="226" stroke="#1a2138" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <text x="525" y="239" text-anchor="middle" font-size="8" fill="#4a5578">RR = 1</text>
+        <text x="202" y="52" text-anchor="middle" font-size="7.5" fill="#94a3b8">0.25</text>
+        <text x="363" y="52" text-anchor="middle" font-size="7.5" fill="#94a3b8">0.5</text>
+        <text x="525" y="52" text-anchor="middle" font-size="7.5" fill="#94a3b8">1</text>
+        <text x="619" y="52" text-anchor="middle" font-size="7.5" fill="#94a3b8">1.5</text>
+        <text x="140" y="73" text-anchor="end" font-size="9" fill="#1a2138" font-weight="700">Heavy rain</text>
+        <line x1="159.6" y1="69.7" x2="244.2" y2="69.7" stroke="#dc2626" stroke-width="2.4"/>
+        <line x1="159.6" y1="65.7" x2="159.6" y2="73.7" stroke="#dc2626" stroke-width="2"/>
+        <line x1="244.2" y1="65.7" x2="244.2" y2="73.7" stroke="#dc2626" stroke-width="2"/>
+        <circle cx="201.9" cy="69.7" r="4.2" fill="#dc2626" stroke="#fff"/>
+        <text x="252" y="73" text-anchor="start" font-size="8.4" fill="#dc2626" font-weight="800">0.25</text>
+        <text x="140" y="96" text-anchor="end" font-size="9" fill="#1a2138" font-weight="700">Light rain</text>
+        <line x1="362.5" y1="93.1" x2="403.9" y2="93.1" stroke="#dc2626" stroke-width="2.4"/>
+        <line x1="362.5" y1="89.1" x2="362.5" y2="97.1" stroke="#dc2626" stroke-width="2"/>
+        <line x1="403.9" y1="89.1" x2="403.9" y2="97.1" stroke="#dc2626" stroke-width="2"/>
+        <circle cx="383.2" cy="93.1" r="4.2" fill="#dc2626" stroke="#fff"/>
+        <text x="412" y="96" text-anchor="start" font-size="8.4" fill="#dc2626" font-weight="800">0.54</text>
+        <text x="140" y="120" text-anchor="end" font-size="9" fill="#1a2138" font-weight="700">Holiday</text>
+        <line x1="336.8" y1="116.6" x2="446.7" y2="116.6" stroke="#dc2626" stroke-width="2.4"/>
+        <line x1="336.8" y1="112.6" x2="336.8" y2="120.6" stroke="#dc2626" stroke-width="2"/>
+        <line x1="446.7" y1="112.6" x2="446.7" y2="120.6" stroke="#dc2626" stroke-width="2"/>
+        <circle cx="391.8" cy="116.6" r="4.2" fill="#dc2626" stroke="#fff"/>
+        <text x="455" y="120" text-anchor="start" font-size="8.4" fill="#dc2626" font-weight="800">0.57</text>
+        <text x="140" y="143" text-anchor="end" font-size="9" fill="#1a2138" font-weight="700">Mist</text>
+        <line x1="483.4" y1="140.0" x2="516.0" y2="140.0" stroke="#dc2626" stroke-width="2.4"/>
+        <line x1="483.4" y1="136.0" x2="483.4" y2="144.0" stroke="#dc2626" stroke-width="2"/>
+        <line x1="516.0" y1="136.0" x2="516.0" y2="144.0" stroke="#dc2626" stroke-width="2"/>
+        <circle cx="499.7" cy="140.0" r="4.2" fill="#dc2626" stroke="#fff"/>
+        <text x="524" y="143" text-anchor="start" font-size="8.4" fill="#dc2626" font-weight="800">0.90</text>
+        <text x="140" y="166" text-anchor="end" font-size="9" fill="#1a2138" font-weight="700">+10% humidity</text>
+        <line x1="504.6" y1="163.4" x2="514.6" y2="163.4" stroke="#dc2626" stroke-width="2.4"/>
+        <line x1="504.6" y1="159.4" x2="504.6" y2="167.4" stroke="#dc2626" stroke-width="2"/>
+        <line x1="514.6" y1="159.4" x2="514.6" y2="167.4" stroke="#dc2626" stroke-width="2"/>
+        <circle cx="509.6" cy="163.4" r="4.2" fill="#dc2626" stroke="#fff"/>
+        <text x="523" y="166" text-anchor="start" font-size="8.4" fill="#dc2626" font-weight="800">0.94</text>
+        <text x="140" y="190" text-anchor="end" font-size="9" fill="#1a2138" font-weight="700">Working day</text>
+        <line x1="531.5" y1="186.9" x2="562.1" y2="186.9" stroke="#059669" stroke-width="2.4"/>
+        <line x1="531.5" y1="182.9" x2="531.5" y2="190.9" stroke="#059669" stroke-width="2"/>
+        <line x1="562.1" y1="182.9" x2="562.1" y2="190.9" stroke="#059669" stroke-width="2"/>
+        <circle cx="546.8" cy="186.9" r="4.2" fill="#059669" stroke="#fff"/>
+        <text x="523" y="190" text-anchor="end" font-size="8.4" fill="#059669" font-weight="800">1.10</text>
+        <text x="140" y="213" text-anchor="end" font-size="9" fill="#1a2138" font-weight="700">+5&#176;C warmer</text>
+        <line x1="582.8" y1="210.3" x2="599.8" y2="210.3" stroke="#059669" stroke-width="2.4"/>
+        <line x1="582.8" y1="206.3" x2="582.8" y2="214.3" stroke="#059669" stroke-width="2"/>
+        <line x1="599.8" y1="206.3" x2="599.8" y2="214.3" stroke="#059669" stroke-width="2"/>
+        <circle cx="591.3" cy="210.3" r="4.2" fill="#059669" stroke="#fff"/>
+        <text x="575" y="213" text-anchor="end" font-size="8.4" fill="#059669" font-weight="800">1.33</text>
+      </svg>
+    </figure>
+
+    <p><span class="hl">Weather rules demand.</span> A <strong>heavy-rain day sees only ~25%</strong> of clear-day
+       rentals, light rain about half. Warmth helps (<strong>+33% for every 5&#176;C</strong>), working days run ~10%
+       busier than weekends, and holidays ~40% quieter. A concrete forecast: a warm, clear working day predicts about
+       <strong>3,000 rentals</strong>.</p>
+    <p><b>Actionable:</b> scale bikes and staff down on forecast rain and cold, up on warm clear working days, and treat
+       holidays like weekends. The forecast feeds straight into the next day's rebalancing plan.</p>
+
+    <div class="step-h"><span class="sn">11</span><h3>Deploy the model</h3></div>
+    <p><span class="term">Persist</span> the model and cleaning as one pipeline; <span class="term">score daily</span> by
+       feeding tomorrow's <em>weather forecast</em> plus the calendar to get a predicted count with a range; feed it into
+       bike <span class="term">rebalancing</span>, staffing, and maintenance planning; <span class="term">monitor</span>
+       forecast error and <span class="term">retrain</span> as ridership grows. Guardrail: report the interval and do not
+       extrapolate to weather far outside the training range.</p>
+  </section>
+
+  <!-- ===== §6 writeup ===== -->
+  <section id="writeup-sec">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Communicate: the Plain-English Write-Up (Step 12)</h2></div>
+    <div class="writeup">
+      <h3>For the operations manager</h3>
+      <p><strong>What we did.</strong> We took two years of daily rental records, cleaned them (removed duplicate days and
+        a few unusable rows, fixed inconsistent labels, filled a handful of missing weather readings, standardized the
+        dates), and built a formula that predicts how many bikes will be rented on a given day.</p>
+      <p><strong>How good is it?</strong> It explains about <strong>two-thirds</strong> of the day-to-day swing in demand
+        and tracks actual rentals closely, reporting a sensible range rather than a single number.</p>
+      <p><strong>What drives demand:</strong></p>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Weather</strong> above all, a rainy day can cut rentals by up to 75%.</span></li>
+        <li><span class="ck">✓</span><span><strong>Temperature</strong>, warmer days are busier (about +33% per 5&#176;C).</span></li>
+        <li><span class="ck">✓</span><span><strong>The calendar</strong>, working days beat weekends; holidays are quiet.</span></li>
+      </ul>
+      <p><strong>A note on method.</strong> Daily counts bounce around far more than a simple model expects, so we used
+        one built for that (a "negative binomial"), which makes the forecast's confidence honest.</p>
+      <p><strong>In practice: let tomorrow's weather forecast set tomorrow's bike plan.</strong></p>
+    </div>
+  </section>
+
+  <!-- ===== notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body"><h3>Run the entire forecast project in Python</h3><p>The companion notebook is the full 12-step pipeline: it loads and cleans the messy daily export (dates, categories, missing weather), visualizes demand and its seasonal rhythm, engineers calendar features, fits Poisson then negative-binomial regression, diagnoses overdispersion (variance-vs-mean, Pearson chi-square), reads rate ratios, and forecasts a day, with every table and chart explained.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/case-study-forecasting-daily-bike-share-demand.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-forecasting-daily-bike-share-demand.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-forecasting-daily-bike-share-demand.ipynb" target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)"><strong>View</strong> opens the rendered notebook instantly.
+      <strong>Open in Colab</strong> runs it live. To run locally, install <code>numpy</code>, <code>pandas</code>,
+      <code>matplotlib</code>, <code>seaborn</code>, <code>statsmodels</code>, and <code>scikit-learn</code>.</p>
+  </section>
+
+  <!-- ===== takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Counts need a count model</strong>: Poisson regression (log link) predicts a non-negative rate; ordinary regression can predict negative demand.</span></li>
+        <li><span class="ck">✓</span><span><strong>Coefficients exponentiate to rate ratios</strong>: heavy rain &#215;0.25, +5&#176;C &#215;1.33, working day &#215;1.10.</span></li>
+        <li><span class="ck">✓</span><span><strong>Overdispersion is the count-model pitfall</strong>: the variance-to-mean ratio and Pearson chi-square / df flagged it (in the hundreds).</span></li>
+        <li><span class="ck">✓</span><span><strong>The negative binomial is the fix</strong>: it let variance exceed the mean and cut the AIC from ~183,000 to ~11,000, honest error bars, same rate ratios.</span></li>
+        <li><span class="ck">✓</span><span><strong>Same 12-step method</strong> as the other case studies, only the model family (and its diagnostic) changed for a count outcome.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== §7 take it further ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Take It Further</h2></div>
+    <p>Five ways to extend the forecast in the notebook:</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Poisson vs negative binomial, quantified</h4>
+        <p>Compare the two models' standard errors on the weather coefficients to see how much Poisson understated them.</p>
+        <div class="chint">Hint: line up <code>.bse</code> from each fit.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Does temperature really curve?</h4>
+        <p>Refit without the squared temperature term and compare AIC; is the curvature worth keeping?</p>
+        <div class="chint">Hint: lower AIC wins; check the fitted temp-response shape.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Cross-validate the forecast</h4>
+        <p>Use 5-fold CV to estimate out-of-sample accuracy and confirm the model is not overfit.</p>
+        <div class="chint">Hint: <code>PoissonRegressor</code> with <code>cross_val_score</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Weekend vs weekday profiles</h4>
+        <p>Test whether weather hurts weekend demand more than weekday demand (an interaction).</p>
+        <div class="chint">Hint: <code>C(weather) * is_weekend</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Forecast a week ahead</h4>
+        <p>Build a 7-row DataFrame from a weather forecast and predict each day's demand with a range.</p>
+        <div class="chint">Hint: <code>get_prediction(...).summary_frame()</code>.</div></div></div>
+    </div>
+
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">📓</div>
+        <div class="nb-body"><h3>All five, worked in a companion notebook</h3><p>A second notebook, <strong>Take It Further</strong>, recaps the Chapter 102 model and then works every one of these five extensions with visuals and explanations, the Poisson-vs-NB standard errors, the temperature curve, cross-validation, a weekend-weather interaction, and a week-ahead forecast, closing with a plain-English summary.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/case-study-forecasting-daily-bike-share-demand--take-it-further.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-forecasting-daily-bike-share-demand--take-it-further.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-forecasting-daily-bike-share-demand--take-it-further.ipynb" target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §8 quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">8</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on the count-regression case study. Answer them, hit <strong>Check Answers</strong>, and keep
+       refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">🏁</div>
+    <div><div class="ctitle">Onward</div>
+      <p>You have now modeled a number, a yes/no, and a count, end to end. <strong>Chapter 103 &#183; Predicting Medical
+         Charges</strong> tackles the last frontier of this Part: a regression with <em>many</em> predictors, where
+         regularization picks the signal from the noise.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="case-study-logistic-regression-in-action.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 101 · Previous</span><br><span class="cn-title">Logistic Regression in Action</span></span>
+    </a>
+    <a class="cn-btn next" href="case-study-predicting-medical-charges.html">
+      <span><span class="cn-dir">Chapter 103 · Next</span><br><span class="cn-title">Predicting Medical Charges</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 102 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => { const h = document.documentElement; bar.style.width = ((h.scrollTop)/(h.scrollHeight-h.clientHeight)*100) + '%'; });
+</script>
+
+<script>
+  window.QUIZ_ID = "ch102";
+  window.QUIZ_DATA = [
+    {
+      q: "The outcome (daily rentals) is a count, so the natural model is…",
+      options: ["Ordinary linear regression", "Poisson regression (log link)", "Logistic regression", "A t-test"],
+      answer: 1,
+      explain: "Counts are non-negative and unbounded; Poisson regression with a log link keeps predictions positive."
+    },
+    {
+      q: "Why not just use ordinary linear regression on the counts?",
+      options: ["It is too slow", "It can predict negative rentals and assumes constant variance", "It needs a log link", "It cannot use dummy variables"],
+      answer: 1,
+      explain: "Linear regression can produce impossible negative counts and wrongly assumes equal variance across the range."
+    },
+    {
+      q: "A Poisson coefficient, once exponentiated, is…",
+      options: ["An odds ratio", "A rate ratio: the multiplier on the expected count", "A probability", "A residual"],
+      answer: 1,
+      explain: "With the log link, e^coef is the factor by which expected demand multiplies per one-unit change."
+    },
+    {
+      q: "The daily rentals had a variance-to-mean ratio in the hundreds. This signals…",
+      options: ["A perfect Poisson fit", "Overdispersion, the counts vary far more than Poisson assumes", "Missing data", "Multicollinearity"],
+      answer: 1,
+      explain: "Poisson assumes variance = mean; a much larger ratio (and Pearson chi-square/df) means overdispersion."
+    },
+    {
+      q: "The fix for the overdispersion was to…",
+      options: ["Delete the busy days", "Fit a negative binomial model", "Use linear regression", "Lower the threshold"],
+      answer: 1,
+      explain: "The negative binomial adds a dispersion parameter so variance can exceed the mean; the AIC dropped enormously."
+    },
+    {
+      q: "Heavy rain has a rate ratio of about 0.25 versus clear weather. That means…",
+      options: ["25% more rentals", "About a quarter of the clear-day rentals (a 75% drop)", "No effect", "25 times more rentals"],
+      answer: 1,
+      explain: "A rate ratio of 0.25 multiplies expected demand by 0.25, roughly a 75% reduction."
+    },
+    {
+      q: "Season came out non-significant once temperature was in the model because…",
+      options: ["Season never matters", "Temperature already captures most of the seasonal effect", "The data were wrong", "Season is categorical"],
+      answer: 1,
+      explain: "Temperature and season are highly related, so temperature absorbs the seasonal signal, a familiar 'held constant' effect."
+    },
+    {
+      q: "Switching from Poisson to negative binomial mostly changed…",
+      options: ["The rate ratios", "The standard errors (they grew to their honest size); the rate ratios barely moved", "The dataset", "The link function"],
+      answer: 1,
+      explain: "Like heteroscedasticity-robust errors, the negative binomial keeps the effects but fixes the understated uncertainty."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 29 · Case Study: Palmer Penguins — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .disp-table code { font-size:0.82em; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/case-study-palmer-penguins.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part V · Putting It All Together</span><span class="sep">/</span>
+      <span>Chapter 29</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part V · Case Study</span> The closer</div>
+    <h1>Case Study: <span class="accent">Palmer Penguins</span></h1>
+    <p class="dek">The final case study, and the friendliest dataset of the three. 347 Antarctic penguins, mostly tidy,
+       with just a few well-chosen problems to fix, and one famous statistical trap that only a chart reveals.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~14 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 29</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">We close Part V where many data-science courses begin, with the Palmer penguins. It is small, clean,
+       and delightful, the perfect dataset to practice the full routine without drowning in mess, and it hides one of the
+       most important cautionary tales in all of statistics.</p>
+
+    <div class="callout key">
+      <div class="cico">🐧</div>
+      <div><div class="ctitle">The dataset</div>
+        <p><code>penguins.csv</code> records 347 penguins of three species (Adelie, Chinstrap, Gentoo) across three
+           Antarctic islands, with <code>bill_length_mm</code>, <code>bill_depth_mm</code>, <code>flipper_length_mm</code>,
+           <code>body_mass_g</code>, <code>sex</code>, plus two extra columns to encode: an ordinal <code>body_size</code>
+           and a nominal <code>band_color</code> (the color of each bird's research tag). A few duplicates, a messy
+           <code>sex</code> column, two empty rows, and one impossible measurement are all that stand between us and a
+           clean table.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1 ===== -->
+  <section id="audit">
+    <div class="section-eyebrow"><div class="num">1</div><h2>First Contact: A Small, Almost-Tidy File</h2></div>
+    <p>Because most of the file is clean, the audit is about finding the <em>few</em> problems precisely.</p>
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>What the audit found</th><th>Evidence</th><th>The fix (and its chapter)</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Duplicate rows</td><td>3 exact-copy rows</td><td>Deduplicate · Ch 19</td></tr>
+          <tr><td class="nm">Empty rows</td><td>2 rows missing every measurement</td><td>Drop the rows · Ch 20</td></tr>
+          <tr><td class="nm">Messy + missing category</td><td><code>sex</code>: <code>male</code>, <code>MALE</code>, <code>Female&nbsp;</code>, <code>.</code>, blanks, 9 gaps</td><td>Standardize then impute · Ch 19, 20</td></tr>
+          <tr><td class="nm">Unit error</td><td><code>flipper_length_mm</code> = <strong>19.5</strong> (cm, not mm)</td><td>Correct the value · Ch 21</td></tr>
+          <tr><td class="nm">Messy categories to encode</td><td><code>body_size</code> (ordinal) and <code>band_color</code> (nominal), mixed casing</td><td>Clean &amp; encode by type · Ch 19, 24</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== Section 2 ===== -->
+  <section id="visualize">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Visualize First: Three Species, and a Famous Trap</h2></div>
+    <p>The single most instructive penguin chart plots bill length against bill depth, colored by species. It shows
+       three clean clusters, and a correlation that <strong>reverses</strong> the moment you account for species.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 215" width="100%" font-family="Inter, sans-serif" aria-label="Bill length versus bill depth by species, showing Simpson's paradox">
+        <text x="340" y="16" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Bill length vs bill depth: down overall, up within each species</text>
+        <line x1="60" y1="185" x2="625" y2="185" stroke="#8b94b3" stroke-width="1"/>
+        <line x1="60" y1="35" x2="60" y2="185" stroke="#8b94b3" stroke-width="1"/>
+        <g font-size="8" fill="#8b94b3" text-anchor="middle">
+          <text x="70" y="197">30</text><text x="250" y="197">40</text><text x="430" y="197">50</text><text x="610" y="197">60</text>
+        </g>
+        <g font-size="8" fill="#8b94b3" text-anchor="end">
+          <text x="55" y="183">12</text><text x="55" y="113">17.5</text><text x="55" y="43">23</text>
+        </g>
+        <text x="340" y="211" text-anchor="middle" font-size="9" fill="#8b94b3">bill length (mm)</text>
+        <text x="24" y="110" text-anchor="middle" font-size="9" fill="#8b94b3" transform="rotate(-90 24 110)">bill depth (mm)</text>
+        <!-- legend -->
+        <circle cx="500" cy="50" r="4" fill="#0891b2"/><text x="510" y="53" font-size="9" fill="#4a5578">Adelie</text>
+        <circle cx="560" cy="50" r="4" fill="#d97706"/><text x="570" y="53" font-size="9" fill="#4a5578">Chinstrap</text>
+        <circle cx="500" cy="64" r="4" fill="#7c3aed"/><text x="510" y="67" font-size="9" fill="#4a5578">Gentoo</text>
+<circle cx="302" cy="95" r="3" fill="#0891b2" fill-opacity="0.6"/>
+<circle cx="326" cy="57" r="3" fill="#0891b2" fill-opacity="0.6"/>
+<circle cx="239" cy="121" r="3" fill="#0891b2" fill-opacity="0.6"/>
+<circle cx="286" cy="107" r="3" fill="#0891b2" fill-opacity="0.6"/>
+<circle cx="302" cy="87" r="3" fill="#0891b2" fill-opacity="0.6"/>
+<circle cx="225" cy="105" r="3" fill="#0891b2" fill-opacity="0.6"/>
+<circle cx="306" cy="91" r="3" fill="#0891b2" fill-opacity="0.6"/>
+<circle cx="320" cy="93" r="3" fill="#0891b2" fill-opacity="0.6"/>
+<circle cx="266" cy="88" r="3" fill="#0891b2" fill-opacity="0.6"/>
+<circle cx="246" cy="106" r="3" fill="#0891b2" fill-opacity="0.6"/>
+<circle cx="126" cy="102" r="3" fill="#0891b2" fill-opacity="0.6"/>
+<circle cx="185" cy="115" r="3" fill="#0891b2" fill-opacity="0.6"/>
+<circle cx="277" cy="90" r="3" fill="#0891b2" fill-opacity="0.6"/>
+<circle cx="227" cy="54" r="3" fill="#0891b2" fill-opacity="0.6"/>
+<circle cx="264" cy="105" r="3" fill="#0891b2" fill-opacity="0.6"/>
+<circle cx="221" cy="119" r="3" fill="#0891b2" fill-opacity="0.6"/>
+<circle cx="171" cy="100" r="3" fill="#0891b2" fill-opacity="0.6"/>
+<circle cx="176" cy="81" r="3" fill="#0891b2" fill-opacity="0.6"/>
+<circle cx="264" cy="115" r="3" fill="#0891b2" fill-opacity="0.6"/>
+<circle cx="243" cy="96" r="3" fill="#0891b2" fill-opacity="0.6"/>
+<circle cx="416" cy="120" r="3" fill="#d97706" fill-opacity="0.6"/>
+<circle cx="335" cy="118" r="3" fill="#d97706" fill-opacity="0.6"/>
+<circle cx="484" cy="121" r="3" fill="#d97706" fill-opacity="0.6"/>
+<circle cx="394" cy="69" r="3" fill="#d97706" fill-opacity="0.6"/>
+<circle cx="272" cy="81" r="3" fill="#d97706" fill-opacity="0.6"/>
+<circle cx="297" cy="111" r="3" fill="#d97706" fill-opacity="0.6"/>
+<circle cx="380" cy="127" r="3" fill="#d97706" fill-opacity="0.6"/>
+<circle cx="390" cy="106" r="3" fill="#d97706" fill-opacity="0.6"/>
+<circle cx="360" cy="123" r="3" fill="#d97706" fill-opacity="0.6"/>
+<circle cx="432" cy="105" r="3" fill="#d97706" fill-opacity="0.6"/>
+<circle cx="399" cy="96" r="3" fill="#d97706" fill-opacity="0.6"/>
+<circle cx="412" cy="115" r="3" fill="#d97706" fill-opacity="0.6"/>
+<circle cx="372" cy="83" r="3" fill="#d97706" fill-opacity="0.6"/>
+<circle cx="425" cy="91" r="3" fill="#d97706" fill-opacity="0.6"/>
+<circle cx="430" cy="97" r="3" fill="#d97706" fill-opacity="0.6"/>
+<circle cx="457" cy="118" r="3" fill="#d97706" fill-opacity="0.6"/>
+<circle cx="423" cy="73" r="3" fill="#d97706" fill-opacity="0.6"/>
+<circle cx="327" cy="123" r="3" fill="#d97706" fill-opacity="0.6"/>
+<circle cx="383" cy="130" r="3" fill="#d97706" fill-opacity="0.6"/>
+<circle cx="372" cy="111" r="3" fill="#d97706" fill-opacity="0.6"/>
+<circle cx="320" cy="142" r="3" fill="#7c3aed" fill-opacity="0.6"/>
+<circle cx="293" cy="156" r="3" fill="#7c3aed" fill-opacity="0.6"/>
+<circle cx="417" cy="157" r="3" fill="#7c3aed" fill-opacity="0.6"/>
+<circle cx="569" cy="138" r="3" fill="#7c3aed" fill-opacity="0.6"/>
+<circle cx="403" cy="128" r="3" fill="#7c3aed" fill-opacity="0.6"/>
+<circle cx="522" cy="142" r="3" fill="#7c3aed" fill-opacity="0.6"/>
+<circle cx="452" cy="118" r="3" fill="#7c3aed" fill-opacity="0.6"/>
+<circle cx="434" cy="151" r="3" fill="#7c3aed" fill-opacity="0.6"/>
+<circle cx="383" cy="118" r="3" fill="#7c3aed" fill-opacity="0.6"/>
+<circle cx="354" cy="158" r="3" fill="#7c3aed" fill-opacity="0.6"/>
+<circle cx="365" cy="153" r="3" fill="#7c3aed" fill-opacity="0.6"/>
+<circle cx="340" cy="125" r="3" fill="#7c3aed" fill-opacity="0.6"/>
+<circle cx="344" cy="130" r="3" fill="#7c3aed" fill-opacity="0.6"/>
+<circle cx="344" cy="132" r="3" fill="#7c3aed" fill-opacity="0.6"/>
+<circle cx="457" cy="133" r="3" fill="#7c3aed" fill-opacity="0.6"/>
+<circle cx="322" cy="139" r="3" fill="#7c3aed" fill-opacity="0.6"/>
+<circle cx="441" cy="132" r="3" fill="#7c3aed" fill-opacity="0.6"/>
+<circle cx="486" cy="172" r="3" fill="#7c3aed" fill-opacity="0.6"/>
+<circle cx="365" cy="146" r="3" fill="#7c3aed" fill-opacity="0.6"/>
+<circle cx="426" cy="153" r="3" fill="#7c3aed" fill-opacity="0.6"/>
+        <!-- overall trend (down) -->
+        <line x1="124" y1="100" x2="556" y2="132" stroke="#db2777" stroke-width="2" stroke-dasharray="6 4"/>
+        <text x="556" y="146" text-anchor="end" font-size="8.5" fill="#db2777" font-weight="700">overall trend: DOWN (r ≈ −0.27)</text>
+        <text x="150" y="60" font-size="8.5" fill="#0891b2" font-weight="700">within each cluster: UP ↗</text>
+      </svg>
+    </figure>
+
+    <div class="callout key">
+      <div class="cico">🪤</div>
+      <div><div class="ctitle">Simpson's paradox</div>
+        <p>Pooled across all penguins, bill length and bill depth are <strong>negatively</strong> correlated (r ≈ −0.27),
+           the dashed line slopes down. But <strong>within every species the correlation is positive</strong> (Adelie
+           +0.28, Chinstrap +0.26, Gentoo +0.30). The reversal happens because Gentoos (purple) have long, shallow bills
+           and sit apart, dragging the overall line down. A correlation computed across mixed groups can point the
+           <em>opposite</em> way to the truth. This is why we color by the grouping variable and always ask "compared to
+           what?", a lesson that returns in force with correlation versus causation.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 3 ===== -->
+  <section id="clean">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Cleaning: Duplicates, a Unit Error, and Empty Rows</h2></div>
+    <p>Three structural fixes. <strong>Deduplicate</strong> (Ch 19) removes 3 exact copies (<strong>347 → 344</strong>).
+       Then the standout: one <code>flipper_length_mm</code> reads <strong>19.5</strong> when every other penguin is near
+       190. It is not an outlier to delete but a <strong>unit error to correct</strong>, centimeters logged as
+       millimeters, so multiplying the sub-50 value by 10 restores the true ~195 mm (Ch 21). Finally, the 2 rows missing
+       <em>every</em> measurement carry no information and are dropped (<strong>344 → 342</strong>, Ch 20).</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.4rem 1.2rem">
+      <svg viewBox="0 0 680 96" width="100%" font-family="Inter, sans-serif" aria-label="The flipper unit error before and after correction">
+        <text x="340" y="16" text-anchor="middle" font-size="11" fill="#1a2138" font-weight="800">One value is not like the others: a unit error, fixed not deleted</text>
+        <line x1="70" y1="58" x2="620" y2="58" stroke="#cdd3e6" stroke-width="1"/>
+        <g font-size="8" fill="#8b94b3" text-anchor="middle"><text x="70" y="74">0</text><text x="207" y="74">50</text><text x="344" y="74">100</text><text x="481" y="74">150</text><text x="618" y="74">200 mm</text></g>
+        <!-- the cluster of real flippers ~165-237 -->
+        <rect x="522" y="50" width="70" height="16" rx="4" fill="#7c3aed" fill-opacity="0.25" stroke="#7c3aed"/>
+        <text x="557" y="42" text-anchor="middle" font-size="8" fill="#7c3aed">real flippers (165–237)</text>
+        <!-- the bad value 19.5 -->
+        <circle cx="123" cy="58" r="5" fill="#db2777" stroke="#fff"/>
+        <text x="123" y="40" text-anchor="middle" font-size="8.5" fill="#db2777" font-weight="700">19.5 ✗</text>
+        <path d="M133,56 C260,40 400,52 520,57" stroke="#059669" stroke-width="1.3" fill="none" stroke-dasharray="4 3" marker-end="url(#fx)"/>
+        <defs><marker id="fx" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#059669"/></marker></defs>
+        <text x="330" y="90" text-anchor="middle" font-size="8.5" fill="#059669">×10 → 195 mm: understanding the cause means we repair the value, not discard the bird.</text>
+      </svg>
+    </figure>
+  </section>
+
+  <!-- ===== Section 4 ===== -->
+  <section id="missing">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Missing &amp; Messy Categories</h2></div>
+    <p>The <code>sex</code> column is both messy and incomplete, so it gets a two-step treatment. <strong>Standardize
+       first</strong> (Ch 19): trim whitespace, lowercase, and map junk tokens (<code>"."</code>, blanks) to a true
+       <code>NaN</code>, leaving clean <code>male</code> / <code>female</code> and 9 genuine gaps. <strong>Then
+       impute</strong> (Ch 20): fill those gaps with the most common sex <em>within each species</em>, a smarter fill
+       than a single global mode, because the species differ. The <code>body_size</code> and <code>band_color</code>
+       columns get the same tidy-up (including <code>med</code> → <code>medium</code>) so they are ready to encode.</p>
+
+    <div class="callout note">
+      <div class="cico">🧩</div>
+      <div><div class="ctitle">Clean before you impute</div>
+        <p>Order matters: if you impute before standardizing, the stray <code>"."</code> and <code>"Female "</code>
+           values count as real categories and corrupt the fill. Standardize to expose the <em>true</em> gaps, then
+           fill them, and fill them using structure you trust (here, the species) rather than a blunt global value.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 5 ===== -->
+  <section id="encode-explore">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Encode by Type, Then Explore</h2></div>
+    <p>The cleaned categories are encoded by <em>whether they have an order</em> (Ch 24). <code>body_size</code> is
+       <strong>ordinal</strong>, so it becomes 1 / 2 / 3; <code>species</code>, <code>island</code>, <code>sex</code>, and
+       <code>band_color</code> are <strong>nominal</strong>, so they become one-hot 1/0 columns.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 210" width="100%" font-family="Inter, sans-serif" aria-label="Ordinal body_size versus one-hot band_color">
+        <text x="340" y="16" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Encode by type: ordinal keeps order, one-hot does not invent one</text>
+        <text x="165" y="42" text-anchor="middle" font-size="10" fill="#0891b2" font-weight="800">body_size · ORDINAL → 1, 2, 3</text>
+        <g font-size="9.5">
+          <rect x="60" y="54" width="98" height="22" rx="4" fill="#eef1f8" stroke="#cdd3e6"/><text x="68" y="69" fill="#8b94b3">"Small","SMALL"</text>
+          <rect x="60" y="80" width="98" height="22" rx="4" fill="#eef1f8" stroke="#cdd3e6"/><text x="68" y="95" fill="#8b94b3">"medium","med"</text>
+          <rect x="60" y="106" width="98" height="22" rx="4" fill="#eef1f8" stroke="#cdd3e6"/><text x="68" y="121" fill="#8b94b3">"Large","LARGE"</text>
+          <text x="170" y="69" font-size="13" fill="#8b94b3">→</text><text x="170" y="95" font-size="13" fill="#8b94b3">→</text><text x="170" y="121" font-size="13" fill="#8b94b3">→</text>
+          <rect x="192" y="54" width="92" height="22" rx="4" fill="#e0f7fb" stroke="#0891b2"/><text x="238" y="69" text-anchor="middle" fill="#1a2138">small = <tspan font-weight="800">1</tspan></text>
+          <rect x="192" y="80" width="92" height="22" rx="4" fill="#e0f7fb" stroke="#0891b2"/><text x="238" y="95" text-anchor="middle" fill="#1a2138">medium = <tspan font-weight="800">2</tspan></text>
+          <rect x="192" y="106" width="92" height="22" rx="4" fill="#e0f7fb" stroke="#0891b2"/><text x="238" y="121" text-anchor="middle" fill="#1a2138">large = <tspan font-weight="800">3</tspan></text>
+        </g>
+        <text x="172" y="150" text-anchor="middle" font-size="8.5" fill="#0891b2">one column; 1 &lt; 2 &lt; 3 keeps the real size order</text>
+        <line x1="346" y1="40" x2="346" y2="170" stroke="#e6e9f2" stroke-width="1"/>
+        <text x="510" y="42" text-anchor="middle" font-size="10" fill="#7c3aed" font-weight="800">band_color · NOMINAL → one-hot (1/0)</text>
+        <g font-size="9" text-anchor="middle">
+          <text x="432" y="60" font-size="7.5" fill="#8b94b3">red</text><text x="478" y="60" font-size="7.5" fill="#8b94b3">blue</text><text x="524" y="60" font-size="7.5" fill="#8b94b3">green</text><text x="570" y="60" font-size="7.5" fill="#8b94b3">yellow</text>
+          <rect x="364" y="66" width="52" height="22" fill="#eef1f8" stroke="#cdd3e6"/><text x="390" y="81" fill="#1a2138">"RED"</text>
+          <rect x="416" y="66" width="46" height="22" fill="#f0e9fe" stroke="#7c3aed"/><text x="439" y="81">1</text><rect x="462" y="66" width="46" height="22" fill="#fff" stroke="#cdd3e6"/><text x="485" y="81">0</text><rect x="508" y="66" width="46" height="22" fill="#fff" stroke="#cdd3e6"/><text x="531" y="81">0</text><rect x="554" y="66" width="46" height="22" fill="#fff" stroke="#cdd3e6"/><text x="577" y="81">0</text>
+          <rect x="364" y="88" width="52" height="22" fill="#eef1f8" stroke="#cdd3e6"/><text x="390" y="103" fill="#1a2138">"Green"</text>
+          <rect x="416" y="88" width="46" height="22" fill="#fff" stroke="#cdd3e6"/><text x="439" y="103">0</text><rect x="462" y="88" width="46" height="22" fill="#fff" stroke="#cdd3e6"/><text x="485" y="103">0</text><rect x="508" y="88" width="46" height="22" fill="#f0e9fe" stroke="#7c3aed"/><text x="531" y="103">1</text><rect x="554" y="88" width="46" height="22" fill="#fff" stroke="#cdd3e6"/><text x="577" y="103">0</text>
+          <rect x="364" y="110" width="52" height="22" fill="#eef1f8" stroke="#cdd3e6"/><text x="390" y="125" fill="#1a2138">"yellow"</text>
+          <rect x="416" y="110" width="46" height="22" fill="#fff" stroke="#cdd3e6"/><text x="439" y="125">0</text><rect x="462" y="110" width="46" height="22" fill="#fff" stroke="#cdd3e6"/><text x="485" y="125">0</text><rect x="508" y="110" width="46" height="22" fill="#fff" stroke="#cdd3e6"/><text x="531" y="125">0</text><rect x="554" y="110" width="46" height="22" fill="#f0e9fe" stroke="#7c3aed"/><text x="577" y="125">1</text>
+        </g>
+        <text x="500" y="150" text-anchor="middle" font-size="8.5" fill="#7c3aed">one column per color; order would be meaningless</text>
+        <text x="340" y="178" text-anchor="middle" font-size="9" fill="#8b94b3">Both cleaned first (trim, lowercase, "med"→medium); the encoding depends only on whether order is real.</text>
+        <text x="340" y="196" text-anchor="middle" font-size="8.5" fill="#db2777">Label-encoding band_color (red=1, blue=2…) would invent a ranking the tags do not have.</text>
+      </svg>
+    </figure>
+
+    <h3 style="font-size:1.05rem;margin:1.6rem 0 0.4rem">A correlation heatmap, with the ordinal code included</h3>
+    <p>Encoding <code>body_size</code> as 1/2/3 lets an ordered category join the numeric correlation matrix:</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 540 300" width="100%" font-family="Inter, sans-serif" aria-label="Correlation heatmap of penguin measurements plus the ordinal body_size code">
+        <text x="265" y="22" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Measurement correlations (+ ordinal body_size)</text>
+<g font-size="8.5" fill="#4a5578" font-weight="700" text-anchor="middle">
+<text x="173" y="40">bill_len</text>
+<text x="219" y="40">bill_dep</text>
+<text x="265" y="40">flipper</text>
+<text x="311" y="40">mass</text>
+<text x="357" y="40">size(ord)</text>
+</g><g font-size="8.5" fill="#4a5578" font-weight="700" text-anchor="end">
+<text x="142" y="72">bill_len</text>
+<text x="142" y="118">bill_dep</text>
+<text x="142" y="164">flipper</text>
+<text x="142" y="210">mass</text>
+<text x="142" y="256">size(ord)</text>
+</g><g font-size="9" text-anchor="middle">
+<rect x="150" y="46" width="46" height="46" fill="#b30326"/><text x="173" y="72" fill="#fff">1.00</text>
+<rect x="196" y="46" width="46" height="46" fill="#b2cbfb"/><text x="219" y="72" fill="#1a2138">-0.29</text>
+<rect x="242" y="46" width="46" height="46" fill="#ee876a"/><text x="265" y="72" fill="#1a2138">0.59</text>
+<rect x="288" y="46" width="46" height="46" fill="#f49b7c"/><text x="311" y="72" fill="#1a2138">0.49</text>
+<rect x="334" y="46" width="46" height="46" fill="#f6a486"/><text x="357" y="72" fill="#1a2138">0.44</text>
+<rect x="150" y="92" width="46" height="46" fill="#b2cbfb"/><text x="173" y="118" fill="#1a2138">-0.29</text>
+<rect x="196" y="92" width="46" height="46" fill="#b30326"/><text x="219" y="118" fill="#fff">1.00</text>
+<rect x="242" y="92" width="46" height="46" fill="#99bafe"/><text x="265" y="118" fill="#1a2138">-0.42</text>
+<rect x="288" y="92" width="46" height="46" fill="#7fa2fa"/><text x="311" y="118" fill="#1a2138">-0.58</text>
+<rect x="334" y="92" width="46" height="46" fill="#86a9fc"/><text x="357" y="118" fill="#1a2138">-0.54</text>
+<rect x="150" y="138" width="46" height="46" fill="#ee876a"/><text x="173" y="164" fill="#1a2138">0.59</text>
+<rect x="196" y="138" width="46" height="46" fill="#99bafe"/><text x="219" y="164" fill="#1a2138">-0.42</text>
+<rect x="242" y="138" width="46" height="46" fill="#b30326"/><text x="265" y="164" fill="#fff">1.00</text>
+<rect x="288" y="138" width="46" height="46" fill="#de624e"/><text x="311" y="164" fill="#fff">0.74</text>
+<rect x="334" y="138" width="46" height="46" fill="#e36c54"/><text x="357" y="164" fill="#fff">0.70</text>
+<rect x="150" y="184" width="46" height="46" fill="#f49b7c"/><text x="173" y="210" fill="#1a2138">0.49</text>
+<rect x="196" y="184" width="46" height="46" fill="#7fa2fa"/><text x="219" y="210" fill="#1a2138">-0.58</text>
+<rect x="242" y="184" width="46" height="46" fill="#de624e"/><text x="265" y="210" fill="#fff">0.74</text>
+<rect x="288" y="184" width="46" height="46" fill="#b30326"/><text x="311" y="210" fill="#fff">1.00</text>
+<rect x="334" y="184" width="46" height="46" fill="#c22d31"/><text x="357" y="210" fill="#fff">0.92</text>
+<rect x="150" y="230" width="46" height="46" fill="#f6a486"/><text x="173" y="256" fill="#1a2138">0.44</text>
+<rect x="196" y="230" width="46" height="46" fill="#86a9fc"/><text x="219" y="256" fill="#1a2138">-0.54</text>
+<rect x="242" y="230" width="46" height="46" fill="#e36c54"/><text x="265" y="256" fill="#fff">0.70</text>
+<rect x="288" y="230" width="46" height="46" fill="#c22d31"/><text x="311" y="256" fill="#fff">0.92</text>
+<rect x="334" y="230" width="46" height="46" fill="#b30326"/><text x="357" y="256" fill="#fff">1.00</text>
+</g>
+<rect x="334" y="184" width="46" height="46" fill="none" stroke="#0a1230" stroke-width="2.2"/>
+<rect x="242" y="184" width="46" height="46" fill="none" stroke="#0a1230" stroke-width="2.2"/>
+        <defs><linearGradient id="cw29" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#b30326"/><stop offset="50%" stop-color="#dddcdb"/><stop offset="100%" stop-color="#3a4cc0"/>
+        </linearGradient></defs>
+        <rect x="396" y="46" width="14" height="230" fill="url(#cw29)" stroke="#cdd3e6"/>
+        <g font-size="8.5" fill="#8b94b3"><text x="414" y="52">+1</text><text x="414" y="165">0</text><text x="414" y="278">&#8722;1</text></g>
+        <text x="432" y="120" font-size="8.5" fill="#b30326" font-weight="800">mass ↔ flipper</text>
+        <text x="432" y="132" font-size="8.5" fill="#4a5578">0.74; mass ↔</text>
+        <text x="432" y="144" font-size="8.5" fill="#0891b2" font-weight="700">size(ord) 0.92</text>
+        <text x="432" y="170" font-size="8.5" fill="#4a5578">bill_depth is</text>
+        <text x="432" y="182" font-size="8.5" fill="#4a5578">negative (the</text>
+        <text x="432" y="194" font-size="8.5" fill="#4a5578">Gentoo effect)</text>
+        <text x="265" y="294" text-anchor="middle" font-size="8.5" fill="#8b94b3">the ordinal body_size code tracks body mass (0.92), confirming the encoding kept the order.</text>
+      </svg>
+    </figure>
+
+    <p>Two readings. The ordinal <strong>body_size code correlates 0.92 with body mass</strong>, confirming the encoding
+       faithfully captured size order, an ordered category now usable in numeric analysis. And <code>bill_depth</code> is
+       <em>negative</em> against mass and flipper (≈ −0.58): the same Gentoo effect behind Simpson's paradox, since the
+       biggest penguins have the shallowest bills. A quick check on the nominal tag closes the loop: mean body mass is
+       <strong>~4,200 g for every <code>band_color</code></strong>, so the tag is pure noise. Confirming a variable
+       carries <em>no</em> signal is as useful as finding one that does, it stops you chasing a phantom.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 168" width="100%" font-family="Inter, sans-serif" aria-label="The penguin cleaning journey">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">From raw file to analysis-ready: every row accounted for</text>
+        <g text-anchor="middle">
+          <rect x="40" y="44" width="110" height="52" rx="10" fill="#0a1230"/><text x="95" y="68" font-size="16" font-weight="800" fill="#fff">347</text><text x="95" y="84" font-size="8" fill="#9fb0d8">raw rows</text>
+          <rect x="210" y="44" width="110" height="52" rx="10" fill="#e0f7fb" stroke="#0891b2"/><text x="265" y="68" font-size="16" font-weight="800" fill="#0891b2">344</text><text x="265" y="84" font-size="8" fill="#4a5578">deduped</text>
+          <rect x="380" y="44" width="110" height="52" rx="10" fill="#e3f6ee" stroke="#059669"/><text x="435" y="68" font-size="16" font-weight="800" fill="#059669">342</text><text x="435" y="84" font-size="8" fill="#4a5578">empty rows gone</text>
+          <rect x="540" y="38" width="100" height="64" rx="10" fill="#f0e9fe" stroke="#7c3aed"/><text x="590" y="60" font-size="14" font-weight="800" fill="#7c3aed">342×17</text><text x="590" y="76" font-size="7.5" fill="#4a5578">analysis-</text><text x="590" y="87" font-size="7.5" fill="#4a5578">ready</text>
+        </g>
+        <g stroke="#8b94b3" stroke-width="1.5" fill="none" marker-end="url(#a29)">
+          <line x1="150" y1="70" x2="208" y2="70"/><line x1="320" y1="70" x2="378" y2="70"/><line x1="490" y1="70" x2="538" y2="70"/>
+        </g>
+        <defs><marker id="a29" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8b94b3"/></marker></defs>
+        <g font-size="8" fill="#8b94b3" text-anchor="middle">
+          <text x="179" y="112">−3 dupes</text><text x="179" y="122">Ch 19</text>
+          <text x="349" y="112">−2 empty</text><text x="349" y="122">Ch 20</text>
+          <text x="515" y="112">fix · impute · encode</text><text x="515" y="122">Ch 21–24</text>
+        </g>
+        <text x="340" y="150" text-anchor="middle" font-size="9.5" fill="#059669">342 clean penguins: 4 measurements + body_size (ordinal) + 12 one-hot columns = 17 model-ready columns.</text>
+      </svg>
+    </figure>
+
+    <h3 style="font-size:1.05rem;margin:1.6rem 0 0.4rem">The last visual check: the prep-work scorecard</h3>
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.4rem">
+      <svg viewBox="0 0 680 230" width="100%" font-family="Inter, sans-serif" aria-label="Scorecard of every cleaning step on the penguin data">
+        <text x="24" y="22" font-size="12" fill="#1a2138" font-weight="800">Prep-work scorecard: raw file → analysis-ready</text>
+        <g font-size="10">
+          <g><circle cx="32" cy="50" r="9" fill="#e3f6ee" stroke="#059669"/><path d="M28,50 l3,3 l5,-6" stroke="#059669" stroke-width="1.8" fill="none"/>
+            <text x="50" y="53" fill="#1a2138"><tspan font-weight="700">Duplicates</tspan> · 3 exact rows removed</text><text x="656" y="53" text-anchor="end" fill="#8b94b3" font-size="8.5">Ch 19</text></g>
+          <g><circle cx="32" cy="78" r="9" fill="#e3f6ee" stroke="#059669"/><path d="M28,78 l3,3 l5,-6" stroke="#059669" stroke-width="1.8" fill="none"/>
+            <text x="50" y="81" fill="#1a2138"><tspan font-weight="700">Unit error</tspan> · flipper 19.5 cm corrected to 195 mm (fixed, not deleted)</text><text x="656" y="81" text-anchor="end" fill="#8b94b3" font-size="8.5">Ch 21</text></g>
+          <g><circle cx="32" cy="106" r="9" fill="#e3f6ee" stroke="#059669"/><path d="M28,106 l3,3 l5,-6" stroke="#059669" stroke-width="1.8" fill="none"/>
+            <text x="50" y="109" fill="#1a2138"><tspan font-weight="700">Empty rows</tspan> · 2 all-missing rows dropped</text><text x="656" y="109" text-anchor="end" fill="#8b94b3" font-size="8.5">Ch 20</text></g>
+          <g><circle cx="32" cy="134" r="9" fill="#e3f6ee" stroke="#059669"/><path d="M28,134 l3,3 l5,-6" stroke="#059669" stroke-width="1.8" fill="none"/>
+            <text x="50" y="137" fill="#1a2138"><tspan font-weight="700">Sex</tspan> · standardized (".", casing) then 9 gaps imputed within species</text><text x="656" y="137" text-anchor="end" fill="#8b94b3" font-size="8.5">Ch 19, 20</text></g>
+          <g><circle cx="32" cy="162" r="9" fill="#e3f6ee" stroke="#059669"/><path d="M28,162 l3,3 l5,-6" stroke="#059669" stroke-width="1.8" fill="none"/>
+            <text x="50" y="165" fill="#1a2138"><tspan font-weight="700">Encode by type</tspan> · body_size ordinal (1/2/3); species/island/sex/band_color one-hot (12)</text><text x="656" y="165" text-anchor="end" fill="#8b94b3" font-size="8.5">Ch 24</text></g>
+          <g><circle cx="32" cy="190" r="9" fill="#e3f6ee" stroke="#059669"/><path d="M28,190 l3,3 l5,-6" stroke="#059669" stroke-width="1.8" fill="none"/>
+            <text x="50" y="193" fill="#1a2138"><tspan font-weight="700">Explored</tspan> · Simpson's paradox surfaced; band_color confirmed as noise</text><text x="656" y="193" text-anchor="end" fill="#8b94b3" font-size="8.5">Ch 15, 16</text></g>
+        </g>
+        <rect x="24" y="206" width="632" height="20" rx="6" fill="#0a1230"/>
+        <text x="340" y="220" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="700">347 × 10 raw  →  342 × 17 analysis-ready  ·  every decision logged</text>
+      </svg>
+    </figure>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters, and where Part V ends</div>
+        <p>Three datasets, one routine: audit, describe, visualize, clean, encode, and explore, with a reason logged at
+           every step. Penguins added the final lessons, fix a value when you understand why it is wrong, impute using
+           structure you trust, and never trust a pooled correlation without checking the groups. With the whole first
+           half of the book now applied end to end, you are ready for what comes next: <strong>probability</strong>, the
+           mathematics of the uncertainty that all of this analysis ultimately quantifies.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐧</div>
+        <div class="nb-body">
+          <h3>Run the whole case study in Python</h3>
+          <p>The companion notebook walks the full routine: the first-contact audit, the bill-length-vs-depth scatter that
+             exposes Simpson's paradox, the deduplication and unit-error fix, dropping the empty rows, standardizing and
+             imputing <code>sex</code>, encoding <code>body_size</code> (ordinal) and the nominal columns (one-hot), a
+             correlation heatmap, and the band_color no-signal check, ending at the analysis-ready table.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/case-study-palmer-penguins.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-palmer-penguins.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-palmer-penguins.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>,
+      <code>matplotlib</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Key Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Visualize first</strong>: the bill scatter exposed <strong>Simpson's paradox</strong>, negative overall, positive within each species.</span></li>
+        <li><span class="ck">✓</span><span><strong>Fix, do not delete</strong>: the 19.5 mm flipper was a unit error (cm→mm), corrected by ×10, not removed.</span></li>
+        <li><span class="ck">✓</span><span><strong>Clean before you impute</strong>: standardize <code>sex</code> (".", casing → NaN), then fill gaps with the mode <em>within species</em>.</span></li>
+        <li><span class="ck">✓</span><span><strong>Encode by type</strong>: <code>body_size</code> ordinal (1/2/3); species/island/sex/band_color one-hot (1/0).</span></li>
+        <li><span class="ck">✓</span><span><strong>A negative result counts</strong>: <code>band_color</code> is confirmed noise (~4,200 g for every color).</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Practice Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five challenges on the penguin data, following the case study beat by beat. Try them in Python before checking the
+       solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Fix the unit error</h4>
+        <p>One flipper reads 19.5 while the rest are near 195. Show it is a unit error, correct it, and explain why you
+           fix rather than delete it.</p>
+        <div class="chint">Hint: values &lt; 50 are cm; multiply by 10.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Drop only the empty rows</h4>
+        <p>Two rows are missing every measurement. Drop only those (not rows missing just one value) and report the count
+           before and after.</p>
+        <div class="chint">Hint: <code>dropna(subset=meas, how="all")</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Clean and impute sex</h4>
+        <p>Standardize the messy <code>sex</code> column, then impute the gaps with the mode within each species. Why
+           within species rather than overall?</p>
+        <div class="chint">Hint: strip/lowercase, map "." &amp; "" to NaN; <code>groupby("species")</code> then fill.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Expose Simpson's paradox</h4>
+        <p>Correlate bill length and bill depth overall, then within each species. Explain the reversal and the lesson.</p>
+        <div class="chint">Hint: overall ≈ −0.27; within each species ≈ +0.3.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Encode by type, then test for signal</h4>
+        <p>Ordinal-encode <code>body_size</code> and one-hot <code>band_color</code>. Then test whether band_color
+           predicts body mass. What do you conclude?</p>
+        <div class="chint">Hint: map small/medium/large→1/2/3; group mass by color, all ~4,200 g.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> answers all five on the real data, in the same visual
+           style. Try them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/case-study-palmer-penguins--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-palmer-penguins--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-palmer-penguins--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on the penguins case study. Answer them, hit <strong>Check Answers</strong>, and keep refining
+       until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="case-study-ames-housing-prices.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 28 · Previous</span><br><span class="cn-title">Case Study: Ames Housing Prices</span></span>
+    </a>
+    <a class="cn-btn next" href="probability-fundamentals.html">
+      <span><span class="cn-dir">Chapter 30 · Next</span><br><span class="cn-title">Probability Fundamentals</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 29 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch29";
+  window.QUIZ_DATA = [
+    {
+      q: "A flipper_length_mm reads 19.5 while every other penguin is near 195. The best action is to…",
+      options: ["Delete the row","Correct it (it is cm, not mm): multiply by 10","Leave it as a valid value","Impute the median"],
+      answer: 1,
+      explain: "19.5 is exactly one-tenth of a plausible value, a centimeters-for-millimeters unit error. Because the cause is known, you fix it (×10), not delete a real bird's data (Chapter 21)."
+    },
+    {
+      q: "Two rows are missing EVERY measurement. The right pandas call is…",
+      options: ["dropna() with the default how='any'","dropna(subset=meas, how='all')","fillna(0)","drop the whole column"],
+      answer: 1,
+      explain: "how='all' removes only rows where every measurement is missing; the default how='any' would also drop rows missing just one value, which you may want to keep (Chapter 20)."
+    },
+    {
+      q: "Why standardize the sex column BEFORE imputing its gaps?",
+      options: ["It looks neater","So stray values like '.' and 'Female ' are turned into true NaN and counted as gaps, not real categories","Imputing first is faster","Order never matters"],
+      answer: 1,
+      explain: "If you impute first, '.' and 'Female ' count as real categories and corrupt the fill. Standardize to expose the true gaps, then impute (Chapters 19, 20)."
+    },
+    {
+      q: "Bill length and bill depth are negatively correlated overall but positively within each species. This is…",
+      options: ["A calculation error","Simpson's paradox: a grouping variable reverses the relationship","Proof bills shrink with age","Multicollinearity"],
+      answer: 1,
+      explain: "A lurking group (species) flips the apparent correlation. Gentoos have long, shallow bills and sit apart, dragging the pooled trend down (Chapter 16)."
+    },
+    {
+      q: "The missing sexes are imputed with the mode WITHIN each species because…",
+      options: ["It is easier to code","Species differ in size and sex ratio, so a species-aware fill is more defensible than one global mode","It guarantees 50/50","Global imputation is impossible"],
+      answer: 1,
+      explain: "Filling with structure you trust (the species) respects real differences between groups, a smarter imputation than a single blunt global value (Chapter 20)."
+    },
+    {
+      q: "body_size (small/medium/large) should be encoded as…",
+      options: ["One-hot columns","Ordinal integer codes 1/2/3 that keep the order","Deleted","A single random number"],
+      answer: 1,
+      explain: "body_size has a real order, so ordinal codes 1<2<3 preserve it. One-hot would throw the order away (Chapter 24)."
+    },
+    {
+      q: "band_color (an arbitrary research tag) should be encoded as…",
+      options: ["Ordinal 1/2/3/4","One-hot 1/0 columns (no order to invent)","Its mean body mass","Dropped immediately"],
+      answer: 1,
+      explain: "Tag colors have no order, so one-hot is correct; label-encoding them would invent a false ranking (Chapter 24)."
+    },
+    {
+      q: "Mean body mass is ~4,200 g for every band_color. This result is…",
+      options: ["Useless and should be hidden","A valuable negative finding: the tag is noise, so do not model it","A sign of an error","Evidence band_color causes mass"],
+      answer: 1,
+      explain: "Confirming a variable carries no signal is as useful as finding one that does, it stops you chasing a phantom pattern (the EDA mindset)."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

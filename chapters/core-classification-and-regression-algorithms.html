@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 107 · Core Classification &amp; Regression Algorithms — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#eef2ff; border:1px solid #c7d2fe; border-left:4px solid #4338ca; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#3730a3; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/core-classification-and-regression-algorithms.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XVIII · Supervised Learning</span><span class="sep">/</span>
+      <span>Chapter 107</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XVIII · Supervised Learning</span> The workhorses</div>
+    <h1>Core Classification &amp; <span class="accent">Regression Algorithms</span></h1>
+    <p class="dek">Five algorithms cover most of everyday machine learning: K-nearest neighbors, decision trees, naive Bayes,
+       support vector machines, and logistic regression. This chapter shows how each one draws a startlingly different
+       decision boundary, which is interpretable, how they race head to head, and how every classifier has a regression
+       twin, all on one heart-disease table.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~20 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 107</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">You have the workflow and a way to measure closeness; now meet the models. These five are the
+       <span class="hl">first tools a practitioner reaches for</span> on tabular data, quick to train, easy to reason
+       about, and often good enough to beat far fancier methods. Each embodies a different idea of what a "pattern" is.</p>
+
+    <div class="def-card">
+      <div class="sigma">5</div>
+      <div class="def-body">
+        A <span class="def-kw">classifier</span> predicts a category, a <span class="def-kw">regressor</span> predicts a
+        number, and most core algorithms do both. The five here decide by <span class="def-kw">nearest neighbors</span>
+        (KNN), <span class="def-kw">yes/no rules</span> (trees), <span class="def-kw">probabilities</span> (naive Bayes),
+        a <span class="def-kw">maximum-margin boundary</span> (SVM), or a <span class="def-kw">linear score</span>
+        (logistic regression).
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🧰</div>
+      <div><div class="ctitle">The chapter in one line</div>
+        <p>There is no single best algorithm: each draws a different boundary shape with different strengths, so
+           standardize your features, cross-validate a handful of models, and pick the one that fits your data, your need
+           for interpretability, and your speed budget.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1 ===== -->
+  <section id="five">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Five Workhorses</h2></div>
+    <p>Each algorithm answers "which class?" with a different mechanism. Knowing the mechanism tells you when it will shine
+       and what it needs from your data.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Algorithm</th><th>How it decides</th><th>Needs scaling?</th><th>Best when</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Logistic regression</td><td>a linear score turned into a probability</td><td>yes</td><td>you want a fast, interpretable baseline</td></tr>
+          <tr><td class="nm">K-nearest neighbors</td><td>majority vote of the closest points</td><td>yes</td><td>the boundary is irregular; data is small</td></tr>
+          <tr><td class="nm">Decision tree</td><td>a sequence of yes/no questions</td><td>no</td><td>you need readable rules</td></tr>
+          <tr><td class="nm">Naive Bayes</td><td>multiply per-feature probabilities</td><td>no</td><td>text / high-dimensional; speed matters</td></tr>
+          <tr><td class="nm">Support vector machine</td><td>the widest-margin boundary (kernels curve it)</td><td>yes</td><td>high dimensions; complex boundaries</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Three of the five, KNN, SVM, and logistic regression, measure distances or weighted sums, so they require
+       <span class="hl">standardized features</span> (Chapter 106). Trees and naive Bayes work on each feature separately,
+       so they do not. In the notebook every scaling-sensitive model is wrapped in a <code>Pipeline</code> with a
+       <code>StandardScaler</code>, exactly the leakage-safe habit from Chapter 105.</p>
+  </section>
+
+  <!-- ===== Section 2 ===== -->
+  <section id="boundaries">
+    <div class="section-eyebrow"><div class="num">2</div><h2>How Each Draws a Boundary</h2></div>
+    <p>The clearest way to see how the algorithms differ is to train them on two features and shade the region each
+       predicts as "disease." The same points produce five very different <span class="hl">decision boundaries</span>.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 720 210" width="100%" font-family="Inter, sans-serif" aria-label="Five small panels showing the decision boundary of each algorithm: KNN is local and wiggly, the decision tree is axis-aligned rectangles, naive Bayes is a smooth curve, the RBF SVM is a flexible curve, and logistic regression is a single straight line">
+        <text x="360" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Same data, five decision boundaries</text>
+        <!-- Panel KNN -->
+        <rect x="16" y="40" width="130" height="120" rx="6" fill="#fbfdff" stroke="#e2e8f0"/>
+        <path d="M22,118 C42,88 56,140 76,108 C96,82 112,132 140,96" fill="none" stroke="#4338ca" stroke-width="2.2" stroke-dasharray="4 3"/>
+        <g fill="#4338ca"><circle cx="34" cy="140" r="2.6"/><circle cx="48" cy="150" r="2.6"/><circle cx="62" cy="138" r="2.6"/><circle cx="40" cy="128" r="2.6"/><circle cx="72" cy="146" r="2.6"/></g>
+        <g fill="#ef4444"><circle cx="104" cy="70" r="2.6"/><circle cx="122" cy="84" r="2.6"/><circle cx="116" cy="60" r="2.6"/><circle cx="98" cy="90" r="2.6"/><circle cx="132" cy="72" r="2.6"/></g>
+        <text x="81" y="34" text-anchor="middle" font-size="9" fill="#3730a3" font-weight="800">KNN</text>
+        <text x="81" y="176" text-anchor="middle" font-size="7.5" fill="#64748b">local &amp; wiggly</text>
+        <!-- Panel Tree -->
+        <rect x="156" y="40" width="130" height="120" rx="6" fill="#fbfdff" stroke="#e2e8f0"/>
+        <path d="M162,140 L214,140 L214,98 L248,98 L248,66 L286,66" fill="none" stroke="#4338ca" stroke-width="2.2"/>
+        <g fill="#4338ca"><circle cx="176" cy="150" r="2.6"/><circle cx="192" cy="132" r="2.6"/><circle cx="206" cy="150" r="2.6"/><circle cx="228" cy="128" r="2.6"/><circle cx="180" cy="120" r="2.6"/></g>
+        <g fill="#ef4444"><circle cx="258" cy="80" r="2.6"/><circle cx="274" cy="60" r="2.6"/><circle cx="262" cy="54" r="2.6"/><circle cx="240" cy="82" r="2.6"/><circle cx="276" cy="90" r="2.6"/></g>
+        <text x="221" y="34" text-anchor="middle" font-size="9" fill="#3730a3" font-weight="800">Decision Tree</text>
+        <text x="221" y="176" text-anchor="middle" font-size="7.5" fill="#64748b">axis-aligned steps</text>
+        <!-- Panel Naive Bayes -->
+        <rect x="296" y="40" width="130" height="120" rx="6" fill="#fbfdff" stroke="#e2e8f0"/>
+        <path d="M302,150 C338,132 356,78 420,52" fill="none" stroke="#4338ca" stroke-width="2.2"/>
+        <g fill="#4338ca"><circle cx="316" cy="146" r="2.6"/><circle cx="332" cy="150" r="2.6"/><circle cx="346" cy="134" r="2.6"/><circle cx="322" cy="132" r="2.6"/><circle cx="360" cy="146" r="2.6"/></g>
+        <g fill="#ef4444"><circle cx="384" cy="76" r="2.6"/><circle cx="402" cy="88" r="2.6"/><circle cx="396" cy="62" r="2.6"/><circle cx="378" cy="94" r="2.6"/><circle cx="412" cy="72" r="2.6"/></g>
+        <text x="361" y="34" text-anchor="middle" font-size="9" fill="#3730a3" font-weight="800">Naive Bayes</text>
+        <text x="361" y="176" text-anchor="middle" font-size="7.5" fill="#64748b">smooth curve</text>
+        <!-- Panel SVM -->
+        <rect x="436" y="40" width="130" height="120" rx="6" fill="#fbfdff" stroke="#e2e8f0"/>
+        <path d="M442,146 C480,120 500,82 560,70" fill="none" stroke="#4338ca" stroke-width="2.4"/>
+        <path d="M442,158 C484,132 508,96 562,84" fill="none" stroke="#a5b4fc" stroke-width="1.2" stroke-dasharray="3 3"/>
+        <path d="M442,134 C476,108 496,70 558,58" fill="none" stroke="#a5b4fc" stroke-width="1.2" stroke-dasharray="3 3"/>
+        <g fill="#4338ca"><circle cx="456" cy="148" r="2.6"/><circle cx="472" cy="152" r="2.6"/><circle cx="486" cy="140" r="2.6"/><circle cx="462" cy="136" r="2.6"/></g>
+        <g fill="#ef4444"><circle cx="524" cy="78" r="2.6"/><circle cx="540" cy="90" r="2.6"/><circle cx="534" cy="66" r="2.6"/><circle cx="552" cy="80" r="2.6"/></g>
+        <text x="501" y="34" text-anchor="middle" font-size="9" fill="#3730a3" font-weight="800">SVM (RBF)</text>
+        <text x="501" y="176" text-anchor="middle" font-size="7.5" fill="#64748b">flexible margin</text>
+        <!-- Panel Logistic -->
+        <rect x="576" y="40" width="130" height="120" rx="6" fill="#fbfdff" stroke="#e2e8f0"/>
+        <line x1="582" y1="152" x2="700" y2="58" stroke="#4338ca" stroke-width="2.4"/>
+        <g fill="#4338ca"><circle cx="600" cy="146" r="2.6"/><circle cx="616" cy="150" r="2.6"/><circle cx="630" cy="138" r="2.6"/><circle cx="606" cy="132" r="2.6"/><circle cx="644" cy="144" r="2.6"/></g>
+        <g fill="#ef4444"><circle cx="664" cy="78" r="2.6"/><circle cx="680" cy="90" r="2.6"/><circle cx="674" cy="64" r="2.6"/><circle cx="656" cy="86" r="2.6"/></g>
+        <text x="641" y="34" text-anchor="middle" font-size="9" fill="#3730a3" font-weight="800">Logistic</text>
+        <text x="641" y="176" text-anchor="middle" font-size="7.5" fill="#64748b">straight line</text>
+        <text x="360" y="200" text-anchor="middle" font-size="8" fill="#8b94b3">blue dots = healthy, red dots = disease; the line/curve is where the model switches its prediction</text>
+      </svg>
+    </figure>
+
+    <p>The notebook draws these live. The shapes tell the story: <strong>KNN</strong> is local and wiggly (it follows
+       clusters of neighbors); the <strong>decision tree</strong> is built from axis-aligned rectangles (one per split);
+       <strong>naive Bayes</strong> is a smooth quadratic; the <strong>RBF SVM</strong> bends flexibly with a margin; and
+       <strong>logistic regression</strong> is a single straight line. Wigglier boundaries capture local detail but risk
+       <span class="hl">overfitting</span>; straighter ones generalize but may <span class="hl">underfit</span>, the
+       bias-variance trade-off made visible.</p>
+  </section>
+
+  <!-- ===== Section 3 ===== -->
+  <section id="interpret">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Interpretability: The Decision Tree</h2></div>
+    <p>One of the five stands apart for transparency. A <span class="term">decision tree</span> is a flowchart of yes/no
+       questions you can read top to bottom, which is why it is trusted in medicine and lending where a decision must be
+       explained.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 250" width="100%" font-family="Inter, sans-serif" aria-label="A decision tree flowchart: the root splits on age, its children split on max heart rate and cholesterol, and the leaves predict healthy or disease">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">A decision tree is a readable flowchart</text>
+        <!-- root -->
+        <rect x="286" y="34" width="108" height="34" rx="7" fill="#eef2ff" stroke="#4338ca"/><text x="340" y="49" text-anchor="middle" font-size="9" fill="#3730a3" font-weight="800">age &lt; 55 ?</text><text x="340" y="61" text-anchor="middle" font-size="7.5" fill="#4a5578">the strongest split</text>
+        <!-- edges to level 2 -->
+        <path d="M300,68 L180,104" stroke="#94a3b8" stroke-width="1.4" marker-end="url(#t7)"/><text x="222" y="86" font-size="7.5" fill="#059669" font-weight="700">yes</text>
+        <path d="M380,68 L500,104" stroke="#94a3b8" stroke-width="1.4" marker-end="url(#t7)"/><text x="452" y="86" font-size="7.5" fill="#b91c1c" font-weight="700">no</text>
+        <!-- level 2 left -->
+        <rect x="118" y="106" width="124" height="34" rx="7" fill="#eef2ff" stroke="#4338ca"/><text x="180" y="121" text-anchor="middle" font-size="8.5" fill="#3730a3" font-weight="800">max_hr &gt; 150 ?</text><text x="180" y="133" text-anchor="middle" font-size="7.5" fill="#4a5578">fitness</text>
+        <!-- level 2 right -->
+        <rect x="438" y="106" width="124" height="34" rx="7" fill="#eef2ff" stroke="#4338ca"/><text x="500" y="121" text-anchor="middle" font-size="8.5" fill="#3730a3" font-weight="800">cholesterol &lt; 250 ?</text><text x="500" y="133" text-anchor="middle" font-size="7.5" fill="#4a5578">risk factor</text>
+        <!-- edges to leaves -->
+        <path d="M150,140 L104,178" stroke="#94a3b8" stroke-width="1.3" marker-end="url(#t7)"/>
+        <path d="M210,140 L256,178" stroke="#94a3b8" stroke-width="1.3" marker-end="url(#t7)"/>
+        <path d="M470,140 L424,178" stroke="#94a3b8" stroke-width="1.3" marker-end="url(#t7)"/>
+        <path d="M530,140 L576,178" stroke="#94a3b8" stroke-width="1.3" marker-end="url(#t7)"/>
+        <!-- leaves -->
+        <rect x="66" y="180" width="80" height="30" rx="7" fill="#ecfdf5" stroke="#059669"/><text x="106" y="199" text-anchor="middle" font-size="8.5" fill="#047857" font-weight="800">healthy</text>
+        <rect x="218" y="180" width="80" height="30" rx="7" fill="#fef2f2" stroke="#ef4444"/><text x="258" y="199" text-anchor="middle" font-size="8.5" fill="#b91c1c" font-weight="800">disease</text>
+        <rect x="386" y="180" width="80" height="30" rx="7" fill="#ecfdf5" stroke="#059669"/><text x="426" y="199" text-anchor="middle" font-size="8.5" fill="#047857" font-weight="800">healthy</text>
+        <rect x="538" y="180" width="80" height="30" rx="7" fill="#fef2f2" stroke="#ef4444"/><text x="578" y="199" text-anchor="middle" font-size="8.5" fill="#b91c1c" font-weight="800">disease</text>
+        <defs><marker id="t7" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#94a3b8"/></marker></defs>
+      </svg>
+    </figure>
+
+    <p>In the notebook, <code>plot_tree</code> renders the real thing and the <strong>feature importances</strong> rank
+       which questions mattered most: <strong>age</strong> carries the strongest splits (importance 0.55), followed by
+       maximum heart rate. You can trace any patient from the root to a leaf and state exactly why the model predicted what
+       it did, a property none of the other four share so cleanly. The price is accuracy: a single tree is a coarse
+       step-function, which the next chapter's <strong>ensembles</strong> fix by combining many trees.</p>
+  </section>
+
+  <!-- ===== Section 4: REAL-WORLD ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: A Head-to-Head Race</h2></div>
+    <p>With 700 patients and six risk factors, which algorithm predicts heart disease best? Cross-validated accuracy
+       settles it, and delivers the field's most important lesson.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · core-classification-and-regression-algorithms--patients.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per patient with <code>age</code>, <code>resting_bp</code>,
+        <code>cholesterol</code>, <code>max_hr</code>, <code>glucose</code>, and <code>bmi</code>, plus the label
+        <code>heart_disease</code> (1 = disease, 0 = healthy).</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/core-classification-and-regression-algorithms--patients.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 700 patients</small></a>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Algorithm</th><th>5-fold CV accuracy</th><th></th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Logistic regression</td><td>0.773</td><td>leads</td></tr>
+          <tr><td class="nm">SVM (RBF)</td><td>0.766</td><td></td></tr>
+          <tr><td class="nm">Naive Bayes</td><td>0.759</td><td></td></tr>
+          <tr><td class="nm">K-nearest neighbors</td><td>0.750</td><td></td></tr>
+          <tr><td class="nm">Decision tree</td><td>0.683</td><td>trails</td></tr>
+          <tr><td class="nm">Baseline (predict majority)</td><td>0.647</td><td>floor</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The margins are close, and that is the point: <span class="hl">no algorithm is universally best</span>, the "no
+       free lunch" theorem. Here the linear models edge ahead, the single tree trails (a weak learner on its own), and all
+       beat the majority-class floor. The professional move is not to crown a favorite in advance but to
+       <strong>cross-validate a handful</strong> and choose using the numbers <em>and</em> your constraints, speed,
+       interpretability, and how the boundary should behave. And because every one of these has a
+       <strong>regression twin</strong> (the notebook predicts a patient's maximum heart rate with a KNN regressor, a tree
+       regressor, and linear regression), the same five ideas cover predicting numbers too.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>These Algorithms in ML &amp; AI</h2></div>
+    <p>None of these are obsolete. They remain the default choice for tabular data and the conceptual building blocks of
+       much larger systems.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Algorithm (this chapter)</th><th>Role in modern ML / AI</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Logistic regression</td><td>the universal baseline; the softmax output layer of a neural network is multinomial logistic regression</td></tr>
+          <tr><td class="nm">Decision tree</td><td>the building block of <strong>gradient boosting</strong> (XGBoost, LightGBM), still state of the art on tabular data</td></tr>
+          <tr><td class="nm">K-nearest neighbors</td><td>similarity search and few-shot retrieval over embeddings</td></tr>
+          <tr><td class="nm">Naive Bayes</td><td>fast, strong text baselines (spam filtering)</td></tr>
+          <tr><td class="nm">Support vector machine</td><td>powerful on small, high-dimensional datasets via kernels</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>Deep learning dominates images, text, and audio, but on <strong>tabular data</strong>, the spreadsheets that run
+           most businesses, ensembles of the humble decision tree (gradient-boosted trees) still routinely beat neural
+           networks. Knowing when a simple, fast, interpretable model is the right answer, rather than reaching for the
+           biggest network, is a genuine mark of expertise. And the connection runs deep: <strong>logistic regression is a
+           one-layer neural network</strong>, and the final classification layer of a large language model is exactly the
+           multinomial logistic regression in this chapter. Master these five and you understand both the workhorses of
+           applied ML and the primitives inside modern AI.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Train all five in Python</h3>
+          <p>The companion notebook fits every algorithm with <code>scikit-learn</code>, draws the five
+             <strong>decision boundaries</strong> side by side, renders a readable <strong>decision tree</strong> with its
+             feature importances, races the models with <strong>cross-validated accuracy</strong>, and shows the
+             <strong>regression twin</strong> of each, every cell explained.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/core-classification-and-regression-algorithms.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/core-classification-and-regression-algorithms.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/core-classification-and-regression-algorithms.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly. <strong>Open in Colab</strong> runs it live. To run
+      locally, install <code>numpy</code>, <code>pandas</code>, <code>scikit-learn</code>, <code>matplotlib</code>,
+      <code>seaborn</code>, and <code>openpyxl</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Five workhorses</strong>: KNN (neighbor vote), trees (yes/no rules), naive Bayes (probabilities), SVM (max margin), logistic regression (linear score).</span></li>
+        <li><span class="ck">✓</span><span><strong>Each draws a different boundary</strong>: KNN wiggly, tree rectangular, naive Bayes and SVM curved, logistic straight, the bias-variance trade-off made visible.</span></li>
+        <li><span class="ck">✓</span><span><strong>KNN, SVM, and logistic regression need standardized features</strong>; trees and naive Bayes do not.</span></li>
+        <li><span class="ck">✓</span><span><strong>No free lunch</strong>: no model wins on every dataset, cross-validate several and weigh accuracy against interpretability and speed.</span></li>
+        <li><span class="ck">✓</span><span><strong>Every classifier has a regression twin</strong>, and these algorithms remain the go-to for tabular data and the primitives inside modern AI.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges on the patient table. Try them with scikit-learn before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Train a KNN classifier</h4>
+        <p>Scale the features, fit KNN (k = 15), and report test accuracy.</p>
+        <div class="chint">Hint: <code>make_pipeline(StandardScaler(), KNeighborsClassifier(15))</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Read a tree's importances</h4>
+        <p>Fit a shallow decision tree and print its most important feature.</p>
+        <div class="chint">Hint: <code>tree.feature_importances_</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Head-to-head</h4>
+        <p>Compare logistic regression, a tree, and KNN by 5-fold cross-validated accuracy.</p>
+        <div class="chint">Hint: loop <code>cross_val_score(m, X, y, cv=5).mean()</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>SVM: the kernel matters</h4>
+        <p>Compare a linear SVM and an RBF SVM by cross-validated accuracy.</p>
+        <div class="chint">Hint: <code>SVC(kernel="linear")</code> vs <code>SVC(kernel="rbf")</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>The regression twin</h4>
+        <p>Predict <code>max_hr</code> (a number) with a KNN regressor and linear regression; compare R&#178;.</p>
+        <div class="chint">Hint: <code>KNeighborsRegressor</code>, <code>LinearRegression</code>, <code>scoring="r2"</code>.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code. Try
+           them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/core-classification-and-regression-algorithms--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/core-classification-and-regression-algorithms--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/core-classification-and-regression-algorithms--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on the core algorithms. Answer them, hit <strong>Check Answers</strong>, and keep refining
+       until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>A single decision tree trailed the field, but trees have a superpower when you combine them. <strong>Chapter 108
+         &#183; Ensemble Methods</strong> shows how bagging, random forests, and boosting (XGBoost and friends) turn many
+         weak trees into the strongest models on tabular data.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="distance-metrics.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 106 · Previous</span><br><span class="cn-title">Distance Metrics</span></span>
+    </a>
+    <a class="cn-btn next" href="ensemble-methods.html">
+      <span><span class="cn-dir">Chapter 108 · Next</span><br><span class="cn-title">Ensemble Methods</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 107 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch107";
+  window.QUIZ_DATA = [
+    {
+      q: "K-nearest neighbors classifies a new point by…",
+      options: ["Fitting a straight line", "The majority vote of its closest training points", "Multiplying probabilities", "Asking yes/no questions"],
+      answer: 1,
+      explain: "KNN looks at the k nearest labeled points and takes their majority class, a local, distance-based decision."
+    },
+    {
+      q: "Which algorithms in this chapter need standardized features?",
+      options: ["Decision tree and naive Bayes", "KNN, SVM, and logistic regression", "Only logistic regression", "None of them"],
+      answer: 1,
+      explain: "Distance- and weighted-sum-based models (KNN, SVM, logistic) need scaling; trees and naive Bayes work per-feature and do not."
+    },
+    {
+      q: "The most interpretable of the five, a readable set of rules, is…",
+      options: ["The SVM", "The decision tree", "Naive Bayes", "KNN"],
+      answer: 1,
+      explain: "A decision tree is a flowchart of yes/no questions you can trace from root to leaf to explain any prediction."
+    },
+    {
+      q: "Naive Bayes is 'naive' because it assumes…",
+      options: ["The data is small", "The features are conditionally independent given the class", "The boundary is linear", "There is no noise"],
+      answer: 1,
+      explain: "It multiplies per-feature probabilities as if features were independent, a crude assumption that is often good enough."
+    },
+    {
+      q: "An SVM with an RBF kernel draws a ___ boundary; logistic regression draws a ___ boundary.",
+      options: ["straight; curved", "curved; straight (linear)", "both straight", "both curved"],
+      answer: 1,
+      explain: "The RBF kernel lets the SVM bend flexibly; logistic regression produces a single straight-line boundary."
+    },
+    {
+      q: "The 'no free lunch' idea means…",
+      options: ["Models are free to use", "No single algorithm is best on every dataset, so you should compare several", "KNN always wins", "Deep learning always wins"],
+      answer: 1,
+      explain: "Performance depends on the data; the right practice is to cross-validate a handful of models and compare."
+    },
+    {
+      q: "Every classifier here has a 'regression twin' because…",
+      options: ["They share the same name", "The same underlying idea can predict a number instead of a category", "They all use trees", "Regression is unrelated"],
+      answer: 1,
+      explain: "KNeighborsRegressor, DecisionTreeRegressor, and LinearRegression apply the same mechanism to a continuous target."
+    },
+    {
+      q: "On tabular data, the models that often still beat deep neural networks are…",
+      options: ["Naive Bayes", "Gradient-boosted decision trees (ensembles of trees)", "Plain KNN", "Linear regression only"],
+      answer: 1,
+      explain: "Ensembles of trees (XGBoost, LightGBM) remain state of the art on many tabular problems, the subject of the next chapter."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

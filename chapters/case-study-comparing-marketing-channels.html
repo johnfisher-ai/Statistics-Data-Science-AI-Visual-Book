@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 85 · Case Study: Comparing Marketing Channels — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#ecfeff; border:1px solid #a5f3fc; border-left:4px solid #0891b2; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#0e7490; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+    .report-card { background:#fff; border:1px solid #cffafe; border-left:5px solid #0e7490; border-radius:14px;
+                   padding:1.3rem 1.5rem; margin:1.3rem 0; box-shadow:0 6px 18px rgba(8,51,68,0.06); }
+    .report-card .rep-tag { font-size:0.7rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#0e7490; }
+    .report-card h3 { margin:0.25rem 0 0.7rem; font-size:1.12rem; color:var(--ink); }
+    .report-card p { color:var(--ink-soft); line-height:1.75; margin:0.55rem 0; }
+    .hyp-box { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1rem 0; }
+    .hyp { flex:1; min-width:240px; border:1px solid var(--line); border-radius:11px; padding:0.8rem 1rem; }
+    .hyp.h0 { border-left:4px solid #64748b; } .hyp.h1 { border-left:4px solid #0891b2; }
+    .hyp .hk { font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-faint); }
+    .hyp .hv { font-weight:600; color:var(--ink); margin-top:2px; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/case-study-comparing-marketing-channels.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XIII · Inference Case Studies</span><span class="sep">/</span>
+      <span>Chapter 85</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XIII · Case Study</span> Four channels, one budget</div>
+    <h1>Case Study: Comparing <span class="accent">Marketing Channels</span></h1>
+    <p class="dek">Marketing acquires customers through four channels and wants to know which brings the most valuable
+       ones. With more than two groups, the right move is one omnibus test, not a pile of pairwise comparisons. We run a
+       one-way ANOVA, cross-check it, and let Tukey HSD name the winner.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~14 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 85</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Two groups was a single t-test. Real decisions usually involve more: four marketing channels, five
+       store layouts, six suppliers. Compare them pairwise and the false alarms multiply.
+       <span class="term">Analysis of variance</span> asks the global question once, then a post-hoc test fills in the
+       detail.</p>
+
+    <div class="def-card">
+      <div class="sigma">F</div>
+      <div class="def-body">
+        <span class="def-kw">The scenario.</span> Customers were acquired through four channels (Organic, Paid Search,
+        Email, Social), and each customer's <span class="def-kw">90-day revenue</span> was recorded. The business wants to
+        reallocate budget toward the channel that brings the most valuable customers.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🎯</div>
+      <div><div class="ctitle">The question</div>
+        <p>Do the four channels differ in average revenue per customer by more than chance? And if so, which channel (or
+           channels) genuinely stands apart?</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1 ===== -->
+  <section id="data">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Data &amp; The Question</h2></div>
+    <p>One row per acquired customer: the <code>channel</code> that brought them and their 90-day
+       <code>revenue_per_customer</code>. The groups are balanced (about 70 customers each), which keeps the analysis
+       clean.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · case-study-comparing-marketing-channels--marketing_channels.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per customer with <code>channel</code> (four groups),
+        <code>revenue_per_customer</code>, and <code>signup_month</code>.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/case-study-comparing-marketing-channels--marketing_channels.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 280 customers</small></a>
+      </div>
+    </div>
+
+    <p>The sample means: <strong>Email $92</strong>, Organic $78, Paid Search $70, Social $67. Email leads, but four
+       sample averages always wobble apart a little even if the true channel values were identical. We need to test
+       whether the spread among these means is bigger than the within-channel noise.</p>
+  </section>
+
+  <!-- ===== Section 2 ===== -->
+  <section id="choose">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Choosing the Test &amp; the Hypotheses</h2></div>
+    <p>The decision map: the outcome (revenue) is <span class="hl">numeric</span>, and there are
+       <span class="hl">four independent groups</span>. Running all six pairwise t-tests would give roughly a 26% chance
+       of a false alarm even if nothing differed. The omnibus answer is <span class="term">one-way ANOVA</span>; a
+       significant F then earns a <span class="term">Tukey HSD</span> post-hoc.</p>
+
+    <div class="hyp-box">
+      <div class="hyp h0"><div class="hk">H&#8320; · Null</div><div class="hv">&#956;<sub>Organic</sub> = &#956;<sub>Paid</sub> = &#956;<sub>Email</sub> = &#956;<sub>Social</sub> &nbsp;&#8211;&nbsp; all channels equal</div></div>
+      <div class="hyp h1"><div class="hk">H&#8321; · Alternative</div><div class="hv">at least one channel mean differs from the others</div></div>
+    </div>
+
+    <p><strong>Assumption checks.</strong> ANOVA needs independent groups (true by design), roughly
+       <span class="term">equal variances</span>, and roughly <span class="term">normal residuals</span>.
+       <span class="term">Levene's test</span> (p &#8776; 0.37) clears equal variance and a residual QQ plot with
+       <span class="term">Shapiro</span> (p &#8776; 0.11) clears normality, so the conditions hold. Had equal variance
+       failed, the remedy is <strong>Welch's ANOVA</strong>; because revenue can be right-skewed we also run the
+       rank-based <span class="term">Kruskal-Wallis</span> test as a cross-check, and it agrees, so the conclusion does
+       not hinge on assuming a perfect bell curve.</p>
+  </section>
+
+  <!-- ===== Section 3 ===== -->
+  <section id="analysis">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The Analysis &amp; Results</h2></div>
+    <p>The F-test answers "any difference?"; &#951;&#178; says how much channel matters; Kruskal-Wallis confirms; Tukey HSD
+       says which pairs separate.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 180" width="100%" font-family="Inter, sans-serif" aria-label="Mean revenue by channel; Email is highest and significantly above the other three">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Mean 90-day revenue per customer, by channel</text>
+        <line x1="80" y1="150" x2="620" y2="150" stroke="#94a3b8" stroke-width="1"/>
+        <rect x="110" y="58" width="90" height="92" fill="#0891b2"/><text x="155" y="50" text-anchor="middle" font-size="10" fill="#0e7490" font-weight="800">$92</text><text x="155" y="165" text-anchor="middle" font-size="9" fill="#475569">Email</text>
+        <rect x="250" y="92" width="90" height="58" fill="#a5f3fc"/><text x="295" y="84" text-anchor="middle" font-size="10" fill="#0e7490" font-weight="700">$78</text><text x="295" y="165" text-anchor="middle" font-size="9" fill="#475569">Organic</text>
+        <rect x="390" y="108" width="90" height="42" fill="#a5f3fc"/><text x="435" y="100" text-anchor="middle" font-size="10" fill="#0e7490" font-weight="700">$70</text><text x="435" y="165" text-anchor="middle" font-size="9" fill="#475569">Paid Search</text>
+        <rect x="530" y="114" width="90" height="36" fill="#a5f3fc"/><text x="575" y="106" text-anchor="middle" font-size="10" fill="#0e7490" font-weight="700">$67</text><text x="575" y="165" text-anchor="middle" font-size="9" fill="#475569">Social</text>
+        <text x="155" y="135" text-anchor="middle" font-size="8" fill="#fff" font-weight="700">winner</text>
+      </svg>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Step</th><th>Result</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">One-way ANOVA</td><td>F = 12.4, p &#8776; 10&#8315;&#8311; &#8594; reject H&#8320;</td></tr>
+          <tr><td class="nm">Effect size</td><td>&#951;&#178; &#8776; 0.12 (channel explains ~12% of revenue variation)</td></tr>
+          <tr><td class="nm">Kruskal-Wallis cross-check</td><td>H = 29.7, p &#8776; 10&#8315;&#8326; (agrees)</td></tr>
+          <tr><td class="nm">Tukey: Email vs Organic</td><td>+$14.6, CI [+3.0, +26.2] &#8594; differs</td></tr>
+          <tr><td class="nm">Tukey: Email vs Paid / Social</td><td>+$22 / +$25 &#8594; both differ</td></tr>
+          <tr><td class="nm">Tukey: Organic vs Paid vs Social</td><td>all within noise &#8594; not distinguishable</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The F-test is decisive and Kruskal-Wallis agrees, so a real difference exists and does not depend on the normality
+       assumption. Tukey HSD localizes it cleanly: the entire story is <strong>Email</strong>, which significantly beats
+       each of the other three, while Organic, Paid Search, and Social are statistically interchangeable on revenue.</p>
+  </section>
+
+  <!-- ===== Section 4: Report ===== -->
+  <section id="report">
+    <div class="section-eyebrow"><div class="num">4</div><h2>The Statistician's Report</h2></div>
+    <p>How to brief the head of marketing, no F-statistics required.</p>
+
+    <div class="report-card">
+      <div class="rep-tag">📋 Statistician's report &#183; to marketing</div>
+      <h3>Recommendation: shift budget toward Email</h3>
+      <p><strong>What we found.</strong> Customers acquired through <strong>Email</strong> are worth about
+        <strong>$92</strong> in their first 90 days, roughly <strong>$15 to $25 more</strong> than those from Organic
+        ($78), Paid Search ($70), or Social ($67). Those other three channels are statistically about the same as each
+        other.</p>
+      <p><strong>How confident are we?</strong> The overall difference is extremely unlikely to be chance (less than 1 in
+        a million), and a method that makes no bell-curve assumption agrees. The careful pairwise comparison (which
+        corrects for testing several at once) confirms Email stands apart from all three others, while the gaps among
+        Organic, Paid, and Social are within the noise.</p>
+      <p><strong>What to do.</strong> Re-weight acquisition spend toward Email, and treat Organic, Paid, and Social as
+        equivalent on revenue for now.</p>
+      <p><strong>Caveats.</strong> This is revenue <em>per acquired customer</em>, not per dollar spent, fold in each
+        channel's acquisition cost before finalizing the budget. And because channels were not randomly assigned (this is
+        observational), some of Email's edge could reflect who self-selects into it rather than the channel itself.</p>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">In the field</div>
+        <p>The same one-way-ANOVA-plus-post-hoc pattern is how teams compare three or more models, prompts, or
+           configurations, and why "A/B/n" experiments need multiplicity corrections. The omnibus-then-pairwise discipline
+           keeps a lucky winner from being mistaken for a real one.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Run the ANOVA and Tukey HSD in Python</h3>
+          <p>The companion notebook <strong>explores</strong> revenue by channel (summaries, skew, a distribution plot), then lets <strong>statsmodels</strong> run the ANOVA (<code>ols</code> + <code>anova_lm</code>) and every pairwise comparison (<code>pairwise_tukeyhsd</code>), no hand-coded loop, cross-checks with Kruskal-Wallis, and plots revenue by channel.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/case-study-comparing-marketing-channels.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-comparing-marketing-channels.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-comparing-marketing-channels.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, <code>scipy</code>,
+      <code>matplotlib</code>, <code>statsmodels</code>, and <code>openpyxl</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>3+ groups</strong>: use one-way ANOVA, not many t-tests, to keep the false-alarm rate honest.</span></li>
+        <li><span class="ck">✓</span><span><strong>Cross-check</strong> a skew-prone outcome with Kruskal-Wallis; agreement makes the conclusion robust.</span></li>
+        <li><span class="ck">✓</span><span><strong>Omnibus then post-hoc</strong>: a significant F (p &#8776; 10&#8315;&#8311;, &#951;&#178; &#8776; 0.12) earns a Tukey HSD to find the pairs.</span></li>
+        <li><span class="ck">✓</span><span><strong>Result</strong>: Email beats all three other channels; Organic, Paid, and Social are indistinguishable.</span></li>
+        <li><span class="ck">✓</span><span><strong>Caveats</strong>: revenue per customer (not per dollar), and observational, so confirm with cost data and watch for self-selection.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on this case study. Answer them, hit <strong>Check Answers</strong>, and keep refining until
+       you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>So far, one test per question. <strong>Chapter 86 &#183; A Clinical Trial</strong> takes a single trial and
+         answers <em>three</em> questions, paired, two-arm, and a responder rate, each needing a different test on the
+         same patients.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="case-study-a-web-a-b-test.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 84 · Previous</span><br><span class="cn-title">Case Study: A Web A/B Test</span></span>
+    </a>
+    <a class="cn-btn next" href="case-study-a-clinical-trial.html">
+      <span><span class="cn-dir">Chapter 86 · Next</span><br><span class="cn-title">Case Study: A Clinical Trial</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 85 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch85";
+  window.QUIZ_DATA = [
+    {
+      q: "With four groups to compare on a numeric outcome, the right omnibus test is…",
+      options: ["Six separate t-tests", "One-way ANOVA", "A two-proportion z-test", "A paired t-test"],
+      answer: 1,
+      explain: "ANOVA tests all group means at once, avoiding the false-alarm inflation of many pairwise t-tests."
+    },
+    {
+      q: "Why not just run all six pairwise t-tests?",
+      options: ["They're too slow", "Each carries a 5% false-alarm risk, so the combined chance of a false positive balloons", "t-tests can't compare revenue", "They always agree with ANOVA"],
+      answer: 1,
+      explain: "Six tests at 5% each give roughly a 26% chance of at least one false positive; ANOVA controls this."
+    },
+    {
+      q: "A significant ANOVA F tells you…",
+      options: ["Exactly which channel is best", "That at least one channel mean differs, but not which", "All channels differ", "Nothing"],
+      answer: 1,
+      explain: "F is an omnibus result; a post-hoc test like Tukey HSD identifies which specific channels differ."
+    },
+    {
+      q: "Tukey HSD is run after a significant ANOVA in order to…",
+      options: ["Re-test the same hypothesis", "Compare all channel pairs while controlling the overall error rate", "Increase the sample size", "Check normality"],
+      answer: 1,
+      explain: "Tukey does the pairwise comparisons with the family-wise error held at α."
+    },
+    {
+      q: "Running Kruskal-Wallis as a cross-check matters because…",
+      options: ["It replaces ANOVA", "It makes no normality assumption, so agreement shows the result is robust to skew", "It's faster", "It increases the effect size"],
+      answer: 1,
+      explain: "The rank-based test confirms the ANOVA conclusion without assuming a bell curve."
+    },
+    {
+      q: "Tukey showed Email differs from all three others, but Organic, Paid, and Social do not differ from each other. This means…",
+      options: ["All four channels are different", "Only Email stands apart; the other three are statistically interchangeable on revenue", "No channels differ", "Social is the best"],
+      answer: 1,
+      explain: "The single real separation is Email vs the rest; the remaining gaps are within the noise."
+    },
+    {
+      q: "η² ≈ 0.12 means…",
+      options: ["12% of customers chose Email", "Channel explains about 12% of the variation in revenue", "The test is 12% significant", "Email earns 12% more"],
+      answer: 1,
+      explain: "Eta-squared is the share of total outcome variance attributable to the grouping variable."
+    },
+    {
+      q: "A key caveat in the report was that…",
+      options: ["The test was invalid", "Revenue is per customer (not per dollar spent) and channels were not randomized, so confirm with cost data and watch for self-selection", "Email should be cut", "ANOVA can't be trusted"],
+      answer: 1,
+      explain: "Per-customer revenue ignores acquisition cost, and observational data invites self-selection effects."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

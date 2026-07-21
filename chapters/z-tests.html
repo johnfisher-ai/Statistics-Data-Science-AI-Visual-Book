@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 76 · z-Tests — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#eef2ff; border:1px solid #c7d2fe; border-left:4px solid #4f46e5; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#4338ca; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/z-tests.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XII · Hypothesis Testing &amp; Inference</span><span class="sep">/</span>
+      <span>Chapter 76</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XII · Hypothesis Testing &amp; Inference</span> The normal-curve workhorse</div>
+    <h1>z-<span class="accent">Tests</span></h1>
+    <p class="dek">When the sample is large or the outcome is a simple yes/no, the normal distribution is the reference and
+       the z-test is the everyday tool, the math behind polls, conversion rates, and approval numbers. We build the
+       one-sample, one-proportion, and two-proportion versions, then settle a real approval poll.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~16 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 76</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">A pollster reports "64% approve, and that beats the 60% benchmark." A product team says "B converts
+       better than A." Both are <span class="term">z-tests</span>: when n is large or we are dealing with proportions,
+       the standardized statistic follows a standard normal curve, and the whole test reduces to "how many standard
+       errors from the null?"</p>
+
+    <div class="def-card">
+      <div class="sigma">z</div>
+      <div class="def-body">
+        A <span class="def-kw">z-test</span> compares a standardized statistic, z = (estimate &#8722; null) / standard
+        error, against the <span class="def-kw">standard normal</span> distribution. It applies when &#963; is known or n
+        is large (so s &#8776; &#963;), and to <span class="def-kw">proportions</span>, where the null value p&#8320;
+        fixes the standard error directly.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🔔</div>
+      <div><div class="ctitle">The chapter in one line</div>
+        <p>Standardize the estimate into a z, read the tail area off the normal curve, and decide. For proportions the
+           standard error comes from the null (one sample) or a pooled rate (two samples).</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1 ===== -->
+  <section id="whenz">
+    <div class="section-eyebrow"><div class="num">1</div><h2>When z, Not t</h2></div>
+    <p>The z-test and the t-test answer the same question; they differ only in the reference curve. Use
+       <span class="term">z</span> when the population standard deviation is known, when the sample is large enough that
+       s is essentially &#963;, or for proportions. Use <span class="term">t</span> (next chapter) when &#963; is unknown
+       and the sample is small.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 170" width="100%" font-family="Inter, sans-serif" aria-label="The t distribution has heavier tails for small samples but converges to the standard normal as the sample grows">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">As n grows, the t curve converges to the normal &#8212; use z</text>
+        <path d="M70,140 C220,138 280,52 340,52 C400,52 460,138 610,140" fill="none" stroke="#4f46e5" stroke-width="2.2"/>
+        <path d="M70,140 C210,135 270,78 340,78 C410,78 470,135 610,140" fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-dasharray="5 4"/>
+        <text x="470" y="60" font-size="9" fill="#4338ca" font-weight="700">z (normal): large n</text>
+        <text x="120" y="92" font-size="9" fill="#b45309" font-weight="700">t: small n (heavy tails)</text>
+        <text x="340" y="158" text-anchor="middle" font-size="8.5" fill="#8b94b3">by n &#8776; 30&#8211;60 the two are nearly identical</text>
+      </svg>
+    </figure>
+
+    <p>In the notebook a large-sample z-test (n = 400) gives a p-value indistinguishable from the t-test, the curves have
+       merged. That is why z is the natural default for big samples, and the <em>only</em> sensible choice for
+       proportions, where the variance is pinned down by the proportion itself rather than estimated separately.</p>
+  </section>
+
+  <!-- ===== Section 2 ===== -->
+  <section id="oneprop">
+    <div class="section-eyebrow"><div class="num">2</div><h2>The One-Proportion z-Test</h2></div>
+    <p>For a yes/no outcome we test H&#8320;: p = p&#8320;. The key move: under the null the standard error is a
+       <span class="hl">known number</span>, &#8730;(p&#8320;(1&#8722;p&#8320;)/n), because the null value fixes the
+       variance. The statistic z = (p&#770; &#8722; p&#8320;) / SE&#8320; is then standard normal.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 150" width="100%" font-family="Inter, sans-serif" aria-label="The one-proportion test formula: z equals p-hat minus p-naught over the square root of p-naught times one minus p-naught over n">
+        <text x="340" y="26" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">One-proportion z statistic</text>
+        <text x="340" y="78" text-anchor="middle" font-size="22" fill="#4338ca" font-weight="800">z = (p&#770; &#8722; p&#8320;) &#247; &#8730;( p&#8320;(1&#8722;p&#8320;) / n )</text>
+        <text x="340" y="112" text-anchor="middle" font-size="10" fill="#4a5578">the standard error uses p&#8320; (the null), not p&#770; &#8212; we compute in the null world</text>
+        <text x="340" y="132" text-anchor="middle" font-size="9" fill="#8b94b3">valid when n&#183;p&#8320; &#8805; 10 and n&#183;(1&#8722;p&#8320;) &#8805; 10</text>
+      </svg>
+    </figure>
+
+    <p>In the notebook, 545 successes in 1,000 trials is 2.85 standard errors above 0.5 (p &#8776; 0.004), so the rate
+       genuinely differs from one-half. If the success-failure condition fails (too few of either outcome), the normal
+       approximation breaks down and an <span class="term">exact binomial test</span> is the right fallback.</p>
+  </section>
+
+  <!-- ===== Section 3 ===== -->
+  <section id="twoprop">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The Two-Proportion z-Test</h2></div>
+    <p>To compare two groups we test H&#8320;: p&#8320; = p&#8330; (equivalently, the difference is 0). Under that null
+       both groups share one true rate, so we estimate it with the <span class="term">pooled proportion</span> and use it
+       in the standard error.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 160" width="100%" font-family="Inter, sans-serif" aria-label="Two groups pooled into one estimated rate under the null, then compared">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Under H&#8320; the two groups share one rate &#8212; pool to estimate it</text>
+        <rect x="70" y="46" width="180" height="40" rx="8" fill="#eef2ff" stroke="#4f46e5"/>
+        <text x="160" y="71" text-anchor="middle" font-size="10" fill="#4338ca" font-weight="700">group A: s&#8320;/n&#8320;</text>
+        <rect x="430" y="46" width="180" height="40" rx="8" fill="#eef2ff" stroke="#4f46e5"/>
+        <text x="520" y="71" text-anchor="middle" font-size="10" fill="#4338ca" font-weight="700">group B: s&#8330;/n&#8330;</text>
+        <path d="M250,66 L300,98" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#p2)"/>
+        <path d="M430,66 L380,98" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#p2)"/>
+        <defs><marker id="p2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#94a3b8"/></marker></defs>
+        <rect x="262" y="100" width="156" height="38" rx="8" fill="#f5f3ff" stroke="#7c3aed"/>
+        <text x="340" y="124" text-anchor="middle" font-size="10" fill="#6d28d9" font-weight="800">pooled rate p&#770;</text>
+      </svg>
+    </figure>
+
+    <p>The standard error becomes &#8730;(p&#770;(1&#8722;p&#770;)(1/n&#8320; + 1/n&#8330;)), and z is the difference
+       divided by that. This single test underlies comparing two conversion rates, two pass rates, or two approval
+       numbers, and it is exactly what an A/B test runs on its primary metric (Chapter 82).</p>
+  </section>
+
+  <!-- ===== Section 4: REAL-WORLD ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: An Approval Poll</h2></div>
+    <p>A poll of 820 respondents records whether each approves of a policy. The campaign claims approval is
+       <strong>above 60%</strong>. We answer two questions: does overall approval really exceed the 60% benchmark
+       (one-proportion z), and does approval differ between the youngest and oldest age bands (two-proportion z)?</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · z-tests--approval_poll.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per respondent with a binary <code>approve</code>, plus <code>region</code>
+        and <code>age_group</code>.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/z-tests--approval_poll.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 820 respondents</small></a>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Test</th><th>Estimate</th><th>z</th><th>p-value</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Approval vs 60% (one-prop)</td><td>p&#770; = 64.3%</td><td>2.49</td><td>&#8776; 0.013</td><td>reject H&#8320;: higher than 60%</td></tr>
+          <tr><td class="nm">Young vs old (two-prop)</td><td>70.7% vs 56.8%</td><td>3.22</td><td>&#8776; 0.001</td><td>reject H&#8320;: a real age gap</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Overall approval (64.3%) sits about 2.5 standard errors above the 60% benchmark, so the one-proportion test
+       rejects the claim, approval is genuinely higher. The age contrast is even stronger: 70.7% of the youngest band
+       versus 56.8% of the oldest gives z &#8776; 3.22 (p &#8776; 0.001), a clear, real difference rather than sampling
+       noise. With 820 respondents and both outcomes well represented, the success-failure condition holds and the normal
+       approximation is trustworthy.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>z-Tests in Machine Learning &amp; AI</h2></div>
+    <p>Proportion z-tests are the default for the rate-based metrics that dominate applied ML.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Idea (this chapter)</th><th>In ML / AI it becomes</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">One-proportion z</td><td>"Does accuracy beat a target?"</td><td>is click-through above the 5% goal?</td></tr>
+          <tr><td class="nm">Two-proportion z</td><td>Comparing two models' success rates</td><td>conversion of model A vs model B</td></tr>
+          <tr><td class="nm">Large-sample z for a mean</td><td>Big-data mean comparisons</td><td>average latency this week vs last</td></tr>
+          <tr><td class="nm">Pooled standard error</td><td>The core of A/B significance</td><td>online experiment on a primary metric</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>Most production metrics are <strong>rates</strong>, click-through, conversion, error, churn, and the
+           two-proportion z-test is the standard way to decide whether a new model or feature moved one of them. Because
+           web-scale samples are huge, the normal approximation is essentially exact, so the z-test (and the matching
+           confidence interval on the difference) is what powers experimentation platforms. The same caution from
+           Chapter 75 applies: with millions of users a microscopic lift is "significant", so report the size of the
+           effect, not just the z.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Run every z-test in Python</h3>
+          <p>The companion notebook builds the large-sample one-sample z, the one-proportion z (with the success-failure
+             check), and the two-proportion z with a pooled standard error, then loads
+             <code>z-tests--approval_poll.xlsx</code> to test approval against 60% and compare age groups.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/z-tests.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/z-tests.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/z-tests.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, <code>scipy</code>,
+      <code>matplotlib</code>, <code>statsmodels</code>, and <code>openpyxl</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>z-test</strong>: standardize to z = (estimate &#8722; null)/SE and read the tail off the standard normal curve.</span></li>
+        <li><span class="ck">✓</span><span><strong>Use z</strong> for large samples (s &#8776; &#963;) and for proportions, where the null fixes the standard error.</span></li>
+        <li><span class="ck">✓</span><span><strong>One-proportion</strong> SE uses p&#8320;; <strong>two-proportion</strong> SE uses a pooled rate, valid under the success-failure condition.</span></li>
+        <li><span class="ck">✓</span><span><strong>Real data</strong>: approval beats 60% (z = 2.49, p &#8776; 0.013) and differs by age (z = 3.22, p &#8776; 0.001).</span></li>
+        <li><span class="ck">✓</span><span><strong>In ML/AI</strong>: rate metrics (CTR, conversion, error) live on the two-proportion z, the heart of A/B testing.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>One-proportion z-test</h4>
+        <p>In 1,000 trials you see 470 successes. Test H&#8320;: p = 0.5 (two-sided).</p>
+        <div class="chint">Hint: SE&#8320; = &#8730;(0.5&#183;0.5/1000).</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Two-proportion z-test</h4>
+        <p>Group A: 90/500. Group B: 130/520. Test H&#8320;: p&#8320; = p&#8330;.</p>
+        <div class="chint">Hint: pool = (90 + 130)/(500 + 520).</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Large-sample z for a mean</h4>
+        <p>A sample of 500 has mean 51 and sd 10. Test H&#8320;: &#956; = 50 (two-sided).</p>
+        <div class="chint">Hint: z = (51 &#8722; 50)/(10/&#8730;500).</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Check the validity condition</h4>
+        <p>For n = 40 and p&#8320; = 0.05, is the normal approximation valid? Use the success-failure rule.</p>
+        <div class="chint">Hint: is n&#183;p&#8320; &#8805; 10?</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Real data: approval poll</h4>
+        <p>Load <code>z-tests--approval_poll.xlsx</code> and run the one-proportion z-test of H&#8320;: p = 0.60.</p>
+        <div class="chint">Hint: p&#770; = <code>approve.mean()</code>.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code. Try
+           them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/z-tests--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/z-tests--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/z-tests--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on z-tests. Answer them, hit <strong>Check Answers</strong>, and keep refining until you
+       score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>The z-test assumes a known &#963; or a large sample. <strong>Chapter 77 &#183; t-Tests</strong> handles the
+         common reality, an unknown &#963; and a modest sample, with the one-sample, two-sample, and paired t-tests.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="significance-p-values-and-errors.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 75 · Previous</span><br><span class="cn-title">Significance, p-values &amp; Errors</span></span>
+    </a>
+    <a class="cn-btn next" href="t-tests.html">
+      <span><span class="cn-dir">Chapter 77 · Next</span><br><span class="cn-title">t-Tests</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 76 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch76";
+  window.QUIZ_DATA = [
+    {
+      q: "The z-test uses which distribution as its reference?",
+      options: ["The t distribution", "The standard normal distribution", "The chi-square distribution", "The F distribution"],
+      answer: 1,
+      explain: "z-tests compare the standardized statistic to the standard normal (z) curve."
+    },
+    {
+      q: "You should prefer a z-test over a t-test when…",
+      options: ["The sample is tiny and σ is unknown", "σ is known, or n is large, or the outcome is a proportion", "There are exactly two groups", "The data are skewed"],
+      answer: 1,
+      explain: "z applies with known σ, large n (s ≈ σ), or proportions; small-sample unknown-σ calls for t."
+    },
+    {
+      q: "In the one-proportion z-test, the standard error is computed using…",
+      options: ["The sample proportion p̂", "The null value p₀", "The pooled proportion", "The median"],
+      answer: 1,
+      explain: "Under H₀ the variance is fixed by p₀, so SE₀ = √(p₀(1−p₀)/n)."
+    },
+    {
+      q: "The two-proportion z-test's standard error uses…",
+      options: ["Each group's own rate separately", "A pooled proportion estimated from both groups combined", "Only group A's rate", "The difference of medians"],
+      answer: 1,
+      explain: "Under H₀ both groups share one rate, so we pool the successes to estimate it for the SE."
+    },
+    {
+      q: "The success-failure condition for the normal approximation requires…",
+      options: ["n > 1000", "At least ~10 successes and ~10 failures", "A symmetric distribution", "Equal group sizes"],
+      answer: 1,
+      explain: "With roughly 10+ of each outcome, the sampling distribution of p̂ is close to normal."
+    },
+    {
+      q: "If n·p₀ = 2, the right move is…",
+      options: ["Use the z-test anyway", "Use an exact binomial test instead", "Increase α", "Report p̂ with no test"],
+      answer: 1,
+      explain: "The success-failure condition fails, so the normal approximation is unreliable; use the exact test."
+    },
+    {
+      q: "In the poll, approval of 64.3% vs the 60% benchmark gave z ≈ 2.49 (p ≈ 0.013). This means…",
+      options: ["Approval is exactly 60%", "Approval is significantly higher than 60%", "The test is invalid", "The sample was too small"],
+      answer: 1,
+      explain: "z ≈ 2.49 puts 64.3% about 2.5 SEs above 60%, p ≈ 0.013 < 0.05, so we reject the 60% claim."
+    },
+    {
+      q: "Comparing two conversion rates in an A/B test is fundamentally a…",
+      options: ["One-sample t-test", "Two-proportion z-test", "Chi-square goodness-of-fit", "Correlation test"],
+      answer: 1,
+      explain: "Two yes/no rates from two groups is exactly the two-proportion z-test (with a pooled SE)."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

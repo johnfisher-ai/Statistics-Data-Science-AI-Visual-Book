@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 104 · What Is Machine Learning? — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#eef2ff; border:1px solid #c7d2fe; border-left:4px solid #4338ca; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#3730a3; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/what-is-machine-learning.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XVII · Introducing Machine Learning</span><span class="sep">/</span>
+      <span>Chapter 104</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XVII · Introducing Machine Learning</span> The big picture</div>
+    <h1>What Is <span class="accent">Machine Learning?</span></h1>
+    <p class="dek">Machine learning is how computers learn patterns from data instead of following hand-written rules. This
+       opener maps the whole field: the three learning paradigms, supervised, unsupervised, and reinforcement, the split
+       between classification and regression, and how the machine-learning mindset differs from the statistics you already
+       know. Every idea is run in code on one real customer table.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~18 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 104</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">For most of this book a human wrote the rule: compute a mean, fit a line, run a test. <span class="term">Machine
+       learning</span> flips that around, you show the computer examples and it <span class="hl">learns the rule
+       itself</span>, then applies it to data it has never seen. That single shift powers recommendation feeds, fraud
+       alerts, medical triage, and the large language models behind modern AI.</p>
+
+    <div class="def-card">
+      <div class="sigma">ML</div>
+      <div class="def-body">
+        <span class="def-kw">Machine learning</span> is the study of algorithms that <span class="def-kw">improve at a task
+        by learning from data</span> rather than being explicitly programmed. Its three great families are
+        <span class="def-kw">supervised</span> (learn from labeled examples), <span class="def-kw">unsupervised</span>
+        (find structure with no labels), and <span class="def-kw">reinforcement</span> (learn a policy from reward).
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">The chapter in one line</div>
+        <p>If your data has a <em>label</em> to predict, it is supervised (classification for a category, regression for a
+           number); if it has no label, it is unsupervised; if an <em>agent</em> learns from <em>reward</em>, it is
+           reinforcement learning.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1 ===== -->
+  <section id="paradigms">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Three Paradigms of Learning</h2></div>
+    <p>Almost every machine-learning method belongs to one of three families, distinguished by <span class="hl">what kind
+       of feedback the algorithm gets</span>. This one picture is the map for the rest of the section.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 720 250" width="100%" font-family="Inter, sans-serif" aria-label="Three panels: supervised learning maps features to a known label, unsupervised learning finds clusters with no label, and reinforcement learning has an agent learn a policy from reward">
+        <text x="360" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">Three ways a machine can learn</text>
+        <!-- Supervised -->
+        <rect x="20" y="36" width="216" height="196" rx="12" fill="#eef2ff" stroke="#c7d2fe"/>
+        <text x="128" y="56" text-anchor="middle" font-size="11" fill="#3730a3" font-weight="800">SUPERVISED</text>
+        <text x="128" y="70" text-anchor="middle" font-size="8" fill="#4338ca">learn from labeled examples</text>
+        <g font-size="7.5">
+          <rect x="42" y="84" width="118" height="18" fill="#fff" stroke="#c7d2fe"/><text x="52" y="96" fill="#475569">features (age, spend&#8230;)</text>
+          <rect x="166" y="84" width="52" height="18" fill="#4338ca"/><text x="192" y="96" text-anchor="middle" fill="#fff" font-weight="700">label</text>
+          <rect x="42" y="104" width="118" height="14" fill="#fff" stroke="#e6e9f2"/><rect x="166" y="104" width="52" height="14" fill="#e0e7ff"/>
+          <rect x="42" y="120" width="118" height="14" fill="#fff" stroke="#e6e9f2"/><rect x="166" y="120" width="52" height="14" fill="#e0e7ff"/>
+        </g>
+        <path d="M128,140 L128,158" stroke="#4338ca" stroke-width="1.6" marker-end="url(#a104)"/>
+        <rect x="66" y="160" width="124" height="24" rx="6" fill="#fff" stroke="#4338ca"/><text x="128" y="176" text-anchor="middle" font-size="8.5" fill="#3730a3" font-weight="700">model learns f: X &#8594; y</text>
+        <text x="128" y="204" text-anchor="middle" font-size="8" fill="#4a5578">then predicts the label for</text>
+        <text x="128" y="216" text-anchor="middle" font-size="8" fill="#4a5578">new, unlabeled rows</text>
+        <!-- Unsupervised -->
+        <rect x="252" y="36" width="216" height="196" rx="12" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="360" y="56" text-anchor="middle" font-size="11" fill="#1d4ed8" font-weight="800">UNSUPERVISED</text>
+        <text x="360" y="70" text-anchor="middle" font-size="8" fill="#2563eb">find structure, no label</text>
+        <g>
+          <ellipse cx="312" cy="120" rx="34" ry="28" fill="#dbeafe" stroke="#60a5fa" stroke-dasharray="3 2"/>
+          <g fill="#1d4ed8"><circle cx="300" cy="112" r="2.6"/><circle cx="316" cy="108" r="2.6"/><circle cx="308" cy="126" r="2.6"/><circle cx="322" cy="124" r="2.6"/><circle cx="312" cy="118" r="2.6"/></g>
+          <ellipse cx="400" cy="150" rx="36" ry="28" fill="#dbeafe" stroke="#60a5fa" stroke-dasharray="3 2"/>
+          <g fill="#2563eb"><circle cx="388" cy="144" r="2.6"/><circle cx="406" cy="140" r="2.6"/><circle cx="396" cy="158" r="2.6"/><circle cx="412" cy="156" r="2.6"/><circle cx="402" cy="150" r="2.6"/></g>
+          <ellipse cx="360" cy="98" rx="26" ry="20" fill="#e0e7ff" stroke="#818cf8" stroke-dasharray="3 2"/>
+          <g fill="#4338ca"><circle cx="352" cy="96" r="2.6"/><circle cx="366" cy="92" r="2.6"/><circle cx="360" cy="104" r="2.6"/></g>
+        </g>
+        <text x="360" y="200" text-anchor="middle" font-size="8" fill="#4a5578">the algorithm groups similar</text>
+        <text x="360" y="212" text-anchor="middle" font-size="8" fill="#4a5578">rows into clusters on its own</text>
+        <!-- Reinforcement -->
+        <rect x="484" y="36" width="216" height="196" rx="12" fill="#ecfeff" stroke="#a5f3fc"/>
+        <text x="592" y="56" text-anchor="middle" font-size="11" fill="#0e7490" font-weight="800">REINFORCEMENT</text>
+        <text x="592" y="70" text-anchor="middle" font-size="8" fill="#0891b2">learn a policy from reward</text>
+        <rect x="512" y="92" width="72" height="34" rx="7" fill="#fff" stroke="#0891b2"/><text x="548" y="113" text-anchor="middle" font-size="8.5" fill="#0e7490" font-weight="700">agent</text>
+        <rect x="600" y="92" width="80" height="34" rx="7" fill="#fff" stroke="#0891b2"/><text x="640" y="108" text-anchor="middle" font-size="8" fill="#0e7490" font-weight="700">environment</text>
+        <path d="M584,102 L598,102" stroke="#0891b2" stroke-width="1.5" marker-end="url(#c104)"/><text x="591" y="88" text-anchor="middle" font-size="7" fill="#0891b2">action</text>
+        <path d="M600,118 L586,118" stroke="#059669" stroke-width="1.5" marker-end="url(#g104)"/><text x="593" y="132" text-anchor="middle" font-size="7" fill="#059669">reward</text>
+        <text x="592" y="164" text-anchor="middle" font-size="8" fill="#4a5578">try an action, see the reward,</text>
+        <text x="592" y="176" text-anchor="middle" font-size="8" fill="#4a5578">repeat, and improve the policy</text>
+        <text x="592" y="200" text-anchor="middle" font-size="8" fill="#0e7490" font-weight="700">games, robotics, RLHF</text>
+        <defs>
+          <marker id="a104" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#4338ca"/></marker>
+          <marker id="c104" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#0891b2"/></marker>
+          <marker id="g104" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#059669"/></marker>
+        </defs>
+      </svg>
+    </figure>
+
+    <p>The vast majority of applied work is <span class="hl">supervised</span>, because so many valuable questions come
+       with labeled history: past emails marked spam or not, past loans that defaulted or not, past customers who churned
+       or not. Unsupervised learning is the tool for exploration when no label exists, and reinforcement learning shines
+       when an agent must act in a changing environment. The notebook runs one small example of each on the same data.</p>
+  </section>
+
+  <!-- ===== Section 2 ===== -->
+  <section id="supervised">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Supervised Learning: Classification vs Regression</h2></div>
+    <p>Supervised learning always has the same shape: a table of <span class="term">features</span> (the inputs, written
+       X) and a <span class="term">label</span> (the target, written y). The model learns the mapping from X to y on
+       training examples, then predicts y for new rows. It splits in two by the <span class="hl">type of the label</span>.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 720 210" width="100%" font-family="Inter, sans-serif" aria-label="Classification separates two classes with a boundary to predict a category, while regression fits a line to predict a number">
+        <text x="360" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Two flavors of supervised learning</text>
+        <!-- classification -->
+        <text x="185" y="40" text-anchor="middle" font-size="10" fill="#3730a3" font-weight="800">Classification &#8594; a category</text>
+        <line x1="60" y1="180" x2="310" y2="180" stroke="#94a3b8" stroke-width="1"/><line x1="60" y1="56" x2="60" y2="180" stroke="#94a3b8" stroke-width="1"/>
+        <line x1="70" y1="176" x2="300" y2="66" stroke="#4338ca" stroke-width="2" stroke-dasharray="5 3"/>
+        <g fill="#059669"><circle cx="92" cy="150" r="3.4"/><circle cx="110" cy="164" r="3.4"/><circle cx="130" cy="150" r="3.4"/><circle cx="104" cy="140" r="3.4"/><circle cx="146" cy="160" r="3.4"/><circle cx="126" cy="168" r="3.4"/></g>
+        <g fill="#ef4444"><circle cx="220" cy="92" r="3.4"/><circle cx="240" cy="104" r="3.4"/><circle cx="258" cy="86" r="3.4"/><circle cx="236" cy="80" r="3.4"/><circle cx="272" cy="100" r="3.4"/><circle cx="252" cy="112" r="3.4"/></g>
+        <text x="112" y="120" font-size="8" fill="#059669" font-weight="700">stayed</text>
+        <text x="236" y="130" font-size="8" fill="#ef4444" font-weight="700">churned</text>
+        <text x="185" y="198" text-anchor="middle" font-size="8" fill="#64748b">a boundary separates the classes</text>
+        <!-- regression -->
+        <text x="535" y="40" text-anchor="middle" font-size="10" fill="#b45309" font-weight="800">Regression &#8594; a number</text>
+        <line x1="410" y1="180" x2="660" y2="180" stroke="#94a3b8" stroke-width="1"/><line x1="410" y1="56" x2="410" y2="180" stroke="#94a3b8" stroke-width="1"/>
+        <line x1="420" y1="168" x2="650" y2="72" stroke="#d97706" stroke-width="2.4"/>
+        <g fill="#4338ca"><circle cx="440" cy="158" r="3.2"/><circle cx="470" cy="150" r="3.2"/><circle cx="500" cy="132" r="3.2"/><circle cx="530" cy="124" r="3.2"/><circle cx="560" cy="108" r="3.2"/><circle cx="590" cy="98" r="3.2"/><circle cx="620" cy="84" r="3.2"/><circle cx="455" cy="146" r="3.2"/><circle cx="575" cy="112" r="3.2"/></g>
+        <text x="535" y="198" text-anchor="middle" font-size="8" fill="#64748b">a line predicts a continuous value</text>
+      </svg>
+    </figure>
+
+    <p>In the notebook, a <code>LogisticRegression</code> <strong>classifier</strong> predicts the category
+       <code>churned</code> (yes/no) and reaches <strong>77% accuracy</strong> on customers it never trained on; a
+       <code>LinearRegression</code> <strong>regressor</strong> predicts the number <code>monthly_spend</code> and scores
+       <strong>R&#178; = 0.83</strong> on the test set. Same three-step recipe every time, <span class="hl">split, fit,
+       evaluate on held-out data</span>, changing only the kind of answer. And note the golden rule already in play: we
+       always judge a model on data it has <em>not</em> seen, because memorizing the training set is not learning.</p>
+  </section>
+
+  <!-- ===== Section 3 ===== -->
+  <section id="stats-vs-ml">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Statistics vs Machine Learning</h2></div>
+    <p>You have already done machine learning, a fitted regression <em>is</em> a supervised model. What changes in ML is
+       the <span class="hl">emphasis</span>: from explaining a process to predicting new outcomes.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th></th><th>Classical statistics</th><th>Machine learning</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Main goal</td><td>inference: explain, with uncertainty</td><td>prediction: generalize to new data</td></tr>
+          <tr><td class="nm">Key question</td><td>which effects are real, and how big?</td><td>how accurate is it on unseen cases?</td></tr>
+          <tr><td class="nm">Prized output</td><td>coefficients, p-values, intervals</td><td>held-out accuracy, error, loss</td></tr>
+          <tr><td class="nm">Validation</td><td>model assumptions, diagnostics</td><td>train / test split, cross-validation</td></tr>
+          <tr><td class="nm">Typical tool</td><td><code>statsmodels</code></td><td><code>scikit-learn</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The notebook makes this vivid on the churn data: the <em>statistics</em> view fits a logistic model and reads its
+       coefficients, <strong>short tenure</strong> and <strong>frequent support calls</strong> significantly raise churn
+       (tiny p-values); the <em>machine-learning</em> view cross-validates the same model and reports a single number,
+       <strong>79% accuracy</strong> on unseen customers. Neither is better, they answer different questions, and a strong
+       practitioner moves fluently between "why?" and "how well will it predict?"</p>
+  </section>
+
+  <!-- ===== Section 4: REAL-WORLD ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: Supervised and Unsupervised on One Table</h2></div>
+    <p>A telecom has 600 customers with six numeric features and a churn label. The same table answers a
+       <span class="term">supervised</span> question (who will churn?) and an <span class="term">unsupervised</span> one
+       (what natural segments exist?), the two most common tasks in commercial ML.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · what-is-machine-learning--customers.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per customer with <code>age</code>, <code>income_k</code>,
+        <code>tenure_months</code>, <code>num_products</code>, <code>monthly_spend</code>, and <code>support_calls</code>,
+        plus the label <code>churned</code> (1 = left last quarter, 0 = stayed).</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/what-is-machine-learning--customers.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 600 customers</small></a>
+      </div>
+    </div>
+
+    <p>Run unsupervised on the numeric features and <code>KMeans</code> recovers <strong>three clean segments</strong>,
+       with no label at all:</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 720 300" width="100%" font-family="Inter, sans-serif" aria-label="A scatter of income versus monthly spend showing three K-means clusters: a budget segment, a standard segment, and a premium segment">
+        <text x="360" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">K-means found 3 customer segments (no label used)</text>
+        <line x1="70" y1="258" x2="680" y2="258" stroke="#94a3b8" stroke-width="1"/>
+        <line x1="70" y1="50" x2="70" y2="258" stroke="#94a3b8" stroke-width="1"/>
+        <text x="375" y="286" text-anchor="middle" font-size="9" fill="#4a5578" font-weight="700">annual income (thousands of dollars)</text>
+        <text x="26" y="154" text-anchor="middle" font-size="9" fill="#4a5578" font-weight="700" transform="rotate(-90 26 154)">monthly spend</text>
+        <g font-size="8" fill="#64748b" text-anchor="middle">
+          <text x="133" y="272">40</text><text x="291" y="272">70</text><text x="449" y="272">100</text><text x="607" y="272">130</text>
+        </g>
+        <!-- budget (amber) -->
+        <g fill="#d97706"><circle cx="133" cy="204" r="4"/><circle cx="112" cy="216" r="4"/><circle cx="175" cy="193" r="4"/><circle cx="154" cy="212" r="4"/><circle cx="196" cy="189" r="4"/><circle cx="122" cy="225" r="4"/><circle cx="212" cy="184" r="4"/><circle cx="143" cy="199" r="4"/><circle cx="186" cy="203" r="4"/><circle cx="164" cy="208" r="4"/></g>
+        <!-- standard (indigo) -->
+        <g fill="#4338ca"><circle cx="291" cy="172" r="4"/><circle cx="317" cy="165" r="4"/><circle cx="344" cy="155" r="4"/><circle cx="280" cy="178" r="4"/><circle cx="333" cy="159" r="4"/><circle cx="302" cy="168" r="4"/><circle cx="370" cy="151" r="4"/><circle cx="270" cy="182" r="4"/><circle cx="354" cy="163" r="4"/><circle cx="323" cy="166" r="4"/></g>
+        <!-- premium (green) -->
+        <g fill="#059669"><circle cx="449" cy="117" r="4"/><circle cx="502" cy="108" r="4"/><circle cx="554" cy="98" r="4"/><circle cx="422" cy="127" r="4"/><circle cx="607" cy="79" r="4"/><circle cx="475" cy="113" r="4"/><circle cx="528" cy="102" r="4"/><circle cx="581" cy="89" r="4"/><circle cx="438" cy="121" r="4"/><circle cx="565" cy="94" r="4"/></g>
+        <g font-size="9" font-weight="700">
+          <circle cx="470" cy="238" r="5" fill="#d97706"/><text x="482" y="241" fill="#b45309">budget</text>
+          <circle cx="545" cy="238" r="5" fill="#4338ca"/><text x="557" y="241" fill="#3730a3">standard</text>
+          <circle cx="628" cy="238" r="5" fill="#059669"/><text x="640" y="241" fill="#047857">premium</text>
+        </g>
+      </svg>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Discovered segment</th><th>Size</th><th>Avg income / spend</th><th>Churn rate</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Budget</td><td>269</td><td>~40k / $44, 1.5 products, 15 mo</td><td><strong>50%</strong></td></tr>
+          <tr><td class="nm">Standard</td><td>242</td><td>~73k / $61, 2.4 products, 39 mo</td><td>10%</td></tr>
+          <tr><td class="nm">Premium</td><td>89</td><td>~101k / $90, 4.5 products, 50 mo</td><td>0%</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The two tasks reinforce each other. Unsupervised clustering found the segments blind, yet they line up perfectly
+       with the supervised label: the <strong>budget</strong> segment (short tenure, few products) carries essentially
+       <em>all</em> the churn risk, while the <strong>premium</strong> segment barely leaves. That is the practical payoff
+       of the taxonomy, one dataset, two lenses, and a clear action: focus retention on the budget segment.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>The Paradigms in Modern AI</h2></div>
+    <p>The three families are not just textbook categories, they are the scaffolding of every frontier AI system. The same
+       words, scaled up with deep neural networks and enormous datasets, describe how today's models are built.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Paradigm (this chapter)</th><th>At the frontier it becomes</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Supervised</td><td>Labeled deep learning</td><td>image classifiers, medical diagnosis from scans</td></tr>
+          <tr><td class="nm">Unsupervised / self-supervised</td><td>Pretraining on raw data</td><td>an LLM learning to predict the next token on the web</td></tr>
+          <tr><td class="nm">Reinforcement</td><td>Learning from feedback</td><td>game agents; <strong>RLHF</strong> aligning chatbots to human preference</td></tr>
+          <tr><td class="nm">Regression / classification</td><td>The two output heads</td><td>a network ending in a number or a class probability</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>A modern large language model is a tour of all three paradigms at once. It is <strong>pretrained</strong> by
+           self-supervised learning, predicting the next word on trillions of tokens with no human labels, which is
+           unsupervised learning in disguise. It is then <strong>fine-tuned</strong> with supervised examples of good
+           answers, and finally <strong>aligned</strong> with reinforcement learning from human feedback (RLHF), an agent
+           optimizing a reward built from human preferences. The vocabulary of this one chapter, features and labels,
+           classification and regression, clustering, reward, is exactly the language you need to read a frontier AI
+           paper.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Run all three paradigms in Python</h3>
+          <p>The companion notebook trains a churn <strong>classifier</strong> and a spend <strong>regressor</strong> with
+             <code>scikit-learn</code>, finds customer segments with <strong>K-means</strong>, teaches a
+             <strong>reinforcement-learning</strong> agent to pick the best offer from reward, and contrasts the
+             <code>statsmodels</code> inference view with the cross-validated ML view, every cell explained.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/what-is-machine-learning.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/what-is-machine-learning.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/what-is-machine-learning.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>,
+      <code>scikit-learn</code>, <code>statsmodels</code>, <code>matplotlib</code>, <code>seaborn</code>, and
+      <code>openpyxl</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Machine learning learns rules from data</strong> instead of being programmed with them, then applies them to unseen cases.</span></li>
+        <li><span class="ck">✓</span><span><strong>Three paradigms</strong>: supervised (labeled examples), unsupervised (structure, no label), reinforcement (a policy from reward).</span></li>
+        <li><span class="ck">✓</span><span><strong>Supervised splits by label type</strong>: classification predicts a category, regression predicts a number, same split-fit-evaluate recipe.</span></li>
+        <li><span class="ck">✓</span><span><strong>Always evaluate on held-out data</strong>: a model that only fits the training set has memorized, not learned.</span></li>
+        <li><span class="ck">✓</span><span><strong>Statistics vs ML is a difference of emphasis</strong>: inference (explain) versus prediction (generalize); frontier AI uses all three paradigms at once.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges on the customer table. Try them with scikit-learn before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Features vs label</h4>
+        <p>Separate the input features from the target and print the shape of each.</p>
+        <div class="chint">Hint: <code>X = df[feat]</code>, <code>y = df["churned"]</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Train / test split and accuracy</h4>
+        <p>Hold out 30%, train a logistic classifier, and report accuracy on the unseen part.</p>
+        <div class="chint">Hint: <code>train_test_split</code> then <code>accuracy_score</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Regression instead</h4>
+        <p>Predict <code>monthly_spend</code> (a number) and report the test R&#178;.</p>
+        <div class="chint">Hint: <code>LinearRegression().score(X_test, y_test)</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Cluster into segments</h4>
+        <p>Run K-means with k = 3 on the numeric features; print the mean income and spend per cluster.</p>
+        <div class="chint">Hint: <code>KMeans(n_clusters=3).fit_predict(...)</code> then <code>groupby</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Explain vs predict</h4>
+        <p>Fit a statsmodels logit to find the strongest churn driver, then cross-validate for a prediction score.</p>
+        <div class="chint">Hint: read the coefficients, then <code>cross_val_score(..., cv=5)</code>.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code. Try
+           them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/what-is-machine-learning--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/what-is-machine-learning--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/what-is-machine-learning--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on the machine-learning taxonomy. Answer them, hit <strong>Check Answers</strong>, and keep
+       refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>You now know what the field contains. <strong>Chapter 105 &#183; The Machine Learning Workflow</strong> turns
+         the taxonomy into a disciplined process, train/validation/test splits, cross-validation, hyperparameter tuning,
+         pipelines, and the leakage traps that quietly inflate every beginner's accuracy.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="case-study-predicting-medical-charges.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 103 · Previous</span><br><span class="cn-title">Predicting Medical Charges</span></span>
+    </a>
+    <a class="cn-btn next" href="the-machine-learning-workflow.html">
+      <span><span class="cn-dir">Chapter 105 · Next</span><br><span class="cn-title">The Machine Learning Workflow</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 104 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch104";
+  window.QUIZ_DATA = [
+    {
+      q: "Machine learning is best described as…",
+      options: ["Programming explicit if-then rules by hand", "Algorithms that learn patterns from data and apply them to new, unseen cases", "A faster spreadsheet", "Only deep neural networks"],
+      answer: 1,
+      explain: "ML learns the rule from examples instead of having a human write it, then generalizes to new data."
+    },
+    {
+      q: "A dataset has an input table and a column you want to predict. This is…",
+      options: ["Unsupervised learning", "Supervised learning", "Reinforcement learning", "Not machine learning"],
+      answer: 1,
+      explain: "A labeled target makes it supervised: the model learns the mapping from features (X) to the label (y)."
+    },
+    {
+      q: "Predicting the category 'churn: yes/no' is ___, while predicting the number 'monthly spend' is ___.",
+      options: ["regression; classification", "classification; regression", "clustering; regression", "both are clustering"],
+      answer: 1,
+      explain: "Classification predicts a category; regression predicts a continuous number. Same supervised recipe, different label type."
+    },
+    {
+      q: "K-means grouping customers into segments using only the features (no label) is…",
+      options: ["Supervised classification", "Supervised regression", "Unsupervised learning", "Reinforcement learning"],
+      answer: 2,
+      explain: "No label is used; the algorithm discovers structure (clusters) on its own, that is unsupervised learning."
+    },
+    {
+      q: "An agent that tries actions and learns which pay off from the rewards it receives is doing…",
+      options: ["Supervised learning", "Unsupervised learning", "Reinforcement learning", "Regression"],
+      answer: 2,
+      explain: "Reinforcement learning has no labeled dataset; it learns a policy from trial and reward by interacting with an environment."
+    },
+    {
+      q: "Why do we always evaluate a model on a held-out test set?",
+      options: ["To make training faster", "To measure how well it will perform on data it has not seen (generalization)", "To increase the accuracy number", "Because the library requires it"],
+      answer: 1,
+      explain: "A model that only fits its training data may have memorized it; held-out data gives an honest estimate of real-world performance."
+    },
+    {
+      q: "The core difference in emphasis between classical statistics and machine learning is…",
+      options: ["Statistics uses computers, ML does not", "Statistics emphasizes inference (explain), ML emphasizes prediction (generalize)", "They are unrelated fields", "ML never uses probability"],
+      answer: 1,
+      explain: "Statistics prizes coefficients, p-values, and intervals (explanation); ML prizes held-out accuracy and error (generalization)."
+    },
+    {
+      q: "A modern large language model is pretrained by predicting the next word on huge amounts of text with no human labels. That step is essentially…",
+      options: ["Supervised classification", "Self-supervised / unsupervised learning", "Reinforcement learning", "A database query"],
+      answer: 1,
+      explain: "Predicting the next token creates its own targets from raw data, self-supervised learning, before later supervised fine-tuning and RLHF."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

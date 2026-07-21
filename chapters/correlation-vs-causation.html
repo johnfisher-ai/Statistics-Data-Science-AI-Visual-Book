@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 91 · Correlation vs. Causation — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#faf5ff; border:1px solid #e9d5ff; border-left:4px solid #9333ea; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#7e22ce; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/correlation-vs-causation.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XIV · Correlation &amp; Association</span><span class="sep">/</span>
+      <span>Chapter 91</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XIV · Correlation &amp; Association</span> The most important caveat in statistics</div>
+    <h1>Correlation vs. <span class="accent">Causation</span></h1>
+    <p class="dek">A strong correlation feels like proof, and that feeling has launched countless bad decisions. A
+       correlation has four possible explanations, and only one is "x causes y." This chapter separates confounding,
+       reverse causation, and coincidence, and uses partial correlation to expose a lurking variable.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~16 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 91</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Ice-cream sales and drownings rise together. Countries that eat more chocolate win more Nobel prizes.
+       Neither is cause and effect. Learning to resist the pull of a tempting correlation is the difference between
+       analysis and superstition.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#8800;</div>
+      <div class="def-body">
+        A <span class="def-kw">correlation</span> between x and y has four possible explanations: x causes y, y causes x
+        (<span class="def-kw">reverse</span>), a third variable causes both
+        (<span class="def-kw">confounding</span>), or <span class="def-kw">coincidence</span>. The correlation number is
+        identical in all four, so the data alone cannot establish causation.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">⚠️</div>
+      <div><div class="ctitle">The chapter in one line</div>
+        <p>Correlation is evidence of <em>association</em>, never proof of <em>cause</em>. Only a randomized experiment, or
+           careful causal reasoning, can establish that one variable drives another.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1 ===== -->
+  <section id="fourstories">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Four Reasons Two Things Correlate</h2></div>
+    <p>When you see x and y move together, pause and run through the four explanations before reaching for "x causes y."
+       The data look the same under all of them; choosing between them takes <span class="hl">design or domain
+       knowledge</span>, not a bigger correlation.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 170" width="100%" font-family="Inter, sans-serif" aria-label="Four diagrams for a correlation: x causes y, y causes x, a confounder z causes both, and pure coincidence">
+        <text x="340" y="16" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">The same correlation, four very different stories</text>
+        <defs><marker id="ar91" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#7e22ce"/></marker></defs>
+        <!-- 1 x->y -->
+        <text x="95" y="44" text-anchor="middle" font-size="8.5" fill="#1a2138" font-weight="700">1 &#183; x causes y</text>
+        <circle cx="60" cy="80" r="15" fill="#faf5ff" stroke="#9333ea"/><text x="60" y="84" text-anchor="middle" font-size="10" fill="#7e22ce" font-weight="800">x</text>
+        <circle cx="130" cy="80" r="15" fill="#faf5ff" stroke="#9333ea"/><text x="130" y="84" text-anchor="middle" font-size="10" fill="#7e22ce" font-weight="800">y</text>
+        <path d="M77,80 L113,80" stroke="#7e22ce" stroke-width="2" marker-end="url(#ar91)"/>
+        <text x="95" y="116" text-anchor="middle" font-size="7.5" fill="#15803d">the only causal one</text>
+        <!-- 2 y->x -->
+        <text x="265" y="44" text-anchor="middle" font-size="8.5" fill="#1a2138" font-weight="700">2 &#183; y causes x</text>
+        <circle cx="230" cy="80" r="15" fill="#faf5ff" stroke="#9333ea"/><text x="230" y="84" text-anchor="middle" font-size="10" fill="#7e22ce" font-weight="800">x</text>
+        <circle cx="300" cy="80" r="15" fill="#faf5ff" stroke="#9333ea"/><text x="300" y="84" text-anchor="middle" font-size="10" fill="#7e22ce" font-weight="800">y</text>
+        <path d="M283,80 L247,80" stroke="#7e22ce" stroke-width="2" marker-end="url(#ar91)"/>
+        <text x="265" y="116" text-anchor="middle" font-size="7.5" fill="#b45309">reverse causation</text>
+        <!-- 3 confounder -->
+        <text x="435" y="44" text-anchor="middle" font-size="8.5" fill="#1a2138" font-weight="700">3 &#183; z causes both</text>
+        <circle cx="435" cy="62" r="14" fill="#fef3c7" stroke="#d97706"/><text x="435" y="66" text-anchor="middle" font-size="9" fill="#b45309" font-weight="800">z</text>
+        <circle cx="400" cy="112" r="14" fill="#faf5ff" stroke="#9333ea"/><text x="400" y="116" text-anchor="middle" font-size="9" fill="#7e22ce" font-weight="800">x</text>
+        <circle cx="470" cy="112" r="14" fill="#faf5ff" stroke="#9333ea"/><text x="470" y="116" text-anchor="middle" font-size="9" fill="#7e22ce" font-weight="800">y</text>
+        <path d="M425,74 L408,99" stroke="#d97706" stroke-width="1.8" marker-end="url(#ar91)"/>
+        <path d="M445,74 L462,99" stroke="#d97706" stroke-width="1.8" marker-end="url(#ar91)"/>
+        <text x="435" y="140" text-anchor="middle" font-size="7.5" fill="#b45309">confounding</text>
+        <!-- 4 coincidence -->
+        <text x="600" y="44" text-anchor="middle" font-size="8.5" fill="#1a2138" font-weight="700">4 &#183; coincidence</text>
+        <circle cx="565" cy="80" r="15" fill="#faf5ff" stroke="#9333ea"/><text x="565" y="84" text-anchor="middle" font-size="10" fill="#7e22ce" font-weight="800">x</text>
+        <circle cx="635" cy="80" r="15" fill="#faf5ff" stroke="#9333ea"/><text x="635" y="84" text-anchor="middle" font-size="10" fill="#7e22ce" font-weight="800">y</text>
+        <path d="M582,80 L618,80" stroke="#94a3b8" stroke-width="1.6" stroke-dasharray="4 3"/>
+        <text x="600" y="116" text-anchor="middle" font-size="7.5" fill="#64748b">spurious / by luck</text>
+      </svg>
+    </figure>
+
+    <p>This single idea has saved more analyses than any formula. A high r tells you two variables are
+       <span class="term">associated</span>; it is silent on <em>why</em>. The job now is to tell the stories apart.</p>
+  </section>
+
+  <!-- ===== Section 2 ===== -->
+  <section id="confounding">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Confounding &amp; Partial Correlation</h2></div>
+    <p>The most common trap is a <span class="term">confounder</span>: a lurking variable z that drives both x and y, so
+       they correlate although neither causes the other. The cure is the <span class="term">partial correlation</span>
+       from Chapter 90: hold z constant (by correlating the residuals after regressing it out) and watch the link
+       collapse.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 160" width="100%" font-family="Inter, sans-serif" aria-label="A confounder z drives both x and y, producing a correlation between them; controlling for z removes it">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Control for the confounder, and the spurious link disappears</text>
+        <defs><marker id="ar91b" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#d97706"/></marker></defs>
+        <circle cx="230" cy="56" r="18" fill="#fef3c7" stroke="#d97706"/><text x="230" y="61" text-anchor="middle" font-size="11" fill="#b45309" font-weight="800">z</text>
+        <text x="230" y="36" text-anchor="middle" font-size="8" fill="#b45309">the common cause</text>
+        <circle cx="150" cy="120" r="18" fill="#faf5ff" stroke="#9333ea"/><text x="150" y="125" text-anchor="middle" font-size="11" fill="#7e22ce" font-weight="800">x</text>
+        <circle cx="310" cy="120" r="18" fill="#faf5ff" stroke="#9333ea"/><text x="310" y="125" text-anchor="middle" font-size="11" fill="#7e22ce" font-weight="800">y</text>
+        <path d="M217,70 L165,104" stroke="#d97706" stroke-width="2" marker-end="url(#ar91b)"/>
+        <path d="M243,70 L295,104" stroke="#d97706" stroke-width="2" marker-end="url(#ar91b)"/>
+        <path d="M170,124 L290,124" stroke="#94a3b8" stroke-width="1.6" stroke-dasharray="5 4"/>
+        <text x="230" y="146" text-anchor="middle" font-size="8" fill="#8b94b3">x and y correlate, but only through z</text>
+        <text x="480" y="70" text-anchor="middle" font-size="10" fill="#7e22ce" font-weight="800">raw corr 0.88</text>
+        <path d="M430,82 L530,82" stroke="#9333ea" stroke-width="1.6" marker-end="url(#ar91)"/>
+        <text x="480" y="104" text-anchor="middle" font-size="9" fill="#4a5578">hold z constant</text>
+        <text x="480" y="130" text-anchor="middle" font-size="10" fill="#15803d" font-weight="800">partial corr &#8776; 0</text>
+      </svg>
+    </figure>
+
+    <p>In the notebook, x and y both built from a hidden z correlate at <strong>0.88</strong>, but the partial correlation
+       controlling for z is about <strong>&#8722;0.02</strong>: there was never a direct link. Coloring the scatterplot by
+       z makes the illusion visible, and a partial correlation near zero is the statistical fingerprint of confounding.
+       This is also why <span class="hl">randomized experiments</span> (Chapter 65) are the gold standard, randomization
+       balances every confounder at once.</p>
+  </section>
+
+  <!-- ===== Section 3 ===== -->
+  <section id="spurious">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Reverse Causation &amp; Spurious Correlations</h2></div>
+    <p>Two more ways a correlation deceives. <span class="term">Reverse causation</span>: the arrow points the other way.
+       <span class="term">Spurious by chance</span>: test enough unrelated pairs and some will correlate strongly by pure
+       luck, the multiple-comparisons trap of Chapter 75.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Pitfall</th><th>Example</th><th>The tell</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Reverse causation</td><td>"More police, more crime", or does crime bring police?</td><td>ask which direction is plausible in time</td></tr>
+          <tr><td class="nm">Confounding</td><td>ice cream &amp; drownings (driven by heat)</td><td>partial correlation collapses</td></tr>
+          <tr><td class="nm">Spurious by chance</td><td>chocolate consumption &amp; Nobel prizes</td><td>no mechanism; vanishes on replication</td></tr>
+          <tr><td class="nm">Selection / Simpson's</td><td>a trend reverses within every subgroup</td><td>segment the data and re-check</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>In the notebook, 1,000 pairs of <em>pure noise</em> produce a luckiest correlation around <strong>0.6</strong>, from
+       nothing at all. The defenses are timeless: ask <em>which direction is plausible?</em>, demand a
+       <em>mechanism</em>, check whether it <em>replicates</em>, and reserve causal claims for randomized experiments or
+       careful causal inference.</p>
+  </section>
+
+  <!-- ===== Section 4: REAL-WORLD ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: Ice Cream, Drownings &amp; Temperature</h2></div>
+    <p>The textbook case, in real daily data. Ice-cream sales and drownings rise together. Should we ban ice cream at the
+       beach? We measure the raw correlation, then control for temperature, the lurking common cause.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · correlation-vs-causation--confounding.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per day with <code>temperature_f</code>, <code>ice_cream_sales</code>,
+        <code>beach_visitors</code>, and <code>drownings</code>.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/correlation-vs-causation--confounding.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 200 days</small></a>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Correlation</th><th>Value</th><th>Reading</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">ice cream &amp; drownings (raw)</td><td>0.58</td><td>alarming, if taken at face value</td></tr>
+          <tr><td class="nm">temperature &amp; ice cream</td><td>0.87</td><td>heat drives ice cream</td></tr>
+          <tr><td class="nm">temperature &amp; drownings</td><td>0.68</td><td>heat drives swimming (and drownings)</td></tr>
+          <tr><td class="nm">ice cream &amp; drownings | temperature</td><td>&#8722;0.03</td><td><strong>no direct link</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The raw correlation is a real <strong>0.58</strong>, but coloring the scatter by temperature gives it away: hot days
+       cluster top-right, cold days bottom-left. Heat causes both, more ice cream <em>and</em> more swimming, hence more
+       drownings. Control for temperature and the partial correlation collapses to <strong>&#8722;0.03</strong>: ice cream
+       and drownings have <em>no</em> direct relationship. Banning ice cream would not save a single swimmer; the cause is
+       the heat. That is confounding caught red-handed.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Causation in Machine Learning &amp; AI</h2></div>
+    <p>The correlation-causation gap is one of the deepest issues in applied machine learning.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Idea (this chapter)</th><th>In ML / AI it becomes</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Prediction vs intervention</td><td>"Will it happen?" vs "What if we act?"</td><td>a model predicts churn but can't say what fixes it</td></tr>
+          <tr><td class="nm">Confounding</td><td>Spurious features / shortcut learning</td><td>a model keys on a background artifact, not the object</td></tr>
+          <tr><td class="nm">Controlling for variables</td><td>Causal inference &amp; DAGs</td><td>do-calculus, propensity scores, instruments</td></tr>
+          <tr><td class="nm">Randomization</td><td>A/B tests as causal gold standard</td><td>the only clean way to measure a feature's effect</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>A predictive model learns <strong>correlations</strong>, which is enough to forecast but not to tell you what
+           will happen <em>if you intervene</em>. A model can predict that customers who contact support churn more,
+           without support <em>causing</em> churn. Acting on correlations alone is how teams ship features that move a
+           metric the wrong way. The remedies are this chapter at scale: <strong>randomized experiments</strong> (A/B
+           tests) to measure true effects, and the field of <strong>causal inference</strong> (DAGs, do-calculus,
+           propensity scores) to reason about cause when experiments are impossible. Confounding also explains
+           <strong>shortcut learning</strong>, when a model latches onto a spurious cue that happens to correlate with the
+           label in training but fails in the wild.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Expose a confounder in Python</h3>
+          <p>The companion notebook lists the four explanations, manufactures a confounded correlation and dissolves it
+             with a partial correlation, shows how noise breeds spurious correlations, and loads
+             <code>correlation-vs-causation--confounding.xlsx</code> to debunk the ice-cream-and-drownings link by controlling for
+             temperature.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/correlation-vs-causation.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/correlation-vs-causation.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/correlation-vs-causation.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, <code>scipy</code>,
+      <code>matplotlib</code>, <code>seaborn</code>, <code>statsmodels</code>, and <code>openpyxl</code> and launch
+      <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Correlation has four explanations</strong>: x&#8594;y, y&#8594;x, a confounder z&#8594;both, or coincidence, only one is causation.</span></li>
+        <li><span class="ck">✓</span><span><strong>Confounding</strong> is caught with a partial correlation: control for z and a spurious link collapses.</span></li>
+        <li><span class="ck">✓</span><span><strong>Watch for reverse causation</strong> (which way does the arrow point?) and <strong>spurious-by-chance</strong> (many comparisons, no mechanism).</span></li>
+        <li><span class="ck">✓</span><span><strong>Real data</strong>: ice cream &amp; drownings correlate 0.58, but the partial correlation given temperature is &#8722;0.03, the heat causes both.</span></li>
+        <li><span class="ck">✓</span><span><strong>In ML/AI</strong>: models learn correlations (prediction), not interventions; use A/B tests and causal inference for cause.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them with SciPy and statsmodels before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Manufacture a confounded correlation</h4>
+        <p>Make z drive both x and y; show x and y correlate although neither causes the other.</p>
+        <div class="chint">Hint: x = 2z + noise, y = 1.5z + noise.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Control for the confounder</h4>
+        <p>Compute the partial correlation of x and y given z and show it collapses toward 0.</p>
+        <div class="chint">Hint: correlate the residuals after regressing each on z.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Spurious by chance</h4>
+        <p>Across 1,000 unrelated 30-point pairs, find the largest |r| that appears by luck.</p>
+        <div class="chint">Hint: pure noise still produces sizeable correlations sometimes.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Partial-correlation formula</h4>
+        <p>Verify the residual method matches r<sub>xy.z</sub> = (r<sub>xy</sub> &#8722; r<sub>xz</sub>r<sub>yz</sub>) / &#8730;((1&#8722;r<sub>xz</sub>&#178;)(1&#8722;r<sub>yz</sub>&#178;)).</p>
+        <div class="chint">Hint: compute the three pairwise r's and plug in.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Real data: debunk the ice-cream link</h4>
+        <p>Load <code>correlation-vs-causation--confounding.xlsx</code>; show the raw correlation and the partial correlation controlling for temperature.</p>
+        <div class="chint">Hint: regress ice cream and drownings on temperature, correlate residuals.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code. Try
+           them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/correlation-vs-causation--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/correlation-vs-causation--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/correlation-vs-causation--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on correlation vs. causation. Answer them, hit <strong>Check Answers</strong>, and keep
+       refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">🏁</div>
+    <div><div class="ctitle">That completes Part XIV</div>
+      <p>You can now measure a relationship (covariance, correlation) and resist over-claiming cause. <strong>Part XV
+         &#183; Regression Analysis</strong> turns these relationships into a model that predicts, starting with
+         <strong>Chapter 92 &#183; Simple Linear Regression</strong>.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="correlation-coefficients.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 90 · Previous</span><br><span class="cn-title">Correlation Coefficients</span></span>
+    </a>
+    <a class="cn-btn next" href="simple-linear-regression.html">
+      <span><span class="cn-dir">Chapter 92 · Next</span><br><span class="cn-title">Simple Linear Regression</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 91 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch91";
+  window.QUIZ_DATA = [
+    {
+      q: "A strong correlation between x and y proves that…",
+      options: ["x causes y", "x and y are associated, but not necessarily that one causes the other", "y causes x", "there is a confounder"],
+      answer: 1,
+      explain: "Correlation establishes association only; causation needs design (experiments) or causal reasoning."
+    },
+    {
+      q: "Which is NOT one of the four explanations for a correlation?",
+      options: ["x causes y", "y causes x", "a confounder causes both", "the correlation was computed incorrectly"],
+      answer: 3,
+      explain: "The four explanations are x→y, y→x, a common-cause confounder, or coincidence; a miscalculation isn't one of them."
+    },
+    {
+      q: "A confounder is…",
+      options: ["A measurement error", "A third variable that causes both x and y, creating a correlation between them", "A type of outlier", "A small sample"],
+      answer: 1,
+      explain: "A confounder z drives both x and y, so they correlate even though neither causes the other."
+    },
+    {
+      q: "To check whether a correlation is due to a confounder z, you compute…",
+      options: ["A larger correlation", "The partial correlation controlling for z (correlate the residuals)", "The covariance", "The mean of z"],
+      answer: 1,
+      explain: "Partial correlation removes z's influence; if the link collapses toward 0, z was the confounder."
+    },
+    {
+      q: "Ice cream and drownings correlate at 0.58, but controlling for temperature gives −0.03. This means…",
+      options: ["Ice cream causes drownings", "Temperature is a confounder; ice cream and drownings have no direct link", "Drownings cause ice-cream sales", "The data are wrong"],
+      answer: 1,
+      explain: "Heat drives both ice-cream sales and swimming; once temperature is held constant, the link vanishes."
+    },
+    {
+      q: "'More police are associated with more crime' is most likely an example of…",
+      options: ["Police causing crime", "Reverse causation (more crime leads to more police)", "A perfect experiment", "No correlation"],
+      answer: 1,
+      explain: "The plausible direction is that high-crime areas get more police, the arrow runs the other way."
+    },
+    {
+      q: "Testing 1,000 unrelated pairs and finding one with r ≈ 0.6 illustrates…",
+      options: ["A real effect", "A spurious correlation arising by chance (multiple comparisons)", "Confounding", "Reverse causation"],
+      answer: 1,
+      explain: "With enough comparisons, strong correlations appear from pure noise; demand a mechanism and replication."
+    },
+    {
+      q: "Why can a predictive ML model mislead about interventions?",
+      options: ["It is always wrong", "It learns correlations (what predicts an outcome), which need not be what CAUSES it", "It uses too much data", "It can't compute correlations"],
+      answer: 1,
+      explain: "Acting on a correlation (e.g., support contact predicts churn) can fail because it may not be causal; use experiments."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

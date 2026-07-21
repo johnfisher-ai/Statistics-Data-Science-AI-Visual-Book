@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 79 · Chi-Square Tests — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#eef2ff; border:1px solid #c7d2fe; border-left:4px solid #4f46e5; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#4338ca; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/chi-square-tests.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XII · Hypothesis Testing &amp; Inference</span><span class="sep">/</span>
+      <span>Chapter 79</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XII · Hypothesis Testing &amp; Inference</span> Tests for counts and categories</div>
+    <h1>Chi-Square <span class="accent">Tests</span></h1>
+    <p class="dek">When the data are counts in categories, not numbers on a scale, the chi-square family takes over. It
+       compares what you observed to what you would expect, answering two questions: do counts match a claimed split,
+       and are two categorical variables related? We apply both to support-channel choice.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~16 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 79</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">A die lands on 6 a few too many times. Email is the top support channel, but only in some regions.
+       These are questions about <span class="term">counts</span>, not means, and the
+       <span class="term">chi-square test</span> answers them by comparing observed counts to the counts expected under a
+       null hypothesis.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#967;&#178;</div>
+      <div class="def-body">
+        A <span class="def-kw">chi-square test</span> sums (O &#8722; E)&#178; / E over all cells, where O is the
+        <span class="def-kw">observed</span> count and E the count <span class="def-kw">expected</span> under H&#8320;. The
+        <span class="def-kw">goodness-of-fit</span> test compares one variable to a claimed distribution; the
+        <span class="def-kw">test of independence</span> checks whether two categorical variables are associated.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🧮</div>
+      <div><div class="ctitle">The chapter in one line</div>
+        <p>Compare observed counts to expected counts. Big gaps &#8594; big &#967;&#178; &#8594; small p. Report Cramer's V
+           so a tiny p from a huge sample is not mistaken for a strong relationship.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1 ===== -->
+  <section id="idea">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Chi-Square Idea: Observed vs Expected</h2></div>
+    <p>Every chi-square test rests on one comparison. For each category, take the <span class="term">observed</span> count
+       O and the count E we would <span class="term">expect</span> if H&#8320; were true, and measure the gap with
+       (O &#8722; E)&#178; / E. Summing across categories gives a single number that is small when the data behave and
+       large when they surprise.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 168" width="100%" font-family="Inter, sans-serif" aria-label="Observed counts in indigo against expected counts as dashed outlines; chi-square sums the squared gaps relative to expected">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">&#967;&#178; = sum over cells of (observed &#8722; expected)&#178; &#247; expected</text>
+        <g>
+          <rect x="90" y="70" width="50" height="70" fill="#818cf8"/>
+          <rect x="190" y="58" width="50" height="82" fill="#818cf8"/>
+          <rect x="290" y="80" width="50" height="60" fill="#818cf8"/>
+          <rect x="390" y="96" width="50" height="44" fill="#818cf8"/>
+          <rect x="490" y="86" width="50" height="54" fill="#818cf8"/>
+        </g>
+        <g fill="none" stroke="#4338ca" stroke-width="1.6" stroke-dasharray="4 3">
+          <rect x="90" y="78" width="50" height="62"/><rect x="190" y="78" width="50" height="62"/>
+          <rect x="290" y="78" width="50" height="62"/><rect x="390" y="78" width="50" height="62"/>
+          <rect x="490" y="78" width="50" height="62"/>
+        </g>
+        <text x="120" y="156" text-anchor="middle" font-size="8" fill="#64748b">observed (bars) vs expected (dashed)</text>
+        <text x="515" y="156" text-anchor="middle" font-size="8" fill="#64748b">gaps drive &#967;&#178;</text>
+      </svg>
+    </figure>
+
+    <p>The contribution (O&#8722;E)&#178;/E is tiny where the data match expectation and grows where they diverge. Under
+       H&#8320; this sum follows a <span class="hl">chi-square distribution</span>, whose degrees of freedom depend on the
+       design, which is what turns the raw discrepancy into a p-value.</p>
+  </section>
+
+  <!-- ===== Section 2 ===== -->
+  <section id="gof">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Goodness-of-Fit</h2></div>
+    <p>The <span class="term">goodness-of-fit</span> test asks whether one categorical variable follows a hypothesized
+       distribution, a fair die (equal proportions), a claimed market split, last year's mix. Degrees of freedom =
+       (number of categories &#8722; 1).</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 150" width="100%" font-family="Inter, sans-serif" aria-label="A claimed split of forty thirty twenty ten compared against observed proportions">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Does the observed split match the claim?</text>
+        <g font-size="9" text-anchor="middle">
+          <rect x="120" y="46" width="80" height="80" rx="6" fill="#eef2ff" stroke="#4f46e5"/>
+          <text x="160" y="90" font-size="13" fill="#4338ca" font-weight="800">40/30/</text><text x="160" y="106" font-size="13" fill="#4338ca" font-weight="800">20/10</text>
+          <text x="160" y="138" fill="#64748b">claimed</text>
+          <text x="340" y="92" font-size="20" fill="#94a3b8">vs</text>
+          <rect x="480" y="46" width="80" height="80" rx="6" fill="#f5f3ff" stroke="#7c3aed"/>
+          <text x="520" y="90" font-size="13" fill="#6d28d9" font-weight="800">observed</text>
+          <text x="520" y="106" font-size="13" fill="#6d28d9" font-weight="800">counts</text>
+          <text x="520" y="138" fill="#64748b">from the data</text>
+        </g>
+      </svg>
+    </figure>
+
+    <p>In the notebook, observed tier counts of 330/290/180/100 against a claimed 40/30/20/10 split give &#967;&#178;
+       &#8776; 5.1 (p &#8776; 0.17), consistent with the claim. The test is the categorical analog of a one-sample test:
+       it compares a whole distribution of counts to a benchmark. Always check that every <span class="hl">expected</span>
+       count is at least about 5, or the approximation wobbles.</p>
+  </section>
+
+  <!-- ===== Section 3 ===== -->
+  <section id="independence">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Test of Independence &amp; Cramer's V</h2></div>
+    <p>The <span class="term">test of independence</span> works on a contingency table, rows for one categorical
+       variable, columns for another, and asks whether they are related. The expected count for a cell, <em>assuming
+       independence</em>, is (row total &#215; column total) / grand total. Degrees of freedom = (rows &#8722; 1)(columns
+       &#8722; 1).</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 158" width="100%" font-family="Inter, sans-serif" aria-label="A contingency table of two row categories by three column categories, with row and column totals feeding the expected counts">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Expected cell = row total &#215; column total &#247; grand total</text>
+        <g stroke="#cbd5e1" fill="#fafbfe">
+          <rect x="200" y="40" width="80" height="34"/><rect x="280" y="40" width="80" height="34"/><rect x="360" y="40" width="80" height="34"/>
+          <rect x="200" y="74" width="80" height="34"/><rect x="280" y="74" width="80" height="34"/><rect x="360" y="74" width="80" height="34"/>
+        </g>
+        <rect x="440" y="40" width="70" height="68" fill="#eef2ff" stroke="#4f46e5"/>
+        <text x="475" y="79" text-anchor="middle" font-size="9" fill="#4338ca" font-weight="700">row totals</text>
+        <rect x="200" y="108" width="240" height="30" fill="#f5f3ff" stroke="#7c3aed"/>
+        <text x="320" y="127" text-anchor="middle" font-size="9" fill="#6d28d9" font-weight="700">column totals</text>
+        <text x="150" y="60" font-size="9" fill="#64748b">row A</text><text x="150" y="94" font-size="9" fill="#64748b">row B</text>
+      </svg>
+    </figure>
+
+    <p>A significant chi-square says the two variables are associated, the categorical cousin of correlation. But with
+       enough data even a negligible association turns significant, so report <span class="term">Cramer's V</span>, a
+       rescaling of &#967;&#178; to a 0-to-1 effect size. V near 0 means barely related; V near 1 means tightly linked. In
+       the notebook a 2&#215;3 table gives &#967;&#178; &#8776; 25 (p &#8776; 0.000) with V &#8776; 0.25, a moderate link.</p>
+  </section>
+
+  <!-- ===== Section 4: REAL-WORLD ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: Support Channel by Region</h2></div>
+    <p>A company logs each customer's region and preferred support channel (Email, Phone, Chat, App). Two questions, two
+       chi-square tests: are the four channels used equally often (goodness-of-fit), and does channel preference depend on
+       region (independence)?</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · chi-square-tests--customer_channel.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per customer with <code>region</code> and the
+        <code>preferred_channel</code> (four categories).</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/chi-square-tests--customer_channel.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 900 customers</small></a>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Question</th><th>Test</th><th>Result</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Channels used equally?</td><td>goodness-of-fit (df = 3)</td><td>&#967;&#178; &#8776; 13.7, p &#8776; 0.003</td><td>no, usage is uneven</td></tr>
+          <tr><td class="nm">Preference depends on region?</td><td>independence (df = 9)</td><td>&#967;&#178; &#8776; 81, p &#8776; 10&#8315;&#185;&#179;</td><td>yes, associated</td></tr>
+          <tr><td class="nm">How strong is the link?</td><td>Cramer's V</td><td>&#8776; 0.17</td><td>modest, not dominant</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Both tests reject their nulls. The four channels are <em>not</em> used equally (goodness-of-fit p &#8776; 0.003), and
+       channel preference clearly <strong>depends on region</strong> (independence p &#8776; 10&#8315;&#185;&#179;). Yet the
+       effect size tells the fuller story: <strong>Cramer's V &#8776; 0.17</strong> means the association, though
+       unmistakably real given 900 customers, is <em>modest</em>, region shifts the channel mix rather than determining
+       it. This is the discipline the chapter keeps returning to: a microscopic p-value confirms an effect exists, but
+       only the effect size says whether it matters.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Chi-Square in Machine Learning &amp; AI</h2></div>
+    <p>The chi-square statistic shows up wherever categorical features and class labels meet.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Idea (this chapter)</th><th>In ML / AI it becomes</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Test of independence</td><td>Categorical feature selection</td><td><code>chi2</code> in scikit-learn's SelectKBest</td></tr>
+          <tr><td class="nm">Observed vs expected</td><td>Detecting data / label drift</td><td>this month's category mix vs baseline</td></tr>
+          <tr><td class="nm">Goodness-of-fit</td><td>Checking class balance</td><td>do label counts match the design?</td></tr>
+          <tr><td class="nm">Cramer's V</td><td>Strength of categorical association</td><td>which features actually relate to the target</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>Chi-square is a standard <strong>feature-selection</strong> tool for categorical predictors: scikit-learn's
+           <code>chi2</code> score ranks features by how strongly they associate with the target, exactly a test of
+           independence per feature. It is also a workhorse for <strong>drift detection</strong>, comparing the
+           category distribution of incoming data against a training-time baseline flags when the world has shifted under
+           a deployed model. As always, pair the test with an effect size (Cramer's V): at web scale, everything is
+           "significant", so the size of the association is what guides which features and which drifts deserve action.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Run both chi-square tests in Python</h3>
+          <p>The companion notebook computes the statistic by hand, runs goodness-of-fit with <code>chisquare</code> and
+             independence with <code>chi2_contingency</code>, derives Cramer's V, and loads
+             <code>chi-square-tests--customer_channel.xlsx</code> to test channel usage and its dependence on region.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/chi-square-tests.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/chi-square-tests.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/chi-square-tests.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, <code>scipy</code>,
+      <code>matplotlib</code>, <code>statsmodels</code>, and <code>openpyxl</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Chi-square</strong> compares observed to expected counts: &#967;&#178; = &#931;(O &#8722; E)&#178;/E, large when they diverge.</span></li>
+        <li><span class="ck">✓</span><span><strong>Goodness-of-fit</strong> tests one variable vs a claimed split (df = categories &#8722; 1).</span></li>
+        <li><span class="ck">✓</span><span><strong>Independence</strong> tests whether two categorical variables are related (df = (r&#8722;1)(c&#8722;1)); keep expected counts &#8805; ~5.</span></li>
+        <li><span class="ck">✓</span><span><strong>Real data</strong>: channels used unequally (p &#8776; 0.003) and depend on region (p &#8776; 10&#8315;&#185;&#179;), but Cramer's V &#8776; 0.17 says modestly.</span></li>
+        <li><span class="ck">✓</span><span><strong>In ML/AI</strong>: chi-square powers categorical feature selection and drift detection, paired with Cramer's V.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Goodness-of-fit for a die</h4>
+        <p>Test whether [18, 22, 16, 20, 14, 10] (100 rolls) is consistent with a fair die.</p>
+        <div class="chint">Hint: expected = 100/6 in each cell.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Goodness-of-fit vs a claim</h4>
+        <p>Observed [330, 290, 180, 100]; claimed split 40/30/20/10. Test it.</p>
+        <div class="chint">Hint: expected = claim &#215; total.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Test of independence</h4>
+        <p>For the table [[90, 60, 50], [40, 80, 70]], test independence and report the degrees of freedom.</p>
+        <div class="chint">Hint: <code>stats.chi2_contingency</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Cramer's V</h4>
+        <p>For the table above, compute Cramer's V as an effect size.</p>
+        <div class="chint">Hint: V = &#8730;(&#967;&#178; / (n &#183; (min(r,c) &#8722; 1))).</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Real data: channel by region</h4>
+        <p>Load <code>chi-square-tests--customer_channel.xlsx</code> and test independence of region and preferred_channel.</p>
+        <div class="chint">Hint: build a <code>pd.crosstab</code> first.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code. Try
+           them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/chi-square-tests--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/chi-square-tests--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/chi-square-tests--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on chi-square tests. Answer them, hit <strong>Check Answers</strong>, and keep refining until
+       you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>z, t, F, and chi-square all lean on distributional assumptions. <strong>Chapter 80 &#183; Nonparametric
+         Tests</strong> handles skewed, ordinal, or outlier-ridden data by testing ranks instead of raw values.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="anova.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 78 · Previous</span><br><span class="cn-title">ANOVA</span></span>
+    </a>
+    <a class="cn-btn next" href="nonparametric-tests.html">
+      <span><span class="cn-dir">Chapter 80 · Next</span><br><span class="cn-title">Nonparametric Tests</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 79 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch79";
+  window.QUIZ_DATA = [
+    {
+      q: "Chi-square tests are designed for…",
+      options: ["Continuous measurements", "Counts in categories", "Paired numeric data", "Time series"],
+      answer: 1,
+      explain: "Chi-square works on categorical counts, comparing observed cell counts to expected ones."
+    },
+    {
+      q: "The chi-square statistic is computed as…",
+      options: ["Σ(O − E)", "Σ(O − E)²/E", "Σ O/E", "Σ E²/O"],
+      answer: 1,
+      explain: "Each cell contributes (observed − expected)² ÷ expected; summing gives the χ² statistic."
+    },
+    {
+      q: "A goodness-of-fit test checks whether…",
+      options: ["Two variables are related", "One variable's counts match a claimed distribution", "Two means are equal", "The data are normal"],
+      answer: 1,
+      explain: "Goodness-of-fit compares one categorical variable's observed counts to a hypothesized split."
+    },
+    {
+      q: "In a test of independence, the expected count for a cell is…",
+      options: ["The grand total ÷ number of cells", "(row total × column total) ÷ grand total", "Always the same as observed", "The row total"],
+      answer: 1,
+      explain: "Under independence, E = row total × column total ÷ grand total."
+    },
+    {
+      q: "Degrees of freedom for an r × c independence test are…",
+      options: ["r × c", "(r − 1)(c − 1)", "r + c", "n − 1"],
+      answer: 1,
+      explain: "The independence test has (rows − 1)(columns − 1) degrees of freedom."
+    },
+    {
+      q: "The chi-square approximation can be unreliable when…",
+      options: ["The sample is large", "Some expected counts are below about 5", "All counts are equal", "There are exactly two categories"],
+      answer: 1,
+      explain: "Small expected counts (under ~5) break the approximation; combine categories or use an exact test."
+    },
+    {
+      q: "Cramer's V is reported because…",
+      options: ["It replaces the p-value", "It measures how STRONG the association is, since a tiny p with big n can still be a weak link", "It's easier to compute", "It fixes small samples"],
+      answer: 1,
+      explain: "V is the effect size: with large n everything is significant, so V tells you whether the link matters."
+    },
+    {
+      q: "scikit-learn's chi2 feature-selection score is essentially…",
+      options: ["A t-test", "A test of independence between each categorical feature and the target", "A correlation", "An ANOVA"],
+      answer: 1,
+      explain: "It ranks features by their chi-square association with the target, a per-feature independence test."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

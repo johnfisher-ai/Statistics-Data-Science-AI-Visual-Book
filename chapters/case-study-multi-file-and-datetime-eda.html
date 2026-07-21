@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 141 · Case Study: Multi-File, Multi-Date EDA — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .rw-card { background:#fff1f2; border:1px solid #fecdd3; border-left:4px solid #e11d48; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#be123c; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none; padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+    .step-h { display:flex; align-items:center; gap:0.6rem; margin:1.4rem 0 0.4rem; }
+    .step-h .sn { flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:#e11d48; color:#fff; font-weight:800; font-size:0.95rem; display:flex; align-items:center; justify-content:center; }
+    .step-h h3 { margin:0; font-size:1.02rem; color:var(--ink); }
+    .writeup { background:#fff1f2; border:1px solid #fecdd3; border-radius:14px; padding:1.3rem 1.5rem; margin:1.3rem 0; }
+    .writeup h3 { margin-top:0; color:#be123c; }
+    .writeup h4 { margin:1rem 0 0.3rem; color:#be123c; font-size:0.92rem; }
+    .nb-fig { margin:1.4rem 0; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:1rem 1rem 0.6rem; }
+    .nb-fig img { display:block; width:100%; height:auto; border-radius:8px; }
+    .nb-fig figcaption { margin:0.75rem 0.2rem 0.3rem; font-size:0.85rem; color:var(--ink-soft); line-height:1.55; }
+    .nb-fig .cap-t { font-size:0.64rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#be123c; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/case-study-multi-file-and-datetime-eda.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXIV · Extended Case Studies</span><span class="sep">/</span>
+      <span>Chapter 141</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XXIV · Extended Case Study</span> The unglamorous 80%</div>
+    <h1>Case Study: <span class="accent">Multi-File, Multi-Date EDA</span></h1>
+    <p class="dek">Three messy exports, mismatched keys, four date formats, currency stored as text, duplicates and orphans.
+       This is the data-cleaning work that precedes every analysis in the book, turning raw files into one table you can
+       actually trust, and only then exploring it.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~22 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Full notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 141</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Every earlier chapter began with a tidy dataframe. This one is about how you <span class="hl">earn</span>
+       that dataframe. Real data arrives split across separate exports and riddled with the small inconsistencies that
+       silently corrupt results: the same country spelled four ways, a date that could be March or April, a price stored
+       as the text <span class="term">"$1,299.00"</span>, rows duplicated by an export bug. The work of
+       <span class="hl">joining and cleaning</span> those files deserves the same rigor as any model, because a mistake
+       here quietly poisons every number downstream.</p>
+
+    <div class="def-card">
+      <div class="sigma">🧹</div>
+      <div class="def-body">
+        <span class="def-kw">Data wrangling</span> is the process of turning raw, messy sources into one clean, tidy table:
+        normalize <span class="def-kw">missing values</span>, clean the <span class="def-kw">join keys</span>, drop
+        <span class="def-kw">duplicates</span>, parse <span class="def-kw">dates</span> and numbers, standardize
+        categories, <span class="def-kw">join</span>, and <span class="def-kw">validate</span> before you trust a single
+        total.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🎯</div>
+      <div><div class="ctitle">What this case study ties together</div>
+        <p>It is the exploratory-data-analysis groundwork the whole book stands on: a realistic multi-file
+           <strong>merge</strong>, disciplined <strong>date and type parsing</strong>, duplicate and orphan detection,
+           a <strong>validation</strong> checklist, and honest handling of the <strong>missing data</strong> that a clean
+           join reveals.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §1 problem + files ===== -->
+  <section id="setup">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Problem, and the Three Files (Steps 1&#8211;2)</h2></div>
+    <p>The business question is simple, how is revenue trending and who returns the most, but the data lives in three
+       separate exports that must be joined first: an <strong>orders</strong> file, a <strong>customers</strong> file, and
+       a <strong>returns</strong> file. Each has its own quirks, and they link on a shared <code>customer_id</code> and
+       <code>order_id</code> that do not quite match out of the box.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · three raw CSV files</div>
+      <p style="margin:0.5rem 0 0"><strong>orders</strong> (mixed date formats, currency as text, duplicate rows, missing
+        amounts, a few orphan customer ids), <strong>customers</strong> (id casing and whitespace, four spellings per
+        country, duplicate rows, some missing regions), and <strong>returns</strong> (its own date format). The notebook
+        turns all three into one clean table.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/case-study-multi-file-and-datetime-eda--orders.csv" download>📄 orders.csv &nbsp;<small>1,240 rows</small></a>
+        <a class="ex-file xls" href="../data/case-study-multi-file-and-datetime-eda--customers.csv" download>📄 customers.csv &nbsp;<small>315 rows</small></a>
+        <a class="ex-file xls" href="../data/case-study-multi-file-and-datetime-eda--returns.csv" download>📄 returns.csv &nbsp;<small>150 rows</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §2 the mess ===== -->
+  <section id="clean">
+    <div class="section-eyebrow"><div class="num">2</div><h2>The Mess, One Class at a Time (Steps 3&#8211;8)</h2></div>
+    <p>Good cleaning is methodical: fix one kind of problem at a time, in the right order. We normalize the many spellings
+       of <strong>missing</strong> (<code>""</code>, <code>N/A</code>, <code>null</code>, <code>-</code>) into a single
+       <code>NaN</code>; clean the <strong>join key</strong> on both tables (strip whitespace, uppercase) so it will match;
+       drop <strong>duplicate rows</strong> (40 orders and 15 customers); parse each <strong>date</strong> column with its
+       own format; turn currency <strong>text</strong> into numbers (37 orders turn out to have no amount); and
+       standardize the <strong>categories</strong> so four spellings of one country collapse to one.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 250" width="100%" font-family="Inter, sans-serif" aria-label="A before-and-after table: messy raw values on the left transform into clean typed values on the right">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">One class of mess at a time: raw text becomes clean, typed data</text>
+        <text x="175" y="46" text-anchor="middle" font-size="10" fill="#be123c" font-weight="800">RAW (all text)</text>
+        <text x="505" y="46" text-anchor="middle" font-size="10" fill="#059669" font-weight="800">CLEAN (typed)</text>
+        <line x1="340" y1="56" x2="340" y2="238" stroke="#e6e9f2"/>
+        <!-- rows -->
+        <g font-size="11" font-family="monospace">
+          <text x="40" y="80" fill="#8b94b3">"$1,299.00"</text><text x="300" y="80" fill="#be123c" font-family="Inter">&#8594;</text><text x="380" y="80" fill="#1a2138">1299.0</text><text x="560" y="80" font-size="8.5" fill="#8b94b3" font-family="Inter">float</text>
+          <text x="40" y="110" fill="#8b94b3">"03/15/2024"</text><text x="300" y="110" fill="#be123c" font-family="Inter">&#8594;</text><text x="380" y="110" fill="#1a2138">2024-03-15</text><text x="560" y="110" font-size="8.5" fill="#8b94b3" font-family="Inter">datetime</text>
+          <text x="40" y="140" fill="#8b94b3">"SHIPPED"</text><text x="300" y="140" fill="#be123c" font-family="Inter">&#8594;</text><text x="380" y="140" fill="#1a2138">shipped</text><text x="560" y="140" font-size="8.5" fill="#8b94b3" font-family="Inter">category</text>
+          <text x="40" y="170" fill="#8b94b3">"USA" / "U.S."</text><text x="300" y="170" fill="#be123c" font-family="Inter">&#8594;</text><text x="380" y="170" fill="#1a2138">United States</text><text x="560" y="170" font-size="8.5" fill="#8b94b3" font-family="Inter">category</text>
+          <text x="40" y="200" fill="#8b94b3">"c0007 "</text><text x="300" y="200" fill="#be123c" font-family="Inter">&#8594;</text><text x="380" y="200" fill="#1a2138">C0007</text><text x="560" y="200" font-size="8.5" fill="#8b94b3" font-family="Inter">clean key</text>
+          <text x="40" y="230" fill="#8b94b3">"N/A" / ""</text><text x="300" y="230" fill="#be123c" font-family="Inter">&#8594;</text><text x="380" y="230" fill="#1a2138">NaN</text><text x="560" y="230" font-size="8.5" fill="#8b94b3" font-family="Inter">missing</text>
+        </g>
+      </svg>
+    </figure>
+  </section>
+
+  <!-- ===== §3 join + validate ===== -->
+  <section id="join">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Join, and Validate (Steps 9&#8211;10)</h2></div>
+    <p>Now the tables can be joined. A <strong>left join</strong> on the cleaned <code>customer_id</code> attaches each
+       order's region, and <code>indicator=True</code> reveals <strong>8 orphan orders</strong> whose id matches no
+       customer, a data-quality issue to report, not hide. Cleaning the key first is what makes this work: joined on the
+       raw keys, about a quarter of orders would have silently failed to match. A second join flags returns.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 210" width="100%" font-family="Inter, sans-serif" aria-label="Three files, orders customers and returns, join on shared keys into one clean analysis table, with eight orphan orders flagged">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Three files join on shared keys into one analysis-ready table</text>
+        <g>
+          <rect x="40" y="45" width="120" height="42" rx="7" fill="#fff1f2" stroke="#e11d48"/><text x="100" y="66" text-anchor="middle" font-size="10" fill="#be123c" font-weight="700">orders</text><text x="100" y="79" text-anchor="middle" font-size="8" fill="#8b94b3">1,200 rows</text>
+          <rect x="40" y="97" width="120" height="42" rx="7" fill="#fff1f2" stroke="#e11d48"/><text x="100" y="118" text-anchor="middle" font-size="10" fill="#be123c" font-weight="700">customers</text><text x="100" y="131" text-anchor="middle" font-size="8" fill="#8b94b3">300 rows</text>
+          <rect x="40" y="149" width="120" height="42" rx="7" fill="#fff1f2" stroke="#e11d48"/><text x="100" y="170" text-anchor="middle" font-size="10" fill="#be123c" font-weight="700">returns</text><text x="100" y="183" text-anchor="middle" font-size="8" fill="#8b94b3">150 rows</text>
+        </g>
+        <path d="M160,66 C240,66 250,110 330,116" fill="none" stroke="#94a3b8" stroke-width="1.5"/>
+        <path d="M160,118 C240,118 250,118 330,118" fill="none" stroke="#94a3b8" stroke-width="1.5"/>
+        <path d="M160,170 C240,170 250,124 330,122" fill="none" stroke="#94a3b8" stroke-width="1.5"/>
+        <text x="245" y="100" text-anchor="middle" font-size="8.5" fill="#0369a1" font-family="monospace">merge(on=key)</text>
+        <rect x="335" y="92" width="150" height="52" rx="8" fill="#ecfdf5" stroke="#059669" stroke-width="1.5"/>
+        <text x="410" y="114" text-anchor="middle" font-size="10.5" fill="#047857" font-weight="800">clean table</text>
+        <text x="410" y="130" text-anchor="middle" font-size="8" fill="#8b94b3">1,200 orders &#215; 9 cols</text>
+        <path d="M485,118 L540,118" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a)"/>
+        <text x="610" y="108" text-anchor="middle" font-size="9" fill="#be123c" font-weight="700">validate:</text>
+        <text x="610" y="122" text-anchor="middle" font-size="8.5" fill="#8b94b3">8 orphans flagged</text>
+        <text x="610" y="134" text-anchor="middle" font-size="8.5" fill="#8b94b3">37 missing amounts</text>
+        <defs><marker id="a" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#94a3b8"/></marker></defs>
+      </svg>
+    </figure>
+
+    <p>Then we <strong>validate</strong> before trusting anything: assert the order ids are unique, the dates fall in
+       range, amounts are non-negative, exactly three regions remain, and surface what is still imperfect (the 37 missing
+       amounts, the 8 orphans). Cheap assertions here catch the errors that would otherwise silently reach a dashboard.</p>
+  </section>
+
+  <!-- ===== §4 payoff EDA ===== -->
+  <section id="eda">
+    <div class="section-eyebrow"><div class="num">4</div><h2>The Payoff: Trustworthy EDA (Step 11)</h2></div>
+    <p>Only now, on a table we trust, do the answers appear, and every one of them would have been wrong on the raw files:
+       inflated by duplicates, scattered by region spellings, or crashed by text amounts. Realized revenue is about
+       <strong>388,000 dollars</strong> at a <strong>13.8% return rate</strong>, with the United States the largest market
+       (roughly <strong>194,000 dollars</strong>, about half the total) and a steady monthly order flow.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/case-study-multi-file-and-datetime-eda--eda.png" alt="Two clean charts: orders per month showing a steady flow, and a horizontal bar chart of realized revenue by region led by the United States at 194,000 dollars">
+      <figcaption><span class="cap-t">From the notebook &#183; Step 11</span><br>The business answers, finally trustworthy: a steady monthly order flow (left) and realized revenue by region (right), led by the United States at about 194,000 dollars, roughly half the total.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== §5 the date trap + communicate ===== -->
+  <section id="writeup-sec">
+    <div class="section-eyebrow"><div class="num">5</div><h2>The Silent Date Trap, and the Memo (Step 12 &amp; beyond)</h2></div>
+    <p>One cleaning bug deserves special fear: the mis-parsed date. Order dates like <code>03/04/2024</code> are ambiguous,
+       March 4th or April 3rd, and guessing wrong produces <strong>no error at all</strong>, just a wrong answer. On this
+       data, parsing day-first instead of month-first leaves close to <strong>300 dates silently swapped</strong> into the
+       wrong month, quietly distorting the monthly trend even though the raw text never changed. The defense is to never
+       let the parser guess: set the convention explicitly, coerce failures, and sanity-check the result.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/case-study-multi-file-and-datetime-eda--datebug.png" alt="Two monthly order curves from the same date column: the correct month-first parse and the wrong day-first parse diverge, showing how a silent date bug distorts the trend">
+      <figcaption><span class="cap-t">From the Take It Further notebook</span><br>The same date column, two parse rules, two different histories. Nothing errors out, but close to 300 dates silently swap month and day, and the monthly curves diverge. A date bug produces no error message, only wrong answers.</figcaption>
+    </figure>
+
+    <div class="writeup">
+      <h3>Memo to the analytics team</h3>
+      <p>After consolidating the three exports into one clean table (1,200 unique orders across 300 customers), realized
+         revenue was about <strong>388,000 dollars</strong> at a <strong>13.8% return rate</strong>, led by the United
+         States.</p>
+      <h4>Two data-quality issues to fix at the source</h4>
+      <p><strong>37 orders</strong> exported with no amount (so revenue is a slight under-count, the plausible range is
+         about 388,000 to 399,000 dollars), and <strong>8 orders</strong> reference customers missing from the customer
+         file.</p>
+      <h4>The repeatable checklist</h4>
+      <p>(1) normalize missing-value sentinels, (2) clean and standardize join keys on every table, (3) drop duplicate
+         rows, (4) parse each date with its own explicit format, (5) convert currency and numeric text to numbers, (6)
+         standardize text categories, (7) join with an indicator to catch orphans, and (8) assert structural checks before
+         trusting any total.</p>
+    </div>
+  </section>
+
+  <!-- ===== notebook cta ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body"><h3>Do the whole clean-up in Python</h3><p>The companion notebook is the full 12-step wrangling workflow: it loads the three messy files, normalizes missing-value sentinels, cleans the join keys, drops duplicates, parses three date formats and the currency amounts, standardizes the region and status categories, joins everything with an indicator to catch orphans, runs a validation checklist, and only then explores the clean data, all library-first with pandas.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/case-study-multi-file-and-datetime-eda.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-multi-file-and-datetime-eda.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-multi-file-and-datetime-eda.ipynb" target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)"><strong>View</strong> opens the rendered notebook instantly.
+      <strong>Open in Colab</strong> runs it live. To run locally, install <code>numpy</code>, <code>pandas</code>,
+      <code>matplotlib</code>, and <code>openpyxl</code>.</p>
+  </section>
+
+  <!-- ===== takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Cleaning is the job</strong>: turning three messy files into one trustworthy table is where analyses are won or lost.</span></li>
+        <li><span class="ck">✓</span><span><strong>Normalize keys before joining</strong>: on the raw keys about a quarter of orders silently failed to match; cleaning cut orphans to 8.</span></li>
+        <li><span class="ck">✓</span><span><strong>Parse dates and numbers explicitly</strong>: a wrong date assumption swapped close to 300 dates with no error at all.</span></li>
+        <li><span class="ck">✓</span><span><strong>Deduplicate before you aggregate</strong>: 40 duplicate orders would have inflated every revenue total.</span></li>
+        <li><span class="ck">✓</span><span><strong>Validate, and be honest about gaps</strong>: assert your assumptions, and report the range the 37 missing amounts imply (about 388k to 399k dollars).</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== take it further ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Take It Further</h2></div>
+    <p>Five deeper cuts at data cleaning in the companion notebook:</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>The day-first date trap</h4>
+        <p>Parse the dates both ways and count how many silently swap month and day.</p>
+        <div class="chint">Hint: compare <code>dayfirst=False</code> and <code>dayfirst=True</code>, always with <code>errors='coerce'</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Clean the key, or lose the join</h4>
+        <p>Join on the raw keys versus the cleaned keys and measure how many matches a dirty key silently drops.</p>
+        <div class="chint">Hint: count orphans from the merge indicator, before and after normalizing the id.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Validate the merge with a contract</h4>
+        <p>Use <code>validate="m:1"</code> so a bad key relationship raises an error instead of a quiet bug.</p>
+        <div class="chint">Hint: it enforces that each customer id is unique in the customer table.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Wrap it in a reusable pipeline</h4>
+        <p>Fold every step into one <code>clean()</code> function with assertions, a data contract for next month's export.</p>
+        <div class="chint">Hint: end the function with <code>assert</code> checks on ids, dates, amounts, and statuses.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>How much do the gaps move revenue?</h4>
+        <p>Bracket the headline by excluding versus imputing the missing amounts.</p>
+        <div class="chint">Hint: compare exclude, overall-mean impute, and regional-mean impute.</div></div></div>
+    </div>
+
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">📓</div>
+        <div class="nb-body"><h3>All five, worked in a companion notebook</h3><p>A second notebook, <strong>Take It Further</strong>, rebuilds the Chapter 141 clean-up and works every extension with visuals and explanations: the day-first date trap, the cost of a dirty join key, a merge validated by a data contract, a reusable asserting pipeline, and a revenue-sensitivity analysis of the missing amounts.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/case-study-multi-file-and-datetime-eda--take-it-further.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-multi-file-and-datetime-eda--take-it-further.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-multi-file-and-datetime-eda--take-it-further.ipynb" target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on the wrangling workflow, from missing-value sentinels to validating a join. Answer them, hit
+       <strong>Check Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>That completes the Extended Case Studies. The book continues with <strong>Part XXV and beyond</strong>, opening
+         with <strong>Bayesian Inference in Practice</strong> (coming soon), MLE and MAP, MCMC with PyMC, credible
+         intervals, and posterior predictive checks. Browse the full <a href="../toc.html">Contents</a> for what is
+         published and what is on the way.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="case-study-forecasting-with-drivers.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 140 · Previous</span><br><span class="cn-title">Forecasting with Drivers</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 141 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => { const h = document.documentElement; bar.style.width = ((h.scrollTop)/(h.scrollHeight-h.clientHeight)*100) + '%'; });
+</script>
+
+<script>
+  window.QUIZ_ID = "ch141";
+  window.QUIZ_DATA = [
+    {
+      q: "Why normalize '', 'N/A', 'null', and '-' to NaN before anything else?",
+      options: ["To save memory", "So 'missing' is represented one way, otherwise 'N/A' counts as a real category and breaks summaries", "To speed up the join", "It is required by pandas"],
+      answer: 1,
+      explain: "If the sentinels are not unified, a value like 'N/A' is treated as a genuine category, corrupting counts, groupbys, and any numeric conversion."
+    },
+    {
+      q: "Why clean the join key (strip, uppercase) on BOTH tables before merging?",
+      options: ["For readability", "A join matches exact strings, so 'c0007' and 'C0007' would fail to link and silently create orphans", "To remove duplicates", "It changes the dtype"],
+      answer: 1,
+      explain: "Merges match on exact strings. On the raw keys about a quarter of orders failed to match; cleaning the key on both sides cut orphans to 8."
+    },
+    {
+      q: "Why deduplicate before you aggregate?",
+      options: ["It looks tidier", "Duplicate rows would inflate every sum, like revenue, and every count", "pandas needs unique indexes", "To parse dates faster"],
+      answer: 1,
+      explain: "Forty duplicate order rows, if summed, would overstate revenue. Deduplicate (after cleaning the key) so identical rows collapse before any total."
+    },
+    {
+      q: "The order dates came in several formats. What is the safe way to parse them?",
+      options: ["Let pandas guess with its defaults", "Set the format/convention explicitly, use errors='coerce', then count the failures", "Drop the date column", "Convert them to strings"],
+      answer: 1,
+      explain: "Guessing risks a silent day/month swap. Parse explicitly, coerce unparseable values to NaT so they surface, and sanity-check the result."
+    },
+    {
+      q: "Currency was stored as text like \"$1,299.00\". How do you make it numeric?",
+      options: ["Leave it as text", "Strip the $ and commas, then to_numeric with errors='coerce', which flags values that still cannot parse", "Multiply by 1", "Use astype(int) directly"],
+      answer: 1,
+      explain: "Remove the symbols, coerce to a number, and the coercion turns the 37 truly-missing amounts into NaN rather than crashing the column."
+    },
+    {
+      q: "The merge used indicator=True and found 8 'left_only' rows. What are they?",
+      options: ["Duplicate orders", "Orphan orders whose customer_id matches no customer, a data-quality issue to report", "Returned orders", "Cancelled orders"],
+      answer: 1,
+      explain: "left_only means the order had no matching customer. The indicator surfaces these orphans so you can flag them rather than lose them silently."
+    },
+    {
+      q: "After cleaning, realized revenue was about 388k dollars but 37 orders had no amount. The honest way to report it is…",
+      options: ["State 388k as exact", "As a range (about 388k to 399k), and flag the missing amounts for the source system", "Delete those orders and never mention it", "Impute zero"],
+      answer: 1,
+      explain: "Missing amounts make the total a lower bound. Reporting the plausible range and flagging the gap is more honest than a single false-precise figure."
+    },
+    {
+      q: "What is the single best summary of this chapter?",
+      options: ["Cleaning is a minor preliminary", "Cleaning is engineering: normalize keys before joining, parse types explicitly, validate with assertions, and be honest about gaps", "Always use more data", "Dates never matter"],
+      answer: 1,
+      explain: "The messy 80% of the work deserves the same rigor as modeling; a mistake in the join or a parse silently poisons every downstream number."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

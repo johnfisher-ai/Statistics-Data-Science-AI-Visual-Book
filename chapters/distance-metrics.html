@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 106 · Distance Metrics — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#eef2ff; border:1px solid #c7d2fe; border-left:4px solid #4338ca; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#3730a3; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/distance-metrics.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XVII · Introducing Machine Learning</span><span class="sep">/</span>
+      <span>Chapter 106</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XVII · Introducing Machine Learning</span> How close is close?</div>
+    <h1>Distance <span class="accent">Metrics</span></h1>
+    <p class="dek">Nearest neighbors, clustering, recommendation, and the vector search behind modern AI all rest on one
+       question: how far apart are two points? The answer depends on the ruler. This chapter builds the whole toolkit,
+       Euclidean, Manhattan, Minkowski, cosine, Jaccard, Hamming, and Mahalanobis, and shows why standardizing first, and
+       picking the right metric, quietly decides the result.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~18 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 106</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">"Which points are most similar?" is the engine under a huge share of machine learning. But
+       <span class="hl">similarity is not one thing</span>, straight-line closeness, shared features, and pointing in the
+       same direction are different questions, and each has its own distance. Choosing the metric is a modeling decision,
+       not a detail.</p>
+
+    <div class="def-card">
+      <div class="sigma">d</div>
+      <div class="def-body">
+        A <span class="def-kw">distance metric</span> d(x, y) measures how far apart two points are: zero when identical,
+        larger as they diverge. <span class="def-kw">Euclidean</span> is straight-line distance;
+        <span class="def-kw">cosine</span> measures the angle between vectors; <span class="def-kw">Jaccard</span> and
+        <span class="def-kw">Hamming</span> compare sets and bit-strings; <span class="def-kw">Mahalanobis</span> corrects
+        for the data's covariance.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">📐</div>
+      <div><div class="ctitle">The chapter in one line</div>
+        <p>Standardize numeric features first, then match the metric to the data: Euclidean or Manhattan for continuous
+           values, cosine for direction (text and embeddings), Jaccard or Hamming for binary flags, and Mahalanobis when
+           features are correlated.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1 ===== -->
+  <section id="numeric">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Euclidean, Manhattan &amp; Minkowski</h2></div>
+    <p>For continuous features, distance is geometry. <span class="term">Euclidean</span> distance is the straight line
+       between two points; <span class="term">Manhattan</span> distance walks along the axes like a taxi on a grid. Both
+       are special cases of the <span class="term">Minkowski</span> distance with a parameter p.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 250" width="100%" font-family="Inter, sans-serif" aria-label="Between the same two points, the Euclidean distance is a straight diagonal of length 5 while the Manhattan distance walks along the grid for a total of 7; unit balls show Minkowski p equals 2 as a circle and p equals 1 as a diamond">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Same two points, two rulers</text>
+        <!-- grid -->
+        <g stroke="#eef1f6" stroke-width="1">
+          <line x1="80" y1="210" x2="530" y2="210"/><line x1="80" y1="172" x2="530" y2="172"/><line x1="80" y1="134" x2="530" y2="134"/><line x1="80" y1="96" x2="530" y2="96"/><line x1="80" y1="58" x2="530" y2="58"/>
+          <line x1="80" y1="48" x2="80" y2="210"/><line x1="170" y1="48" x2="170" y2="210"/><line x1="260" y1="48" x2="260" y2="210"/><line x1="350" y1="48" x2="350" y2="210"/><line x1="440" y1="48" x2="440" y2="210"/><line x1="530" y1="48" x2="530" y2="210"/>
+        </g>
+        <!-- Manhattan staircase A(1,1)->B(5,4) -->
+        <path d="M170,172 L530,172 L530,58" fill="none" stroke="#d97706" stroke-width="3" stroke-dasharray="6 4"/>
+        <!-- Euclidean straight -->
+        <line x1="170" y1="172" x2="530" y2="58" stroke="#4338ca" stroke-width="3"/>
+        <circle cx="170" cy="172" r="6" fill="#1a2138"/><circle cx="530" cy="58" r="6" fill="#1a2138"/>
+        <text x="158" y="188" font-size="10" fill="#1a2138" font-weight="800">A</text>
+        <text x="538" y="56" font-size="10" fill="#1a2138" font-weight="800">B</text>
+        <text x="320" y="104" fill="#3730a3" font-size="10" font-weight="800" transform="rotate(-18 320 104)">Euclidean = 5</text>
+        <text x="360" y="166" fill="#b45309" font-size="10" font-weight="800">Manhattan = 7</text>
+        <!-- unit balls -->
+        <text x="612" y="70" text-anchor="middle" font-size="8.5" fill="#1a2138" font-weight="800">unit "balls"</text>
+        <circle cx="612" cy="110" r="30" fill="none" stroke="#4338ca" stroke-width="2"/>
+        <text x="612" y="113" text-anchor="middle" font-size="8" fill="#3730a3" font-weight="700">p=2</text>
+        <path d="M612,150 L642,180 L612,210 L582,180 Z" fill="none" stroke="#d97706" stroke-width="2"/>
+        <text x="612" y="183" text-anchor="middle" font-size="8" fill="#b45309" font-weight="700">p=1</text>
+        <text x="340" y="238" text-anchor="middle" font-size="8.5" fill="#8b94b3">Minkowski: p = 2 is Euclidean (circle), p = 1 is Manhattan (diamond)</text>
+      </svg>
+    </figure>
+
+    <p>In the notebook, <code>scipy</code> confirms it: from A = (1, 1) to B = (5, 4), Euclidean distance is
+       <strong>5.0</strong> (a straight 3-4-5 triangle) and Manhattan is <strong>7.0</strong> (4 across plus 3 up).
+       Minkowski with <strong>p = 2 reproduces Euclidean</strong> and <strong>p = 1 reproduces Manhattan</strong>; larger p
+       weights the single biggest coordinate gap more heavily. Euclidean is the everyday default, while Manhattan is
+       steadier against outliers and often preferred in very high dimensions.</p>
+  </section>
+
+  <!-- ===== Section 2 ===== -->
+  <section id="nonnumeric">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Cosine, Jaccard &amp; Hamming</h2></div>
+    <p>Not all data is a point in space. For direction, sets, and bit-strings, three non-Euclidean measures take over.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 240" width="100%" font-family="Inter, sans-serif" aria-label="On the left, cosine similarity is the angle between two vectors regardless of length; on the right, two rows of binary flags show Jaccard as shared over union and Hamming as the count of differing positions">
+        <text x="175" y="18" text-anchor="middle" font-size="11" fill="#1a2138" font-weight="800">Cosine: the angle, not the length</text>
+        <!-- cosine vectors -->
+        <line x1="60" y1="200" x2="60" y2="48" stroke="#cbd5e1"/><line x1="60" y1="200" x2="300" y2="200" stroke="#cbd5e1"/>
+        <path d="M60,200 L250,120" stroke="#4338ca" stroke-width="2.6" marker-end="url(#v1)"/>
+        <path d="M60,200 L200,60" stroke="#0891b2" stroke-width="2.6" marker-end="url(#v2)"/>
+        <path d="M110,178 A54 54 0 0 0 96,150" fill="none" stroke="#64748b" stroke-width="1.4"/>
+        <text x="120" y="150" font-size="10" fill="#475569" font-weight="800">&#952;</text>
+        <text x="255" y="118" font-size="9" fill="#3730a3" font-weight="700">u</text>
+        <text x="205" y="56" font-size="9" fill="#0e7490" font-weight="700">v</text>
+        <text x="175" y="222" text-anchor="middle" font-size="8.5" fill="#64748b">similarity = cos &#952;; length is ignored</text>
+        <!-- divider -->
+        <line x1="350" y1="40" x2="350" y2="212" stroke="#e6e9f2"/>
+        <text x="520" y="18" text-anchor="middle" font-size="11" fill="#1a2138" font-weight="800">Jaccard &amp; Hamming: binary flags</text>
+        <g stroke="#fff" stroke-width="2">
+          <rect x="396" y="60" width="34" height="34" fill="#4338ca"/><rect x="434" y="60" width="34" height="34" fill="#4338ca"/><rect x="472" y="60" width="34" height="34" fill="#e5e7eb"/><rect x="510" y="60" width="34" height="34" fill="#4338ca"/><rect x="548" y="60" width="34" height="34" fill="#e5e7eb"/>
+          <rect x="396" y="110" width="34" height="34" fill="#4338ca"/><rect x="434" y="110" width="34" height="34" fill="#e5e7eb"/><rect x="472" y="110" width="34" height="34" fill="#e5e7eb"/><rect x="510" y="110" width="34" height="34" fill="#4338ca"/><rect x="548" y="110" width="34" height="34" fill="#4338ca"/>
+        </g>
+        <rect x="431" y="57" width="40" height="90" fill="none" stroke="#ef4444" stroke-width="2.4"/>
+        <rect x="545" y="57" width="40" height="90" fill="none" stroke="#ef4444" stroke-width="2.4"/>
+        <text x="388" y="82" text-anchor="end" font-size="9" fill="#3730a3" font-weight="700">P1</text>
+        <text x="388" y="132" text-anchor="end" font-size="9" fill="#3730a3" font-weight="700">P2</text>
+        <text x="520" y="170" text-anchor="middle" font-size="8.5" fill="#b91c1c" font-weight="700">2 positions differ &#8594; Hamming = 2</text>
+        <text x="520" y="186" text-anchor="middle" font-size="8.5" fill="#3730a3" font-weight="700">2 shared / 4 in either &#8594; Jaccard = 0.5</text>
+        <text x="520" y="206" text-anchor="middle" font-size="7.5" fill="#8b94b3">indigo = feature present, grey = absent</text>
+        <defs>
+          <marker id="v1" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#4338ca"/></marker>
+          <marker id="v2" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#0891b2"/></marker>
+        </defs>
+      </svg>
+    </figure>
+
+    <p><span class="term">Cosine similarity</span> is the cosine of the angle between two vectors, so it ignores magnitude
+       entirely: in the notebook, u = (2, 1) and v = (6, 3) point the same way and score <strong>cosine 1.0</strong>, even
+       though their Euclidean distance is a large 4.47. That is why cosine is the default for text, a long and a short
+       document on the same topic should count as similar, and for the embedding vectors behind modern search.
+       <span class="term">Jaccard</span> similarity is shared features over total features present (2 of 4, or
+       <strong>0.5</strong>), ideal for sparse tags and market baskets; <span class="term">Hamming</span> distance simply
+       counts the positions that differ (<strong>2 of 5</strong>), natural for fixed-length codes.</p>
+  </section>
+
+  <!-- ===== Section 3 ===== -->
+  <section id="scaling-maha">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Scaling First, and Mahalanobis</h2></div>
+    <p>Two subtleties decide whether a distance is meaningful. First, <span class="hl">scale</span>: because Euclidean
+       distance squares each feature's difference, a feature measured in hundreds (price) drowns out one measured in single
+       digits (rating). The notebook shows the nearest neighbor <em>changing</em> after <code>StandardScaler</code>, so
+       <strong>always standardize numeric features first</strong>. Second, <span class="hl">correlation</span>: Euclidean
+       treats every direction alike, but real features are often correlated.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 270" width="100%" font-family="Inter, sans-serif" aria-label="A correlated data cloud forms a tilted ellipse; two candidate points sit at the same Euclidean radius from the center, but the one across the trend is far in Mahalanobis distance while the one along the trend is near">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Mahalanobis: distance that respects the data's shape</text>
+        <!-- data cloud ellipse (tilted) -->
+        <g transform="rotate(-38 340 150)">
+          <ellipse cx="340" cy="150" rx="150" ry="42" fill="#e0e7ff" stroke="#818cf8" stroke-width="1.5"/>
+          <ellipse cx="340" cy="150" rx="100" ry="28" fill="none" stroke="#a5b4fc" stroke-width="1" stroke-dasharray="3 3"/>
+        </g>
+        <!-- euclidean circle (same radius) -->
+        <circle cx="340" cy="150" r="96" fill="none" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="5 4"/>
+        <circle cx="340" cy="150" r="3.5" fill="#1a2138"/><text x="340" y="140" text-anchor="middle" font-size="8" fill="#475569">center</text>
+        <!-- along-trend point (green) -->
+        <circle cx="415" cy="90" r="7" fill="#059669"/><text x="428" y="88" font-size="8.5" fill="#047857" font-weight="700">along the trend</text>
+        <text x="428" y="100" font-size="7.5" fill="#4a5578">Mahalanobis: NEAR</text>
+        <!-- off-trend point (red) -->
+        <circle cx="415" cy="210" r="7" fill="#ef4444"/><text x="428" y="208" font-size="8.5" fill="#b91c1c" font-weight="700">across the trend</text>
+        <text x="428" y="220" font-size="7.5" fill="#4a5578">Mahalanobis: FAR (outlier)</text>
+        <text x="200" y="250" text-anchor="middle" font-size="8" fill="#64748b">grey circle = equal Euclidean distance; both points are on it</text>
+      </svg>
+    </figure>
+
+    <p><span class="term">Mahalanobis distance</span> divides by the covariance matrix, stretching distances along the
+       data's thin directions. In the notebook, two points sit at nearly the same Euclidean radius, but the one lying
+       <strong>across</strong> the correlated trend scores a Mahalanobis distance of <strong>13.5</strong> versus
+       <strong>3.0</strong> for the one <strong>along</strong> it, the off-trend point is a genuine multivariate outlier,
+       which Euclidean completely misses. That is why Mahalanobis is the standard ruler for anomaly detection.</p>
+  </section>
+
+  <!-- ===== Section 4: REAL-WORLD ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: One Product, Three Neighbors</h2></div>
+    <p>A catalog of 120 wireless headphones has numeric specs and binary feature flags. Ask for the product "most similar"
+       to a given one and <span class="hl">the answer changes with the ruler</span>, a direct preview of how a
+       recommender or a K-nearest-neighbors model behaves.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · distance-metrics--products.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per product with numeric <code>price</code>, <code>weight_g</code>,
+        <code>battery_hrs</code>, <code>rating</code>, and binary flags <code>noise_cancel</code>, <code>waterproof</code>,
+        <code>has_mic</code>, <code>fast_charge</code>, <code>foldable</code>.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/distance-metrics--products.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 120 products</small></a>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Metric</th><th>Compares</th><th>Nearest product</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Euclidean (standardized specs)</td><td>the <em>size</em> of numeric specs</td><td>H383</td></tr>
+          <tr><td class="nm">Cosine (spec direction)</td><td>the <em>balance</em> of specs, not their size</td><td>H347</td></tr>
+          <tr><td class="nm">Jaccard (feature flags)</td><td>shared yes/no features</td><td>H336</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Three metrics, three different "most similar" products, all reasonable. Euclidean rewards products with similar
+       numeric specs; cosine rewards a similar <em>profile</em> even at a different price point; Jaccard rewards the same
+       feature set. There is no universally correct choice, <span class="hl">the metric is where you encode what
+       "similar" means for your problem</span>, and standardizing the numeric columns first is what keeps the comparison
+       fair.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Distance in Machine Learning &amp; AI</h2></div>
+    <p>Distance is not a side topic, it is the primitive under many of the most-used algorithms, all the way up to the
+       vector search that powers today's AI assistants.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Metric (this chapter)</th><th>Powers in ML / AI</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Euclidean / Manhattan</td><td>Nearest neighbors, K-means clustering</td><td>KNN classifier, customer segments</td></tr>
+          <tr><td class="nm">Cosine</td><td>Text and embedding similarity</td><td>semantic search, recommendation</td></tr>
+          <tr><td class="nm">Jaccard</td><td>Set / tag overlap, deduplication</td><td>market-basket, near-duplicate detection</td></tr>
+          <tr><td class="nm">Hamming</td><td>Codes and hashing</td><td>one-hot categories, locality-sensitive hashing</td></tr>
+          <tr><td class="nm">Mahalanobis</td><td>Multivariate anomaly detection</td><td>fraud and fault detection</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>Modern AI runs on <strong>embeddings</strong>, dense vectors that place similar images, sentences, or products
+           near each other. Everything downstream, semantic search, recommendation, and the <strong>retrieval</strong> in
+           retrieval-augmented generation (RAG) that feeds a language model relevant context, is a <strong>nearest-neighbor
+           query under a distance metric</strong>, almost always <strong>cosine</strong> on normalized vectors. At scale,
+           exact search is too slow, so <strong>approximate nearest-neighbor</strong> indexes (HNSW, FAISS) trade a little
+           accuracy for enormous speed. The rulers in this chapter are the literal mathematics of a vector database.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Compute every distance in Python</h3>
+          <p>The companion notebook computes each metric with <code>scipy.spatial.distance</code>, draws the Manhattan
+             staircase, shows a nearest neighbor <strong>flipping</strong> after standardizing, visualizes cosine as an
+             angle and Hamming as mismatched bits, contrasts Euclidean and <strong>Mahalanobis</strong> on correlated data,
+             and finds one product's neighbor three different ways, walked through end to end.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/distance-metrics.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/distance-metrics.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/distance-metrics.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly. <strong>Open in Colab</strong> runs it live. To run
+      locally, install <code>numpy</code>, <code>pandas</code>, <code>scipy</code>, <code>scikit-learn</code>,
+      <code>matplotlib</code>, and <code>openpyxl</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Euclidean (L2)</strong> is straight-line distance, <strong>Manhattan (L1)</strong> walks the grid; both are <strong>Minkowski</strong> with p = 2 and p = 1.</span></li>
+        <li><span class="ck">✓</span><span><strong>Standardize numeric features first</strong>, otherwise the largest-scale feature dominates every distance.</span></li>
+        <li><span class="ck">✓</span><span><strong>Cosine</strong> measures direction, not magnitude, the default for text and embedding similarity.</span></li>
+        <li><span class="ck">✓</span><span><strong>Jaccard</strong> (shared / union) and <strong>Hamming</strong> (count of differences) handle binary and set data.</span></li>
+        <li><span class="ck">✓</span><span><strong>Mahalanobis</strong> corrects for feature covariance, catching multivariate outliers Euclidean misses.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges. Try them with SciPy before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Euclidean vs Manhattan</h4>
+        <p>For A = (0, 0) and B = (3, 4), compute both distances and explain the difference.</p>
+        <div class="chint">Hint: <code>euclidean</code> and <code>cityblock</code> from <code>scipy.spatial.distance</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>The Minkowski family</h4>
+        <p>Show that Minkowski p = 1 equals Manhattan and p = 2 equals Euclidean.</p>
+        <div class="chint">Hint: <code>minkowski(A, B, p)</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Standardize before distance</h4>
+        <p>Show the nearest neighbor changes after scaling when features have very different ranges.</p>
+        <div class="chint">Hint: compare distances before and after <code>StandardScaler</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Cosine ignores magnitude</h4>
+        <p>Show two vectors pointing the same way have cosine similarity 1 but a large Euclidean distance.</p>
+        <div class="chint">Hint: use v = 4&#215;u.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Real data: two rulers</h4>
+        <p>For the first product, find its nearest neighbor by scaled-Euclidean and by Jaccard on the flags.</p>
+        <div class="chint">Hint: <code>cdist(..., "euclidean")</code> and <code>cdist(..., "jaccard")</code>.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code. Try
+           them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/distance-metrics--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/distance-metrics--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/distance-metrics--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on distance metrics. Answer them, hit <strong>Check Answers</strong>, and keep refining until
+       you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>With a workflow and a way to measure closeness in hand, we can meet the algorithms. <strong>Chapter 107 &#183;
+         Core Classification &amp; Regression Algorithms</strong> covers the workhorses, K-nearest neighbors, decision
+         trees, naive Bayes, SVM, and logistic regression, and when to reach for each.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="the-machine-learning-workflow.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 105 · Previous</span><br><span class="cn-title">The Machine Learning Workflow</span></span>
+    </a>
+    <a class="cn-btn next" href="core-classification-and-regression-algorithms.html">
+      <span><span class="cn-dir">Chapter 107 · Next</span><br><span class="cn-title">Core Classification &amp; Regression Algorithms</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 106 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch106";
+  window.QUIZ_DATA = [
+    {
+      q: "From (0,0) to (3,4), the Euclidean and Manhattan distances are…",
+      options: ["5 and 5", "5 and 7", "7 and 5", "4 and 3"],
+      answer: 1,
+      explain: "Euclidean is the straight hypotenuse (5); Manhattan walks 3 across + 4 up = 7."
+    },
+    {
+      q: "Minkowski distance with p = 1 is ___, and with p = 2 is ___.",
+      options: ["Euclidean; Manhattan", "Manhattan; Euclidean", "cosine; Jaccard", "both Euclidean"],
+      answer: 1,
+      explain: "Minkowski generalizes both: p = 1 is Manhattan (L1), p = 2 is Euclidean (L2)."
+    },
+    {
+      q: "Before any distance-based method on numeric features, you should…",
+      options: ["Take logs", "Standardize the features so no single scale dominates", "Remove the label", "Use p = 3"],
+      answer: 1,
+      explain: "Euclidean squares each difference, so a large-scale feature dominates; standardizing puts features on equal footing."
+    },
+    {
+      q: "Cosine similarity measures…",
+      options: ["Straight-line distance", "The angle (direction) between vectors, ignoring their length", "The number of differing bits", "The covariance"],
+      answer: 1,
+      explain: "Cosine is cos of the angle between vectors; two vectors pointing the same way score 1 regardless of magnitude."
+    },
+    {
+      q: "To compare a long and a short document on the same topic, the best metric is…",
+      options: ["Euclidean", "Cosine", "Hamming", "Mahalanobis"],
+      answer: 1,
+      explain: "Cosine ignores length, so documents of very different sizes about the same topic are correctly judged similar."
+    },
+    {
+      q: "Jaccard similarity between two sets of binary flags is…",
+      options: ["The count of ones", "The size of the intersection divided by the size of the union", "The angle between them", "Always 0 or 1"],
+      answer: 1,
+      explain: "Jaccard = shared features / features present in either; it suits sparse presence/absence data."
+    },
+    {
+      q: "Hamming distance counts…",
+      options: ["The Euclidean gap", "The number of positions at which two equal-length strings differ", "The union of sets", "The correlation"],
+      answer: 1,
+      explain: "Hamming is the number of differing positions, natural for fixed-length codes and one-hot vectors."
+    },
+    {
+      q: "Mahalanobis distance differs from Euclidean because it…",
+      options: ["Is always larger", "Accounts for the covariance (correlation) of the features", "Ignores magnitude", "Only works on binary data"],
+      answer: 1,
+      explain: "By dividing by the covariance matrix, Mahalanobis stretches distances along thin directions, catching multivariate outliers."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

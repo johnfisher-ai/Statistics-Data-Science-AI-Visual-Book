@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 78 · ANOVA — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#eef2ff; border:1px solid #c7d2fe; border-left:4px solid #4f46e5; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#4338ca; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/anova.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XII · Hypothesis Testing &amp; Inference</span><span class="sep">/</span>
+      <span>Chapter 78</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XII · Hypothesis Testing &amp; Inference</span> Comparing many groups at once</div>
+    <h1>A<span class="accent">NOVA</span></h1>
+    <p class="dek">Three groups, or five, or ten, how do you compare them without a flurry of t-tests that manufacture
+       false alarms? Analysis of variance tests every mean in one shot using the F statistic, and Tukey's HSD pinpoints
+       which groups actually differ. We apply both to three shipping carriers.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~17 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 78</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Three fertilizers, three teaching methods, three carriers, the moment you have more than two groups,
+       the two-sample t-test runs out. Testing every pair separately quietly multiplies your false-alarm rate.
+       <span class="term">ANOVA</span> (analysis of variance) asks the global question once, at a single &#945;.</p>
+
+    <div class="def-card">
+      <div class="sigma">F</div>
+      <div class="def-body">
+        <span class="def-kw">ANOVA</span> tests H&#8320;: all group means are equal. Its statistic, the
+        <span class="def-kw">F ratio</span>, is the variance <em>between</em> the group means divided by the variance
+        <em>within</em> groups. A large F (small p) means the groups differ by more than chance; a follow-up
+        <span class="def-kw">post-hoc test</span> like Tukey HSD then says <em>which</em> pairs differ.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">📊</div>
+      <div><div class="ctitle">The chapter in one line</div>
+        <p>One omnibus test (is any mean different?) protects the error rate; one post-hoc test (which pairs?) gives the
+           detail. F = between-group spread &#247; within-group spread.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1 ===== -->
+  <section id="whynot">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Why Not Just Run Many t-Tests?</h2></div>
+    <p>With k groups there are k(k&#8722;1)/2 possible pairs, 3 for three groups, 10 for five. Each t-test carries its own
+       5% false-alarm risk, and those risks compound. Run enough comparisons and you are almost guaranteed to "find"
+       something that is not there.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 150" width="100%" font-family="Inter, sans-serif" aria-label="The number of pairwise comparisons grows quickly with the number of groups, inflating the family-wise error rate">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">More groups &#8594; many pairs &#8594; inflated false-alarm rate</text>
+        <g font-size="9" fill="#4338ca" font-weight="700" text-anchor="middle">
+          <text x="120" y="56">3 groups</text><text x="340" y="56">5 groups</text><text x="560" y="56">10 groups</text>
+        </g>
+        <g font-size="20" fill="#4f46e5" font-weight="800" text-anchor="middle">
+          <text x="120" y="92">3 pairs</text><text x="340" y="92">10 pairs</text><text x="560" y="92">45 pairs</text>
+        </g>
+        <g font-size="9" fill="#b91c1c" font-weight="700" text-anchor="middle">
+          <text x="120" y="120">~14% error</text><text x="340" y="120">~40% error</text><text x="560" y="120">~90% error</text>
+        </g>
+        <text x="340" y="142" text-anchor="middle" font-size="8.5" fill="#8b94b3">chance of at least one false positive across all pairwise tests at &#945; = 0.05</text>
+      </svg>
+    </figure>
+
+    <p>The notebook makes it concrete: five <em>identical</em> groups still trigger at least one "significant" pairwise
+       t-test about <strong>40%</strong> of the time. ANOVA restores a single honest &#945; by testing all means together
+       before any pairwise question is asked.</p>
+  </section>
+
+  <!-- ===== Section 2 ===== -->
+  <section id="fstat">
+    <div class="section-eyebrow"><div class="num">2</div><h2>The F Statistic: Between vs Within</h2></div>
+    <p>ANOVA splits the total variation into two pieces: how far the <span class="term">group means</span> sit from the
+       grand mean (between-group), and how much the data scatters <span class="term">inside</span> each group (within-group,
+       the noise). The F statistic is their ratio.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 180" width="100%" font-family="Inter, sans-serif" aria-label="When group means are far apart relative to within-group scatter, F is large; when the scatter swamps the gaps, F is near 1">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">F = between-group spread &#247; within-group spread</text>
+        <text x="170" y="42" text-anchor="middle" font-size="9.5" fill="#047857" font-weight="700">large F: clear separation</text>
+        <g>
+          <ellipse cx="100" cy="80" rx="34" ry="12" fill="#d1fae5" stroke="#059669"/>
+          <ellipse cx="170" cy="110" rx="34" ry="12" fill="#d1fae5" stroke="#059669"/>
+          <ellipse cx="240" cy="140" rx="34" ry="12" fill="#d1fae5" stroke="#059669"/>
+        </g>
+        <text x="510" y="42" text-anchor="middle" font-size="9.5" fill="#b91c1c" font-weight="700">F near 1: overlap</text>
+        <g>
+          <ellipse cx="470" cy="108" rx="48" ry="22" fill="#fee2e2" stroke="#ef4444"/>
+          <ellipse cx="520" cy="116" rx="48" ry="22" fill="#fee2e2" stroke="#ef4444"/>
+          <ellipse cx="570" cy="100" rx="48" ry="22" fill="#fee2e2" stroke="#ef4444"/>
+        </g>
+        <text x="340" y="170" text-anchor="middle" font-size="8.5" fill="#8b94b3">tight groups with separated means &#8594; big F; wide overlapping groups &#8594; F &#8776; 1</text>
+      </svg>
+    </figure>
+
+    <p>Under H&#8320; (all means equal) the between- and within-group variances estimate the same thing, so F hovers near
+       1. When the means are genuinely separated relative to the noise, F shoots up. The p-value comes from the F
+       distribution with (k &#8722; 1, N &#8722; k) degrees of freedom. In the notebook, three separated groups give F
+       &#8776; 25 (p &#8776; 10&#8315;&#8313;), while three identical groups give F &#8776; 1.</p>
+  </section>
+
+  <!-- ===== Section 3 ===== -->
+  <section id="tukey">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Post-Hoc: Which Pairs Differ?</h2></div>
+    <p>A significant F is an <span class="term">omnibus</span> verdict: <em>some</em> mean differs, but not which. The fix
+       is a post-hoc test that compares every pair while holding the <span class="term">family-wise error</span> at 5%.
+       <span class="term">Tukey's HSD</span> (Honest Significant Difference) is the standard choice.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 150" width="100%" font-family="Inter, sans-serif" aria-label="Tukey confidence intervals for each pair of group differences; intervals that miss zero are significant">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Tukey HSD: a pair differs if its interval misses 0</text>
+        <line x1="360" y1="36" x2="360" y2="140" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="3 3"/>
+        <text x="360" y="34" text-anchor="middle" font-size="8.5" fill="#64748b">0</text>
+        <line x1="180" y1="60" x2="300" y2="60" stroke="#4f46e5" stroke-width="3"/><circle cx="240" cy="60" r="4" fill="#4338ca"/>
+        <text x="120" y="64" font-size="9" fill="#4338ca" font-weight="700">A&#8722;C</text><text x="312" y="64" font-size="8" fill="#059669" font-weight="700">sig</text>
+        <line x1="150" y1="92" x2="270" y2="92" stroke="#4f46e5" stroke-width="3"/><circle cx="210" cy="92" r="4" fill="#4338ca"/>
+        <text x="120" y="96" font-size="9" fill="#4338ca" font-weight="700">B&#8722;C</text><text x="282" y="96" font-size="8" fill="#059669" font-weight="700">sig</text>
+        <line x1="320" y1="124" x2="430" y2="124" stroke="#94a3b8" stroke-width="3"/><circle cx="375" cy="124" r="4" fill="#64748b"/>
+        <text x="120" y="128" font-size="9" fill="#4338ca" font-weight="700">A&#8722;B</text><text x="442" y="128" font-size="8" fill="#b91c1c" font-weight="700">not sig (crosses 0)</text>
+      </svg>
+    </figure>
+
+    <p>Each Tukey interval is widened just enough that all comparisons together stay within the 5% budget. A pair is
+       significant exactly when its confidence interval excludes 0. This is the disciplined sequel to a significant
+       ANOVA, never a scatter of uncorrected t-tests.</p>
+  </section>
+
+  <!-- ===== Section 4: REAL-WORLD ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: Delivery by Carrier</h2></div>
+    <p>A shipper benchmarks <strong>three carriers</strong> on door-to-door delivery time, 80 shipments each. Do the
+       carriers genuinely differ, and if so, which? One-way ANOVA answers the first question; Tukey HSD answers the
+       second.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · anova--carrier_delivery.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per shipment with <code>carrier</code> (three groups),
+        <code>delivery_hours</code>, and the destination <code>region</code>.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/anova--carrier_delivery.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 240 shipments</small></a>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Carrier</th><th>Mean delivery (h)</th><th>Tukey comparison</th><th>Different?</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">FastFreight</td><td>30.4</td><td>FastFreight vs GroundLink</td><td>yes (faster)</td></tr>
+          <tr><td class="nm">GroundLink</td><td>35.9</td><td>FastFreight vs RegionalCo</td><td>yes (faster)</td></tr>
+          <tr><td class="nm">RegionalCo</td><td>37.4</td><td>GroundLink vs RegionalCo</td><td>no clear difference</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The omnibus ANOVA gives F &#8776; <strong>22.9</strong>, p &#8776; 10&#8315;&#8313;, so we reject the hypothesis that
+       all three carriers are equally fast; carrier explains about <strong>16%</strong> of the variation (&#951;&#178;
+       &#8776; 0.16). Tukey HSD then localizes it: <strong>FastFreight</strong> (&#8776; 30.4 h) is significantly faster
+       than both GroundLink and RegionalCo, while GroundLink and RegionalCo are statistically indistinguishable. The
+       decision is clear, route through FastFreight, and ANOVA-plus-Tukey is what justifies it rigorously.</p>
+
+    <p><strong>First, though, the checks that make those p-values trustworthy.</strong> ANOVA assumes
+       <span class="term">independent</span> observations (true here, each shipment is separate), roughly
+       <span class="term">equal variances</span> across the groups, and roughly <span class="term">normal residuals</span>.
+       The companion notebook runs Levene's test (p &#8776; 0.10, so the variances are close enough) and a residual QQ plot
+       backed by Shapiro (p &#8776; 0.28, near-normal), so the classic F-test is valid on this data. When a check fails you
+       switch tools rather than drop the question: unequal variances call for <strong>Welch's ANOVA</strong>, and heavy
+       non-normality for the rank-based <strong>Kruskal-Wallis</strong> test (which agrees here,
+       p &#8776; 3&#215;10&#8315;&#8313;). And report the bias-corrected effect size <strong>&#969;&#178; &#8776; 0.15</strong>
+       next to the p-value: about 15% of delivery-time variance is down to the carrier.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>ANOVA in Machine Learning &amp; AI</h2></div>
+    <p>Comparing more than two options, models, configs, arms, is exactly an ANOVA problem.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Idea (this chapter)</th><th>In ML / AI it becomes</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">One-way ANOVA</td><td>Comparing 3+ models or configs</td><td>accuracy across four architectures</td></tr>
+          <tr><td class="nm">Family-wise error</td><td>Why A/B/n tests need correction</td><td>5 variants &#8594; many pairwise risks</td></tr>
+          <tr><td class="nm">Tukey HSD</td><td>Which model is the real winner</td><td>post-hoc pairwise model comparison</td></tr>
+          <tr><td class="nm">Between vs within variance</td><td>Signal vs noise in metrics</td><td>config effect vs run-to-run jitter</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>Benchmarking several models or hyperparameter settings is a multiple-comparison minefield: with random seeds
+           adding run-to-run noise, picking "the best" from many pairwise comparisons invites a lucky winner. A one-way
+           ANOVA across configurations first asks whether <em>any</em> setting truly matters; if so, a post-hoc test
+           identifies the genuine standouts while controlling the family-wise error. The same structure underlies
+           <strong>A/B/n testing</strong> (more than two variants), where treating each arm-vs-control comparison
+           independently inflates false positives unless you correct for it.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Run ANOVA and Tukey HSD in Python</h3>
+          <p>The companion notebook demonstrates the multiple-comparisons trap, <strong>checks the ANOVA assumptions</strong>
+             (Levene for equal variance, a residual QQ plot and Shapiro for normality, plus a Kruskal-Wallis cross-check),
+             builds the F test with <code>f_oneway</code>, reports the full table with mean squares and
+             <code>&#969;&#178;</code>, runs Tukey HSD in one call with <code>pairwise_tukeyhsd</code>, and loads
+             <code>anova--carrier_delivery.xlsx</code> to compare three carriers and find which differ.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/anova.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/anova.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/anova.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, <code>scipy</code>,
+      <code>matplotlib</code>, <code>statsmodels</code>, and <code>openpyxl</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>ANOVA</strong> tests "all group means equal" in one shot, avoiding the error inflation of many pairwise t-tests.</span></li>
+        <li><span class="ck">✓</span><span><strong>The F statistic</strong> is between-group variance &#247; within-group variance; near 1 under H&#8320;, large when groups separate.</span></li>
+        <li><span class="ck">✓</span><span><strong>A significant F is omnibus</strong>, follow it with Tukey HSD to see which specific pairs differ.</span></li>
+        <li><span class="ck">✓</span><span><strong>Real data</strong>: carriers differ (F &#8776; 22.9, p &#8776; 10&#8315;&#8313;, &#951;&#178; &#8776; 0.16); FastFreight is significantly faster.</span></li>
+        <li><span class="ck">✓</span><span><strong>In ML/AI</strong>: comparing 3+ models or A/B/n arms is an ANOVA problem; correct for multiplicity.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>One-way ANOVA</h4>
+        <p>Three groups N(20, 5, n = 30), N(22, 5, n = 30), N(26, 5, n = 30). Run a one-way ANOVA.</p>
+        <div class="chint">Hint: <code>stats.f_oneway(g1, g2, g3)</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Effect size &#951;&#178;</h4>
+        <p>For those groups compute &#951;&#178; = SS<sub>between</sub> / SS<sub>total</sub>.</p>
+        <div class="chint">Hint: use the grand mean to split the sums of squares.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>ANOVA = t-test for two groups</h4>
+        <p>Show that for exactly two groups, F = t&#178; (pooled).</p>
+        <div class="chint">Hint: compare <code>f_oneway</code> to <code>ttest_ind(equal_var=True)</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Tukey HSD by hand</h4>
+        <p>For the three groups in #1, find which pairs differ (&#945; = 0.05) using the studentized range.</p>
+        <div class="chint">Hint: HSD = q* &#183; &#8730;(MSW/n).</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Real data: carriers</h4>
+        <p>Load <code>anova--carrier_delivery.xlsx</code> and run the one-way ANOVA across carriers.</p>
+        <div class="chint">Hint: group <code>delivery_hours</code> by <code>carrier</code>.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code. Try
+           them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/anova--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/anova--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/anova--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on ANOVA. Answer them, hit <strong>Check Answers</strong>, and keep refining until you score
+       100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>So far the outcomes have been numeric. <strong>Chapter 79 &#183; Chi-Square Tests</strong> turns to
+         <em>categorical</em> data, testing whether counts match expectations and whether two categorical variables are
+         related.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="t-tests.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 77 · Previous</span><br><span class="cn-title">t-Tests</span></span>
+    </a>
+    <a class="cn-btn next" href="chi-square-tests.html">
+      <span><span class="cn-dir">Chapter 79 · Next</span><br><span class="cn-title">Chi-Square Tests</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 78 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch78";
+  window.QUIZ_DATA = [
+    {
+      q: "ANOVA is used to…",
+      options: ["Compare exactly two proportions", "Test whether three or more group means are all equal", "Measure correlation", "Clean data"],
+      answer: 1,
+      explain: "ANOVA tests H₀: all group means equal, the natural extension of the two-sample t-test to 3+ groups."
+    },
+    {
+      q: "Why not just run a t-test on every pair of groups?",
+      options: ["t-tests are too slow", "The many comparisons inflate the family-wise false-alarm rate", "t-tests can't handle numeric data", "It always gives the same answer"],
+      answer: 1,
+      explain: "Each pairwise test risks a 5% false alarm; with many pairs the combined error rate balloons."
+    },
+    {
+      q: "The F statistic is…",
+      options: ["Within-group variance ÷ between-group variance", "Between-group variance ÷ within-group variance", "The sum of all means", "The largest group mean"],
+      answer: 1,
+      explain: "F compares variation among the group means to the noise within groups; large F signals real differences."
+    },
+    {
+      q: "Under H₀ (all means equal), the F statistic is typically…",
+      options: ["Near 0", "Near 1", "Very large", "Negative"],
+      answer: 1,
+      explain: "When the null holds, between- and within-group variances estimate the same quantity, so F ≈ 1."
+    },
+    {
+      q: "A significant ANOVA F tells you…",
+      options: ["Exactly which pair differs", "That at least one mean differs, but not which", "That all pairs differ", "Nothing useful"],
+      answer: 1,
+      explain: "F is an omnibus test: it flags that some difference exists; a post-hoc test identifies the pairs."
+    },
+    {
+      q: "Tukey's HSD is used to…",
+      options: ["Replace the F test", "Compare all pairs after a significant ANOVA while controlling the overall error", "Estimate the mean", "Test normality"],
+      answer: 1,
+      explain: "Tukey HSD does the post-hoc pairwise comparisons with the family-wise error held at α."
+    },
+    {
+      q: "In the carrier example (F ≈ 22.9, p ≈ 10⁻⁹), Tukey showed…",
+      options: ["All three carriers differ from each other", "FastFreight is faster than both others, which don't clearly differ", "No carriers differ", "Only GroundLink and RegionalCo differ"],
+      answer: 1,
+      explain: "FastFreight separates from GroundLink and RegionalCo; those two are statistically indistinguishable."
+    },
+    {
+      q: "Comparing four model architectures across many seeds is best framed as…",
+      options: ["Many independent t-tests, no correction", "An ANOVA, then a corrected post-hoc comparison", "A single z-test", "A correlation"],
+      answer: 1,
+      explain: "It's a multi-group comparison: ANOVA first, then a post-hoc test that controls the family-wise error."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

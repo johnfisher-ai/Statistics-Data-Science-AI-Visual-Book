@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 71 · Confidence Intervals for Proportions &amp; Differences — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#eff6ff; border:1px solid #bfdbfe; border-left:4px solid #2563eb; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#1d4ed8; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file.nb { background:#eef2ff; color:#1d4ed8; border-color:#c7d2fe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/confidence-intervals-for-proportions-and-differences.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XI · Estimation &amp; Confidence Intervals</span><span class="sep">/</span>
+      <span>Chapter 71</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XI · Estimation &amp; Confidence Intervals</span> Polls, A/B tests, and lifts</div>
+    <h1>CIs for <span class="accent">Proportions &amp; Differences</span></h1>
+    <p class="dek">Polls and A/B tests estimate proportions, and the question that matters is usually a difference. We build
+       intervals for one proportion, for a difference of two proportions, and of two means, then settle a real A/B test
+       from a spreadsheet by asking whether the lift's interval clears zero.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~16 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 71</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">A great deal of real decision-making rests on a yes/no rate, did the visitor convert, the patient
+       recover, the voter approve? This chapter builds confidence intervals for those <em>proportions</em>, and, more
+       usefully, for the <em>difference</em> between two of them.</p>
+
+    <div class="def-card">
+      <div class="sigma">p&#770; &#177; z&#183;SE</div>
+      <div class="def-body">
+        A <span class="def-kw">CI for a proportion</span> is p&#770; &#177; z&#183;&#8730;(p&#770;(1&#8722;p&#770;)/n),
+        valid under the <span class="def-kw">success-failure condition</span> (&#8805;10 of each). A
+        <span class="def-kw">CI for a difference</span> combines both groups' standard errors; if it
+        <span class="def-kw">excludes 0</span>, the groups truly differ.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🅰️</div>
+      <div><div class="ctitle">The difference is the point</div>
+        <p>Two separate intervals are not the test. The right tool is a single interval on the <strong>difference</strong>,
+           and the decision rule is simple: if that interval excludes zero, the difference is real.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: one proportion ===== -->
+  <section id="oneprop">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Confidence Interval for a Proportion</h2></div>
+    <p>For a yes/no outcome, the sample proportion p&#770; = successes/n estimates the true rate p. Its standard error is
+       &#8730;(p&#770;(1&#8722;p&#770;)/n), so the 95% interval is p&#770; &#177; 1.96&#183;SE.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 120" width="100%" font-family="Inter, sans-serif" aria-label="A proportion estimate with a confidence interval on a 0 to 1 axis">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">p&#770; = 16.8% with a 95% interval of [13.5%, 20.1%]</text>
+        <line x1="60" y1="70" x2="620" y2="70" stroke="#cbd5e1" stroke-width="2"/>
+        <g font-size="8" fill="#8b94b3" text-anchor="middle"><text x="60" y="92">0%</text><text x="340" y="92">15%</text><text x="620" y="92">30%</text></g>
+        <line x1="312" y1="70" x2="436" y2="70" stroke="#2563eb" stroke-width="6"/>
+        <circle cx="374" cy="70" r="7" fill="#1d4ed8"/>
+        <line x1="312" y1="58" x2="312" y2="82" stroke="#2563eb" stroke-width="2.5"/><line x1="436" y1="58" x2="436" y2="82" stroke="#2563eb" stroke-width="2.5"/>
+        <text x="374" y="52" text-anchor="middle" font-size="9" fill="#1d4ed8" font-weight="800">p&#770;</text>
+        <text x="540" y="108" text-anchor="middle" font-size="8" fill="#8b94b3">SE = &#8730;(p&#770;(1&#8722;p&#770;)/n)</text>
+      </svg>
+    </figure>
+
+    <p>The <span class="hl">success-failure condition</span>, at least about 10 successes and 10 failures, is what
+       justifies the normal approximation. In the notebook, 84 of 500 gives 16.8% with a 95% interval of
+       <strong>[13.5%, 20.1%]</strong>. With very few successes the approximation breaks down, and the Wilson or exact
+       (Clopper-Pearson) interval is safer.</p>
+  </section>
+
+  <!-- ===== Section 2: difference of proportions ===== -->
+  <section id="diffprop">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Difference of Two Proportions</h2></div>
+    <p>The interesting quantity is usually the <span class="term">lift</span>, p<sub>B</sub> &#8722; p<sub>A</sub>. Its
+       standard error adds the two groups' variances: SE = &#8730;(p<sub>A</sub>(1&#8722;p<sub>A</sub>)/n<sub>A</sub> +
+       p<sub>B</sub>(1&#8722;p<sub>B</sub>)/n<sub>B</sub>). The decision turns on whether the interval excludes 0.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 130" width="100%" font-family="Inter, sans-serif" aria-label="A confidence interval for a difference of proportions, judged against zero">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Judge the difference against 0</text>
+        <line x1="60" y1="74" x2="620" y2="74" stroke="#cbd5e1" stroke-width="2"/>
+        <line x1="180" y1="44" x2="180" y2="104" stroke="#1a2138" stroke-width="1.6" stroke-dasharray="4 3"/>
+        <text x="180" y="38" text-anchor="middle" font-size="9" fill="#1a2138" font-weight="700">0 (no difference)</text>
+        <line x1="300" y1="74" x2="520" y2="74" stroke="#059669" stroke-width="6"/>
+        <circle cx="410" cy="74" r="7" fill="#047857"/>
+        <line x1="300" y1="62" x2="300" y2="86" stroke="#059669" stroke-width="2.5"/><line x1="520" y1="62" x2="520" y2="86" stroke="#059669" stroke-width="2.5"/>
+        <text x="410" y="56" text-anchor="middle" font-size="9" fill="#047857" font-weight="800">CI for p_B &#8722; p_A</text>
+        <text x="410" y="100" text-anchor="middle" font-size="8.5" fill="#059669">entirely above 0 &#8594; B truly beats A</text>
+      </svg>
+    </figure>
+
+    <p>If the whole interval sits above 0, group B's rate is genuinely higher; if it straddles 0, you cannot rule out
+       "no difference". This single rule, <strong>does the difference interval exclude 0?</strong>, is the backbone of
+       A/B testing and is exactly equivalent to the hypothesis tests of the next Part.</p>
+  </section>
+
+  <!-- ===== Section 3: difference of means ===== -->
+  <section id="diffmeans">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Difference of Two Means</h2></div>
+    <p>When the outcome is numeric, revenue per user, minutes on site, the same idea uses a
+       <span class="term">two-sample t-interval</span>: (x&#772;<sub>B</sub> &#8722; x&#772;<sub>A</sub>) &#177;
+       t*&#183;&#8730;(s<sub>A</sub>&#178;/n<sub>A</sub> + s<sub>B</sub>&#178;/n<sub>B</sub>), with degrees of freedom from
+       the Welch approximation.</p>
+
+    <p>In the notebook, two spending groups differ by <strong>+$5.09</strong> with a 95% interval of about
+       <strong>[+$2.80, +$7.38]</strong>, again clear of zero. Whether the target is a rate or an average, the interval on
+       the difference answers the real question: is the gap big enough to be sure it is not noise?</p>
+  </section>
+
+  <!-- ===== Section 4: REAL-WORLD ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: An A/B Test</h2></div>
+    <p>A product team ran a randomized experiment and exported <strong>2,000 visitors</strong>: variant A is the current
+       page, variant B a new design. Did B actually convert better, or did it just look better by chance?</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · confidence-intervals-for-proportions-and-differences--ab_test.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per visitor with <code>variant</code> (A/B) and <code>converted</code> (0/1).</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/confidence-intervals-for-proportions-and-differences--ab_test.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 2,000 visitors</small></a>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Variant</th><th>n</th><th>Conversions</th><th>Rate</th><th>95% CI</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">A (control)</td><td>995</td><td>109</td><td>10.95%</td><td>[9.01%, 12.90%]</td></tr>
+          <tr><td class="nm">B (new design)</td><td>1,005</td><td>147</td><td>14.63%</td><td>[12.44%, 16.81%]</td></tr>
+          <tr><td class="nm">Lift (B &#8722; A)</td><td>&#8212;</td><td>&#8212;</td><td>+3.67 pts</td><td>[+0.75, +6.59] pts</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The lift is <strong>+3.7 percentage points</strong>, and its 95% interval, roughly <strong>[+0.8, +6.6]
+       points</strong>, lies entirely above zero. The improvement is real, so the team ships B. Note that the two
+       individual CIs barely overlap, which is easy to misread, the correct and only test is the interval on the
+       <em>difference</em>, which here clears 0 decisively.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Proportions &amp; Differences in Machine Learning &amp; AI</h2></div>
+    <p>Comparing models, prompts, or product variants is almost always a comparison of proportions or means, and the CI on
+       the difference is how you decide whether one truly beats another.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Idea (this chapter)</th><th>In ML / AI it becomes</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">CI for a proportion</td><td>Interval on a rate metric</td><td>click-through rate, win rate, pass@1</td></tr>
+          <tr><td class="nm">Difference of proportions</td><td>Online A/B test of two systems</td><td>does the new model lift conversion?</td></tr>
+          <tr><td class="nm">Difference of means</td><td>Comparing two models' scores</td><td>mean reward / accuracy of A vs B</td></tr>
+          <tr><td class="nm">Excludes 0?</td><td>Is the improvement real?</td><td>ship only if the lift CI clears zero</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>Every "our model beats the baseline" claim is a difference of proportions or means, and it is only credible if
+           the <strong>confidence interval on the difference excludes zero</strong>. Online A/B tests of recommender and
+           ranking systems are exactly the difference-of-proportions interval from this chapter, run at scale. The most
+           common error in model comparison is reading two overlapping intervals instead of building the single interval
+           on the gap, which is both more powerful and the statistically correct test.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Build proportion and difference CIs in Python</h3>
+          <p>The companion notebook builds a CI for one proportion (with the success-failure check), for a difference of
+             proportions, and for a difference of means, then loads <code>confidence-intervals-for-proportions-and-differences--ab_test.xlsx</code> to settle a real A/B
+             test by asking whether the lift's interval excludes zero.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/confidence-intervals-for-proportions-and-differences.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/confidence-intervals-for-proportions-and-differences.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/confidence-intervals-for-proportions-and-differences.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, <code>scipy</code>,
+      <code>matplotlib</code>, and <code>openpyxl</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>CI for a proportion</strong>: p&#770; &#177; z&#183;&#8730;(p&#770;(1&#8722;p&#770;)/n), valid under the success-failure condition (&#8805;10 each).</span></li>
+        <li><span class="ck">✓</span><span><strong>CI for a difference of proportions</strong>: combine both SEs; the difference is real if the interval excludes 0.</span></li>
+        <li><span class="ck">✓</span><span><strong>CI for a difference of means</strong>: the two-sample t-interval (Welch); same exclude-0 rule.</span></li>
+        <li><span class="ck">✓</span><span><strong>Test the difference, not two separate intervals</strong>, overlapping individual CIs can still have a difference that clears 0.</span></li>
+        <li><span class="ck">✓</span><span><strong>Real A/B test</strong>: B converts 14.6% vs A 11.0%, a +3.7-point lift with a 95% CI of [+0.8, +6.6] that excludes 0, so ship B.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them with NumPy and SciPy before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>CI for a proportion</h4>
+        <p>220 of 1,000 surveyed customers churned. Build a 95% CI for the churn rate.</p>
+        <div class="chint">Hint: p&#770; &#177; 1.96&#183;&#8730;(p&#770;(1&#8722;p&#770;)/n).</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Success-failure condition</h4>
+        <p>For 6 successes out of 40, check whether the normal-approximation CI is appropriate.</p>
+        <div class="chint">Hint: need &#8805;10 successes AND &#8805;10 failures.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Difference of two proportions</h4>
+        <p>Group A: 90/600 converted. Group B: 120/620. Build a 95% CI for p<sub>B</sub> &#8722; p<sub>A</sub> and check
+           whether it excludes 0.</p>
+        <div class="chint">Hint: combine the two standard errors.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Difference of two means</h4>
+        <p>Two groups spend Normal(40, 12), n = 200 and Normal(44, 13), n = 210. Build a 95% CI for the difference of
+           means.</p>
+        <div class="chint">Hint: two-sample t-interval with Welch df.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Real data: A/B lift</h4>
+        <p>Load <code>confidence-intervals-for-proportions-and-differences--ab_test.xlsx</code> and report each variant's conversion CI and the CI for the lift
+           (B &#8722; A).</p>
+        <div class="chint">Hint: <code>groupby("variant")</code>, then the difference interval.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code. Try
+           them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/confidence-intervals-for-proportions-and-differences--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/confidence-intervals-for-proportions-and-differences--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/confidence-intervals-for-proportions-and-differences--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on intervals for proportions and differences. Answer them, hit <strong>Check Answers</strong>,
+       and keep refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return
+       anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">🧭</div>
+    <div><div class="ctitle">Up next</div>
+      <p>Every interval here has a width, the margin of error. <strong>Chapter 72</strong> zooms in on the
+         <strong>margin of error</strong> itself, what drives it, how it shrinks with sample size, and how to report a
+         poll the right way.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="confidence-intervals-for-a-mean.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 70 · Previous</span><br><span class="cn-title">Confidence Intervals for a Mean</span></span>
+    </a>
+    <a class="cn-btn next" href="margin-of-error.html">
+      <span><span class="cn-dir">Chapter 72 · Next</span><br><span class="cn-title">Margin of Error</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 71 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch71";
+  window.QUIZ_DATA = [
+    {
+      q: "The 95% confidence interval for a single proportion is…",
+      options: ["p̂ × 1.96 × n", "p̂ ± 1.96·√(p̂(1−p̂)/n)", "p̂ ÷ n", "p̂ ± n"],
+      answer: 1,
+      explain: "The proportion's standard error is √(p̂(1−p̂)/n), so the 95% interval is p̂ ± 1.96·SE."
+    },
+    {
+      q: "The success-failure condition for a proportion CI requires…",
+      options: ["n > 1000", "At least ~10 successes AND ~10 failures", "p̂ = 0.5", "σ to be known"],
+      answer: 1,
+      explain: "The normal approximation needs roughly 10 of each; otherwise use the Wilson or exact (Clopper-Pearson) interval."
+    },
+    {
+      q: "For a difference of two proportions, the standard error is…",
+      options: ["The larger of the two SEs", "√(p_A(1−p_A)/n_A + p_B(1−p_B)/n_B)", "p_B − p_A", "always zero"],
+      answer: 1,
+      explain: "Independent groups add variances, so the difference's SE combines both groups' standard errors under the square root."
+    },
+    {
+      q: "How do you decide whether two groups truly differ?",
+      options: ["See if the two separate CIs touch", "Check whether the CI for the DIFFERENCE excludes 0", "Compare sample sizes", "Pick the larger p̂"],
+      answer: 1,
+      explain: "Build a single interval on the difference; if it excludes 0, the difference is statistically distinguishable from zero."
+    },
+    {
+      q: "Two individual proportion CIs overlap slightly. What can you conclude about the difference?",
+      options: ["There is definitely no difference", "Nothing yet, you must build the CI on the difference, which may still exclude 0", "The difference is exactly zero", "B is worse than A"],
+      answer: 1,
+      explain: "Overlapping individual intervals do NOT imply no difference; the proper test is the interval on the difference itself."
+    },
+    {
+      q: "In the A/B test, B converted 14.6% vs A's 11.0%, lift +3.7 pts with 95% CI [+0.8, +6.6]. The right decision is…",
+      options: ["Keep A; the result is noise", "Ship B; the lift interval excludes 0", "Run forever; it's never decided", "Pick randomly"],
+      answer: 1,
+      explain: "The lift's 95% interval lies entirely above 0, so B's improvement is real and B should be shipped."
+    },
+    {
+      q: "For a numeric outcome (revenue per user), comparing two groups uses…",
+      options: ["A proportion CI", "A two-sample t-interval for the difference of means", "The median only", "No interval"],
+      answer: 1,
+      explain: "Numeric outcomes use the two-sample (Welch) t-interval for the difference of means; the exclude-0 rule still applies."
+    },
+    {
+      q: "In ML, the claim 'our model beats the baseline' is credible only if…",
+      options: ["The new model is newer", "The confidence interval on the difference in performance excludes zero", "It has more parameters", "The demo looks good"],
+      answer: 1,
+      explain: "A real improvement requires the interval on the metric difference to clear zero; otherwise the gap may be noise."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

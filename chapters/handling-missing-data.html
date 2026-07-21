@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 20 · Handling Missing Data — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.85rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.58rem 0.8rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#ecfeff; border:1px solid #a5f3fc; border-left:4px solid #0891b2; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#0e7490; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none; padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<!-- ============ TOP NAV ============ -->
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/handling-missing-data.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<!-- ============ HERO ============ -->
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part IV · Preparing Data for Analysis</span><span class="sep">/</span>
+      <span>Chapter 20</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part IV · Preparing Data</span> Getting data ready</div>
+    <h1>Handling <span class="accent">Missing Data</span></h1>
+    <p class="dek">Almost every real dataset has gaps. How you fill or drop them can quietly bias your results, and
+       the right choice depends on <em>why</em> the data is missing. This chapter gives you the mechanisms, the
+       methods, and the pitfalls.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~13 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 20</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <!-- ===== Intro / Section 1 ===== -->
+  <section id="intro">
+    <p class="lead">Chapter 18 warned about hidden missing codes like <code>-99</code>, and Chapter 19 showed that
+       coercing bad values to numbers <em>creates</em> <code>NaN</code>. Now the gaps are real and visible. The
+       question is what to do with them, and the honest answer starts with a question of your own: why are they
+       missing?</p>
+
+    <div class="def-card">
+      <div class="sigma">∅</div>
+      <div class="def-body">
+        <span class="def-kw">Missing data</span> are absent values in a dataset. How to handle them, delete or
+        impute, depends on the <span class="def-kw">missingness mechanism</span>: whether the gaps are random or
+        tied to the very values you cannot see.
+      </div>
+    </div>
+
+    <div class="section-eyebrow"><div class="num">1</div><h2>Why Missingness Has a Mechanism</h2></div>
+    <p>It is tempting to just drop the blanks and move on. But whether that is safe depends entirely on
+       <span class="hl">why</span> they are blank. Rubin's classic taxonomy names three mechanisms, and the mechanism
+       decides the method.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 210" width="100%" font-family="Inter, sans-serif" aria-label="MCAR, MAR, and MNAR missingness mechanisms">
+        <g text-anchor="middle">
+          <!-- MCAR -->
+          <rect x="14" y="34" width="208" height="150" rx="12" fill="#e3f6ee" stroke="#059669" stroke-width="1.6"/>
+          <text x="118" y="60" font-size="15" fill="#059669" font-weight="900">MCAR</text>
+          <text x="118" y="78" font-size="9.5" fill="#1a2138" font-weight="700">Missing Completely At Random</text>
+          <text x="118" y="104" font-size="10" fill="#4a5578">Depends on nothing,</text>
+          <text x="118" y="119" font-size="10" fill="#4a5578">pure chance.</text>
+          <text x="118" y="143" font-size="9.5" fill="#4a5578" font-style="italic">e.g. a sensor randomly</text>
+          <text x="118" y="156" font-size="9.5" fill="#4a5578" font-style="italic">drops a reading</text>
+          <text x="118" y="176" font-size="9" fill="#059669" font-weight="700">deletion is unbiased</text>
+          <!-- MAR -->
+          <rect x="236" y="34" width="208" height="150" rx="12" fill="#fef3e2" stroke="#d97706" stroke-width="1.6"/>
+          <text x="340" y="60" font-size="15" fill="#d97706" font-weight="900">MAR</text>
+          <text x="340" y="78" font-size="9.5" fill="#1a2138" font-weight="700">Missing At Random</text>
+          <text x="340" y="104" font-size="10" fill="#4a5578">Depends only on data</text>
+          <text x="340" y="119" font-size="10" fill="#4a5578">you DID observe.</text>
+          <text x="340" y="143" font-size="9.5" fill="#4a5578" font-style="italic">e.g. men skip an item,</text>
+          <text x="340" y="156" font-size="9.5" fill="#4a5578" font-style="italic">and sex is recorded</text>
+          <text x="340" y="176" font-size="9" fill="#d97706" font-weight="700">imputation can work</text>
+          <!-- MNAR -->
+          <rect x="458" y="34" width="208" height="150" rx="12" fill="#fde8ef" stroke="#db2777" stroke-width="1.6"/>
+          <text x="562" y="60" font-size="15" fill="#db2777" font-weight="900">MNAR</text>
+          <text x="562" y="78" font-size="9.5" fill="#1a2138" font-weight="700">Missing Not At Random</text>
+          <text x="562" y="104" font-size="10" fill="#4a5578">Depends on the value</text>
+          <text x="562" y="119" font-size="10" fill="#4a5578">you CANNOT see.</text>
+          <text x="562" y="143" font-size="9.5" fill="#4a5578" font-style="italic">e.g. high earners refuse</text>
+          <text x="562" y="156" font-size="9.5" fill="#4a5578" font-style="italic">to report income</text>
+          <text x="562" y="176" font-size="9" fill="#db2777" font-weight="700">hardest: model it</text>
+          <text x="340" y="22" font-size="11" fill="#1a2138" font-weight="700">The three missingness mechanisms (Rubin)</text>
+        </g>
+      </svg>
+    </figure>
+
+    <div class="callout note">
+      <div class="cico">🧭</div>
+      <div><div class="ctitle">You can't read the mechanism off the data</div>
+        <p>A test (Little's MCAR test) can give evidence <em>against</em> MCAR, but <strong>MAR and MNAR are
+           impossible to tell apart from the observed data alone</strong>, because the deciding information is exactly
+           the values you don't have. The mechanism is an assumption you justify with <strong>domain knowledge</strong>,
+           and you should state it openly.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 2: detect + delete ===== -->
+  <section id="detect-delete">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Detect First, Then Decide on Deletion</h2></div>
+    <p>Before any fix: convert hidden codes (<code>-99</code>, <code>"N/A"</code>) to real <code>NaN</code>, then
+       count. <code>df.isna().sum()</code> and <code>df.isna().mean()*100</code> tell you how much is missing and
+       where; a missingness heatmap shows whether columns go blank together (a clue toward MAR).</p>
+
+    <p>The simplest response is <span class="hl">deletion</span>, and it is the most common mistake:</p>
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Method</th><th>How</th><th>Good</th><th>Risk</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Listwise (complete-case)</td><td><code>df.dropna()</code> drops any row with a gap</td><td>Simple; unbiased under MCAR</td><td>Can discard a LOT of rows; biased under MAR/MNAR</td></tr>
+          <tr><td class="nm">Pairwise</td><td>Use rows present for each calculation (e.g. <code>df.corr()</code>)</td><td>Keeps more data</td><td>Different stats on different subsamples</td></tr>
+          <tr><td class="nm">Drop the column</td><td>Remove a feature that is mostly empty (rule of thumb &gt;50–60%)</td><td>Sheds a near-useless feature</td><td>Threshold is arbitrary; missingness may itself be informative</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout note">
+      <div class="cico">🗑️</div>
+      <div><div class="ctitle">"Just drop the NaNs" compounds fast</div>
+        <p>With three columns each only 10% missing, only about 0.9³ ≈ <strong>73%</strong> of rows survive
+           listwise deletion, you can lose a quarter of the data while no single column looks bad. And deletion is
+           unbiased <em>only</em> under MCAR; under MAR or MNAR it systematically distorts your results.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 3: imputation ===== -->
+  <section id="imputation">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Imputation: Filling the Gaps</h2></div>
+    <p>Rather than drop, you can <span class="hl">impute</span>, estimate the missing values. The methods run from
+       trivial to sophisticated, and each has a catch worth knowing.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Method</th><th>How it works</th><th>The catch</th><th>scikit-learn</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Mean / median / mode</td><td>Fill with the column's average (median for skewed, mode for categorical)</td><td><strong>Shrinks variance</strong>, biases correlations toward 0; ignores other columns</td><td><code>SimpleImputer(strategy=...)</code></td></tr>
+          <tr><td class="nm">Constant + indicator</td><td>Fill a fixed value and add a "was-missing" flag column</td><td>Keeps the missingness signal; constant fill alone still distorts</td><td><code>add_indicator=True</code></td></tr>
+          <tr><td class="nm">Regression</td><td>Predict the gap from other columns</td><td>Deterministic version inflates correlations; add a random residual (<strong>stochastic</strong>)</td><td><code>IterativeImputer</code></td></tr>
+          <tr><td class="nm">KNN</td><td>Fill from the k most similar rows</td><td>Must <strong>standardize first</strong>; curse of dimensionality</td><td><code>KNNImputer</code></td></tr>
+          <tr><td class="nm">MICE (iterative)</td><td>Model each column from all others, cycle to convergence</td><td>The serious default under MAR; sklearn's is experimental &amp; single</td><td><code>IterativeImputer</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">📉</div>
+      <div><div class="ctitle">The killer caveat: mean imputation lies</div>
+        <p>Replace every gap with the column mean and the standard deviation <strong>drops</strong>, a fake spike
+           piles up at the mean, and relationships with other variables wash out. It is a fine quick baseline, but
+           never a basis for careful inference. The notebook shows the variance shrinking before your eyes.</p></div>
+    </div>
+
+    <div class="callout note">
+      <div class="cico">🎲</div>
+      <div><div class="ctitle">Single imputation understates uncertainty</div>
+        <p>A filled-in value is a <em>guess</em>, but the analysis treats it as if it were truly observed, so
+           standard errors come out too small and confidence intervals too narrow. <strong>Multiple imputation</strong>
+           fixes this: generate several complete datasets, analyze each, and pool the results (Rubin's rules) so the
+           uncertainty of guessing is carried through. scikit-learn's <code>IterativeImputer</code> is MICE-style but
+           does single imputation; full multiple imputation lives in R's <code>mice</code> or
+           <code>statsmodels</code>.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 4: decision framework + leakage ===== -->
+  <section id="framework">
+    <div class="section-eyebrow"><div class="num">4</div><h2>A Decision Framework</h2></div>
+    <p>Put it together into a repeatable flow. The mechanism drives the method; there is no universal best.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 250" width="100%" font-family="Inter, sans-serif" aria-label="Missing-data decision flow from mechanism to method">
+        <!-- top: convert + quantify -->
+        <rect x="200" y="12" width="280" height="34" rx="9" fill="#eef1f8" stroke="#8b94b3" stroke-width="1.4"/>
+        <text x="340" y="33" text-anchor="middle" font-size="11" fill="#1a2138" font-weight="800">Convert hidden codes to NaN, then quantify &amp; visualize</text>
+        <line x1="340" y1="46" x2="340" y2="66" stroke="#8b94b3" stroke-width="1.4"/>
+        <rect x="246" y="66" width="188" height="32" rx="9" fill="#0a1230"/>
+        <text x="340" y="86" text-anchor="middle" font-size="11" fill="#fff" font-weight="800">Reason about the mechanism</text>
+        <!-- three branches -->
+        <g stroke="#cdd3e6" stroke-width="1.4" fill="none">
+          <path d="M340,98 C150,120 118,130 118,150"/>
+          <path d="M340,98 L340,150"/>
+          <path d="M340,98 C540,120 562,130 562,150"/>
+        </g>
+        <!-- MCAR -->
+        <rect x="34" y="150" width="168" height="40" rx="9" fill="#e3f6ee" stroke="#059669" stroke-width="1.5"/>
+        <text x="118" y="168" text-anchor="middle" font-size="11" fill="#059669" font-weight="800">MCAR + little missing</text>
+        <text x="118" y="183" text-anchor="middle" font-size="9.5" fill="#4a5578">deletion is fine</text>
+        <!-- MAR -->
+        <rect x="256" y="150" width="168" height="40" rx="9" fill="#fef3e2" stroke="#d97706" stroke-width="1.5"/>
+        <text x="340" y="168" text-anchor="middle" font-size="11" fill="#d97706" font-weight="800">MAR + substantial</text>
+        <text x="340" y="183" text-anchor="middle" font-size="9.5" fill="#4a5578">impute (KNN / MICE)</text>
+        <!-- MNAR -->
+        <rect x="478" y="150" width="168" height="40" rx="9" fill="#fde8ef" stroke="#db2777" stroke-width="1.5"/>
+        <text x="562" y="168" text-anchor="middle" font-size="11" fill="#db2777" font-weight="800">MNAR</text>
+        <text x="562" y="183" text-anchor="middle" font-size="9.5" fill="#4a5578">model it / indicator / sensitivity</text>
+        <text x="340" y="222" text-anchor="middle" font-size="10" fill="#8b94b3">Column &gt;50–60% empty? Consider dropping it. Always document the assumption.</text>
+        <text x="340" y="240" text-anchor="middle" font-size="10" fill="#8b94b3">For modeling: impute inside a Pipeline fit on TRAIN only.</text>
+      </svg>
+    </figure>
+
+    <div class="callout key">
+      <div class="cico">🚰</div>
+      <div><div class="ctitle">Fit the imputer on training data only</div>
+        <p>Same discipline as scaling in Chapter 12: learn the fill values (mean, neighbors, MICE model) from the
+           <strong>training set</strong>, then apply them to the test set. Imputing over the whole dataset before the
+           split leaks test information into training and inflates your scores. A scikit-learn <code>Pipeline</code>
+           handles this automatically inside cross-validation.</p></div>
+    </div>
+
+    <div class="callout note">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for data science</div>
+        <p>Most estimators refuse to run on <code>NaN</code>, so you must deal with gaps before modeling, and how you
+           deal with them shapes every result that follows. Mishandled missingness is one of the quietest sources of
+           biased conclusions in all of analysis. Choosing deliberately, and documenting the assumption, is what
+           separates a defensible analysis from a lucky one. With gaps handled, the next chapter turns to the values
+           that are present but extreme: detecting and treating outliers.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 5: In ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Missing Data in Machine Learning &amp; AI</h2></div>
+    <p>Most models refuse to train on missing values, so handling them is a required step, and doing it carelessly leaks
+       information or bakes in bias. The <em>reason</em> a value is missing decides the right fix.</p>
+
+    <table class="disp-table">
+      <thead>
+        <tr><th>Approach</th><th>The scikit-learn tool</th><th>When to reach for it</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="nm tx-cyan">Simple imputation</td><td><code>SimpleImputer</code> (mean, median, most-frequent)</td><td>A fast, robust default, median for skewed features</td></tr>
+        <tr><td class="nm tx-purple">Model-based imputation</td><td><code>KNNImputer</code>, <code>IterativeImputer</code></td><td>When other features can predict the missing one</td></tr>
+        <tr><td class="nm tx-amber">Missing-indicator</td><td><code>add_indicator=True</code>, or a manual flag column</td><td>When the fact that a value is missing is itself informative (MNAR)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Impute inside the pipeline, fit on train only</div>
+        <p>Compute the imputation value (the mean, say) on the <strong>training set</strong>, then apply it to the test
+           set, exactly as with scaling. Impute before you split and you leak test information into training. And when
+           data is <strong>missing not at random</strong>, add a missing-indicator, because the missingness carries
+           signal a plain fill would erase.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 6: Real-World Example ===== -->
+  <section id="real-world">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Real-World Example: A Survey with Gaps</h2></div>
+    <p>In this survey, income is <strong>missing not at random</strong>: higher earners are the ones who leave it blank.
+       The result is a trap, the average of the incomes people <em>did</em> report is biased <strong>low</strong> (about
+       <strong>57,000</strong> dollars against a true <strong>61,000</strong>), and mean-imputing that value would spread
+       the bias to everyone. The companion notebook maps the missingness and compares imputation strategies.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · handling-missing-data--survey_missing.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per respondent: <code>respondent_id</code>, <code>age</code>,
+        <code>region</code>, <code>hours_online</code>, and <code>income</code>. <code>income</code> is missing not at
+        random (high earners skip it), while <code>age</code> and <code>hours_online</code> are missing roughly at
+        random, so the mechanism differs by column.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/handling-missing-data--survey_missing.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 350 respondents</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Bring it to life in Python</h3>
+          <p>The companion notebook converts sentinels to <code>NaN</code> and charts the gaps, measures how many rows
+             deletion really costs, shows mean imputation shrinking the variance with a fake spike, imputes with KNN
+             (scaled) and MICE, and fits an imputer on train only to avoid leakage.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/handling-missing-data.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/handling-missing-data.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/handling-missing-data.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>,
+      <code>scikit-learn</code>, <code>matplotlib</code> (and optionally <code>missingno</code>) and launch
+      <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Key Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>The mechanism drives the method</strong>: MCAR (random), MAR (depends on observed data), MNAR (depends on the missing value itself).</span></li>
+        <li><span class="ck">✓</span><span><strong>You can't prove the mechanism from data</strong>; MAR vs MNAR needs domain knowledge, so state your assumption.</span></li>
+        <li><span class="ck">✓</span><span><strong>Deletion is unbiased only under MCAR</strong> and compounds fast across columns; under MAR/MNAR it biases results.</span></li>
+        <li><span class="ck">✓</span><span><strong>Mean imputation shrinks variance</strong>; single imputation understates uncertainty (multiple imputation fixes it); KNN/MICE use other columns.</span></li>
+        <li><span class="ck">✓</span><span><strong>Fit imputers on train only</strong> to avoid leakage, and keep a missingness indicator when the gap is informative.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Practice Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them on paper or in Python before checking the solutions.</p>
+
+    <div class="challenges">
+      <div class="challenge">
+        <div class="cnum">1</div>
+        <div class="cbody">
+          <h4>Name the mechanism</h4>
+          <p>Classify each: (a) a scale randomly drops every 50th reading from a glitch; (b) high earners skip the
+             income question; (c) men skip an item more often, and sex is recorded.</p>
+          <div class="chint">Hint: depends on nothing → MCAR; on the missing value → MNAR; on an observed variable → MAR.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">2</div>
+        <div class="cbody">
+          <h4>Count the gaps</h4>
+          <p>A frame uses <code>-1</code> for missing age. Convert it to <code>NaN</code> and report the count and
+             percent missing per column.</p>
+          <div class="chint">Hint: <code>replace(-1, np.nan)</code> first, then <code>isna().sum()</code> / <code>isna().mean()*100</code>.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">3</div>
+        <div class="cbody">
+          <h4>Deletion cost</h4>
+          <p>For a 500-row frame where each of 3 columns is independently 10% missing, how many complete rows survive
+             listwise deletion? Compute it.</p>
+          <div class="chint">Hint: <code>len(df.dropna())</code>; compare with 0.9³.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">4</div>
+        <div class="cbody">
+          <h4>Mean imputation cost</h4>
+          <p>Take 300 values ~N(100, 20), blank out 40%, then mean-impute. Compare the standard deviation before and
+             after, and explain what happened.</p>
+          <div class="chint">Hint: <code>SimpleImputer(strategy="mean")</code>; the SD shrinks.</div>
+        </div>
+      </div>
+      <div class="challenge">
+        <div class="cnum">5</div>
+        <div class="cbody">
+          <h4>No leakage</h4>
+          <p>Split a frame with missing values into train/test, then impute without leaking. Show the test set is
+             filled with the value learned from the training data.</p>
+          <div class="chint">Hint: <code>SimpleImputer().fit(X_train)</code> then <code>transform(X_test)</code>.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges in the same visual
+           style. Try them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/handling-missing-data--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/handling-missing-data--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/handling-missing-data--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">8</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on missing data. Answer them, hit <strong>Check Answers</strong>, and keep refining
+       until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <!-- ===== Chapter Nav ===== -->
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="finding-and-removing-duplicates-and-inconsistencies.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 19 · Previous</span><br><span class="cn-title">Duplicates &amp; Inconsistencies</span></span>
+    </a>
+    <a class="cn-btn next" href="detecting-and-treating-outliers.html">
+      <span><span class="cn-dir">Chapter 21 · Next</span><br><span class="cn-title">Detecting &amp; Treating Outliers</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 20 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<!-- ===== Quiz data for this chapter ===== -->
+<script>
+  window.QUIZ_ID = "ch20";
+  window.QUIZ_DATA = [
+    {
+      q: "A temperature sensor randomly drops readings due to a network glitch, unrelated to the temperature. This is…",
+      options: [
+        "MAR",
+        "MCAR",
+        "MNAR",
+        "Not missing data"
+      ],
+      answer: 1,
+      explain: "MCAR (Missing Completely At Random): the probability of being missing depends on nothing, pure chance. Deletion is unbiased here."
+    },
+    {
+      q: "High earners decline to report their income, so income is missing more often when income is high. This is…",
+      options: [
+        "MCAR",
+        "MAR",
+        "MNAR",
+        "Pairwise deletion"
+      ],
+      answer: 2,
+      explain: "MNAR: missingness depends on the unobserved value itself (income). It's the hardest case, and standard imputation is biased."
+    },
+    {
+      q: "Men skip a survey item more often, but you recorded each respondent's sex. Conditioning on sex explains the missingness. This is…",
+      options: [
+        "MCAR",
+        "MAR",
+        "MNAR",
+        "Listwise deletion"
+      ],
+      answer: 1,
+      explain: "MAR: missingness depends only on OBSERVED data (sex), not on the missing value itself. Imputation that conditions on sex can be approximately unbiased."
+    },
+    {
+      q: "Listwise deletion (df.dropna()) is unbiased…",
+      options: [
+        "Always",
+        "Only under MCAR",
+        "Only under MNAR",
+        "Never"
+      ],
+      answer: 1,
+      explain: "Dropping incomplete rows is unbiased only under MCAR (you just lose power). Under MAR or MNAR it systematically biases results."
+    },
+    {
+      q: "The main problem with mean imputation is that it…",
+      options: [
+        "Is too slow",
+        "Shrinks the variance and biases correlations toward zero",
+        "Cannot handle numeric data",
+        "Requires the mechanism to be MNAR"
+      ],
+      answer: 1,
+      explain: "Every gap becomes the same value, so the standard deviation drops, a fake spike forms at the mean, and relationships with other variables wash out."
+    },
+    {
+      q: "Why does multiple imputation exist, instead of just imputing once?",
+      options: [
+        "It is faster",
+        "Single imputation understates uncertainty; multiple imputation reflects the uncertainty of guessing",
+        "It removes the need for data",
+        "It only works for categorical variables"
+      ],
+      answer: 1,
+      explain: "A single filled value is treated as if observed, making standard errors too small. Multiple imputation creates several datasets and pools them (Rubin's rules) to carry the uncertainty through."
+    },
+    {
+      q: "Before KNN imputation you should…",
+      options: [
+        "Delete all numeric columns",
+        "Standardize the features, because distance is scale-sensitive",
+        "Impute the target variable first",
+        "Convert everything to text"
+      ],
+      answer: 1,
+      explain: "KNN fills from the nearest rows by distance, which is dominated by large-scale features unless you standardize first (Chapter 12)."
+    },
+    {
+      q: "When imputing for a machine-learning model, you should fit the imputer on…",
+      options: [
+        "The full dataset before splitting",
+        "The training set only, then transform the test set",
+        "The test set only",
+        "Each row independently"
+      ],
+      answer: 1,
+      explain: "Fitting on all data leaks test information into training. Learn the fill values from train only and apply them to test, ideally inside a Pipeline."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

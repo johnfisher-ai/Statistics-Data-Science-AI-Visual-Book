@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 64 · Determining Sample Size — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/determining-sample-size.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part X · Sampling &amp; Data Collection</span><span class="sep">/</span>
+      <span>Chapter 64</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part X · Sampling &amp; Data Collection</span> How many is enough?</div>
+    <h1>Determining <span class="accent">Sample Size</span></h1>
+    <p class="dek">Choose a margin of error and a confidence level, and the required sample size follows from a formula. We
+       derive it for a mean and a proportion, verify it by simulation, and see why halving the error quadruples the
+       cost, and why detecting an effect needs power, not just precision.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~16 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 64</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">"How many people do we need?" is the first question every survey, experiment, and study must answer.
+       Too few and the result is uselessly vague; too many and you waste money. The answer is not a guess, it follows
+       from the precision you require.</p>
+
+    <div class="def-card">
+      <div class="sigma">n</div>
+      <div class="def-body">
+        Sample size is set by inverting the <span class="def-kw">margin of error</span> E = z&#183;SE. For a
+        <span class="def-kw">mean</span>: n = (z&#183;&#963;/E)&#178;. For a <span class="def-kw">proportion</span>:
+        n = z&#178;&#183;p(1&#8722;p)/E&#178;. Larger confidence (z) or smaller margin (E) means more data, with E entering
+        as 1/E&#178;.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">📏</div>
+      <div><div class="ctitle">Three inputs, one output</div>
+        <p>Every sample-size calculation needs the same three things: a <strong>confidence level</strong> (fixes z), a
+           <strong>target margin of error</strong> E, and a measure of <strong>variability</strong> (&#963; for a mean,
+           p for a proportion). Supply those and n is determined.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: margin of error ===== -->
+  <section id="margin">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Margin of Error</h2></div>
+    <p>A confidence interval is <em>estimate &#177; margin of error</em>, where E = z&#183;SE. The margin is the precision
+       knob, and you set its value before collecting a thing.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 150" width="100%" font-family="Inter, sans-serif" aria-label="A confidence interval centered on the estimate with a margin of error on each side">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Confidence interval = estimate &#177; margin of error E</text>
+        <line x1="80" y1="80" x2="600" y2="80" stroke="#cbd5e1" stroke-width="2"/>
+        <!-- interval -->
+        <line x1="230" y1="80" x2="450" y2="80" stroke="#e11d48" stroke-width="6"/>
+        <circle cx="340" cy="80" r="7" fill="#be123c"/>
+        <line x1="230" y1="68" x2="230" y2="92" stroke="#e11d48" stroke-width="2.5"/>
+        <line x1="450" y1="68" x2="450" y2="92" stroke="#e11d48" stroke-width="2.5"/>
+        <text x="340" y="64" text-anchor="middle" font-size="9" fill="#be123c" font-weight="800">estimate</text>
+        <!-- E labels -->
+        <path d="M340,108 L230,108" stroke="#8b94b3" stroke-width="1.2" marker-end="url(#m1)"/>
+        <path d="M340,108 L450,108" stroke="#8b94b3" stroke-width="1.2" marker-end="url(#m1)"/>
+        <defs><marker id="m1" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8b94b3"/></marker></defs>
+        <text x="285" y="122" text-anchor="middle" font-size="9" fill="#4a5578">E</text>
+        <text x="395" y="122" text-anchor="middle" font-size="9" fill="#4a5578">E</text>
+        <text x="340" y="140" text-anchor="middle" font-size="9" fill="#8b94b3">E = z &#183; SE = z &#183; &#963;/&#8730;n  &#8594; shrink E by growing n</text>
+      </svg>
+    </figure>
+
+    <p>With &#963; = 15, the notebook shows the margin tightening from <strong>&#177;4.16</strong> at n = 50 to
+       <strong>&#177;1.47</strong> at n = 400. To hit a <em>target</em> margin, you simply invert E = z&#183;&#963;/&#8730;n
+       and solve for n, which is the whole game.</p>
+  </section>
+
+  <!-- ===== Section 2: mean ===== -->
+  <section id="mean">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Sample Size for a Mean</h2></div>
+    <p>Solving the margin formula for n gives the sample-size rule for a mean:</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 130" width="100%" font-family="Inter, sans-serif" aria-label="The sample size formula for a mean and its inputs">
+        <text x="340" y="42" text-anchor="middle" font-size="22" fill="#1a2138" font-weight="800">n = ( z &#183; &#963; / E )&#178;</text>
+        <g font-size="9" text-anchor="middle" font-weight="700">
+          <text x="250" y="74" fill="#0891b2">z: confidence</text>
+          <text x="340" y="74" fill="#7c3aed">&#963;: variability</text>
+          <text x="430" y="74" fill="#e11d48">E: target margin</text>
+        </g>
+        <rect x="170" y="92" width="340" height="26" rx="7" fill="#fff1f2" stroke="#e11d48"/>
+        <text x="340" y="110" text-anchor="middle" font-size="9.5" fill="#be123c" font-weight="800">&#963;=15, E=&#177;2, 95% &#8594; n = 217 (verified by simulation: &#177;1.99)</text>
+      </svg>
+    </figure>
+
+    <p>For &#963; = 15 and a target margin of &#177;2 at 95% confidence, the formula gives <strong>n = 217</strong>, and the
+       notebook's simulation confirms that samples of that size really do produce intervals of half-width &#177;2.0. The
+       one wrinkle: you need an estimate of &#963; in advance, from a pilot study, prior research, or a conservative
+       guess.</p>
+  </section>
+
+  <!-- ===== Section 3: proportion ===== -->
+  <section id="proportion">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Sample Size for a Proportion</h2></div>
+    <p>For a yes/no question the variability is p(1&#8722;p), which is largest at <strong>p = 0.5</strong>. Since you rarely
+       know p before sampling, planners use 0.5 for the safest, largest, sample size.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 190" width="100%" font-family="Inter, sans-serif" aria-label="Required sample size as a function of the proportion, a parabola peaking at 0.5">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">n = z&#178;&#183;p(1&#8722;p)/E&#178; is largest at p = 0.5 (E = &#177;3%, 95%)</text>
+        <line x1="70" y1="160" x2="640" y2="160" stroke="#8b94b3" stroke-width="1"/>
+        <line x1="70" y1="40" x2="70" y2="160" stroke="#8b94b3" stroke-width="1"/>
+        <text x="355" y="180" text-anchor="middle" font-size="8.5" fill="#8b94b3">true proportion p</text>
+        <!-- parabola n=z^2 p(1-p)/E^2, peak 1067 at .5 -->
+        <path d="M70,160 C200,70 250,50 355,50 C460,50 510,70 640,160" fill="none" stroke="#e11d48" stroke-width="2.5"/>
+        <line x1="355" y1="50" x2="355" y2="160" stroke="#be123c" stroke-dasharray="4 3"/>
+        <circle cx="355" cy="50" r="4" fill="#be123c"/>
+        <text x="355" y="42" text-anchor="middle" font-size="9" fill="#be123c" font-weight="800">p=0.5, n=1067</text>
+        <g font-size="8" fill="#8b94b3" text-anchor="middle">
+          <text x="70" y="174">0</text><text x="355" y="174">0.5</text><text x="640" y="174">1</text>
+          <text x="170" y="120" fill="#4a5578">p=0.1: 384</text>
+        </g>
+      </svg>
+    </figure>
+
+    <p>The worst-case sample size, with p = 0.5 and a &#177;3% margin at 95%, is <strong>n &#8776; 1,067</strong>, which is
+       exactly why the textbook national poll surveys "about a thousand" people. If a pilot tells you p is far from 0.5,
+       you need fewer: at p = 0.1 the same margin needs only <strong>384</strong>. Assuming 0.5 simply guarantees the
+       margin whatever the truth turns out to be.</p>
+  </section>
+
+  <!-- ===== Section 4: diminishing returns ===== -->
+  <section id="returns">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Diminishing Returns &amp; the Finite-Population Correction</h2></div>
+    <p>Because n grows as <strong>1/E&#178;</strong>, precision is expensive: each halving of the margin demands four times
+       the data.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 180" width="100%" font-family="Inter, sans-serif" aria-label="Required sample size soaring as the target margin of error shrinks">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Required n explodes as the margin shrinks (1/E&#178;)</text>
+        <line x1="70" y1="155" x2="640" y2="155" stroke="#8b94b3" stroke-width="1"/>
+        <line x1="70" y1="35" x2="70" y2="155" stroke="#8b94b3" stroke-width="1"/>
+        <text x="355" y="174" text-anchor="middle" font-size="8.5" fill="#8b94b3">target margin of error E</text>
+        <!-- curve: big at small E. points (E descending left->right): 6%,5%,4%,3%,2%,1% -> n 267,384,600,1067,2401,9604 -->
+        <polyline points="120,150 200,146 290,140 380,130 470,107 600,45" fill="none" stroke="#e11d48" stroke-width="2.5"/>
+        <g fill="#be123c" font-size="8" text-anchor="middle">
+          <circle cx="470" cy="107" r="3.5"/><text x="470" y="100">&#177;2%: 2401</text>
+          <circle cx="600" cy="45" r="3.5"/><text x="600" y="38">&#177;1%: 9604</text>
+          <circle cx="380" cy="130" r="3.5"/><text x="380" y="123">&#177;3%: 1067</text>
+        </g>
+        <text x="200" y="125" font-size="8.5" fill="#92400e" font-weight="700">halve E &#8594; 4&#215; the sample</text>
+      </svg>
+    </figure>
+
+    <p>Tightening the margin from &#177;2% to &#177;1% multiplies the required sample by <strong>four</strong>, from 2,401
+       to 9,604. The <span class="hl">finite-population correction</span>, n = n&#8320;/(1 + (n&#8320;&#8722;1)/N), gives
+       some back when the sample is a sizable fraction of a small population: for a town of 2,000 the needed sample drops
+       from 1,067 to <strong>696</strong>, but for a population of 100,000 it barely changes. Big populations get no
+       discount.</p>
+  </section>
+
+  <!-- ===== Section 5: power & ML ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Power, A/B Tests &amp; Machine Learning</h2></div>
+    <p>Margin of error sizes a single estimate. To <em>compare</em> groups, an A/B test, a treatment effect, you size for
+       <span class="term">statistical power</span>: the probability of detecting a real effect when it exists. This is the
+       sample-size question all over machine learning.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 175" width="100%" font-family="Inter, sans-serif" aria-label="Statistical power rising with sample size toward the 80 percent target">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Power rises with n: detecting a 10% &#8594; 12% lift</text>
+        <line x1="70" y1="150" x2="640" y2="150" stroke="#8b94b3" stroke-width="1"/>
+        <line x1="70" y1="35" x2="70" y2="150" stroke="#8b94b3" stroke-width="1"/>
+        <text x="355" y="170" text-anchor="middle" font-size="8.5" fill="#8b94b3">sample size per group</text>
+        <line x1="70" y1="62" x2="640" y2="62" stroke="#0d9488" stroke-dasharray="5 4"/>
+        <text x="120" y="56" font-size="8" fill="#0f766e" font-weight="700">80% power target</text>
+        <!-- power points: 500:.26 1000:.42 2000:.64 3000:.79 4000:.89 5000:.94 mapped y 150..35 over 0..1 -->
+        <polyline points="120,120 190,102 320,76 420,60 510,48 600,42" fill="none" stroke="#e11d48" stroke-width="2.5"/>
+        <g fill="#be123c"><circle cx="120" cy="120" r="3"/><circle cx="190" cy="102" r="3"/><circle cx="320" cy="76" r="3"/><circle cx="420" cy="60" r="3"/><circle cx="510" cy="48" r="3"/><circle cx="600" cy="42" r="3"/></g>
+        <text x="430" y="52" font-size="8" fill="#be123c" font-weight="700">~4,000/group for 80%</text>
+      </svg>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Idea (this chapter)</th><th>In ML / AI it becomes</th><th>Concrete example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Margin of error</td><td>Confidence on a metric</td><td>a test set of n gives accuracy &#177; z&#8730;(acc(1&#8722;acc)/n)</td></tr>
+          <tr><td class="nm">Sample size for a proportion</td><td>How big a test set?</td><td>to certify &#177;1% accuracy needs ~9,600 labeled examples</td></tr>
+          <tr><td class="nm">Statistical power</td><td>A/B test &amp; experiment sizing</td><td>~4,000/group to detect a 2-point lift at 80% power</td></tr>
+          <tr><td class="nm">1/E&#178; cost law</td><td>Diminishing returns of labels</td><td>each extra digit of precision costs 100&#215; the data</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>A model's reported accuracy is an estimate with a margin of error, so a test set has a required size just like a
+           poll: certifying accuracy to &#177;1% needs on the order of <strong>9,600</strong> labeled examples, and a
+           100-item test set cannot tell a 90% model from a 93% one. Comparing two models or two prompts is an
+           <strong>A/B test</strong>, and the notebook shows detecting a 2-point lift takes roughly
+           <strong>4,000 per group</strong> for 80% power, which is why so many "our model is better" claims are
+           statistically underpowered. Power analysis before you run the experiment is what separates a real result from
+           noise.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Compute (and verify) sample sizes in Python</h3>
+          <p>The companion notebook derives n for a mean and a proportion, confirms by simulation that the resulting
+             intervals hit the target margin, plots the p(1&#8722;p) parabola and the 1/E&#178; cost curve, applies the
+             finite-population correction, and runs a power analysis for an A/B test.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/determining-sample-size.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/determining-sample-size.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/determining-sample-size.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>scipy</code>, and
+      <code>matplotlib</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Margin of error</strong> E = z&#183;SE is the precision you choose; sample size comes from inverting it.</span></li>
+        <li><span class="ck">✓</span><span><strong>For a mean</strong>: n = (z&#183;&#963;/E)&#178; (here 217 for &#963;=15, &#177;2); you need an estimate of &#963; first.</span></li>
+        <li><span class="ck">✓</span><span><strong>For a proportion</strong>: n = z&#178;p(1&#8722;p)/E&#178;, worst case p=0.5 gives ~1,067 for &#177;3%, the classic poll size.</span></li>
+        <li><span class="ck">✓</span><span><strong>Cost is 1/E&#178;</strong>: halving the margin quadruples n; the finite-population correction helps only for small populations.</span></li>
+        <li><span class="ck">✓</span><span><strong>Power</strong> sizes comparisons (A/B tests, model evals): detecting a 2-point lift needs ~4,000/group at 80% power.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them with NumPy and SciPy before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Sample size for a mean</h4>
+        <p>With &#963; = 20 and a target margin of &#177;3 at 95% confidence, find n and verify it by simulation.</p>
+        <div class="chint">Hint: n = (z&#183;&#963;/E)&#178;, then check the simulated margin.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Sample size for a proportion</h4>
+        <p>A pilot suggests p = 0.2. For a &#177;4% margin at 95%, find n.</p>
+        <div class="chint">Hint: n = z&#178;p(1&#8722;p)/E&#178;.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>The worst case is p = 0.5</h4>
+        <p>Show that p = 0.5 maximizes the required sample size, and compute the safe n for &#177;4%.</p>
+        <div class="chint">Hint: tabulate n across several values of p.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Halve the margin, quadruple the sample</h4>
+        <p>Confirm that cutting the target margin in half multiplies the required sample size by four.</p>
+        <div class="chint">Hint: n is proportional to 1/E&#178;.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Higher confidence costs more</h4>
+        <p>Compare the sample size for 95% vs 99% confidence at the same &#177;3% margin.</p>
+        <div class="chint">Hint: the ratio is (z&#8329;&#8329;/z&#8329;&#8325;)&#178;.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code. Try
+           them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/determining-sample-size--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/determining-sample-size--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/determining-sample-size--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on sample size. Answer them, hit <strong>Check Answers</strong>, and keep refining until you
+       score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">🧭</div>
+    <div><div class="ctitle">Up next</div>
+      <p>You can now size a study. <strong>Chapter 65</strong> steps back to <strong>study design and data quality</strong>:
+         observational versus experimental studies, randomization, confounding, and the dimensions that make data
+         trustworthy in the first place.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="non-probability-sampling-methods.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 63 · Previous</span><br><span class="cn-title">Non-Probability Sampling Methods</span></span>
+    </a>
+    <a class="cn-btn next" href="study-design-and-data-quality.html">
+      <span><span class="cn-dir">Chapter 65 · Next</span><br><span class="cn-title">Study Design &amp; Data Quality</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 64 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch64";
+  window.QUIZ_DATA = [
+    {
+      q: "The margin of error E in a confidence interval equals…",
+      options: ["z × SE", "σ × n", "the sample mean", "1/n"],
+      answer: 0,
+      explain: "E = z·SE is the half-width of the interval. Choosing a target E and confidence level (z) determines the required sample size."
+    },
+    {
+      q: "The sample-size formula for estimating a MEAN is…",
+      options: ["n = (z·σ/E)²", "n = z·σ·E", "n = E²/σ", "n = z/E"],
+      answer: 0,
+      explain: "Inverting E = z·σ/√n gives n = (z·σ/E)². You need an estimate of σ (from a pilot or prior data) to use it."
+    },
+    {
+      q: "For a proportion, the required sample size is LARGEST when…",
+      options: ["p = 0", "p = 0.5", "p = 1", "p = 0.1"],
+      answer: 1,
+      explain: "Variability p(1−p) is maximized at p = 0.5, so assuming 0.5 gives the safest (largest) sample size when p is unknown."
+    },
+    {
+      q: "A ±3% margin at 95% for a proportion (worst case) needs roughly…",
+      options: ["About 100", "About 1,067", "About 10,000", "About 50"],
+      answer: 1,
+      explain: "n = z²·0.25/E² = 1.96²·0.25/0.03² ≈ 1,067, which is why classic national polls survey about a thousand people."
+    },
+    {
+      q: "To HALVE the margin of error, you must…",
+      options: ["Double the sample", "Quadruple the sample", "Halve the sample", "Change nothing"],
+      answer: 1,
+      explain: "Sample size grows as 1/E², so cutting E in half requires four times as much data."
+    },
+    {
+      q: "The finite-population correction matters most when…",
+      options: ["The population is huge", "The sample is a large fraction of a small population", "p = 0.5", "Confidence is 99%"],
+      answer: 1,
+      explain: "The FPC reduces the needed n when you sample a sizable share of a small population; for large populations it is negligible."
+    },
+    {
+      q: "Statistical power is…",
+      options: ["The margin of error", "The probability of detecting a real effect when it exists", "The sample mean", "The confidence level"],
+      answer: 1,
+      explain: "Power sizes comparisons (A/B tests, treatment effects). Underpowered studies often miss real effects, a major cause of irreproducibility."
+    },
+    {
+      q: "Reporting a model's accuracy to ±1% (a proportion) requires a test set of roughly…",
+      options: ["100 examples", "1,000 examples", "9,600 examples", "10 examples"],
+      answer: 2,
+      explain: "Accuracy is a proportion, so ±1% at 95% needs n ≈ z²·0.25/0.01² ≈ 9,600 labeled examples; small test sets cannot certify small differences."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 89 · Covariance — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#faf5ff; border:1px solid #e9d5ff; border-left:4px solid #9333ea; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#7e22ce; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/covariance.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XIV · Correlation &amp; Association</span><span class="sep">/</span>
+      <span>Chapter 89</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XIV · Correlation &amp; Association</span> How two variables move together</div>
+    <h1><span class="accent">Covariance</span></h1>
+    <p class="dek">Inference asked questions about one variable at a time. Now we ask how <em>two</em> variables relate.
+       Covariance is the first answer: a single signed number for the direction two variables move together. Its catch,
+       that its size depends on units, is exactly what motivates correlation in the next chapter.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~15 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 89</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Do advertising spend and sales rise together? Does resting heart rate fall as exercise rises? These
+       are questions about <span class="term">association</span>, how two variables co-vary. The simplest measure is
+       <span class="term">covariance</span>, and it is the foundation everything in this Part builds on.</p>
+
+    <div class="def-card">
+      <div class="sigma">cov</div>
+      <div class="def-body">
+        The <span class="def-kw">covariance</span> of x and y is the average of the products of their deviations from
+        their means: cov(x, y) = mean of (x &#8722; x&#772;)(y &#8722; y&#772;). It is
+        <span class="def-kw">positive</span> when they move together, <span class="def-kw">negative</span> when they move
+        oppositely, and near <span class="def-kw">zero</span> when there is no linear tendency.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🔗</div>
+      <div><div class="ctitle">The chapter in one line</div>
+        <p>Covariance reads the <em>direction</em> two variables move together from its sign. But its magnitude depends on
+           the units, which is why we standardize it into correlation.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1 ===== -->
+  <section id="measures">
+    <div class="section-eyebrow"><div class="num">1</div><h2>What Covariance Measures</h2></div>
+    <p>Picture a scatterplot. If high x tends to come with high y (and low with low), the cloud slopes up and covariance
+       is <span class="hl">positive</span>. If high x comes with low y, it slopes down and covariance is
+       <span class="hl">negative</span>. A shapeless cloud gives covariance near <span class="hl">zero</span>.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 170" width="100%" font-family="Inter, sans-serif" aria-label="Three scatterplots: a positive covariance sloping up, a negative covariance sloping down, and a near-zero covariance with no slope">
+        <text x="340" y="16" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">The sign of covariance is the direction of the slope</text>
+        <g>
+          <text x="115" y="40" text-anchor="middle" font-size="9" fill="#7e22ce" font-weight="800">cov &gt; 0</text>
+          <line x1="55" y1="140" x2="180" y2="140" stroke="#cbd5e1"/><line x1="55" y1="50" x2="55" y2="140" stroke="#cbd5e1"/>
+          <g fill="#9333ea"><circle cx="70" cy="128" r="3"/><circle cx="90" cy="118" r="3"/><circle cx="105" cy="108" r="3"/><circle cx="125" cy="92" r="3"/><circle cx="145" cy="78" r="3"/><circle cx="165" cy="64" r="3"/><circle cx="100" cy="100" r="3"/></g>
+        </g>
+        <g>
+          <text x="340" y="40" text-anchor="middle" font-size="9" fill="#b45309" font-weight="800">cov &lt; 0</text>
+          <line x1="280" y1="140" x2="405" y2="140" stroke="#cbd5e1"/><line x1="280" y1="50" x2="280" y2="140" stroke="#cbd5e1"/>
+          <g fill="#d97706"><circle cx="295" cy="64" r="3"/><circle cx="315" cy="78" r="3"/><circle cx="330" cy="92" r="3"/><circle cx="350" cy="108" r="3"/><circle cx="370" cy="120" r="3"/><circle cx="390" cy="130" r="3"/><circle cx="335" cy="100" r="3"/></g>
+        </g>
+        <g>
+          <text x="565" y="40" text-anchor="middle" font-size="9" fill="#64748b" font-weight="800">cov &#8776; 0</text>
+          <line x1="505" y1="140" x2="630" y2="140" stroke="#cbd5e1"/><line x1="505" y1="50" x2="505" y2="140" stroke="#cbd5e1"/>
+          <g fill="#94a3b8"><circle cx="520" cy="100" r="3"/><circle cx="545" cy="70" r="3"/><circle cx="560" cy="120" r="3"/><circle cx="580" cy="85" r="3"/><circle cx="600" cy="115" r="3"/><circle cx="615" cy="78" r="3"/><circle cx="565" cy="98" r="3"/></g>
+        </g>
+        <text x="340" y="162" text-anchor="middle" font-size="8.5" fill="#8b94b3">np.cov(x, y) returns the 2&#215;2 matrix; the off-diagonal entry is the covariance</text>
+      </svg>
+    </figure>
+
+    <p>In the notebook these three pictures come straight from <code>np.cov</code>: covariance about +0.8, &#8722;0.8, and
+       0.0. One signed number captures "which way do they move together?", the starting point for every relationship
+       measure that follows.</p>
+  </section>
+
+  <!-- ===== Section 2 ===== -->
+  <section id="formula">
+    <div class="section-eyebrow"><div class="num">2</div><h2>The Formula &amp; the Quadrant Intuition</h2></div>
+    <p>Split the scatterplot into four quadrants with vertical and horizontal lines at the two means. A point where both x
+       and y are <em>above</em> their means (upper-right) or both <em>below</em> (lower-left) has a
+       <span class="hl">positive</span> deviation product. The other two quadrants give <span class="hl">negative</span>
+       products. Covariance is the average of all of them.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 180" width="100%" font-family="Inter, sans-serif" aria-label="A scatterplot divided into four quadrants by the means; upper-right and lower-left give positive deviation products, the other two negative">
+        <text x="340" y="16" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">cov = mean of (x &#8722; x&#772;)(y &#8722; y&#772;)</text>
+        <line x1="120" y1="100" x2="560" y2="100" stroke="#1a2138" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <line x1="340" y1="34" x2="340" y2="166" stroke="#1a2138" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <rect x="340" y="34" width="220" height="66" fill="#f3e8ff" opacity="0.7"/>
+        <rect x="120" y="100" width="220" height="66" fill="#f3e8ff" opacity="0.7"/>
+        <rect x="120" y="34" width="220" height="66" fill="#fef3c7" opacity="0.6"/>
+        <rect x="340" y="100" width="220" height="66" fill="#fef3c7" opacity="0.6"/>
+        <text x="450" y="68" text-anchor="middle" font-size="9" fill="#7e22ce" font-weight="800">+ (both above)</text>
+        <text x="230" y="138" text-anchor="middle" font-size="9" fill="#7e22ce" font-weight="800">+ (both below)</text>
+        <text x="230" y="68" text-anchor="middle" font-size="9" fill="#b45309" font-weight="800">&#8722;</text>
+        <text x="450" y="138" text-anchor="middle" font-size="9" fill="#b45309" font-weight="800">&#8722;</text>
+        <g fill="#9333ea"><circle cx="400" cy="78" r="3"/><circle cx="430" cy="64" r="3"/><circle cx="470" cy="56" r="3"/><circle cx="500" cy="70" r="3"/><circle cx="250" cy="130" r="3"/><circle cx="280" cy="120" r="3"/><circle cx="300" cy="140" r="3"/></g>
+        <g fill="#d97706"><circle cx="250" cy="80" r="3"/><circle cx="455" cy="130" r="3"/></g>
+        <text x="565" y="104" font-size="8" fill="#64748b">x&#772;</text><text x="345" y="44" font-size="8" fill="#64748b">y&#772;</text>
+        <text x="340" y="178" text-anchor="middle" font-size="8" fill="#8b94b3">more (and stronger) points on the purple diagonal &#8594; positive covariance</text>
+      </svg>
+    </figure>
+
+    <p>It is a vote: each point casts a signed product, and the average is the covariance. In the notebook, coloring points
+       by the sign of their product makes a positive relationship visibly purple-dominated. (Use <code>ddof</code> to pick
+       the population or sample version; the sign and story are the same.)</p>
+  </section>
+
+  <!-- ===== Section 3 ===== -->
+  <section id="vscorr">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Covariance vs Correlation</h2></div>
+    <p>Covariance has a fatal flaw for comparison: its units are x times y, so its <span class="hl">magnitude is
+       arbitrary</span>. Measure y in cents instead of dollars and the covariance jumps 100-fold, though nothing about the
+       relationship changed. Divide by the two standard deviations and the units cancel, giving
+       <span class="term">correlation</span>, a unitless number locked into [&#8722;1, 1].</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 150" width="100%" font-family="Inter, sans-serif" aria-label="Scaling y by 1000 multiplies the covariance by 1000 but leaves the correlation unchanged">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Change the units: covariance moves, correlation does not</text>
+        <rect x="60" y="40" width="270" height="42" rx="9" fill="#faf5ff" stroke="#9333ea"/>
+        <text x="195" y="60" text-anchor="middle" font-size="10" fill="#7e22ce" font-weight="800">cov(x, y) = 0.45 &#8594; cov(x, 1000y) = 450</text>
+        <text x="195" y="75" text-anchor="middle" font-size="8" fill="#7c3aed">magnitude depends on units (uninterpretable)</text>
+        <rect x="350" y="40" width="270" height="42" rx="9" fill="#ecfdf5" stroke="#059669"/>
+        <text x="485" y="60" text-anchor="middle" font-size="10" fill="#047857" font-weight="800">corr = cov / (s&#8339; s&#8336;) = 0.75 either way</text>
+        <text x="485" y="75" text-anchor="middle" font-size="8" fill="#15803d">unitless, in [&#8722;1, 1] (comparable)</text>
+        <text x="340" y="112" text-anchor="middle" font-size="9" fill="#4a5578">correlation = covariance, standardized by the spread of each variable</text>
+        <text x="340" y="132" text-anchor="middle" font-size="8" fill="#8b94b3">covariance answers "which direction?" &#183; correlation answers "how strong?" (Chapter 90)</text>
+      </svg>
+    </figure>
+
+    <p>So the two are partners. Covariance gives the raw signed strength in the data's own units; correlation rescales it
+       to a universal &#8722;1-to-1 ruler you can compare across any pair of variables. Chapter 90 is devoted to that
+       ruler.</p>
+  </section>
+
+  <!-- ===== Section 4: REAL-WORLD ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: Ad Spend &amp; Sales</h2></div>
+    <p>A marketing team has 160 campaigns with spend, reach, visits, and sales. We compute the covariance matrix (a grid
+       of unit-dependent numbers) and the correlation matrix (a readable heatmap), and see why analysts almost always
+       reach for the latter.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · covariance--ad_sales.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per campaign with <code>ad_spend</code>, <code>impressions</code>,
+        <code>web_visits</code>, and <code>sales</code> (plus <code>region</code>).</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/covariance--ad_sales.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 160 campaigns</small></a>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Pair</th><th>Covariance</th><th>Correlation</th><th>Reading</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">ad_spend &amp; sales</td><td>&#8776; 29,000,000</td><td>0.95</td><td>very strong, positive</td></tr>
+          <tr><td class="nm">ad_spend &amp; web_visits</td><td>large positive</td><td>0.97</td><td>very strong, positive</td></tr>
+          <tr><td class="nm">web_visits &amp; sales</td><td>large positive</td><td>0.91</td><td>strong, positive</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The covariance between spend and sales is roughly <strong>29 million</strong> (dollars times dollars), a magnitude
+       you cannot interpret or compare to anything. Standardized, that same relationship is a correlation of
+       <strong>0.95</strong>, instantly legible as "very strong and positive." Every metric here moves together, which is
+       precisely why analysts read the <span class="hl">correlation heatmap</span>, not the covariance grid. The notebook
+       draws both with <code>pandas</code> and <code>seaborn</code>.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 406" width="100%" font-family="Inter, sans-serif" aria-label="A four by four correlation heatmap of ad spend, impressions, web visits and sales, all strongly positive">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Correlation heatmap: every metric moves together</text>
+        <text x="186" y="72" text-anchor="start" font-size="8" fill="#4a5578" font-weight="700" transform="rotate(-32 186 72)">ad spend</text>
+        <text x="258" y="72" text-anchor="start" font-size="8" fill="#4a5578" font-weight="700" transform="rotate(-32 258 72)">impressions</text>
+        <text x="330" y="72" text-anchor="start" font-size="8" fill="#4a5578" font-weight="700" transform="rotate(-32 330 72)">web visits</text>
+        <text x="402" y="72" text-anchor="start" font-size="8" fill="#4a5578" font-weight="700" transform="rotate(-32 402 72)">sales</text>
+        <text x="142" y="123" text-anchor="end" font-size="8.5" fill="#1a2138" font-weight="700">ad spend</text>
+        <rect x="150" y="84" width="72" height="72" fill="#581c87" stroke="#fff" stroke-width="1.5"/>
+        <text x="186" y="123" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">1.00</text>
+        <rect x="222" y="84" width="72" height="72" fill="#622a8f" stroke="#fff" stroke-width="1.5"/>
+        <text x="258" y="123" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">0.99</text>
+        <rect x="294" y="84" width="72" height="72" fill="#76459f" stroke="#fff" stroke-width="1.5"/>
+        <text x="330" y="123" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">0.97</text>
+        <rect x="366" y="84" width="72" height="72" fill="#8a60af" stroke="#fff" stroke-width="1.5"/>
+        <text x="402" y="123" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">0.95</text>
+        <text x="142" y="195" text-anchor="end" font-size="8.5" fill="#1a2138" font-weight="700">impressions</text>
+        <rect x="150" y="156" width="72" height="72" fill="#622a8f" stroke="#fff" stroke-width="1.5"/>
+        <text x="186" y="195" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">0.99</text>
+        <rect x="222" y="156" width="72" height="72" fill="#581c87" stroke="#fff" stroke-width="1.5"/>
+        <text x="258" y="195" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">1.00</text>
+        <rect x="294" y="156" width="72" height="72" fill="#8a60af" stroke="#fff" stroke-width="1.5"/>
+        <text x="330" y="195" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">0.95</text>
+        <rect x="366" y="156" width="72" height="72" fill="#9e7cbf" stroke="#fff" stroke-width="1.5"/>
+        <text x="402" y="195" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">0.93</text>
+        <text x="142" y="267" text-anchor="end" font-size="8.5" fill="#1a2138" font-weight="700">web visits</text>
+        <rect x="150" y="228" width="72" height="72" fill="#76459f" stroke="#fff" stroke-width="1.5"/>
+        <text x="186" y="267" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">0.97</text>
+        <rect x="222" y="228" width="72" height="72" fill="#8a60af" stroke="#fff" stroke-width="1.5"/>
+        <text x="258" y="267" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">0.95</text>
+        <rect x="294" y="228" width="72" height="72" fill="#581c87" stroke="#fff" stroke-width="1.5"/>
+        <text x="330" y="267" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">1.00</text>
+        <rect x="366" y="228" width="72" height="72" fill="#b197ce" stroke="#fff" stroke-width="1.5"/>
+        <text x="402" y="267" text-anchor="middle" font-size="9" fill="#3b0764" font-weight="700">0.91</text>
+        <text x="142" y="339" text-anchor="end" font-size="8.5" fill="#1a2138" font-weight="700">sales</text>
+        <rect x="150" y="300" width="72" height="72" fill="#8a60af" stroke="#fff" stroke-width="1.5"/>
+        <text x="186" y="339" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">0.95</text>
+        <rect x="222" y="300" width="72" height="72" fill="#9e7cbf" stroke="#fff" stroke-width="1.5"/>
+        <text x="258" y="339" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">0.93</text>
+        <rect x="294" y="300" width="72" height="72" fill="#b197ce" stroke="#fff" stroke-width="1.5"/>
+        <text x="330" y="339" text-anchor="middle" font-size="9" fill="#3b0764" font-weight="700">0.91</text>
+        <rect x="366" y="300" width="72" height="72" fill="#581c87" stroke="#fff" stroke-width="1.5"/>
+        <text x="402" y="339" text-anchor="middle" font-size="9" fill="#ffffff" font-weight="700">1.00</text>
+        <text x="150" y="390" font-size="8" fill="#64748b">0 (none)</text>
+        <rect x="208" y="382" width="3" height="9" fill="#ede9fe"/>
+        <rect x="211" y="382" width="3" height="9" fill="#e9e4fb"/>
+        <rect x="214" y="382" width="3" height="9" fill="#e5def8"/>
+        <rect x="217" y="382" width="3" height="9" fill="#e2d9f5"/>
+        <rect x="220" y="382" width="3" height="9" fill="#ded4f2"/>
+        <rect x="223" y="382" width="3" height="9" fill="#dacfef"/>
+        <rect x="226" y="382" width="3" height="9" fill="#d6c9ec"/>
+        <rect x="229" y="382" width="3" height="9" fill="#d2c4e9"/>
+        <rect x="232" y="382" width="3" height="9" fill="#cebfe6"/>
+        <rect x="235" y="382" width="3" height="9" fill="#cbbae3"/>
+        <rect x="238" y="382" width="3" height="9" fill="#c7b4df"/>
+        <rect x="241" y="382" width="3" height="9" fill="#c3afdc"/>
+        <rect x="244" y="382" width="3" height="9" fill="#bfaad9"/>
+        <rect x="247" y="382" width="3" height="9" fill="#bba5d6"/>
+        <rect x="250" y="382" width="3" height="9" fill="#b89fd3"/>
+        <rect x="253" y="382" width="3" height="9" fill="#b49ad0"/>
+        <rect x="256" y="382" width="3" height="9" fill="#b095cd"/>
+        <rect x="259" y="382" width="3" height="9" fill="#ac90ca"/>
+        <rect x="262" y="382" width="3" height="9" fill="#a88ac7"/>
+        <rect x="265" y="382" width="3" height="9" fill="#a485c4"/>
+        <rect x="268" y="382" width="3" height="9" fill="#a180c1"/>
+        <rect x="271" y="382" width="3" height="9" fill="#9d7bbe"/>
+        <rect x="274" y="382" width="3" height="9" fill="#9975bb"/>
+        <rect x="277" y="382" width="3" height="9" fill="#9570b8"/>
+        <rect x="280" y="382" width="3" height="9" fill="#916bb5"/>
+        <rect x="283" y="382" width="3" height="9" fill="#8d66b2"/>
+        <rect x="286" y="382" width="3" height="9" fill="#8a60af"/>
+        <rect x="289" y="382" width="3" height="9" fill="#865bac"/>
+        <rect x="292" y="382" width="3" height="9" fill="#8256a9"/>
+        <rect x="295" y="382" width="3" height="9" fill="#7e51a6"/>
+        <rect x="298" y="382" width="3" height="9" fill="#7a4ba2"/>
+        <rect x="301" y="382" width="3" height="9" fill="#77469f"/>
+        <rect x="304" y="382" width="3" height="9" fill="#73419c"/>
+        <rect x="307" y="382" width="3" height="9" fill="#6f3c99"/>
+        <rect x="310" y="382" width="3" height="9" fill="#6b3696"/>
+        <rect x="313" y="382" width="3" height="9" fill="#673193"/>
+        <rect x="316" y="382" width="3" height="9" fill="#632c90"/>
+        <rect x="319" y="382" width="3" height="9" fill="#60278d"/>
+        <rect x="322" y="382" width="3" height="9" fill="#5c218a"/>
+        <rect x="325" y="382" width="3" height="9" fill="#581c87"/>
+        <text x="332" y="390" font-size="8" fill="#64748b">1 (perfect +)</text>
+      </svg>
+    </figure>
+
+    <p>How to read it: each cell is the correlation between its row and column variable, so the grid is symmetric and the diagonal is always <strong>1.00</strong> (a variable correlates perfectly with itself). Darker purple means a stronger positive correlation. Here every off-diagonal cell is dark (0.91 to 0.99): all four marketing metrics rise together almost in lockstep, more spend buys more impressions and visits, which turn into more sales. Why it matters: a heatmap turns a wall of numbers into an instant picture, you spot the strongest and weakest links at a glance, which is exactly why the correlation heatmap is the standard first look at any set of numeric variables.</p>
+  </section>
+
+  <!-- ===== Section 5: ML & AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Covariance in Machine Learning &amp; AI</h2></div>
+    <p>The covariance <em>matrix</em> is one of the most important objects in all of machine learning.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Idea (this chapter)</th><th>In ML / AI it becomes</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Covariance matrix</td><td>The shape of multivariate data</td><td>the &#931; in a multivariate Gaussian</td></tr>
+          <tr><td class="nm">Directions of variance</td><td>Principal Component Analysis (PCA)</td><td>eigenvectors of the covariance matrix</td></tr>
+          <tr><td class="nm">Standardizing</td><td>Whitening &amp; Mahalanobis distance</td><td>distance that accounts for correlation</td></tr>
+          <tr><td class="nm">Sign of covariance</td><td>Feature relationship screening</td><td>which inputs move with the target</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">Why this matters for AI research</div>
+        <p>The <strong>covariance matrix</strong> encodes how every pair of features varies together, and its eigen-decomposition
+           is exactly <strong>PCA</strong>: the eigenvectors point along the directions of greatest variance, letting you
+           compress or denoise high-dimensional data. The same matrix defines the <strong>multivariate Gaussian</strong>
+           at the heart of many models, and <strong>Mahalanobis distance</strong> uses its inverse to measure distance in
+           a way that respects correlation (crucial for anomaly detection). Covariance is where one-variable statistics
+           ends and the multivariate world of modern ML begins.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>See covariance in pictures with Python</h3>
+          <p>The companion notebook plots positive, negative, and zero covariance, colors the deviation quadrants, shows
+             how units change covariance but not correlation, and loads <code>covariance--ad_sales.xlsx</code> to compare the
+             covariance matrix with a <code>seaborn</code> correlation heatmap.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/covariance.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/covariance.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/covariance.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, <code>scipy</code>,
+      <code>matplotlib</code>, <code>seaborn</code>, <code>statsmodels</code>, and <code>openpyxl</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Covariance</strong> = mean of (x &#8722; x&#772;)(y &#8722; y&#772;); positive = move together, negative = move oppositely, ~0 = no linear tendency.</span></li>
+        <li><span class="ck">✓</span><span><strong>Quadrant intuition</strong>: points on the same side of both means push covariance up; opposite-side points push it down.</span></li>
+        <li><span class="ck">✓</span><span><strong>Units matter</strong>: covariance scales with the units of x and y, so its magnitude is not comparable across pairs.</span></li>
+        <li><span class="ck">✓</span><span><strong>Standardize</strong> by the two SDs to get correlation, unitless and in [&#8722;1, 1] (next chapter).</span></li>
+        <li><span class="ck">✓</span><span><strong>In ML/AI</strong>: the covariance matrix drives PCA, the multivariate Gaussian, and Mahalanobis distance.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five short challenges, beginner to intermediate. Try them with NumPy and pandas before checking the solutions.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Covariance from the formula</h4>
+        <p>For x = [1,2,3,4,5], y = [2,4,5,4,5], compute covariance as the mean of deviation products and check with NumPy.</p>
+        <div class="chint">Hint: <code>((x-x.mean())*(y-y.mean())).mean()</code> matches <code>np.cov(ddof=0)</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Sign of covariance</h4>
+        <p>Generate a negatively related pair and confirm the covariance is negative.</p>
+        <div class="chint">Hint: y = &#8722;0.7&#183;x + noise.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Units change covariance, not correlation</h4>
+        <p>Show cov(x, 100y) = 100&#183;cov(x, y) while the correlation is unchanged.</p>
+        <div class="chint">Hint: compare <code>np.cov</code> and <code>np.corrcoef</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Standardize to correlation</h4>
+        <p>Compute correlation as cov/(s&#8339;&#183;s&#8336;) and confirm it matches <code>np.corrcoef</code>.</p>
+        <div class="chint">Hint: use <code>ddof=1</code> standard deviations.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Real data: covariance vs correlation matrix</h4>
+        <p>Load <code>covariance--ad_sales.xlsx</code> and print the covariance and correlation matrices of the four numeric columns.</p>
+        <div class="chint">Hint: <code>df.cov()</code> and <code>df.corr()</code>.</div></div></div>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">✅</div>
+      <div><div class="ctitle">Check your work</div>
+        <p>A fully-worked <strong>solutions notebook</strong> walks through all five challenges, each verified in code. Try
+           them yourself first, then compare.</p></div>
+    </div>
+
+    <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:0.4rem">
+      <a class="btn btn-primary" href="notebooks/html/covariance--solutions.html">📓 View Solutions</a>
+      <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+         href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/covariance--solutions.ipynb"
+         target="_blank" rel="noopener">▶ Open Solutions in Colab</a>
+      <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+         href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/covariance--solutions.ipynb"
+         target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on covariance. Answer them, hit <strong>Check Answers</strong>, and keep refining until you
+       score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>Covariance told us the direction; its magnitude was unreadable. <strong>Chapter 90 &#183; Correlation
+         Coefficients</strong> standardizes it into Pearson's r and Spearman's rank correlation, the &#8722;1-to-1 ruler
+         for the <em>strength</em> of a relationship.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="case-study-manufacturing-quality.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 88 · Previous</span><br><span class="cn-title">Case Study: Manufacturing Quality</span></span>
+    </a>
+    <a class="cn-btn next" href="correlation-coefficients.html">
+      <span><span class="cn-dir">Chapter 90 · Next</span><br><span class="cn-title">Correlation Coefficients</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 89 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch89";
+  window.QUIZ_DATA = [
+    {
+      q: "Covariance is defined as…",
+      options: ["The average of x times y", "The average of the products of deviations from the means, (x − x̄)(y − ȳ)", "The difference of the two means", "The ratio of the two variances"],
+      answer: 1,
+      explain: "Covariance averages (x − x̄)(y − ȳ): how the two variables deviate from their means together."
+    },
+    {
+      q: "A positive covariance means…",
+      options: ["x and y are unrelated", "x and y tend to rise and fall together", "x rises as y falls", "the data are normal"],
+      answer: 1,
+      explain: "Positive covariance means above-average x tends to come with above-average y (and below with below)."
+    },
+    {
+      q: "In the quadrant picture, a point where both x and y are BELOW their means contributes a…",
+      options: ["Negative product", "Positive product", "Zero product", "Product of one"],
+      answer: 1,
+      explain: "(x − x̄) and (y − ȳ) are both negative, so their product is positive (lower-left quadrant)."
+    },
+    {
+      q: "If you measure y in cents instead of dollars (×100), the covariance…",
+      options: ["Is unchanged", "Is multiplied by 100", "Is divided by 100", "Becomes negative"],
+      answer: 1,
+      explain: "Covariance has units of x×y, so rescaling y by 100 multiplies the covariance by 100."
+    },
+    {
+      q: "Why is the MAGNITUDE of a covariance hard to interpret?",
+      options: ["It is always negative", "Its units (x times y) and scale depend on how the variables are measured", "It is always between −1 and 1", "It ignores the means"],
+      answer: 1,
+      explain: "Because it carries the units of x times y, the same relationship gives different covariance numbers under different units."
+    },
+    {
+      q: "To convert covariance into a comparable, unitless measure you…",
+      options: ["Add the two means", "Divide by the product of the two standard deviations", "Square it", "Multiply by n"],
+      answer: 1,
+      explain: "Correlation = cov(x,y) / (sₓ·s_y); dividing by the SDs cancels the units, giving a number in [−1, 1]."
+    },
+    {
+      q: "In the ad dataset, cov(ad_spend, sales) ≈ 29 million while the correlation is 0.95. This shows…",
+      options: ["The relationship is weak", "The covariance magnitude is unreadable, but standardized it is a strong 0.95", "There is no relationship", "The covariance is wrong"],
+      answer: 1,
+      explain: "29 million dollars² is meaningless on its own; standardized, the relationship is a strong positive 0.95."
+    },
+    {
+      q: "The covariance MATRIX is central to which ML technique?",
+      options: ["Decision trees", "Principal Component Analysis (PCA)", "k-nearest neighbors", "Naive Bayes"],
+      answer: 1,
+      explain: "PCA finds the eigenvectors of the covariance matrix, the directions of greatest variance in the data."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

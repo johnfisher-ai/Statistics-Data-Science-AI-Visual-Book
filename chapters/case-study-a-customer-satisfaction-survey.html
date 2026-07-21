@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 87 · Case Study: A Customer Satisfaction Survey — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#ecfeff; border:1px solid #a5f3fc; border-left:4px solid #0891b2; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#0e7490; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+    .report-card { background:#fff; border:1px solid #cffafe; border-left:5px solid #0e7490; border-radius:14px;
+                   padding:1.3rem 1.5rem; margin:1.3rem 0; box-shadow:0 6px 18px rgba(8,51,68,0.06); }
+    .report-card .rep-tag { font-size:0.7rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#0e7490; }
+    .report-card h3 { margin:0.25rem 0 0.7rem; font-size:1.12rem; color:var(--ink); }
+    .report-card p { color:var(--ink-soft); line-height:1.75; margin:0.55rem 0; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/case-study-a-customer-satisfaction-survey.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XIII · Inference Case Studies</span><span class="sep">/</span>
+      <span>Chapter 87</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XIII · Case Study</span> Mixed data, three tools</div>
+    <h1>Case Study: A <span class="accent">Satisfaction Survey</span></h1>
+    <p class="dek">Survey data mixes types: a yes/no recommend, categorical plans, an ordinal 1-5 rating. We put a
+       margin of error on the headline rate, test whether recommending depends on plan with chi-square, and compare
+       satisfaction across segments with a rank-based test, then write the read-out.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~14 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 87</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Survey results are where people most often misread statistics, quoting a rate as if it were exact,
+       comparing averages of 1-to-5 ratings, or calling a weak association "strong." This case study handles all three
+       traps on one survey, the careful way.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#9733;</div>
+      <div class="def-body">
+        <span class="def-kw">The scenario.</span> A customer survey recorded a 1-5
+        <span class="def-kw">satisfaction</span> rating, whether each respondent
+        <span class="def-kw">would recommend</span> (the top-2-box metric), their <span class="def-kw">plan</span>, and
+        their <span class="def-kw">segment</span> (new vs existing).
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🎯</div>
+      <div><div class="ctitle">The three questions</div>
+        <p>(1) What share would recommend, with a margin of error? (2) Does recommending depend on plan tier? (3) Do new
+           and existing customers differ in satisfaction?</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1 ===== -->
+  <section id="data">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Data &amp; The Questions</h2></div>
+    <p>One row per respondent, with a binary <code>would_recommend</code>, an ordinal
+       <code>satisfaction_1_5</code>, and categorical <code>plan</code> and <code>segment</code>. Three columns, three
+       different data types, three different tools.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · case-study-a-customer-satisfaction-survey--satisfaction_survey.xlsx</div>
+      <p style="margin:0.5rem 0 0">One row per respondent with <code>segment</code>, <code>plan</code>,
+        <code>region</code>, <code>satisfaction_1_5</code> (ordinal), and <code>would_recommend</code> (0/1).</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/case-study-a-customer-satisfaction-survey--satisfaction_survey.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 720 respondents</small></a>
+      </div>
+    </div>
+
+    <p>The headline: about <strong>64%</strong> would recommend. But this is a <em>sample</em> of customers, so 64% is an
+       estimate, not a fact, it deserves a margin of error. And because a 1-to-5 rating is ordinal (the steps are not
+       guaranteed equal), we will compare it with a rank-based test, not by averaging.</p>
+  </section>
+
+  <!-- ===== Section 2 ===== -->
+  <section id="choose">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Three Questions, Three Tests</h2></div>
+    <p>Each question maps to its data type. A rate gets an interval; two categoricals get a chi-square; an ordinal rating
+       across groups gets a rank test.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Question</th><th>Data type</th><th>Tool</th><th>H&#8320; / H&#8321;</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Share who would recommend?</td><td>one proportion</td><td>estimate + margin of error</td><td>&#8212; (estimation)</td></tr>
+          <tr><td class="nm">Recommending vs plan?</td><td>two categorical variables</td><td>chi-square independence</td><td>independent / associated</td></tr>
+          <tr><td class="nm">Satisfaction: new vs existing?</td><td>ordinal (1-5), 2 groups</td><td>Mann-Whitney U</td><td>same distribution / they differ</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Why Mann-Whitney for satisfaction? A 1-to-5 scale is <span class="hl">ordinal</span>: we know 4 beats 3, but not
+       that the gap equals the gap from 1 to 2, so averaging is shaky. Comparing <em>ranks</em> sidesteps that. For the
+       chi-square we will confirm every expected cell count is at least ~5, and we will report <span class="hl">Cramer's
+       V</span> so a small p from 720 respondents is not mistaken for a strong link.</p>
+  </section>
+
+  <!-- ===== Section 3 ===== -->
+  <section id="analysis">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The Analysis &amp; Results</h2></div>
+    <p>The margin of error frames the headline; chi-square and Cramer's V handle the plan link; Mann-Whitney compares the
+       segments.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 168" width="100%" font-family="Inter, sans-serif" aria-label="Would-recommend rate rises with plan tier from Basic to Pro to Enterprise">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Would-recommend rate rises with plan tier</text>
+        <line x1="120" y1="148" x2="600" y2="148" stroke="#94a3b8" stroke-width="1"/>
+        <rect x="170" y="92" width="100" height="56" fill="#a5f3fc"/><text x="220" y="84" text-anchor="middle" font-size="10" fill="#0e7490" font-weight="700">~58%</text><text x="220" y="162" text-anchor="middle" font-size="9" fill="#475569">Basic</text>
+        <rect x="330" y="78" width="100" height="70" fill="#0891b2"/><text x="380" y="70" text-anchor="middle" font-size="10" fill="#0e7490" font-weight="800">~67%</text><text x="380" y="162" text-anchor="middle" font-size="9" fill="#475569">Pro</text>
+        <rect x="490" y="64" width="100" height="84" fill="#0e7490"/><text x="540" y="56" text-anchor="middle" font-size="10" fill="#0e7490" font-weight="800">~74%</text><text x="540" y="162" text-anchor="middle" font-size="9" fill="#475569">Enterprise</text>
+        <text x="340" y="36" text-anchor="middle" font-size="8.5" fill="#64748b">chi-square p &#8776; 0.001, but Cramer's V &#8776; 0.14 (a modest link)</text>
+      </svg>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Question</th><th>Result</th><th>Reading</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Recommend rate</td><td>64% &#177; 3.5 pts (95%), i.e. [61%, 68%]</td><td>healthy, quote as a range</td></tr>
+          <tr><td class="nm">Plan &#215; recommend</td><td>&#967;&#178; = 13.7, p &#8776; 0.001, V &#8776; 0.14</td><td>real but modest association</td></tr>
+          <tr><td class="nm">Satisfaction (new vs existing)</td><td>means 3.58 vs 3.99, Mann-Whitney p &#8776; 10&#8315;&#8312;</td><td>existing clearly happier</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Three honest reads. The 64% recommend rate carries a <strong>&#177;3.5 point</strong> margin, so the truth is
+       likely 61-68%. Recommending <em>does</em> depend on plan (p &#8776; 0.001), but Cramer&#39;s V &#8776; 0.14 says the
+       link is modest, higher tiers recommend more, yet plan explains only a sliver of who recommends. And existing
+       customers out-rate new ones on satisfaction (Mann-Whitney p &#8776; 10&#8315;&#8312;) <em>even though both medians
+       are 4</em>, the rank test catches a real shift in the whole distribution that the medians alone would hide.</p>
+  </section>
+
+  <!-- ===== Section 4: Report ===== -->
+  <section id="report">
+    <div class="section-eyebrow"><div class="num">4</div><h2>The Statistician's Report</h2></div>
+    <p>How to brief a head of customer experience without a stats lecture.</p>
+
+    <div class="report-card">
+      <div class="rep-tag">📋 Statistician's report &#183; to customer experience</div>
+      <h3>Read-out: a solid score, a clear lever, and an onboarding flag</h3>
+      <p><strong>What we found.</strong> About <strong>64%</strong> of customers would recommend us, give or take
+        <strong>3.5 points</strong> (realistically 61-68%). Willingness to recommend <strong>rises with plan tier</strong>
+        (a statistically clear pattern), and <strong>existing customers are more satisfied than new ones</strong> (a real,
+        significant gap).</p>
+      <p><strong>What it means.</strong> The 64% is healthy, but always quote it as a range, do not celebrate or panic over
+        a one-to-two point move, that is within the noise. The plan link is real but <em>modest</em>: tier explains only a
+        small part of who recommends, so "move people to Pro" is a lever, not a cure. The new-versus-existing gap is the
+        actionable signal: newer customers are measurably less happy.</p>
+      <p><strong>What to do.</strong> Track the recommend rate with its margin of error over time, and run a focused review
+        of the new-customer onboarding experience, that is where the satisfaction gap is concentrated.</p>
+      <p><strong>Caveats.</strong> Surveys suffer non-response and self-selection, the people who reply may not represent
+        everyone, so treat these as directional. And satisfaction was compared by ranks, not averages, on purpose, because
+        a 1-5 scale is ordinal.</p>
+    </div>
+
+    <div class="callout tip">
+      <div class="cico">🤖</div>
+      <div><div class="ctitle">In the field</div>
+        <p>This is the statistical backbone of any NPS or CSAT dashboard, and of feature-importance screening (chi-square
+           between a categorical feature and an outcome). The discipline, margins of error on rates, effect sizes beside
+           p-values, rank tests for ordinal scales, is what keeps a dashboard from over-claiming.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Work the survey in Python</h3>
+          <p>The companion notebook <strong>explores</strong> the category counts and rating distribution, then uses <strong>statsmodels</strong> (<code>proportion_confint</code>) for the margin of error and scipy for the chi-square, Cramer's V, and the Mann-Whitney rank test, with plots of recommend-by-plan and satisfaction.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/case-study-a-customer-satisfaction-survey.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-a-customer-satisfaction-survey.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-a-customer-satisfaction-survey.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, <code>scipy</code>,
+      <code>matplotlib</code>, <code>statsmodels</code>, and <code>openpyxl</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>A survey rate is an estimate</strong>: 64% &#177; 3.5 pts, always report the margin of error.</span></li>
+        <li><span class="ck">✓</span><span><strong>Two categoricals</strong> (plan &#215; recommend) &#8594; chi-square, with Cramer's V for strength (here only ~0.14, modest).</span></li>
+        <li><span class="ck">✓</span><span><strong>Ordinal ratings</strong> (1-5) &#8594; Mann-Whitney on ranks, not a t-test on averages.</span></li>
+        <li><span class="ck">✓</span><span><strong>Result</strong>: significant plan link (modest) and existing &gt; new on satisfaction (p &#8776; 10&#8315;&#8312;), despite equal medians.</span></li>
+        <li><span class="ck">✓</span><span><strong>Action</strong>: track the rate with its interval; review new-customer onboarding; mind non-response bias.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on this case study. Answer them, hit <strong>Check Answers</strong>, and keep refining until
+       you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>The finale brings it home to the factory floor. <strong>Chapter 88 &#183; Manufacturing Quality</strong>
+         combines a one-sample test against spec, an ANOVA across lines, and a defect-by-shift chi-square, and closes
+         Part XIII.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="case-study-a-clinical-trial.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 86 · Previous</span><br><span class="cn-title">Case Study: A Clinical Trial</span></span>
+    </a>
+    <a class="cn-btn next" href="case-study-manufacturing-quality.html">
+      <span><span class="cn-dir">Chapter 88 · Next</span><br><span class="cn-title">Case Study: Manufacturing Quality</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 87 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch87";
+  window.QUIZ_DATA = [
+    {
+      q: "A survey says 64% would recommend. The right way to report it is…",
+      options: ["Exactly 64%", "64% with a margin of error (e.g. ±3.5 points)", "Round to 60%", "As a guarantee"],
+      answer: 1,
+      explain: "A sample rate is an estimate; the margin of error communicates how precisely it's known."
+    },
+    {
+      q: "Testing whether 'would recommend' depends on plan tier uses a…",
+      options: ["Paired t-test", "Chi-square test of independence", "One-sample t-test", "ANOVA"],
+      answer: 1,
+      explain: "Two categorical variables (plan × recommend) call for the chi-square test of independence."
+    },
+    {
+      q: "A 1-to-5 satisfaction rating is compared across two groups with Mann-Whitney because…",
+      options: ["It's faster", "The rating is ordinal, the gaps between numbers aren't guaranteed equal, so we compare ranks", "It needs more data", "t-tests are banned"],
+      answer: 1,
+      explain: "Ordinal scales don't have equal intervals, so a rank-based test is more appropriate than averaging."
+    },
+    {
+      q: "The plan × recommend chi-square gave p ≈ 0.001 but Cramer's V ≈ 0.14. This means…",
+      options: ["A strong relationship", "A statistically clear but practically modest association", "No relationship", "An error"],
+      answer: 1,
+      explain: "With 720 respondents even a small association is significant; V ≈ 0.14 says the link is modest."
+    },
+    {
+      q: "Why report Cramer's V alongside the chi-square p-value?",
+      options: ["It replaces the p-value", "Because a small p from a large sample can still be a weak association; V measures strength", "It's required by law", "To fix small samples"],
+      answer: 1,
+      explain: "V is the effect size for categorical association, separating significance from strength."
+    },
+    {
+      q: "Existing customers out-rated new ones (Mann-Whitney p ≈ 10⁻⁸) even though both medians were 4. This shows…",
+      options: ["The test is wrong", "A real shift in the whole distribution that equal medians alone would hide", "There's no difference", "Medians are always enough"],
+      answer: 1,
+      explain: "Rank tests detect distributional shifts; equal medians don't mean equal distributions."
+    },
+    {
+      q: "Before trusting the chi-square, we checked that…",
+      options: ["The sample was paired", "Every expected cell count was at least about 5", "The data were normal", "n was under 30"],
+      answer: 1,
+      explain: "Small expected counts break the chi-square approximation; here the minimum was ~40, well above 5."
+    },
+    {
+      q: "A key caveat for survey conclusions is…",
+      options: ["Surveys are always perfectly representative", "Non-response and self-selection mean respondents may not represent everyone, so treat results as directional", "Margins of error don't apply", "Ordinal data should be averaged"],
+      answer: 1,
+      explain: "Who chooses to answer can bias a survey, so conclusions are directional, not exact population truths."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

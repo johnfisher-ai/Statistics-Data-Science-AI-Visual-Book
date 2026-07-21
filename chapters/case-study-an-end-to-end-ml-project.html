@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 120 · Case Study: An End-to-End ML Project — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#eef2ff; border:1px solid #c7d2fe; border-left:4px solid #4338ca; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#3730a3; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none; padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+    .step-h { display:flex; align-items:center; gap:0.6rem; margin:1.4rem 0 0.4rem; }
+    .step-h .sn { flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:#4338ca; color:#fff; font-weight:800; font-size:0.95rem; display:flex; align-items:center; justify-content:center; }
+    .step-h h3 { margin:0; font-size:1.02rem; color:var(--ink); }
+    .writeup { background:#eef2ff; border:1px solid #c7d2fe; border-radius:14px; padding:1.3rem 1.5rem; margin:1.3rem 0; }
+    .writeup h3 { margin-top:0; color:#3730a3; }
+    .writeup h4 { margin:1rem 0 0.3rem; color:#3730a3; font-size:0.92rem; }
+    .nb-fig { margin:1.4rem 0; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:1rem 1rem 0.6rem; }
+    .nb-fig img { display:block; width:100%; height:auto; border-radius:8px; }
+    .nb-fig figcaption { margin:0.75rem 0.2rem 0.3rem; font-size:0.85rem; color:var(--ink-soft); line-height:1.55; }
+    .nb-fig .cap-t { font-size:0.64rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#3730a3; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/case-study-an-end-to-end-ml-project.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXI · ML Case Study</span><span class="sep">/</span>
+      <span>Chapter 120</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XXI · Putting It All Together</span> The whole workflow, done right</div>
+    <h1>Case Study: An <span class="accent">End-to-End ML Project</span></h1>
+    <p class="dek">Everything from the machine-learning chapters, applied once, on a messy real file, in the right order.
+       We predict hotel booking cancellations, but the real lesson is the discipline: a proper train / validation / test
+       split, a baseline to beat, cross-validation, tuning, and a leakage-free pipeline. The method, not the model.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~26 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Full notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 120</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">You have met the algorithms; now watch them work together on a real problem. A hotel wants to know,
+       at booking time, which reservations are likely to be <span class="hl">canceled</span>, so it can overbook wisely and
+       send timely reminders. The data is a genuine mess. The challenge is not choosing a clever model, it is running the
+       <span class="hl">whole pipeline honestly</span> so the final number can actually be trusted.</p>
+
+    <div class="def-card">
+      <div class="sigma">🎯</div>
+      <div class="def-body">
+        An <span class="def-kw">end-to-end ML project</span> turns a raw file into a deployed model through a repeatable
+        method. Its backbone is <span class="def-kw">honest evaluation</span>: a locked-away <span class="def-kw">test
+        set</span>, a <span class="def-kw">baseline</span> to beat, <span class="def-kw">cross-validation</span> to compare
+        and tune, and a <span class="def-kw">pipeline</span> that stops data leakage.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🧭</div>
+      <div><div class="ctitle">The discipline is the point</div>
+        <p>Any notebook can fit a model. This chapter is about doing it so the result is <strong>real</strong>: split off a
+           test set <em>first</em>, beat a <strong>baseline</strong>, compare models by <strong>cross-validation</strong>,
+           <strong>tune</strong> on validation only, keep every transform <strong>inside a pipeline</strong>, and touch the
+           test set exactly <strong>once</strong>.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §1 method ===== -->
+  <section id="method">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The 12-Step Method</h2></div>
+    <p>The same repeatable loop used in every case study, here aimed at a classification model. The companion notebook runs
+       all twelve steps; the sections below narrate the story.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 678 332" width="100%" font-family="Inter, sans-serif" aria-label="The twelve-step data-project method as a snaking flow: define, collect, inspect, clean, then back visualize, transform, analyze, build, then validate, interpret, deploy, communicate">
+        <text x="339" y="26" text-anchor="middle" font-size="13" fill="#1a2138" font-weight="800">The 12-step method: from a raw file to a decision</text>
+        <defs><marker id="m120" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#3730a3"/></marker></defs>
+        <path d="M165,84 L181,84" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m120)"/>
+        <path d="M331,84 L347,84" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m120)"/>
+        <path d="M497,84 L513,84" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m120)"/>
+        <path d="M588,120 L588,150" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m120)"/>
+        <path d="M513,186 L497,186" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m120)"/>
+        <path d="M347,186 L331,186" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m120)"/>
+        <path d="M181,186 L165,186" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m120)"/>
+        <path d="M90,222 L90,252" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m120)"/>
+        <path d="M165,288 L181,288" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m120)"/>
+        <path d="M331,288 L347,288" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m120)"/>
+        <path d="M497,288 L513,288" stroke="#3730a3" stroke-width="1.7" marker-end="url(#m120)"/>
+        <rect x="15" y="48" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="32" cy="66" r="11" fill="#4338ca"/><text x="32" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">1</text>
+        <text x="49" y="70" font-size="10.5" fill="#3730a3" font-weight="800">Define</text>
+        <text x="27" y="92" font-size="8.3" fill="#4a5578">the objective</text>
+        <rect x="181" y="48" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="198" cy="66" r="11" fill="#4338ca"/><text x="198" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">2</text>
+        <text x="215" y="70" font-size="10.5" fill="#3730a3" font-weight="800">Collect</text>
+        <text x="193" y="92" font-size="8.3" fill="#4a5578">CSV/SQL/API</text>
+        <rect x="347" y="48" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="364" cy="66" r="11" fill="#4338ca"/><text x="364" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">3</text>
+        <text x="381" y="70" font-size="10.5" fill="#3730a3" font-weight="800">Inspect</text>
+        <text x="359" y="92" font-size="8.3" fill="#4a5578">shape, types, gaps</text>
+        <rect x="513" y="48" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="530" cy="66" r="11" fill="#4338ca"/><text x="530" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">4</text>
+        <text x="547" y="70" font-size="10.5" fill="#3730a3" font-weight="800">Clean</text>
+        <text x="525" y="92" font-size="8.3" fill="#4a5578">dupes, categories, gaps</text>
+        <rect x="513" y="150" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="530" cy="168" r="11" fill="#4338ca"/><text x="530" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">5</text>
+        <text x="547" y="172" font-size="10.5" fill="#3730a3" font-weight="800">Visualize</text>
+        <text x="525" y="194" font-size="8.3" fill="#4a5578">balance, cancel rates</text>
+        <rect x="347" y="150" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="364" cy="168" r="11" fill="#4338ca"/><text x="364" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">6</text>
+        <text x="381" y="172" font-size="10.5" fill="#3730a3" font-weight="800">Transform</text>
+        <text x="359" y="194" font-size="8.3" fill="#4a5578">pipeline, no leak</text>
+        <rect x="181" y="150" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="198" cy="168" r="11" fill="#4338ca"/><text x="198" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">7</text>
+        <text x="215" y="172" font-size="10.5" fill="#3730a3" font-weight="800">Analyze</text>
+        <text x="193" y="194" font-size="8.3" fill="#4a5578">split off the test set</text>
+        <rect x="15" y="150" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="32" cy="168" r="11" fill="#4338ca"/><text x="32" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">8</text>
+        <text x="49" y="172" font-size="10.5" fill="#3730a3" font-weight="800">Build</text>
+        <text x="27" y="194" font-size="8.3" fill="#4a5578">baseline + candidates</text>
+        <rect x="15" y="252" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="32" cy="270" r="11" fill="#4338ca"/><text x="32" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">9</text>
+        <text x="49" y="274" font-size="10.5" fill="#3730a3" font-weight="800">Validate</text>
+        <text x="27" y="296" font-size="8.3" fill="#4a5578">CV, tune, test once</text>
+        <rect x="181" y="252" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="198" cy="270" r="11" fill="#4338ca"/><text x="198" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">10</text>
+        <text x="215" y="274" font-size="10.5" fill="#3730a3" font-weight="800">Interpret</text>
+        <text x="193" y="296" font-size="8.3" fill="#4a5578">drivers as odds</text>
+        <rect x="347" y="252" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="364" cy="270" r="11" fill="#4338ca"/><text x="364" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">11</text>
+        <text x="381" y="274" font-size="10.5" fill="#3730a3" font-weight="800">Deploy</text>
+        <text x="359" y="296" font-size="8.3" fill="#4a5578">serve, monitor, retrain</text>
+        <rect x="513" y="252" width="150" height="72" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+        <circle cx="530" cy="270" r="11" fill="#4338ca"/><text x="530" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">12</text>
+        <text x="547" y="274" font-size="10.5" fill="#3730a3" font-weight="800">Communicate</text>
+        <text x="525" y="296" font-size="8.3" fill="#4a5578">plain-English write-up</text>
+      </svg>
+    </figure>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · hotel_bookings.csv</div>
+      <p style="margin:0.5rem 0 0">One row per reservation with <code>lead_time</code>, <code>nights</code>,
+        <code>adults</code>, <code>children</code>, <code>prior_cancellations</code>, <code>booking_changes</code>,
+        <code>deposit_type</code>, <code>market_segment</code>, <code>customer_type</code>, <code>adr</code> (daily rate),
+        <code>total_special_requests</code>, <code>is_repeated_guest</code>, and the target <code>is_canceled</code>.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/hotel_bookings.csv" download>📊 Download dataset &nbsp;<small>CSV · 1,322 rows</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §2 wrangle ===== -->
+  <section id="wrangle">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Define, Collect, Inspect, Clean (Steps 1&#8211;4)</h2></div>
+
+    <div class="step-h"><span class="sn">1</span><h3>Define the objective</h3></div>
+    <p>Predict, at booking time, whether a reservation will be <strong>canceled</strong> (a yes/no classification), and
+       learn what drives the risk. A hotel can use the score to overbook safely, prompt a deposit, or send a confirmation
+       nudge to shaky bookings.</p>
+
+    <div class="step-h"><span class="sn">2</span><h3>Collect the data</h3></div>
+    <p>A CSV export from the property-management system. The same one-line pandas readers apply to a SQL warehouse, an
+       Excel workbook, or a REST API, only the first line changes.</p>
+
+    <div class="step-h"><span class="sn">3</span><h3>Inspect the data</h3></div>
+    <p><code>info()</code>, <code>isna()</code>, and <code>value_counts()</code> expose the mess: duplicate bookings,
+       impossible negative lead times, missing <code>children</code> and <code>adr</code>, and categories written many
+       ways (<code>No Deposit</code>, <code>no deposit</code>, <code>NO DEPOSIT</code>, ...).</p>
+
+    <div class="step-h"><span class="sn">4</span><h3>Clean the data</h3></div>
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Problem</th><th>Detail</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Duplicates</td><td>22 repeated <code>booking_id</code></td><td>deduplicate</td></tr>
+          <tr><td class="nm">Impossible values</td><td>9 negative <code>lead_time</code> (data errors)</td><td>drop those rows</td></tr>
+          <tr><td class="nm">Messy categories</td><td>deposit &#215;11 spellings, segment &#215;15</td><td>standardize to one scheme</td></tr>
+          <tr><td class="nm">Missing values</td><td>34 <code>children</code>, 16 <code>adr</code></td><td><strong>leave for the pipeline</strong> (impute inside CV, not now)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>After cleaning, <strong>1,291 bookings</strong> remain, about <strong>45% canceled</strong>. The missing values are
+       handled later, <em>inside</em> the pipeline, so the fill value is learned from training data only.</p>
+  </section>
+
+  <!-- ===== §3 visualize/transform/analyze ===== -->
+  <section id="explore">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Visualize, Transform, Split (Steps 5&#8211;7)</h2></div>
+
+    <div class="step-h"><span class="sn">5</span><h3>Visualize the signal</h3></div>
+    <p>Cancellation risk climbs steeply with <strong>lead time</strong> (a booking made months ahead is far likelier to
+       fall through) and depends strongly on <strong>deposit type</strong>: guests who put money down rarely cancel, while
+       <code>No Deposit</code> bookings are the riskiest. That separable structure is what a model can exploit.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/case-study-an-end-to-end-ml-project--signal.png" alt="Three bar charts: target balance, cancellation rate by deposit type, and cancellation rate by lead time">
+      <figcaption><span class="cap-t">From the notebook · Step 5</span><br>
+        <strong>Seeing the signal.</strong> <strong>Left</strong>, the target is about 45% canceled, common enough to learn
+        from and a real baseline to beat (not a rare needle in a haystack). <strong>Center</strong>, cancellation rate by
+        deposit type: <code>No Deposit</code> bookings cancel over half the time, while <code>Non Refund</code> guests, who
+        have money at stake, cancel under 20%. <strong>Right</strong>, the rate climbs steadily with lead time, from under
+        30% for last-minute bookings to about 65% for those made six months out. The signal is real and separable, exactly
+        what a model needs.</figcaption>
+    </figure>
+
+    <div class="step-h"><span class="sn">6</span><h3>Transform, inside a pipeline</h3></div>
+    <p>Numeric columns are median-imputed and standardized; categoricals are one-hot encoded. Crucially, all of this lives
+       <strong>inside a scikit-learn <code>Pipeline</code></strong>, so each cross-validation fold re-fits the preprocessing
+       on its own training data. This is the single most important guard against <span class="term">data leakage</span>:
+       impute or scale before splitting and information from the test set silently contaminates training.</p>
+
+    <div class="step-h"><span class="sn">7</span><h3>Split: train / validation / test</h3></div>
+    <p>Before building anything, quarantine a <strong>test set</strong>, here 20% (259 bookings), locked away until the
+       very end. The remaining 80% (1,032 bookings) is for fitting and tuning. Rather than a single fixed validation set,
+       we use <strong>k-fold cross-validation</strong> on the training data: it plays the validation role but rotates
+       through every row, giving a steadier estimate.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 300" width="100%" font-family="Inter, sans-serif" aria-label="Honest evaluation workflow: all data splits into a training set and a locked test set; the training set is cross-validated in five folds to compare and tune models; the final model is evaluated once on the test set">
+        <text x="340" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">Honest evaluation: split first, cross-validate to tune, test once</text>
+        <!-- all data bar -->
+        <rect x="40" y="38" width="600" height="30" rx="6" fill="#e0e7ff" stroke="#c7d2fe"/>
+        <text x="340" y="58" text-anchor="middle" font-size="10" fill="#3730a3" font-weight="700">All bookings (1,291)</text>
+        <!-- split arrows -->
+        <path d="M250,68 L170,92" stroke="#94a3b8" stroke-width="1.4" marker-end="url(#s120)"/>
+        <path d="M470,68 L560,92" stroke="#94a3b8" stroke-width="1.4" marker-end="url(#s120)"/>
+        <defs><marker id="s120" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#94a3b8"/></marker></defs>
+        <!-- training block -->
+        <rect x="40" y="96" width="420" height="34" rx="6" fill="#4338ca"/>
+        <text x="250" y="118" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">TRAINING (80% · 1,032), fit &amp; tune</text>
+        <!-- test block (locked) -->
+        <rect x="500" y="96" width="140" height="34" rx="6" fill="#0f172a"/>
+        <text x="562" y="112" text-anchor="middle" font-size="10" fill="#fff" font-weight="800">TEST (20% · 259)</text>
+        <text x="562" y="124" text-anchor="middle" font-size="8" fill="#c7d2fe">&#128274; locked away</text>
+        <!-- 5 folds -->
+        <text x="60" y="158" font-size="9" fill="#64748b">5-fold cross-validation on the training set:</text>
+        <g>
+          <rect x="40" y="166" width="76" height="18" rx="3" fill="#c7d2fe"/><rect x="120" y="166" width="76" height="18" rx="3" fill="#c7d2fe"/><rect x="200" y="166" width="76" height="18" rx="3" fill="#f59e0b"/><rect x="280" y="166" width="76" height="18" rx="3" fill="#c7d2fe"/><rect x="360" y="166" width="100" height="18" rx="3" fill="#c7d2fe"/>
+          <text x="250" y="179" text-anchor="middle" font-size="8" fill="#7c2d12" font-weight="700">validation fold</text>
+        </g>
+        <text x="470" y="179" font-size="8.5" fill="#64748b">(rotate the held-out fold 5&#215;)</text>
+        <!-- flow to tune -->
+        <path d="M250,190 L250,214" stroke="#3730a3" stroke-width="1.6" marker-end="url(#s120b)"/>
+        <defs><marker id="s120b" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#3730a3"/></marker></defs>
+        <rect x="150" y="216" width="200" height="30" rx="8" fill="#eef2ff" stroke="#4338ca"/>
+        <text x="250" y="235" text-anchor="middle" font-size="9.5" fill="#3730a3" font-weight="700">compare models · tune C</text>
+        <!-- final test arrow -->
+        <path d="M350,231 L500,231" stroke="#059669" stroke-width="1.8" marker-end="url(#s120c)"/>
+        <defs><marker id="s120c" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#059669"/></marker></defs>
+        <rect x="500" y="214" width="150" height="34" rx="8" fill="#dcfce7" stroke="#059669"/>
+        <text x="575" y="230" text-anchor="middle" font-size="9" fill="#065f46" font-weight="800">final test, ONCE</text>
+        <text x="575" y="242" text-anchor="middle" font-size="9" fill="#065f46" font-weight="800">AUC 0.85</text>
+        <text x="340" y="278" text-anchor="middle" font-size="8.5" fill="#8b94b3">The test set influences nothing until the end, that is what makes its score believable.</text>
+      </svg>
+    </figure>
+  </section>
+
+  <!-- ===== §4 build/validate ===== -->
+  <section id="build">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Build and Validate (Steps 8&#8211;9)</h2></div>
+
+    <div class="step-h"><span class="sn">8</span><h3>Build a baseline, then candidates</h3></div>
+    <p>Never trust a model without a <span class="term">baseline</span>. A dummy that always predicts the majority class
+       ("not canceled") is already <strong>54% accurate</strong>, so raw accuracy near that is meaningless. We score by
+       <strong>ROC-AUC</strong> (baseline 0.5) and compare three candidates by 5-fold cross-validation:</p>
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Model</th><th>5-fold CV AUC</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Logistic Regression</td><td><strong>0.812</strong></td><td>simplest, and the winner</td></tr>
+          <tr><td class="nm">Random Forest</td><td>0.789</td><td>flexible, no better here</td></tr>
+          <tr><td class="nm">Gradient Boosting</td><td>0.789</td><td>flexible, no better here</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The instructive surprise: <strong>logistic regression beats both tree ensembles</strong>. On clean, mostly-linear
+       tabular data a well-regularized linear model is often the strongest <em>and</em> the most interpretable, do not
+       reach for a boosted forest reflexively. A <strong>learning curve</strong> (in the notebook) confirms the training
+       and validation scores converge, so the model is not badly overfit and much more data would help only a little.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/case-study-an-end-to-end-ml-project--models.png" alt="Bar chart of 5-fold cross-validated AUC for three models with error bars">
+      <figcaption><span class="cap-t">From the notebook · Step 8</span><br>
+        <strong>Comparing models fairly.</strong> Each bar is a model's mean AUC across the five cross-validation folds; the
+        thin whiskers show how much it varied fold to fold, and the dashed line is random guessing (0.5). All three clear
+        the baseline comfortably, but <strong>logistic regression (0.81) edges out both tree ensembles (0.79)</strong>, and
+        its error bar overlaps theirs, so the simplest model is at least as good. That is reason enough to keep it.</figcaption>
+    </figure>
+
+    <div class="step-h"><span class="sn">9</span><h3>Tune, then the one honest test</h3></div>
+    <p><code>GridSearchCV</code> sweeps the regularization strength and settles on <strong>C = 0.3</strong> (CV AUC 0.812).
+       Only then do we unlock the test set, once, for the final verdict:</p>
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Held-out test metric</th><th>Value</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Accuracy</td><td>0.75</td><td>vs 0.54 baseline, a real lift</td></tr>
+          <tr><td class="nm">ROC-AUC</td><td>0.85</td><td>strong ranking of risk</td></tr>
+          <tr><td class="nm">Recall</td><td>0.75</td><td>catches 3 of 4 real cancellations</td></tr>
+          <tr><td class="nm">Precision</td><td>0.72</td><td>most flagged bookings truly cancel</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Because tuning happened only on cross-validation and the test set was touched exactly once, <strong>0.85 is an honest
+       estimate</strong> of next month's performance, not an optimistic mirage. The confusion matrix (106 true-honored, 89
+       true-canceled, 35 false alarms, 29 misses) makes the trade-off concrete.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/case-study-an-end-to-end-ml-project--eval.png" alt="Confusion matrix and ROC curve on the held-out test set">
+      <figcaption><span class="cap-t">From the notebook · Step 9</span><br>
+        <strong>The final verdict, on data the model never saw.</strong> <strong>Left</strong>, the confusion matrix: the
+        model correctly labeled <strong>106</strong> honored and <strong>89</strong> canceled bookings, against
+        <strong>35</strong> false alarms (flagged but honored) and <strong>29</strong> misses (canceled but not flagged).
+        <strong>Right</strong>, the ROC curve bows well above the diagonal (<strong>AUC 0.85</strong>): across every possible
+        threshold the model ranks risky bookings above safe ones far better than chance. Because the test set was touched
+        only here, at the very end, these numbers are trustworthy.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== §5 interpret/deploy ===== -->
+  <section id="interpret">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Interpret and Deploy (Steps 10&#8211;11)</h2></div>
+
+    <div class="step-h"><span class="sn">10</span><h3>Interpret the drivers</h3></div>
+    <p>Because the winner is a logistic model, its coefficients read as odds. The strongest <strong>cancellation risks</strong>
+       are <code>No Deposit</code> bookings, the <code>Groups</code> segment, long <strong>lead times</strong>, and a history
+       of <strong>prior cancellations</strong>. The strongest <strong>reliability signals</strong> are <code>Non Refund</code>
+       deposits, <code>Corporate</code> bookings, and more <strong>special requests</strong> (a sign of genuine intent). Every
+       one matches hotel-industry intuition, evidence the model learned real structure, not noise.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/case-study-an-end-to-end-ml-project--drivers.png" alt="Horizontal bar chart of logistic regression coefficients for each feature">
+      <figcaption><span class="cap-t">From the notebook · Step 10</span><br>
+        <strong>What pushes a booking toward cancellation.</strong> Each bar is a feature's logistic coefficient (in
+        log-odds). Bars pointing <strong>right (red)</strong> raise cancellation risk, no deposit, the <code>Groups</code>
+        segment, long lead time, and prior cancellations; bars pointing <strong>left (green)</strong> mark reliable bookings,
+        a non-refundable deposit, <code>Corporate</code> bookings, and more special requests. The longer the bar, the
+        stronger the effect. This ranking is only readable because we kept a simple, interpretable model.</figcaption>
+    </figure>
+
+    <div class="step-h"><span class="sn">11</span><h3>Deploy the model</h3></div>
+    <p>Persisting the fitted <code>Pipeline</code> with <code>joblib</code> bundles preprocessing and model together, so
+       production applies the exact same transforms as training. The model then serves a cancellation probability per
+       booking. The real work begins after launch: watch for <strong>data drift</strong>, track live accuracy, and
+       <strong>retrain</strong> on fresh data before performance decays, the subject of Chapter 126.</p>
+  </section>
+
+  <!-- ===== §6 writeup ===== -->
+  <section id="writeup-sec">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Communicate: the Plain-English Write-Up (Step 12)</h2></div>
+    <div class="writeup">
+      <h3>For a non-technical reader</h3>
+      <p><strong>What is this?</strong> We built an early-warning tool that looks at a new hotel reservation and estimates
+        how likely it is to be canceled, so the hotel can plan ahead (overbook sensibly, or nudge a wobbly booking with a
+        reminder or a small incentive).</p>
+
+      <h4>What goes in, and what comes out</h4>
+      <p><strong>Inputs:</strong> ordinary booking details the hotel already has, how far ahead it was booked, how many
+        nights and guests, whether a deposit was paid, how the guest booked (online, direct, corporate, group), the room
+        rate, the number of special requests, and whether it is a repeat guest. <strong>Output:</strong> a single number
+        between 0 and 1, the estimated chance the booking will be canceled.</p>
+
+      <h4>The decisions we made, and why</h4>
+      <ul>
+        <li><span class="ck">✓</span><span>We <strong>cleaned</strong> the file first, removing duplicate bookings, impossible entries, and tidying labels that were spelled several ways, because a computer treats "No Deposit" and "no deposit" as different things.</span></li>
+        <li><span class="ck">✓</span><span>We <strong>hid 20% of the data</strong> ("the test set") and never let the model see it while learning, so we could get an honest grade at the end, the same reason a teacher does not hand out the exam answers in advance.</span></li>
+        <li><span class="ck">✓</span><span>We <strong>compared several methods</strong> against a dumb "always guess the common answer" benchmark, and kept the simplest one that did best, because a simple model is easier to trust, explain, and maintain.</span></li>
+      </ul>
+
+      <h4>How good is it, in plain terms</h4>
+      <p>On bookings it had never seen, the tool is right about <strong>three times in four</strong>, far better than the
+        54% you would get by guessing, and it correctly flags roughly <strong>three of every four bookings that really do
+        cancel</strong>. When it says "70% likely to cancel", about 70% of such bookings genuinely do (the numbers are
+        trustworthy, not just relative rankings).</p>
+
+      <h4>What actually drives a cancellation</h4>
+      <p>Bookings made far in advance, with no deposit, by groups, or by guests who have canceled before are the most
+        likely to fall through. Bookings with a non-refundable deposit, from corporate accounts, or with several special
+        requests are the most reliable. <strong>Bottom line: the biggest single red flag is a no-deposit booking made a
+        long time ahead</strong>, and a simple, explainable model predicts cancellations about as well as anything fancier.</p>
+    </div>
+  </section>
+
+  <!-- ===== notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body"><h3>Run the entire project in Python</h3><p>The companion notebook is the full 12-step pipeline: it loads and cleans the messy bookings file, visualizes the cancellation signal, builds a leakage-free preprocessing pipeline, holds out a test set, benchmarks a baseline against logistic regression, random forest, and gradient boosting by cross-validation, draws a learning curve, tunes the winner with <code>GridSearchCV</code>, evaluates once on the test set (confusion matrix and ROC), interprets the drivers, and saves the model, with every table and chart explained.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/case-study-an-end-to-end-ml-project.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-an-end-to-end-ml-project.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-an-end-to-end-ml-project.ipynb" target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)"><strong>View</strong> opens the rendered notebook instantly.
+      <strong>Open in Colab</strong> runs it live. To run locally, install <code>numpy</code>, <code>pandas</code>,
+      <code>matplotlib</code>, <code>seaborn</code>, and <code>scikit-learn</code>.</p>
+  </section>
+
+  <!-- ===== takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Split first, test last</strong>: lock away a test set before anything else and evaluate on it exactly once, for an honest performance number.</span></li>
+        <li><span class="ck">✓</span><span><strong>Always beat a baseline</strong>: a majority-class dummy was 54% accurate, so judge by AUC and compare against it.</span></li>
+        <li><span class="ck">✓</span><span><strong>Cross-validation is your validation set</strong>: it compares models and tunes hyperparameters using the training data efficiently and robustly.</span></li>
+        <li><span class="ck">✓</span><span><strong>Keep every transform in a pipeline</strong>: imputing or scaling before the split leaks the test set into training, a pipeline prevents it by construction.</span></li>
+        <li><span class="ck">✓</span><span><strong>Simple often wins</strong>: a regularized logistic regression beat the tree ensembles and is fully interpretable, complexity must earn its place.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== §7 take it further ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Take It Further</h2></div>
+    <p>Five ways to extend the project in the notebook:</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>A business-cost threshold</h4>
+        <p>The 0.5 cutoff is arbitrary. Set it by the cost of a missed cancellation versus a false alarm.</p>
+        <div class="chint">Hint: sweep the threshold and minimize <code>FN&#215;cost + FP&#215;cost</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Engineer an interaction</h4>
+        <p>Add a <code>lead_time &#215; no-deposit</code> feature, the thing a tree gets for free, and see if the linear model improves.</p>
+        <div class="chint">Hint: build the product column, then compare CV AUC.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Tune a gradient-boosting rival</h4>
+        <p>Grid-search a GBM properly and compare it to the logistic model on the test set.</p>
+        <div class="chint">Hint: <code>GridSearchCV</code> over <code>n_estimators</code>, <code>max_depth</code>, <code>learning_rate</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Check calibration</h4>
+        <p>Does "70%" really mean 70%? Draw a reliability curve of predicted vs actual cancellation rates.</p>
+        <div class="chint">Hint: <code>calibration_curve(y_test, prob)</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Score a new booking</h4>
+        <p>Build a one-row profile and get its cancellation probability straight from the saved pipeline.</p>
+        <div class="chint">Hint: <code>model.predict_proba(one_row)</code>, no manual preprocessing needed.</div></div></div>
+    </div>
+
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">📓</div>
+        <div class="nb-body"><h3>All five, worked in a companion notebook</h3><p>A second notebook, <strong>Take It Further</strong>, rebuilds the Chapter 120 model and works every one of these five extensions with visuals and explanations, a cost-based decision threshold, an engineered interaction, a tuned gradient-boosting rival, a probability-calibration check, and scoring a new booking, closing with a plain-English summary.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/case-study-an-end-to-end-ml-project--take-it-further.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-an-end-to-end-ml-project--take-it-further.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-an-end-to-end-ml-project--take-it-further.ipynb" target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §8 quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">8</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on the end-to-end workflow. Answer them, hit <strong>Check Answers</strong>, and keep refining until
+       you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>With the workflow in hand, the next chapters apply it to harder, higher-stakes problems.
+         <strong>Chapter 121 &#183; Case Study: Fraud Detection</strong> tackles the extreme case, a rare positive class,
+         where accuracy lies and the right metrics and thresholds decide everything.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="deep-rl-and-applications.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 119 · Previous</span><br><span class="cn-title">Deep RL &amp; Applications</span></span>
+    </a>
+    <a class="cn-btn next" href="case-study-fraud-detection.html">
+      <span><span class="cn-dir">Chapter 121 · Next</span><br><span class="cn-title">Case Study: Fraud Detection</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 120 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => { const h = document.documentElement; bar.style.width = ((h.scrollTop)/(h.scrollHeight-h.clientHeight)*100) + '%'; });
+</script>
+
+<script>
+  window.QUIZ_ID = "ch120";
+  window.QUIZ_DATA = [
+    {
+      q: "Why hold out a test set before doing anything else?",
+      options: ["To have more data to train on", "To get one honest, unbiased estimate of real-world performance", "To speed up training", "To avoid cleaning the data"],
+      answer: 1,
+      explain: "If the test set influences any modeling decision, its score is optimistic. Locking it away keeps the final number honest."
+    },
+    {
+      q: "What is the role of a baseline model?",
+      options: ["To deploy in production", "A minimum bar (e.g., majority class) that any real model must beat", "To tune hyperparameters", "To clean the data"],
+      answer: 1,
+      explain: "A majority-class dummy was 54% accurate here; a model near that adds nothing. Always compare against a baseline."
+    },
+    {
+      q: "Cross-validation is used mainly to…",
+      options: ["Replace the test set", "Compare models and tune hyperparameters robustly on the training data", "Increase accuracy directly", "Encode categories"],
+      answer: 1,
+      explain: "k-fold CV rotates the validation fold through the training data, giving stable estimates for model selection and tuning."
+    },
+    {
+      q: "Putting imputation and scaling inside a Pipeline prevents…",
+      options: ["Overfitting the test set", "Data leakage (learning transform parameters from data that will be tested)", "Slow training", "Missing values"],
+      answer: 1,
+      explain: "A pipeline re-fits preprocessing on each fold's training data only, so no information from held-out data leaks in."
+    },
+    {
+      q: "The test set should be evaluated…",
+      options: ["After every model change", "Exactly once, at the very end", "During cross-validation", "Before cleaning"],
+      answer: 1,
+      explain: "Repeatedly peeking at the test set turns it into a validation set and inflates the final estimate."
+    },
+    {
+      q: "For an imbalanced-ish target, why prefer ROC-AUC over accuracy?",
+      options: ["It is easier to compute", "Accuracy can be high just by predicting the majority class; AUC measures ranking quality", "AUC ignores the model", "They are identical"],
+      answer: 1,
+      explain: "A 54%-accurate dummy shows accuracy alone is misleading; AUC (baseline 0.5) rewards correctly ranking risk."
+    },
+    {
+      q: "Logistic regression beat the tree ensembles here. The lesson is…",
+      options: ["Always use logistic regression", "On clean, mostly-linear tabular data a simple, interpretable model is often hard to beat", "Trees never work", "AUC is unreliable"],
+      answer: 1,
+      explain: "Complexity should earn its place; a well-regularized linear model was best AND interpretable on this data."
+    },
+    {
+      q: "GridSearchCV selects hyperparameters by…",
+      options: ["Using the test set", "Cross-validating each candidate setting on the training data and keeping the best", "Random guessing", "Looking at the coefficients"],
+      answer: 1,
+      explain: "It scores every parameter combination by CV on the training set; the test set stays untouched until the end."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 83 · Review &amp; Choosing the Right Test — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .cs-link { display:block; text-decoration:none; border:1px solid var(--line); border-left:4px solid #0891b2; border-radius:11px;
+               padding:0.85rem 1.1rem; margin:0.6rem 0; background:#ecfeff33; transition:filter .15s; }
+    .cs-link:hover { filter:brightness(0.97); }
+    .cs-link .cs-ch { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#0e7490; }
+    .cs-link .cs-t { font-weight:700; color:var(--ink); }
+    .cs-link .cs-d { color:var(--ink-soft); font-size:0.86rem; margin-top:2px; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/review-and-choosing-the-right-test.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XIII · Inference Case Studies</span><span class="sep">/</span>
+      <span>Chapter 83</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XIII · Putting It All Together</span> The inference playbook</div>
+    <h1>Review &amp; <span class="accent">Choosing the Right Test</span></h1>
+    <p class="dek">Parts XI and XII gave you estimation and a toolbox of tests. This chapter ties them into one playbook:
+       the four questions that pick any test, the assumptions to check first, and the habit of reporting an effect size
+       and interval alongside every p-value, then it maps the five case studies ahead.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~15 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 83</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">You have met point estimates and confidence intervals, the logic of hypothesis testing, z-, t-, F-,
+       chi-square, and rank-based tests. The skill now is <span class="term">orchestration</span>: turning a messy
+       real-world question into the right test, run correctly, and reported honestly. That is what the next five chapters
+       practice, and this one is the map.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#10003;</div>
+      <div class="def-body">
+        Every analysis answers four questions: is the <span class="def-kw">outcome</span> numeric or categorical? how
+        many <span class="def-kw">groups</span>? are they <span class="def-kw">independent or paired</span>? and do the
+        <span class="def-kw">assumptions</span> hold? Those answers choose the test. Then you report a
+        <span class="def-kw">p-value, an effect size, and an interval</span>, never one alone.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🧭</div>
+      <div><div class="ctitle">The chapter in one line</div>
+        <p>Estimation and testing are two views of the same data; four questions pick the test; assumptions come first;
+           and a result is only finished when it carries an effect size and an interval, not just a p.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1 ===== -->
+  <section id="twosides">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Two Sides of Inference</h2></div>
+    <p><span class="term">Estimation</span> asks "what is the value, and how sure are we?", a point estimate wrapped in a
+       confidence interval. <span class="term">Testing</span> asks "is the effect real, or could chance explain it?",
+       H&#8320; vs H&#8321; with a p-value. They are mirror images of one another.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 150" width="100%" font-family="Inter, sans-serif" aria-label="A confidence interval that excludes zero corresponds to rejecting the null hypothesis at the matching level">
+        <text x="340" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">A 95% CI that misses 0 &#8596; the test rejects H&#8320; at 5%</text>
+        <line x1="80" y1="92" x2="600" y2="92" stroke="#94a3b8" stroke-width="1.2"/>
+        <line x1="250" y1="74" x2="250" y2="110" stroke="#1a2138" stroke-width="1.4" stroke-dasharray="3 3"/>
+        <text x="250" y="126" text-anchor="middle" font-size="9" fill="#475569">0 (no effect)</text>
+        <line x1="360" y1="92" x2="520" y2="92" stroke="#0891b2" stroke-width="4"/>
+        <circle cx="440" cy="92" r="5" fill="#0e7490"/>
+        <text x="440" y="70" text-anchor="middle" font-size="9" fill="#0e7490" font-weight="700">95% CI for the effect</text>
+        <text x="540" y="96" font-size="8.5" fill="#059669" font-weight="700">excludes 0 &#8594; significant</text>
+      </svg>
+    </figure>
+
+    <p>In the notebook, the same change scores give a 95% CI of about [1.1, 5.3] (which excludes 0) and a test with
+       p &#8776; 0.003 (which rejects), the two always agree. Use both in tandem: the test says <em>whether</em> there is
+       an effect, the interval says <em>how large</em> it plausibly is.</p>
+  </section>
+
+  <!-- ===== Section 2 ===== -->
+  <section id="map">
+    <div class="section-eyebrow"><div class="num">2</div><h2>The Master Decision Map</h2></div>
+    <p>Answer the four questions and the test is almost forced. This is the same map from Chapter 81, widened to include
+       estimation and proportions, the version the case studies will use out loud.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 196" width="100%" font-family="Inter, sans-serif" aria-label="Decision tree from outcome type and group structure to the named test">
+        <rect x="272" y="12" width="136" height="28" rx="8" fill="#083344"/>
+        <text x="340" y="30" text-anchor="middle" font-size="10" fill="#fff" font-weight="800">Outcome type?</text>
+        <line x1="340" y1="40" x2="175" y2="62" stroke="#94a3b8" stroke-width="1.4"/>
+        <line x1="340" y1="40" x2="510" y2="62" stroke="#94a3b8" stroke-width="1.4"/>
+        <rect x="105" y="62" width="140" height="26" rx="7" fill="#ecfeff" stroke="#0891b2"/>
+        <text x="175" y="79" text-anchor="middle" font-size="9.5" fill="#0e7490" font-weight="700">numeric</text>
+        <rect x="440" y="62" width="140" height="26" rx="7" fill="#cffafe" stroke="#0e7490"/>
+        <text x="510" y="79" text-anchor="middle" font-size="9.5" fill="#0e7490" font-weight="700">categorical / rate</text>
+        <g font-size="8.5" text-anchor="middle">
+          <line x1="175" y1="88" x2="85" y2="116" stroke="#cbd5e1"/><line x1="175" y1="88" x2="185" y2="116" stroke="#cbd5e1"/><line x1="175" y1="88" x2="285" y2="116" stroke="#cbd5e1"/>
+          <rect x="35" y="116" width="100" height="48" rx="6" fill="#fafbfe" stroke="#cbd5e1"/><text x="85" y="134" fill="#0e7490" font-weight="700">2 paired</text><text x="85" y="152" fill="#475569">paired t / Wilcoxon</text>
+          <rect x="145" y="116" width="100" height="48" rx="6" fill="#fafbfe" stroke="#cbd5e1"/><text x="195" y="134" fill="#0e7490" font-weight="700">2 indep.</text><text x="195" y="152" fill="#475569">Welch t / M-W</text>
+          <rect x="255" y="116" width="100" height="48" rx="6" fill="#fafbfe" stroke="#cbd5e1"/><text x="305" y="134" fill="#0e7490" font-weight="700">3+ groups</text><text x="305" y="152" fill="#475569">ANOVA / Kruskal</text>
+          <line x1="510" y1="88" x2="450" y2="116" stroke="#cbd5e1"/><line x1="510" y1="88" x2="600" y2="116" stroke="#cbd5e1"/>
+          <rect x="400" y="116" width="100" height="48" rx="6" fill="#f0fdfa" stroke="#5eead4"/><text x="450" y="134" fill="#0e7490" font-weight="700">a rate</text><text x="450" y="152" fill="#475569">z for proportions</text>
+          <rect x="550" y="116" width="110" height="48" rx="6" fill="#f0fdfa" stroke="#5eead4"/><text x="605" y="134" fill="#0e7490" font-weight="700">2 variables</text><text x="605" y="152" fill="#475569">chi-square</text>
+        </g>
+      </svg>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Outcome</th><th>Groups</th><th>Design</th><th>Test (rank-based fallback)</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Numeric</td><td>1 vs a value</td><td>&#8212;</td><td>one-sample t-test (Wilcoxon)</td></tr>
+          <tr><td class="nm">Numeric</td><td>2</td><td>paired</td><td>paired t-test (Wilcoxon signed-rank)</td></tr>
+          <tr><td class="nm">Numeric</td><td>2</td><td>independent</td><td>two-sample Welch t (Mann-Whitney U)</td></tr>
+          <tr><td class="nm">Numeric</td><td>3+</td><td>independent</td><td>one-way ANOVA + Tukey (Kruskal-Wallis)</td></tr>
+          <tr><td class="nm">Proportion</td><td>1 or 2</td><td>&#8212;</td><td>one- / two-proportion z-test</td></tr>
+          <tr><td class="nm">Categorical</td><td>2 variables</td><td>&#8212;</td><td>chi-square test of independence</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== Section 3 ===== -->
+  <section id="assumptions">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Assumption Checklists</h2></div>
+    <p>The fourth question is where most analyses go wrong. Check <em>before</em> you choose, then switch to the
+       rank-based twin when the assumption fails.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Test family</th><th>Check</th><th>If it fails</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">t-test / ANOVA</td><td>roughly normal, or n &#8805; ~30 (CLT); no wild outliers</td><td>Mann-Whitney / Kruskal-Wallis</td></tr>
+          <tr><td class="nm">Welch vs pooled t</td><td>unequal variances? prefer Welch by default</td><td>Welch handles it</td></tr>
+          <tr><td class="nm">Chi-square</td><td>expected count &#8805; ~5 in every cell</td><td>Fisher's exact test</td></tr>
+          <tr><td class="nm">Proportion z</td><td>at least ~10 successes and ~10 failures</td><td>exact binomial test</td></tr>
+          <tr><td class="nm">Paired tests</td><td>data are genuinely paired (same units twice)</td><td>do not treat as independent</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The notebook shows the quick programmatic checks: skewness and the Shapiro-Wilk test for normality, and the
+       minimum expected count for a chi-square. The discipline is simple, <span class="hl">check, then choose</span>,
+       never the reverse.</p>
+  </section>
+
+  <!-- ===== Section 4 ===== -->
+  <section id="reporting">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Reading a Result Honestly</h2></div>
+    <p>A p-value is half an answer. With a large enough sample, a trivial effect is "significant"; with too small a
+       sample, a real effect hides. The cure is to always report three things together.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Report</th><th>Answers</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">p-value</td><td>could chance alone explain this? (yes/no at &#945;)</td></tr>
+          <tr><td class="nm">Effect size</td><td>how big is it? (Cohen's d, lift, Cramer's V, &#951;&#178;)</td></tr>
+          <tr><td class="nm">Confidence interval</td><td>how precisely do we know it?</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>In the notebook, a tiny true effect of 0.06 at n = 50,000 gives p &#8776; 10&#8315;&#8308;&#185; (wildly
+       "significant") with an effect size of 0.06 (negligible), the textbook reminder that
+       <strong>significance is not importance</strong>. And "not significant" never means "no effect", it may just mean
+       the study lacked power. Every case study ahead closes with this honest, three-part read.</p>
+  </section>
+
+  <!-- ===== Section 5: Roadmap ===== -->
+  <section id="roadmap">
+    <div class="section-eyebrow"><div class="num">5</div><h2>The Five Case Studies Ahead</h2></div>
+    <p>Each of the next five chapters takes one real, downloadable dataset from question to plain-English recommendation,
+       narrating every decision: the hypotheses, the test choice, the assumption checks, the numbers, and a
+       statistician's report written for a non-statistician.</p>
+
+    <a class="cs-link" href="case-study-a-web-a-b-test.html">
+      <span class="cs-ch">Chapter 84 · Web A/B Test</span>
+      <div class="cs-t">Did the redesign convert better?</div>
+      <div class="cs-d">Two-proportion z-test, a power check, and a confidence interval on the lift.</div>
+    </a>
+    <a class="cs-link" href="case-study-comparing-marketing-channels.html">
+      <span class="cs-ch">Chapter 85 · Comparing Marketing Channels</span>
+      <div class="cs-t">Which acquisition channel performs best?</div>
+      <div class="cs-d">One-way ANOVA with Tukey HSD, cross-checked with a rank-based test.</div>
+    </a>
+    <a class="cs-link" href="case-study-a-clinical-trial.html">
+      <span class="cs-ch">Chapter 86 · Clinical Trial</span>
+      <div class="cs-t">Does the new treatment work?</div>
+      <div class="cs-d">A paired before/after test, a two-arm comparison, and a responder-rate proportion test.</div>
+    </a>
+    <a class="cs-link" href="case-study-a-customer-satisfaction-survey.html">
+      <span class="cs-ch">Chapter 87 · Customer Satisfaction Survey</span>
+      <div class="cs-t">What do the survey numbers really say?</div>
+      <div class="cs-d">Chi-square independence, a top-box proportion with a margin of error, and an ordinal test.</div>
+    </a>
+    <a class="cs-link" href="case-study-manufacturing-quality.html">
+      <span class="cs-ch">Chapter 88 · Manufacturing Quality</span>
+      <div class="cs-t">Is the line on spec, and where are the defects?</div>
+      <div class="cs-d">One-sample test vs target, ANOVA across lines, and a defect-by-shift chi-square.</div>
+    </a>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>The decision rule as runnable code</h3>
+          <p>The companion notebook shows estimation and testing agreeing on the same data via statsmodels' <code>DescrStatsW</code>, implements a <code>choose_test()</code> helper for the whole decision map, runs the assumption checks (skewness, Shapiro-Wilk, expected counts), and demonstrates why every p-value needs an effect size beside it.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/review-and-choosing-the-right-test.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/review-and-choosing-the-right-test.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/review-and-choosing-the-right-test.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, <code>scipy</code>,
+      <code>matplotlib</code>, <code>statsmodels</code>, and <code>openpyxl</code> and launch <code>jupyter notebook</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Estimation and testing</strong> are two views of one dataset; a CI that excludes 0 matches a test that rejects H&#8320;.</span></li>
+        <li><span class="ck">✓</span><span><strong>Four questions</strong> (outcome, groups, design, assumptions) pick the test almost uniquely.</span></li>
+        <li><span class="ck">✓</span><span><strong>Check assumptions first</strong>: normality / n, expected counts, pairing; switch to a rank-based test when they fail.</span></li>
+        <li><span class="ck">✓</span><span><strong>Report three things</strong>: a p-value, an effect size, and an interval, significance is not importance.</span></li>
+        <li><span class="ck">✓</span><span><strong>Next</strong>: five case studies apply this playbook end to end, each with a statistician's report.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on the inference playbook. Answer them, hit <strong>Check Answers</strong>, and keep refining
+       until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">🚀</div>
+    <div><div class="ctitle">Let's put it all together</div>
+      <p>With the playbook in hand, <strong>Chapter 84 &#183; Case Study: A Web A/B Test</strong> takes a real
+         experiment from question to ship decision, framing the hypotheses, checking power, running the two-proportion
+         test, and reporting the lift with an interval.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="a-b-testing-and-online-experiments.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 82 · Previous</span><br><span class="cn-title">A/B Testing &amp; Online Experiments</span></span>
+    </a>
+    <a class="cn-btn next" href="case-study-a-web-a-b-test.html">
+      <span><span class="cn-dir">Chapter 84 · Next</span><br><span class="cn-title">Case Study: A Web A/B Test</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 83 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch83";
+  window.QUIZ_DATA = [
+    {
+      q: "Estimation and hypothesis testing are related because…",
+      options: ["They use different data", "A 95% CI for an effect that excludes 0 matches a test that rejects H₀ at 5%", "Testing replaces estimation", "They always disagree"],
+      answer: 1,
+      explain: "The two are mirror images: if the interval excludes the null value, the matching test is significant."
+    },
+    {
+      q: "The four questions that choose a test are…",
+      options: ["Sample size, budget, software, deadline", "Outcome type, number of groups, independent vs paired, and assumptions", "Mean, median, mode, range", "Who, what, when, where"],
+      answer: 1,
+      explain: "Outcome type, group count, design, and assumptions determine the test almost uniquely."
+    },
+    {
+      q: "A numeric outcome compared across three independent groups (roughly normal) calls for…",
+      options: ["A paired t-test", "One-way ANOVA (with a post-hoc test)", "Chi-square", "A one-proportion z-test"],
+      answer: 1,
+      explain: "3+ independent numeric groups → one-way ANOVA, then Tukey HSD if significant."
+    },
+    {
+      q: "Before running a chi-square test you should check that…",
+      options: ["The data are paired", "Every expected cell count is at least about 5", "The sample is under 30", "The variances are equal"],
+      answer: 1,
+      explain: "Small expected counts break the chi-square approximation; use Fisher's exact test instead."
+    },
+    {
+      q: "If the data are heavily skewed with outliers, you should…",
+      options: ["Always use a t-test", "Switch to the rank-based (nonparametric) version of the test", "Increase α", "Delete the analysis"],
+      answer: 1,
+      explain: "Skew/outliers violate normality, so Mann-Whitney, Kruskal-Wallis, or Wilcoxon are safer."
+    },
+    {
+      q: "A result is reported honestly when it includes…",
+      options: ["Only the p-value", "A p-value, an effect size, and a confidence interval", "Only the sample mean", "Only whether p < 0.05"],
+      answer: 1,
+      explain: "The p says whether, the effect size says how big, the interval says how precisely, all three together."
+    },
+    {
+      q: "A p-value of 10⁻⁴¹ with an effect size of 0.06 means…",
+      options: ["A huge, important effect", "A statistically significant but practically negligible effect (large sample)", "An error", "H₀ is true"],
+      answer: 1,
+      explain: "Huge samples make trivial effects significant; significance is not the same as importance."
+    },
+    {
+      q: "'Not statistically significant' means…",
+      options: ["The effect is definitely zero", "We lack evidence to reject H₀, which may just reflect low power", "The test was wrong", "H₁ is true"],
+      answer: 1,
+      explain: "Absence of evidence isn't evidence of absence; an underpowered study can miss a real effect."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

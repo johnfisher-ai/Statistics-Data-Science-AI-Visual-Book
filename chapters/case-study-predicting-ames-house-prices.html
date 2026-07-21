@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 100 · Case Study: Predicting Ames House Prices — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#f0fdf4; border:1px solid #bbf7d0; border-left:4px solid #059669; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#047857; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#6ee7b7; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+    .step-h { display:flex; align-items:center; gap:0.6rem; margin:1.4rem 0 0.4rem; }
+    .step-h .sn { flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:#059669; color:#fff; font-weight:800;
+                  font-size:0.95rem; display:flex; align-items:center; justify-content:center; }
+    .step-h h3 { margin:0; font-size:1.02rem; color:var(--ink); }
+    .writeup { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:14px; padding:1.3rem 1.5rem; margin:1.3rem 0; }
+    .writeup h3 { margin-top:0; color:#047857; }
+    .nb-fig { margin:1.4rem 0; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:1rem 1rem 0.6rem; }
+    .nb-fig img { display:block; width:100%; height:auto; border-radius:8px; }
+    .nb-fig figcaption { margin:0.75rem 0.2rem 0.3rem; font-size:0.85rem; color:var(--ink-soft); line-height:1.55; }
+    .nb-fig .cap-t { font-size:0.64rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#047857; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/case-study-predicting-ames-house-prices.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XVI · Regression Case Study</span><span class="sep">/</span>
+      <span>Chapter 100</span>
+    </div>
+    <div class="chapter-kicker"><span class="pill">Part XVI · Regression Case Study</span> Putting it all together</div>
+    <h1>Case Study: Predicting Ames <span class="accent">House Prices</span></h1>
+    <p class="dek">Everything in this book, so far, one project. We take a raw, messy spreadsheet of home sales and run it
+       all the way to a fitted, diagnosed, and interpreted model, following a 12-step method. Real data, real problems to
+       fix, real checks to pass, and a plain-English answer at the end.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~28 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Full notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 100</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">A model is the easy part, one line of code. The <em>project</em> around it, defining the question,
+       wrangling a filthy file into shape, checking every assumption, and translating coefficients into a decision, is the
+       real work. This chapter walks that whole arc on the <strong>Ames housing</strong> data.</p>
+
+    <div class="def-card">
+      <div class="sigma">📈</div>
+      <div class="def-body">
+        A <span class="def-kw">regression case study</span> is the end-to-end pipeline: <span class="def-kw">define,
+        collect, inspect, clean, visualize, transform, analyze, build, validate, interpret, deploy, communicate</span>.
+        The model itself occupies one step; the other eleven are what make its answer trustworthy and useful.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🧭</div>
+      <div><div class="ctitle">The data is deliberately dirty</div>
+        <p>This file has duplicate rows, categories in five different spellings, three date formats, structurally and
+           genuinely missing values, a skewed target, and outliers, exactly what real data looks like. Fixing it <em>is</em>
+           the case study.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: the method ===== -->
+  <section id="method">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The 12-Step Method</h2></div>
+    <p>Good data work follows a repeatable loop. Learn it once and every future project, housing, churn, demand, fraud,
+       fits the same frame.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 678 332" width="100%" font-family="Inter, sans-serif" aria-label="The twelve-step data-project method as a snaking flow: define, collect, inspect, clean, then down and back visualize, transform, analyze, build, then down validate, interpret, deploy, communicate">
+        <text x="339" y="26" text-anchor="middle" font-size="13" fill="#1a2138" font-weight="800">The 12-step method: from a raw file to a decision</text>
+        <defs><marker id="m100" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#047857"/></marker></defs>
+        <path d="M165,84.0 L181,84.0" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <path d="M331,84.0 L347,84.0" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <path d="M497,84.0 L513,84.0" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <path d="M588.0,120 L588.0,150" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <path d="M513,186.0 L497,186.0" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <path d="M347,186.0 L331,186.0" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <path d="M181,186.0 L165,186.0" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <path d="M90.0,222 L90.0,252" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <path d="M165,288.0 L181,288.0" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <path d="M331,288.0 L347,288.0" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <path d="M497,288.0 L513,288.0" stroke="#047857" stroke-width="1.7" marker-end="url(#m100)"/>
+        <rect x="15" y="48" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="32" cy="66" r="11" fill="#059669"/><text x="32" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">1</text>
+        <text x="49" y="70" font-size="10.5" fill="#047857" font-weight="800">Define</text>
+        <text x="27" y="92" font-size="8.3" fill="#4a5578">the objective</text>
+        <rect x="181" y="48" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="198" cy="66" r="11" fill="#059669"/><text x="198" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">2</text>
+        <text x="215" y="70" font-size="10.5" fill="#047857" font-weight="800">Collect</text>
+        <text x="193" y="92" font-size="8.3" fill="#4a5578">CSV/SQL/API</text>
+        <rect x="347" y="48" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="364" cy="66" r="11" fill="#059669"/><text x="364" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">3</text>
+        <text x="381" y="70" font-size="10.5" fill="#047857" font-weight="800">Inspect</text>
+        <text x="359" y="92" font-size="8.3" fill="#4a5578">shape, types, gaps</text>
+        <rect x="513" y="48" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="530" cy="66" r="11" fill="#059669"/><text x="530" y="70" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">4</text>
+        <text x="547" y="70" font-size="10.5" fill="#047857" font-weight="800">Clean</text>
+        <text x="525" y="92" font-size="8.3" fill="#4a5578">dupes, dates, missing</text>
+        <rect x="513" y="150" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="530" cy="168" r="11" fill="#059669"/><text x="530" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">5</text>
+        <text x="547" y="172" font-size="10.5" fill="#047857" font-weight="800">Visualize</text>
+        <text x="525" y="194" font-size="8.3" fill="#4a5578">hist, box, heatmap</text>
+        <rect x="347" y="150" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="364" cy="168" r="11" fill="#059669"/><text x="364" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">6</text>
+        <text x="381" y="172" font-size="10.5" fill="#047857" font-weight="800">Transform</text>
+        <text x="359" y="194" font-size="8.3" fill="#4a5578">log, encode, engineer</text>
+        <rect x="181" y="150" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="198" cy="168" r="11" fill="#059669"/><text x="198" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">7</text>
+        <text x="215" y="172" font-size="10.5" fill="#047857" font-weight="800">Analyze</text>
+        <text x="193" y="194" font-size="8.3" fill="#4a5578">correlation, outliers</text>
+        <rect x="15" y="150" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="32" cy="168" r="11" fill="#059669"/><text x="32" y="172" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">8</text>
+        <text x="49" y="172" font-size="10.5" fill="#047857" font-weight="800">Build</text>
+        <text x="27" y="194" font-size="8.3" fill="#4a5578">the regression</text>
+        <rect x="15" y="252" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="32" cy="270" r="11" fill="#059669"/><text x="32" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">9</text>
+        <text x="49" y="274" font-size="10.5" fill="#047857" font-weight="800">Validate</text>
+        <text x="27" y="296" font-size="8.3" fill="#4a5578">VIF, residuals, CV</text>
+        <rect x="181" y="252" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="198" cy="270" r="11" fill="#059669"/><text x="198" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">10</text>
+        <text x="215" y="274" font-size="10.5" fill="#047857" font-weight="800">Interpret</text>
+        <text x="193" y="296" font-size="8.3" fill="#4a5578">coefficients as dollars</text>
+        <rect x="347" y="252" width="150" height="72" rx="10" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+        <circle cx="364" cy="270" r="11" fill="#059669"/><text x="364" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">11</text>
+        <text x="381" y="274" font-size="10.5" fill="#047857" font-weight="800">Deploy</text>
+        <text x="359" y="296" font-size="8.3" fill="#4a5578">API, monitor, retrain</text>
+        <rect x="513" y="252" width="150" height="72" rx="10" fill="#dcfce7" stroke="#059669" stroke-width="1.8"/>
+        <circle cx="530" cy="270" r="11" fill="#059669"/><text x="530" y="274" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">12</text>
+        <text x="547" y="274" font-size="10.5" fill="#047857" font-weight="800">Communicate</text>
+        <text x="525" y="296" font-size="8.3" fill="#4a5578">plain-English write-up</text>
+      </svg>
+    </figure>
+
+    <p>The dataset is our familiar Ames sales file. We will touch every one of these twelve steps; the companion notebook
+       runs them all in code, and the sections below narrate the story with the key numbers and pictures.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · ames_housing.csv</div>
+      <p style="margin:0.5rem 0 0">610 past home sales with <code>neighborhood</code>, <code>gr_liv_area</code> (living
+        area), <code>lot_area</code>, <code>bedrooms</code>, <code>full_bath</code>, quality ratings
+        (<code>kitchen_qual</code>, <code>fireplace_qual</code>, <code>pool_qc</code>), <code>year_built</code>,
+        <code>sale_date</code>, and the target <code>sale_price</code>.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/ames_housing.csv" download>📊 Download dataset &nbsp;<small>CSV · 610 rows</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Section 2: wrangle (steps 1-4) ===== -->
+  <section id="wrangle">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Define, Collect, Inspect, Clean (Steps 1&#8211;4)</h2></div>
+
+    <div class="step-h"><span class="sn">1</span><h3>Define the objective</h3></div>
+    <p>Predict a home's <strong>sale price</strong>, and identify which features drive it, for an agent pricing a listing,
+       an owner choosing a renovation, or a buyer checking an asking price. Success means useful accuracy <em>and</em>
+       coefficients we can trust and explain.</p>
+
+    <div class="step-h"><span class="sn">2</span><h3>Collect the data</h3></div>
+    <p>Ours arrives as a CSV, but data can come from anywhere, and pandas has a one-line reader for each source:</p>
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Source</th><th>Format</th><th>Python (pandas)</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Flat file</td><td>CSV / TSV</td><td><code>pd.read_csv(...)</code></td></tr>
+          <tr><td class="nm">Spreadsheet</td><td>Excel .xlsx</td><td><code>pd.read_excel(..., sheet_name=...)</code></td></tr>
+          <tr><td class="nm">Database</td><td>SQL</td><td><code>pd.read_sql(query, engine)</code> (SQLAlchemy)</td></tr>
+          <tr><td class="nm">Web API</td><td>JSON</td><td><code>pd.json_normalize(requests.get(url).json())</code></td></tr>
+          <tr><td class="nm">Web page</td><td>HTML tables</td><td><code>pd.read_html(url)</code></td></tr>
+          <tr><td class="nm">Scraping</td><td>HTML</td><td><code>requests</code> + <code>BeautifulSoup</code></td></tr>
+          <tr><td class="nm">Big / columnar</td><td>Parquet</td><td><code>pd.read_parquet(...)</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Whatever the source, the goal is the same: land it in a <span class="term">DataFrame</span>. From there the pipeline
+       is identical.</p>
+
+    <div class="step-h"><span class="sn">3</span><h3>Inspect the data</h3></div>
+    <p>Before touching anything, look: <code>df.shape</code> (610 &#215; 16), <code>df.info()</code> (types),
+       <code>df.describe()</code> (ranges), and <code>df.isna().sum()</code> (the missing map). Three kinds of trouble
+       surface immediately, catalogued below.</p>
+
+    <div class="step-h"><span class="sn">4</span><h3>Clean the data</h3></div>
+    <p>Each problem gets a deliberate fix, recorded so the work is reproducible:</p>
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Problem found</th><th>How much</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Missing target (<code>sale_price</code>)</td><td>3 rows</td><td>drop, a target cannot be imputed</td></tr>
+          <tr><td class="nm">Duplicate <code>house_id</code></td><td>10 rows</td><td>deduplicate</td></tr>
+          <tr><td class="nm">Inconsistent categories</td><td><code>central_air</code> Y/Yes; <code>kitchen_qual</code> in 15 spellings</td><td>standardize case, map to one scheme</td></tr>
+          <tr><td class="nm">Three date formats</td><td><code>sale_date</code></td><td><code>pd.to_datetime(..., format="mixed")</code></td></tr>
+          <tr><td class="nm">Structural missing</td><td>pool 604, fireplace 290, garage 29</td><td>"none" category + a <code>has_*</code> flag (it is information, not error)</td></tr>
+          <tr><td class="nm">Genuine missing</td><td><code>lot_frontage</code> 95</td><td>impute the neighborhood median</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>After cleaning, <strong>597 rows</strong> remain with no missing values in any modeling column. The distinction
+       that matters most: a missing pool rating is <em>not</em> an error, most homes have no pool, so it becomes a "none"
+       level and a flag, while a missing lot frontage is genuinely unknown and gets imputed.</p>
+  </section>
+
+  <!-- ===== Section 3: explore & transform (steps 5-7) ===== -->
+  <section id="explore">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Visualize, Transform, Analyze (Steps 5&#8211;7)</h2></div>
+
+    <div class="step-h"><span class="sn">5</span><h3>Visualize the data</h3></div>
+    <p>A histogram shows the target's shape, box plots show spread by group, and a heatmap shows relationships. The
+       correlation heatmap answers "what moves with price?":</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 462" width="100%" font-family="Inter, sans-serif" aria-label="A correlation heatmap of Ames house features; kitchen quality, living area and bedrooms correlate most strongly with price">
+        <text x="340" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">Correlation heatmap: kitchen quality, size, and bedrooms move with price</text>
+        <text x="179" y="74" text-anchor="start" font-size="8" fill="#4a5578" font-weight="700" transform="rotate(-32 179 74)">price</text>
+        <text x="237" y="74" text-anchor="start" font-size="8" fill="#4a5578" font-weight="700" transform="rotate(-32 237 74)">kitchen</text>
+        <text x="295" y="74" text-anchor="start" font-size="8" fill="#4a5578" font-weight="700" transform="rotate(-32 295 74)">living area</text>
+        <text x="353" y="74" text-anchor="start" font-size="8" fill="#4a5578" font-weight="700" transform="rotate(-32 353 74)">bedrooms</text>
+        <text x="411" y="74" text-anchor="start" font-size="8" fill="#4a5578" font-weight="700" transform="rotate(-32 411 74)">full bath</text>
+        <text x="469" y="74" text-anchor="start" font-size="8" fill="#4a5578" font-weight="700" transform="rotate(-32 469 74)">lot area</text>
+        <text x="142" y="116" text-anchor="end" font-size="8.5" fill="#1a2138" font-weight="700">price</text>
+        <rect x="150" y="84" width="58" height="58" fill="#059669" stroke="#fff" stroke-width="1.5"/>
+        <text x="179" y="116" text-anchor="middle" font-size="8.6" fill="#fff" font-weight="700">1.00</text>
+        <rect x="208" y="84" width="58" height="58" fill="#7cc8b0" stroke="#fff" stroke-width="1.5"/>
+        <text x="237" y="116" text-anchor="middle" font-size="8.6" fill="#1a2138" font-weight="700">0.52</text>
+        <rect x="266" y="84" width="58" height="58" fill="#88cdb7" stroke="#fff" stroke-width="1.5"/>
+        <text x="295" y="116" text-anchor="middle" font-size="8.6" fill="#1a2138" font-weight="700">0.47</text>
+        <rect x="324" y="84" width="58" height="58" fill="#8aceb9" stroke="#fff" stroke-width="1.5"/>
+        <text x="353" y="116" text-anchor="middle" font-size="8.6" fill="#1a2138" font-weight="700">0.47</text>
+        <rect x="382" y="84" width="58" height="58" fill="#a9dacb" stroke="#fff" stroke-width="1.5"/>
+        <text x="411" y="116" text-anchor="middle" font-size="8.6" fill="#1a2138" font-weight="700">0.34</text>
+        <rect x="440" y="84" width="58" height="58" fill="#fcf3f3" stroke="#fff" stroke-width="1.5"/>
+        <text x="469" y="116" text-anchor="middle" font-size="8.6" fill="#1a2138" font-weight="700">-0.06</text>
+        <text x="142" y="174" text-anchor="end" font-size="8.5" fill="#1a2138" font-weight="700">kitchen</text>
+        <rect x="150" y="142" width="58" height="58" fill="#7cc8b0" stroke="#fff" stroke-width="1.5"/>
+        <text x="179" y="174" text-anchor="middle" font-size="8.6" fill="#1a2138" font-weight="700">0.52</text>
+        <rect x="208" y="142" width="58" height="58" fill="#059669" stroke="#fff" stroke-width="1.5"/>
+        <text x="237" y="174" text-anchor="middle" font-size="8.6" fill="#fff" font-weight="700">1.00</text>
+        <rect x="266" y="142" width="58" height="58" fill="#c8e7de" stroke="#fff" stroke-width="1.5"/>
+        <text x="295" y="174" text-anchor="middle" font-size="8.6" fill="#1a2138" font-weight="700">0.22</text>
+        <rect x="324" y="142" width="58" height="58" fill="#bfe4d8" stroke="#fff" stroke-width="1.5"/>
+        <text x="353" y="174" text-anchor="middle" font-size="8.6" fill="#1a2138" font-weight="700">0.25</text>
+        <rect x="382" y="142" width="58" height="58" fill="#cdeae1" stroke="#fff" stroke-width="1.5"/>
+        <text x="411" y="174" text-anchor="middle" font-size="8.6" fill="#1a2138" font-weight="700">0.20</text>
+        <rect x="440" y="142" width="58" height="58" fill="#fdf6f6" stroke="#fff" stroke-width="1.5"/>
+        <text x="469" y="174" text-anchor="middle" font-size="8.6" fill="#1a2138" font-weight="700">-0.05</text>
+        <text x="142" y="232" text-anchor="end" font-size="8.5" fill="#1a2138" font-weight="700">living area</text>
+        <rect x="150" y="200" width="58" height="58" fill="#88cdb7" stroke="#fff" stroke-width="1.5"/>
+        <text x="179" y="232" text-anchor="middle" font-size="8.6" fill="#1a2138" font-weight="700">0.47</text>
+        <rect x="208" y="200" width="58" height="58" fill="#c8e7de" stroke="#fff" stroke-width="1.5"/>
+        <text x="237" y="232" text-anchor="middle" font-size="8.6" fill="#1a2138" font-weight="700">0.22</text>
+        <rect x="266" y="200" width="58" height="58" fill="#059669" stroke="#fff" stroke-width="1.5"/>
+        <text x="295" y="232" text-anchor="middle" font-size="8.6" fill="#fff" font-weight="700">1.00</text>
+        <rect x="324" y="200" width="58" height="58" fill="#67bfa3" stroke="#fff" stroke-width="1.5"/>
+        <text x="353" y="232" text-anchor="middle" font-size="8.6" fill="#fff" font-weight="700">0.61</text>
+        <rect x="382" y="200" width="58" height="58" fill="#9ed6c4" stroke="#fff" stroke-width="1.5"/>
+        <text x="411" y="232" text-anchor="middle" font-size="8.6" fill="#1a2138" font-weight="700">0.39</text>
+        <rect x="440" y="200" width="58" height="58" fill="#fdf9f9" stroke="#fff" stroke-width="1.5"/>
+        <text x="469" y="232" text-anchor="middle" font-size="8.6" fill="#1a2138" font-weight="700">-0.03</text>
+        <text x="142" y="290" text-anchor="end" font-size="8.5" fill="#1a2138" font-weight="700">bedrooms</text>
+        <rect x="150" y="258" width="58" height="58" fill="#8aceb9" stroke="#fff" stroke-width="1.5"/>
+        <text x="179" y="290" text-anchor="middle" font-size="8.6" fill="#1a2138" font-weight="700">0.47</text>
+        <rect x="208" y="258" width="58" height="58" fill="#bfe4d8" stroke="#fff" stroke-width="1.5"/>
+        <text x="237" y="290" text-anchor="middle" font-size="8.6" fill="#1a2138" font-weight="700">0.25</text>
+        <rect x="266" y="258" width="58" height="58" fill="#67bfa3" stroke="#fff" stroke-width="1.5"/>
+        <text x="295" y="290" text-anchor="middle" font-size="8.6" fill="#fff" font-weight="700">0.61</text>
+        <rect x="324" y="258" width="58" height="58" fill="#059669" stroke="#fff" stroke-width="1.5"/>
+        <text x="353" y="290" text-anchor="middle" font-size="8.6" fill="#fff" font-weight="700">1.00</text>
+        <rect x="382" y="258" width="58" height="58" fill="#4fb595" stroke="#fff" stroke-width="1.5"/>
+        <text x="411" y="290" text-anchor="middle" font-size="8.6" fill="#fff" font-weight="700">0.70</text>
+        <rect x="440" y="258" width="58" height="58" fill="#fefefe" stroke="#fff" stroke-width="1.5"/>
+        <text x="469" y="290" text-anchor="middle" font-size="8.6" fill="#1a2138" font-weight="700">0.00</text>
+        <text x="142" y="348" text-anchor="end" font-size="8.5" fill="#1a2138" font-weight="700">full bath</text>
+        <rect x="150" y="316" width="58" height="58" fill="#a9dacb" stroke="#fff" stroke-width="1.5"/>
+        <text x="179" y="348" text-anchor="middle" font-size="8.6" fill="#1a2138" font-weight="700">0.34</text>
+        <rect x="208" y="316" width="58" height="58" fill="#cdeae1" stroke="#fff" stroke-width="1.5"/>
+        <text x="237" y="348" text-anchor="middle" font-size="8.6" fill="#1a2138" font-weight="700">0.20</text>
+        <rect x="266" y="316" width="58" height="58" fill="#9ed6c4" stroke="#fff" stroke-width="1.5"/>
+        <text x="295" y="348" text-anchor="middle" font-size="8.6" fill="#1a2138" font-weight="700">0.39</text>
+        <rect x="324" y="316" width="58" height="58" fill="#4fb595" stroke="#fff" stroke-width="1.5"/>
+        <text x="353" y="348" text-anchor="middle" font-size="8.6" fill="#fff" font-weight="700">0.70</text>
+        <rect x="382" y="316" width="58" height="58" fill="#059669" stroke="#fff" stroke-width="1.5"/>
+        <text x="411" y="348" text-anchor="middle" font-size="8.6" fill="#fff" font-weight="700">1.00</text>
+        <rect x="440" y="316" width="58" height="58" fill="#fcfefd" stroke="#fff" stroke-width="1.5"/>
+        <text x="469" y="348" text-anchor="middle" font-size="8.6" fill="#1a2138" font-weight="700">0.01</text>
+        <text x="142" y="406" text-anchor="end" font-size="8.5" fill="#1a2138" font-weight="700">lot area</text>
+        <rect x="150" y="374" width="58" height="58" fill="#fcf3f3" stroke="#fff" stroke-width="1.5"/>
+        <text x="179" y="406" text-anchor="middle" font-size="8.6" fill="#1a2138" font-weight="700">-0.06</text>
+        <rect x="208" y="374" width="58" height="58" fill="#fdf6f6" stroke="#fff" stroke-width="1.5"/>
+        <text x="237" y="406" text-anchor="middle" font-size="8.6" fill="#1a2138" font-weight="700">-0.05</text>
+        <rect x="266" y="374" width="58" height="58" fill="#fdf9f9" stroke="#fff" stroke-width="1.5"/>
+        <text x="295" y="406" text-anchor="middle" font-size="8.6" fill="#1a2138" font-weight="700">-0.03</text>
+        <rect x="324" y="374" width="58" height="58" fill="#fefefe" stroke="#fff" stroke-width="1.5"/>
+        <text x="353" y="406" text-anchor="middle" font-size="8.6" fill="#1a2138" font-weight="700">0.00</text>
+        <rect x="382" y="374" width="58" height="58" fill="#fcfefd" stroke="#fff" stroke-width="1.5"/>
+        <text x="411" y="406" text-anchor="middle" font-size="8.6" fill="#1a2138" font-weight="700">0.01</text>
+        <rect x="440" y="374" width="58" height="58" fill="#059669" stroke="#fff" stroke-width="1.5"/>
+        <text x="469" y="406" text-anchor="middle" font-size="8.6" fill="#fff" font-weight="700">1.00</text>
+      </svg>
+    </figure>
+
+    <p>Reading the top row: <strong>kitchen quality (0.52)</strong>, <strong>living area (0.47)</strong>, and
+       <strong>bedrooms (0.47)</strong> are the strongest numeric drivers; lot area barely matters on its own. The
+       heatmap also lets us eyeball collinearity between predictors, bedrooms and full bath correlate 0.70, worth
+       confirming with VIF later.</p>
+
+    <div class="step-h"><span class="sn">6</span><h3>Transform features</h3></div>
+    <p>Sale price is right-skewed (skew 1.16), which breaks the equal-variance and normality assumptions. Modeling
+       <strong>log(price)</strong> turns percentage effects (how housing actually works) into additive ones and stabilizes
+       the variance. The skew all but vanishes:</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 250" width="100%" font-family="Inter, sans-serif" aria-label="Two histograms: the raw sale price is right-skewed, and the log of price is nearly symmetric">
+        <text x="340" y="19" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">Why we model log(price): the skew collapses</text>
+        <rect x="40" y="48" width="260" height="150" rx="8" fill="#fef2f2" stroke="#e6e9f2"/>
+        <text x="52" y="42" font-size="10" fill="#dc2626" font-weight="800">BEFORE: price  (skew 1.16)</text>
+        <rect x="48.0" y="166.9" width="10.1" height="23.1" fill="#dc2626" opacity="0.6"/>
+        <rect x="59.1" y="153.4" width="10.1" height="36.6" fill="#dc2626" opacity="0.6"/>
+        <rect x="70.2" y="108.4" width="10.1" height="81.6" fill="#dc2626" opacity="0.6"/>
+        <rect x="81.3" y="92.5" width="10.1" height="97.5" fill="#dc2626" opacity="0.6"/>
+        <rect x="92.4" y="71.8" width="10.1" height="118.2" fill="#dc2626" opacity="0.6"/>
+        <rect x="103.5" y="101.1" width="10.1" height="88.9" fill="#dc2626" opacity="0.6"/>
+        <rect x="114.5" y="103.5" width="10.1" height="86.5" fill="#dc2626" opacity="0.6"/>
+        <rect x="125.6" y="138.8" width="10.1" height="51.2" fill="#dc2626" opacity="0.6"/>
+        <rect x="136.7" y="154.7" width="10.1" height="35.3" fill="#dc2626" opacity="0.6"/>
+        <rect x="147.8" y="147.4" width="10.1" height="42.6" fill="#dc2626" opacity="0.6"/>
+        <rect x="158.9" y="164.4" width="10.1" height="25.6" fill="#dc2626" opacity="0.6"/>
+        <rect x="170.0" y="179.0" width="10.1" height="11.0" fill="#dc2626" opacity="0.6"/>
+        <rect x="181.1" y="180.3" width="10.1" height="9.7" fill="#dc2626" opacity="0.6"/>
+        <rect x="192.2" y="181.5" width="10.1" height="8.5" fill="#dc2626" opacity="0.6"/>
+        <rect x="203.3" y="187.6" width="10.1" height="2.4" fill="#dc2626" opacity="0.6"/>
+        <rect x="214.4" y="188.8" width="10.1" height="1.2" fill="#dc2626" opacity="0.6"/>
+        <rect x="225.5" y="186.3" width="10.1" height="3.7" fill="#dc2626" opacity="0.6"/>
+        <rect x="236.5" y="188.8" width="10.1" height="1.2" fill="#dc2626" opacity="0.6"/>
+        <rect x="247.6" y="190.0" width="10.1" height="0.0" fill="#dc2626" opacity="0.6"/>
+        <rect x="258.7" y="190.0" width="10.1" height="0.0" fill="#dc2626" opacity="0.6"/>
+        <rect x="269.8" y="190.0" width="10.1" height="0.0" fill="#dc2626" opacity="0.6"/>
+        <rect x="280.9" y="187.6" width="10.1" height="2.4" fill="#dc2626" opacity="0.6"/>
+        <rect x="380" y="48" width="260" height="150" rx="8" fill="#ecfdf5" stroke="#e6e9f2"/>
+        <text x="392" y="42" font-size="10" fill="#15803d" font-weight="800">AFTER: log(price)  (skew 0.02)</text>
+        <rect x="388.0" y="184.9" width="10.1" height="5.1" fill="#15803d" opacity="0.6"/>
+        <rect x="399.1" y="174.6" width="10.1" height="15.4" fill="#15803d" opacity="0.6"/>
+        <rect x="410.2" y="176.3" width="10.1" height="13.7" fill="#15803d" opacity="0.6"/>
+        <rect x="421.3" y="172.9" width="10.1" height="17.1" fill="#15803d" opacity="0.6"/>
+        <rect x="432.4" y="157.5" width="10.1" height="32.5" fill="#15803d" opacity="0.6"/>
+        <rect x="443.5" y="140.3" width="10.1" height="49.7" fill="#15803d" opacity="0.6"/>
+        <rect x="454.5" y="119.8" width="10.1" height="70.2" fill="#15803d" opacity="0.6"/>
+        <rect x="465.6" y="111.2" width="10.1" height="78.8" fill="#15803d" opacity="0.6"/>
+        <rect x="476.7" y="83.8" width="10.1" height="106.2" fill="#15803d" opacity="0.6"/>
+        <rect x="487.8" y="71.8" width="10.1" height="118.2" fill="#15803d" opacity="0.6"/>
+        <rect x="498.9" y="73.5" width="10.1" height="116.5" fill="#15803d" opacity="0.6"/>
+        <rect x="510.0" y="94.1" width="10.1" height="95.9" fill="#15803d" opacity="0.6"/>
+        <rect x="521.1" y="106.1" width="10.1" height="83.9" fill="#15803d" opacity="0.6"/>
+        <rect x="532.2" y="128.3" width="10.1" height="61.7" fill="#15803d" opacity="0.6"/>
+        <rect x="543.3" y="124.9" width="10.1" height="65.1" fill="#15803d" opacity="0.6"/>
+        <rect x="554.4" y="150.6" width="10.1" height="39.4" fill="#15803d" opacity="0.6"/>
+        <rect x="565.5" y="169.4" width="10.1" height="20.6" fill="#15803d" opacity="0.6"/>
+        <rect x="576.5" y="172.9" width="10.1" height="17.1" fill="#15803d" opacity="0.6"/>
+        <rect x="587.6" y="184.9" width="10.1" height="5.1" fill="#15803d" opacity="0.6"/>
+        <rect x="598.7" y="184.9" width="10.1" height="5.1" fill="#15803d" opacity="0.6"/>
+        <rect x="609.8" y="188.3" width="10.1" height="1.7" fill="#15803d" opacity="0.6"/>
+        <rect x="620.9" y="186.6" width="10.1" height="3.4" fill="#15803d" opacity="0.6"/>
+        <text x="340" y="242" text-anchor="middle" font-size="8.6" fill="#4a5578">Skew 1.16 &#8594; 0.02: percentage effects become additive and the variance stabilizes.</text>
+      </svg>
+    </figure>
+
+    <p>We also <span class="term">encode</span> categories: the quality ratings are <em>ordinal</em> (Po &lt; Fa &lt; TA
+       &lt; Gd &lt; Ex &#8594; 1&#8211;5), while <code>neighborhood</code> is <em>nominal</em> and becomes dummy
+       variables. And we <span class="term">engineer</span> <code>has_*</code> flags, plus a <code>house_age</code>
+       feature that a quick check reveals is degenerate in this extract (the recorded sale year mirrors the build year),
+       so we drop it, a reminder to always validate an engineered feature before trusting it. These
+       transformed features are what the model sees.</p>
+
+    <div class="step-h"><span class="sn">7</span><h3>Analyze patterns</h3></div>
+    <p>A last look for signal and trouble: price rises with living area and, at any size, with kitchen quality (two clean
+       signals), and a box plot flags <strong>four homes over 4,000 sqft</strong> as potential high-leverage outliers.
+       We do not delete them, an unusual value is not automatically an error, but we flag them and check their influence
+       during validation.</p>
+  </section>
+
+  <!-- ===== Section 4: build & validate (steps 8-9) ===== -->
+  <section id="build">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Build and Validate (Steps 8&#8211;9)</h2></div>
+
+    <div class="step-h"><span class="sn">8</span><h3>Build the model</h3></div>
+    <p>One statsmodels call fits a multiple regression of <code>log_price</code> on living area, lot area, age, bedrooms,
+       baths, kitchen and fireplace quality, central air, garage, and neighborhood. It explains the data well, adjusted
+       R&#178; &#8776; <strong>0.65</strong>, but the summary hints at problems that step 9 must resolve.</p>
+
+    <div class="step-h"><span class="sn">9</span><h3>Validate the model</h3></div>
+    <p>Trust nothing until the diagnostics agree. Five checks, and how this model fared:</p>
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Check</th><th>Result</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Multicollinearity (VIF)</td><td>all &lt; 5 &#10003;</td><td>none; keep all predictors on this ground</td></tr>
+          <tr><td class="nm">Equal variance (Breusch-Pagan)</td><td>p &lt; 0.001 &#10007;</td><td>report <strong>HC3 robust standard errors</strong> (they run ~3&#215; wider)</td></tr>
+          <tr><td class="nm">Normal residuals (Jarque-Bera)</td><td>fails at the tails &#10007;</td><td>trace to a few luxury homes; check influence</td></tr>
+          <tr><td class="nm">Influence (Cook's distance)</td><td>30 flagged, max 0.32</td><td>refit without them, coefficients barely move (robust)</td></tr>
+          <tr><td class="nm">Overfitting (5-fold CV)</td><td>CV R&#178; = 0.63</td><td>close to training 0.65, not overfit</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Two more validation moves matter. <span class="hl">Coefficient selection</span>: several predictors
+       (<code>lot_area</code>, <code>full_bath</code>, <code>central_air</code>, fireplace, garage) are not significant,
+       so we drop them; the leaner model of <em>living area, kitchen quality, bedrooms, and neighborhood</em> holds
+       adjusted R&#178; at 0.65 with far fewer moving parts. And a <span class="hl">predicted-vs-actual</span> plot is the
+       honest gut-check on accuracy:</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 320" width="100%" font-family="Inter, sans-serif" aria-label="A predicted-versus-actual price scatter clustering along the diagonal, showing the model predicts well; cross-validated R-squared about 0.63">
+        <text x="340" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">The model in action: predicted vs actual price</text>
+        <text x="340" y="37" text-anchor="middle" font-size="9" fill="#4a5578">Adjusted R&#178; = 0.65, cross-validated R&#178; = 0.63; closer to the line is a better prediction</text>
+        <line x1="64" y1="50" x2="64" y2="268" stroke="#1a2138" stroke-width="1.1"/>
+        <line x1="64" y1="268" x2="654" y2="268" stroke="#1a2138" stroke-width="1.1"/>
+        <line x1="64.0" y1="268.0" x2="654.0" y2="50.0" stroke="#047857" stroke-width="2" stroke-dasharray="6 4"/>
+        <text x="648" y="64" text-anchor="end" font-size="8.5" fill="#047857" font-weight="700">perfect prediction</text>
+        <circle cx="165.6" cy="229.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="151.3" cy="230.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="218.5" cy="201.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="370.2" cy="171.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="211.4" cy="221.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="246.9" cy="227.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="198.3" cy="221.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="204.9" cy="185.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="136.7" cy="230.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="196.8" cy="234.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="229.2" cy="233.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="268.4" cy="200.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="283.1" cy="175.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="245.1" cy="194.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="210.8" cy="193.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="251.8" cy="183.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="261.6" cy="184.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="237.7" cy="204.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="298.7" cy="190.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="143.1" cy="242.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="90.4" cy="247.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="381.5" cy="193.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="124.9" cy="242.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="283.1" cy="203.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="152.7" cy="232.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="245.4" cy="228.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="120.6" cy="229.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="118.4" cy="238.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="437.8" cy="137.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="239.3" cy="226.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="253.2" cy="229.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="317.9" cy="179.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="310.2" cy="205.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="226.0" cy="225.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="298.6" cy="192.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="207.1" cy="208.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="178.1" cy="246.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="121.0" cy="230.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="190.2" cy="210.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="172.0" cy="225.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="402.4" cy="175.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="251.9" cy="211.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="162.1" cy="234.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="109.2" cy="242.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="185.5" cy="229.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="219.6" cy="214.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="466.9" cy="141.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="243.2" cy="198.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="258.9" cy="173.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="242.9" cy="198.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="244.9" cy="185.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="302.2" cy="180.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="105.4" cy="238.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="139.1" cy="226.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="171.7" cy="240.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="280.4" cy="214.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="271.3" cy="214.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="251.0" cy="204.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="132.9" cy="231.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="186.1" cy="203.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="217.3" cy="220.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="143.5" cy="233.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="275.0" cy="231.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="230.2" cy="218.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="168.1" cy="214.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="122.7" cy="235.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="181.3" cy="229.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="654.0" cy="139.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="183.6" cy="132.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="165.6" cy="198.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="161.3" cy="232.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="417.6" cy="149.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="312.4" cy="191.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="316.3" cy="181.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="174.0" cy="224.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="208.9" cy="215.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="290.4" cy="212.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="204.8" cy="231.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="202.0" cy="231.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="134.0" cy="241.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="178.4" cy="226.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="213.5" cy="233.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="206.9" cy="220.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="462.7" cy="166.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="201.1" cy="199.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="91.4" cy="245.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="158.9" cy="222.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="260.3" cy="204.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="172.5" cy="206.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="166.3" cy="223.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="207.9" cy="238.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="176.6" cy="224.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="137.7" cy="245.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="295.3" cy="179.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="193.1" cy="233.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="293.7" cy="187.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="250.8" cy="227.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="147.0" cy="240.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="407.3" cy="189.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="174.3" cy="220.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="299.5" cy="184.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="134.0" cy="242.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="145.1" cy="239.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="216.7" cy="221.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="268.8" cy="159.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="67.9" cy="256.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="258.8" cy="180.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="209.7" cy="180.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="386.6" cy="125.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="174.1" cy="228.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="217.0" cy="202.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="159.3" cy="239.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="159.1" cy="227.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="141.8" cy="238.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="194.3" cy="233.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="184.4" cy="205.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="257.1" cy="232.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="244.9" cy="222.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="414.1" cy="167.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="117.9" cy="244.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="164.1" cy="236.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="325.1" cy="181.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="146.8" cy="239.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="110.6" cy="240.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="201.1" cy="231.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="198.0" cy="220.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="156.2" cy="220.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="266.5" cy="201.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="338.7" cy="167.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="193.5" cy="236.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="305.5" cy="155.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="219.5" cy="201.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="163.4" cy="209.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="229.7" cy="198.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="130.5" cy="245.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="314.3" cy="210.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="306.8" cy="161.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="337.2" cy="178.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="216.1" cy="141.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="207.9" cy="215.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="148.5" cy="221.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="88.7" cy="244.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="140.4" cy="233.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="141.7" cy="245.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="234.9" cy="240.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="120.7" cy="240.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="415.9" cy="154.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="186.9" cy="230.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="303.5" cy="185.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="212.5" cy="228.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="179.4" cy="207.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="353.6" cy="159.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="143.8" cy="229.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="284.7" cy="201.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="230.1" cy="227.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="435.1" cy="154.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="171.3" cy="220.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="169.8" cy="232.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="131.4" cy="205.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="182.4" cy="236.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="353.7" cy="200.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="310.4" cy="187.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="370.9" cy="157.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="379.4" cy="148.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="137.2" cy="227.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="307.0" cy="178.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="220.0" cy="222.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="234.5" cy="228.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="307.6" cy="197.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="247.2" cy="221.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="159.3" cy="237.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="196.8" cy="213.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="174.2" cy="237.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="73.8" cy="249.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="95.4" cy="246.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="144.8" cy="226.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="191.9" cy="226.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="261.8" cy="192.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="147.0" cy="230.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="168.3" cy="239.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="264.5" cy="203.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="197.9" cy="220.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="102.4" cy="249.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="256.3" cy="193.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="248.9" cy="212.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="214.7" cy="209.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="221.0" cy="203.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="347.9" cy="142.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="193.2" cy="206.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="541.7" cy="139.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="151.3" cy="235.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="130.1" cy="222.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="187.9" cy="222.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="195.5" cy="205.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="281.3" cy="179.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="240.0" cy="194.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="192.5" cy="233.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="214.0" cy="228.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="175.9" cy="227.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="129.1" cy="234.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="100.7" cy="244.0" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="244.7" cy="212.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="286.3" cy="163.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="122.4" cy="238.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="215.2" cy="198.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="225.1" cy="184.5" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="237.9" cy="210.3" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="187.2" cy="228.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="175.3" cy="226.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="144.0" cy="246.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="322.6" cy="182.2" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="164.5" cy="217.9" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="241.6" cy="187.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="176.8" cy="209.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="265.8" cy="198.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="139.5" cy="243.4" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="195.0" cy="227.6" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="128.3" cy="242.7" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="372.3" cy="195.8" r="2.6" fill="#059669" opacity="0.4"/>
+        <circle cx="260.8" cy="210.1" r="2.6" fill="#059669" opacity="0.4"/>
+        <text x="171" y="284" text-anchor="middle" font-size="7.6" fill="#94a3b8">$150k</text>
+        <text x="56" y="232" text-anchor="end" font-size="7.6" fill="#94a3b8">$150k</text>
+        <text x="367" y="284" text-anchor="middle" font-size="7.6" fill="#94a3b8">$300k</text>
+        <text x="56" y="159" text-anchor="end" font-size="7.6" fill="#94a3b8">$300k</text>
+        <text x="564" y="284" text-anchor="middle" font-size="7.6" fill="#94a3b8">$450k</text>
+        <text x="56" y="86" text-anchor="end" font-size="7.6" fill="#94a3b8">$450k</text>
+        <text x="359" y="308" text-anchor="middle" font-size="9" fill="#4a5578">actual price &#8594;</text>
+        <text x="18" y="159" text-anchor="middle" font-size="9" fill="#4a5578" transform="rotate(-90 18 159)">predicted price &#8594;</text>
+      </svg>
+    </figure>
+
+    <p>The dots cluster along the diagonal, the model predicts real prices well, and the spread widens for expensive
+       homes, the same heteroscedasticity Breusch-Pagan flagged, which is exactly why we report robust standard errors.
+       This is what a <em>realistically imperfect but honestly handled</em> model looks like.</p>
+  </section>
+
+  <!-- ===== Section 5: interpret & deploy (steps 10-11) ===== -->
+  <section id="interpret">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Interpret and Deploy (Steps 10&#8211;11)</h2></div>
+
+    <div class="step-h"><span class="sn">10</span><h3>Interpret the results</h3></div>
+    <figure class="nb-fig">
+      <img src="../assets/img/case-study-predicting-ames-house-prices--pred_actual.png" alt="Predicted versus actual sale price on the held-out test data, points clustering along the diagonal">
+      <figcaption><span class="cap-t">From the notebook &#183; Step 10</span><br>The model's predictions on homes it never saw, plotted against true sale prices; the tight clustering along the diagonal is the honest 0.63 cross-validated fit.</figcaption>
+    </figure>
+    <p>On the log scale, exponentiating a coefficient gives a percentage effect on price. Ranked, the drivers tell a clear
+       story:</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
+      <svg viewBox="0 0 680 300" width="100%" font-family="Inter, sans-serif" aria-label="A bar chart of each factor percent effect on house price: neighborhood premiums dominate, then bedrooms, kitchen grade, and size; two neighborhoods are discounts">
+        <text x="340" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">What drives price: each factor&#8217;s % effect (all else equal)</text>
+        <text x="340" y="37" text-anchor="middle" font-size="9" fill="#4a5578">Location dominates; the kitchen is the biggest thing an owner can change</text>
+        <line x1="393.0" y1="50" x2="393.0" y2="272" stroke="#1a2138" stroke-width="1.1" stroke-dasharray="3 3"/>
+        <rect x="393.0" y="57.5" width="211.3" height="16.3" rx="2" fill="#059669" opacity="0.85"/>
+        <text x="142" y="68.6" text-anchor="end" font-size="8.8" fill="#1a2138" font-weight="700">NorthRidge (nbhd)</text>
+        <text x="610.3" y="68.6" text-anchor="start" font-size="8.6" fill="#059669" font-weight="800">+52%</text>
+        <rect x="393.0" y="84.7" width="128.7" height="16.3" rx="2" fill="#059669" opacity="0.85"/>
+        <text x="142" y="95.9" text-anchor="end" font-size="8.8" fill="#1a2138" font-weight="700">Somerset (nbhd)</text>
+        <text x="527.7" y="95.9" text-anchor="start" font-size="8.6" fill="#059669" font-weight="800">+32%</text>
+        <rect x="393.0" y="112.0" width="97.2" height="16.3" rx="2" fill="#059669" opacity="0.85"/>
+        <text x="142" y="123.1" text-anchor="end" font-size="8.8" fill="#1a2138" font-weight="700">CollegeCreek (nbhd)</text>
+        <text x="496.2" y="123.1" text-anchor="start" font-size="8.6" fill="#059669" font-weight="800">+24%</text>
+        <rect x="393.0" y="139.2" width="23.9" height="16.3" rx="2" fill="#059669" opacity="0.85"/>
+        <text x="142" y="150.4" text-anchor="end" font-size="8.8" fill="#1a2138" font-weight="700">+1 bedroom</text>
+        <text x="422.9" y="150.4" text-anchor="start" font-size="8.6" fill="#059669" font-weight="800">+6%</text>
+        <rect x="393.0" y="166.4" width="22.2" height="16.3" rx="2" fill="#059669" opacity="0.85"/>
+        <text x="142" y="177.6" text-anchor="end" font-size="8.8" fill="#1a2138" font-weight="700">+1 kitchen grade</text>
+        <text x="421.2" y="177.6" text-anchor="start" font-size="8.6" fill="#059669" font-weight="800">+6%</text>
+        <rect x="393.0" y="193.7" width="9.2" height="16.3" rx="2" fill="#059669" opacity="0.85"/>
+        <text x="142" y="204.9" text-anchor="end" font-size="8.8" fill="#1a2138" font-weight="700">+100 sqft</text>
+        <text x="408.2" y="204.9" text-anchor="start" font-size="8.6" fill="#059669" font-weight="800">+2%</text>
+        <rect x="354.7" y="220.9" width="38.3" height="16.3" rx="2" fill="#dc2626" opacity="0.85"/>
+        <text x="142" y="232.1" text-anchor="end" font-size="8.8" fill="#1a2138" font-weight="700">Edwards (nbhd)</text>
+        <text x="348.7" y="232.1" text-anchor="end" font-size="8.6" fill="#dc2626" font-weight="800">-9%</text>
+        <rect x="352.6" y="248.2" width="40.4" height="16.3" rx="2" fill="#dc2626" opacity="0.85"/>
+        <text x="142" y="259.4" text-anchor="end" font-size="8.8" fill="#1a2138" font-weight="700">OldTown (nbhd)</text>
+        <text x="346.6" y="259.4" text-anchor="end" font-size="8.6" fill="#dc2626" font-weight="800">-10%</text>
+      </svg>
+    </figure>
+
+    <p><span class="hl">Location is king.</span> An otherwise-identical home is worth about <strong>52% more</strong> in
+       NorthRidge and 32% more in Somerset than in the baseline neighborhood, but ~10% <em>less</em> in OldTown or
+       Edwards. After location, the <strong>kitchen</strong> is the biggest controllable lever (about +6% per quality
+       grade), then bedrooms (+6% each) and size (+2% per 100 sqft). Age, extra baths, and central air add nothing once
+       these are in the model. A concrete prediction: an 1,800 sqft, good-kitchen, 3-bed home in CollegeCreek is worth
+       about <strong>$226,000</strong> (95% interval $152k&#8211;$334k).</p>
+    <p><b>Actionable:</b> a renovating owner gets more per dollar from the kitchen than from most additions; an agent must
+       price off <em>neighborhood-specific</em> comps; a buyer can sanity-check any asking price against the model's fair
+       range.</p>
+
+    <div class="step-h"><span class="sn">11</span><h3>Deploy the model</h3></div>
+    <p>To turn this into a tool people use: <span class="term">persist</span> the fitted model and the cleaning steps as a
+       <code>scikit-learn</code> Pipeline; <span class="term">serve</span> it behind a small API (FastAPI/Flask) that
+       accepts a home's features and returns a price <em>with an interval</em>; score in <span class="term">batch</span>
+       for nightly re-valuations or <span class="term">on demand</span> for a live widget; add
+       <span class="term">guardrails</span> (always return the interval, refuse to extrapolate past the training range,
+       predict on the log scale then exponentiate); and <span class="term">monitor</span> prediction error for drift,
+       <span class="term">retraining</span> on fresh sales each quarter. The discipline from steps 2&#8211;10 is exactly
+       what keeps a deployed model honest.</p>
+  </section>
+
+  <!-- ===== Section 6: writeup (step 12) ===== -->
+  <section id="writeup-sec">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Communicate: the Plain-English Write-Up (Step 12)</h2></div>
+    <p>The last step is the one non-analysts actually read. Here is the whole project with no jargon:</p>
+
+    <div class="writeup">
+      <h3>What we found, for a non-statistician</h3>
+      <p><strong>What we did.</strong> We took a spreadsheet of 610 past home sales, cleaned it up (removed duplicates and
+        a few unusable rows, fixed typos in the categories, filled in some missing lot sizes, standardized the dates), and
+        built a formula that estimates a home's price from its features.</p>
+      <p><strong>How good is it?</strong> The formula explains about <strong>two-thirds</strong> of why prices differ
+        (an "R-squared" of 0.65). Tested on homes it had never seen, it held up (0.63), so it is not just memorizing. It
+        reports a price <em>range</em>, not a false-precision single number.</p>
+      <p><strong>What drives price, in order:</strong></p>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Neighborhood</strong> is the biggest factor, the same house can be worth 50% more or 10% less purely by location.</span></li>
+        <li><span class="ck">✓</span><span><strong>Kitchen quality</strong> is the biggest thing an owner can change: each grade up is worth about <strong>6%</strong>.</span></li>
+        <li><span class="ck">✓</span><span><strong>Size</strong> adds about 2% per extra 100 sqft; each <strong>bedroom</strong> about 5.5%.</span></li>
+        <li><span class="ck">✓</span><span>Age, extra bathrooms, and air conditioning did <strong>not</strong> matter once the above were accounted for, a useful, money-saving finding.</span></li>
+      </ul>
+      <p><strong>The honest caveats.</strong> A few luxury homes behave differently, so we used robust error bars and
+        confirmed those homes do not distort the conclusions. The model describes this town's past sales and should be
+        refreshed as the market moves.</p>
+      <p><strong>Bottom line: location aside, the kitchen is where the money is</strong>, and any asking price can be
+        checked against the model's fair-value range.</p>
+    </div>
+  </section>
+
+  <!-- ===== Notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>Run the entire project in Python</h3>
+          <p>The companion notebook is the full 12-step pipeline in code and pictures: it loads the messy CSV, inspects
+             and cleans it (duplicates, categories, dates, missing values), visualizes with histograms, box plots, and a
+             correlation heatmap, log-transforms and encodes, builds the regression, runs the complete diagnostic suite
+             (VIF, residual plots and tests, robust standard errors, Cook's distance, cross-validation), interprets the
+             coefficients as dollars, and closes with a deployment plan and a plain-English write-up. Every table and
+             chart is explained.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/case-study-predicting-ames-house-prices.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-predicting-ames-house-prices.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-predicting-ames-house-prices.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)">
+      <strong>View</strong> opens the rendered notebook instantly (no setup). <strong>Open in Colab</strong> runs &amp;
+      edits it live in your browser. To run locally, install <code>numpy</code>, <code>pandas</code>, <code>scipy</code>,
+      <code>matplotlib</code>, <code>seaborn</code>, <code>statsmodels</code>, and <code>scikit-learn</code>.
+    </p>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>The method is the skill</strong>: define &#8594; collect &#8594; inspect &#8594; clean &#8594; visualize &#8594; transform &#8594; analyze &#8594; build &#8594; validate &#8594; interpret &#8594; deploy &#8594; communicate. The model is one step of twelve.</span></li>
+        <li><span class="ck">✓</span><span><strong>Cleaning dominates real work</strong>: duplicates, inconsistent categories, mixed date formats, and two <em>different</em> kinds of missing data (structural "none" vs genuinely unknown) all needed deliberate fixes.</span></li>
+        <li><span class="ck">✓</span><span><strong>Transform for the model</strong>: a log fixed the skewed price (1.16 &#8594; 0.02); ordinal and dummy encoding turned categories into usable features.</span></li>
+        <li><span class="ck">✓</span><span><strong>Validate honestly</strong>: VIF cleared multicollinearity, but heteroscedasticity was real (robust SEs), a few luxury homes were influential (Cook's distance), and cross-validation (0.63) confirmed no overfit.</span></li>
+        <li><span class="ck">✓</span><span><strong>Interpret into decisions</strong>: location dominates (NorthRidge +52%), the kitchen is the best controllable lever (+6%/grade), and the answer ends in plain English.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Take it further ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Take It Further</h2></div>
+    <p>Five ways to extend the case study in the notebook, each exercises a method from earlier chapters:</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>A different imputation</h4>
+        <p>Impute <code>lot_frontage</code> with a regression on lot area instead of the neighborhood median; does the model change?</p>
+        <div class="chint">Hint: compare coefficients and CV R&#178; before and after.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Skip the log</h4>
+        <p>Fit the model on raw price instead of log(price) and compare the residual diagnostics.</p>
+        <div class="chint">Hint: the funnel and the Jarque-Bera test should get worse.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Add an interaction</h4>
+        <p>Test whether the effect of living area differs by neighborhood (<code>gr_liv_area * C(neighborhood)</code>).</p>
+        <div class="chint">Hint: look at the interaction p-values before keeping it.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Regularize it</h4>
+        <p>Fit a lasso on the full feature set; does it select the same predictors you kept by hand?</p>
+        <div class="chint">Hint: <code>LassoCV</code> on the standardized features (Ch 97).</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Price your own home</h4>
+        <p>Build a one-row DataFrame for a house you know and predict its price with an interval.</p>
+        <div class="chint">Hint: <code>get_prediction(...).summary_frame()</code>, then exponentiate.</div></div></div>
+    </div>
+
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">📓</div>
+        <div class="nb-body">
+          <h3>All five, worked in a companion notebook</h3>
+          <p>A second notebook, <strong>Take It Further</strong>, recaps the Chapter 100 model and then works every one of
+             these five extensions with visuals and explanations, a regression imputation, the raw-vs-log comparison, the
+             neighborhood interaction, a lasso, and a price-your-own-home tool, closing with a plain-English summary.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/case-study-predicting-ames-house-prices--take-it-further.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-predicting-ames-house-prices--take-it-further.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/case-study-predicting-ames-house-prices--take-it-further.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">8</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on the end-to-end case study. Answer them, hit <strong>Check Answers</strong>, and keep refining
+       until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">🏁</div>
+    <div><div class="ctitle">You have run a real project end to end</div>
+      <p>From a dirty CSV to a deployed, explained model. <strong>Chapter 101 &#183; Case Study: Logistic Regression in
+         Action</strong> does the same for a yes/no outcome, fitting, reading odds ratios, choosing a threshold, and
+         evaluating a classifier end to end.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="econometrics-and-panel-data.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 99 · Previous</span><br><span class="cn-title">Econometrics &amp; Panel Data</span></span>
+    </a>
+    <a class="cn-btn next" href="case-study-logistic-regression-in-action.html">
+      <span><span class="cn-dir">Chapter 101 · Next</span><br><span class="cn-title">Case Study: Logistic Regression in Action</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 100 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch100";
+  window.QUIZ_DATA = [
+    {
+      q: "In the 12-step method, the model-fitting itself is…",
+      options: ["The whole job", "One step of twelve; cleaning, checking, and interpreting are the rest", "Unnecessary", "Always the first step"],
+      answer: 1,
+      explain: "Fitting is one line; defining, wrangling, validating, and communicating are the real work."
+    },
+    {
+      q: "A column like pool_qc is missing for 604 of 610 homes. This is…",
+      options: ["A data error to delete", "Structural missingness: most homes have no pool, so it becomes a 'none' category + a flag", "A reason to drop the rows", "Impossible"],
+      answer: 1,
+      explain: "Structural missing means the feature does not apply; encode it as 'none' plus a has_* flag, do not treat it as an error."
+    },
+    {
+      q: "sale_price is missing for 3 rows. The right move is to…",
+      options: ["Impute the mean price", "Drop those rows, the target cannot be imputed", "Set them to 0", "Ignore it"],
+      answer: 1,
+      explain: "You never impute the target; rows with no outcome cannot train or validate the model, so drop them."
+    },
+    {
+      q: "Sale price has a right skew of 1.16. Modeling log(price)…",
+      options: ["Makes it worse", "Reduces the skew to about 0 and stabilizes the variance", "Changes the units to euros", "Removes all outliers"],
+      answer: 1,
+      explain: "A log transform of a skewed positive response makes effects multiplicative-to-additive and steadies the variance (skew 1.16 &#8594; 0.02)."
+    },
+    {
+      q: "kitchen_qual (Po/Fa/TA/Gd/Ex) should be encoded as…",
+      options: ["One-hot dummies with no order", "An ordinal scale 1-5, because the categories are ranked", "A single random number", "Dropped"],
+      answer: 1,
+      explain: "Quality has a natural order, so map it to an ordinal 1-5; nominal fields like neighborhood get dummy variables instead."
+    },
+    {
+      q: "VIFs are all below 5, but Breusch-Pagan fails (p < 0.001). This means…",
+      options: ["The model is unusable", "No multicollinearity, but heteroscedasticity is present, so report robust (HC3) standard errors", "The coefficients are biased", "You must delete predictors"],
+      answer: 1,
+      explain: "Low VIF rules out multicollinearity; a failed Breusch-Pagan means unequal variance, fixed with robust standard errors, not by dropping predictors."
+    },
+    {
+      q: "Cross-validated R&#178; (0.63) is close to the training R&#178; (0.65). This tells you…",
+      options: ["The model is badly overfit", "The model generalizes, it is not just memorizing the training data", "The data is wrong", "You need more predictors"],
+      answer: 1,
+      explain: "A CV score close to the training score means little overfitting; a big gap would signal it."
+    },
+    {
+      q: "The single biggest driver of price in the model is…",
+      options: ["Central air", "Neighborhood (location)", "The sale date", "Number of bathrooms"],
+      answer: 1,
+      explain: "Location dominates: an identical home can be worth ~52% more or ~10% less purely by neighborhood."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
