@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 143 · Causal Inference — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .ml-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.85rem; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .ml-table th,.ml-table td { padding:0.6rem 0.8rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .ml-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .ml-table td { color:var(--ink-soft); } .ml-table tr:last-child td { border-bottom:none; }
+    .ml-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#fdf4ff; border:1px solid #f5d0fe; border-left:4px solid #a21caf; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#86198f; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none; padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+    .rw-find { background:var(--panel-2); border-radius:10px; padding:0.5rem 1rem; margin-top:0.9rem; }
+    .rw-find li { font-size:0.85rem; color:var(--ink-soft); line-height:1.6; margin:0.2rem 0; }
+    .research { background:#fdf4ff; border:1px solid #f5d0fe; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#86198f; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/causal-inference.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXIV · Advanced &amp; Applied Topics</span><span class="sep">/</span>
+      <span>Chapter 143</span>
+    </div>
+    <h1>Causal <span class="accent">Inference</span></h1>
+    <p class="dek">Prediction asks what usually happens next. Causal inference asks a harder question: what happens if we
+       <em>intervene</em>? Raising a price, sending a coupon, launching a program, each is an action whose effect you cannot
+       read off a correlation. This chapter is the toolkit for estimating what an action actually causes, even when you were
+       never able to run a clean experiment.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~25 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 143</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Back in the correlation chapter the warning was blunt: <span class="hl">correlation is not
+       causation</span>. This chapter is the constructive sequel. When you want to know whether a treatment
+       <span class="hl">causes</span> an outcome, and a randomized experiment is off the table, causal inference gives you a
+       disciplined way to get an answer, and, just as important, to know when you <span class="hl">cannot</span>. The whole
+       field turns on one uncomfortable fact: you only ever see what <em>did</em> happen, never the
+       <span class="hl">counterfactual</span> of what would have happened otherwise.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#8757;</div>
+      <div class="def-body">
+        The <span class="def-kw">causal effect</span> of a treatment on a unit is the difference between its outcome
+        <span class="def-kw">with</span> the treatment and its outcome <span class="def-kw">without</span> it, the two
+        <span class="def-kw">potential outcomes</span> <code>Y(1)</code> and <code>Y(0)</code>. A
+        <span class="def-kw">confounder</span> is a variable that influences both who gets treated and the outcome,
+        creating a correlation that is not a causal effect.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">&#9878;</div>
+      <div><div class="ctitle">The fundamental problem of causal inference</div>
+        <p>For any one customer you can enroll them in the program or not, but never both, so you can never observe their
+           individual treatment effect directly. Causal inference is the science of recovering an <strong>average</strong>
+           effect from data where half of every story is missing. Randomization solves it by design; when you cannot
+           randomize, you solve it by <strong>assumptions you must state out loud</strong>.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §1 potential outcomes ===== -->
+  <section id="potential">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Potential Outcomes and the Missing Half</h2></div>
+    <p>The cleanest way to define a causal effect is to imagine two parallel worlds for each unit. In one, the unit is
+       treated and we see <code>Y(1)</code>; in the other, it is not and we see <code>Y(0)</code>. The individual causal
+       effect is <code>Y(1) &#8722; Y(0)</code>. Reality only ever hands you <em>one</em> of the two columns per row.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 214" width="100%" font-family="Inter, sans-serif" aria-label="A table of four customers with two potential-outcome columns Y(1) and Y(0); for each customer only one is observed and the other is a grayed-out question mark, the counterfactual we can never see">
+        <text x="350" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">Each unit has two potential outcomes; you observe only one</text>
+        <!-- header -->
+        <text x="70" y="52" font-size="10" fill="#475569" font-weight="800">customer</text>
+        <rect x="176" y="38" width="150" height="20" fill="#fdf4ff" stroke="#f5d0fe"/><text x="251" y="52" text-anchor="middle" font-size="10" fill="#86198f" font-weight="800">Y(1)  treated</text>
+        <rect x="336" y="38" width="150" height="20" fill="#eff6ff" stroke="#bfdbfe"/><text x="411" y="52" text-anchor="middle" font-size="10" fill="#1d4ed8" font-weight="800">Y(0)  not treated</text>
+        <text x="560" y="52" text-anchor="middle" font-size="10" fill="#475569" font-weight="800">effect</text>
+        <!-- rows -->
+        <g font-size="10.5">
+          <!-- row1 treated observed -->
+          <text x="70" y="82" fill="#334155">Ava</text>
+          <rect x="176" y="68" width="150" height="24" fill="#fae8ff"/><text x="251" y="84" text-anchor="middle" fill="#86198f" font-weight="700">$420</text>
+          <text x="411" y="84" text-anchor="middle" fill="#94a3b8">? &#160; (unseen)</text>
+          <text x="560" y="84" text-anchor="middle" fill="#94a3b8">?</text>
+          <!-- row2 control observed -->
+          <text x="70" y="112" fill="#334155">Ben</text>
+          <text x="251" y="114" text-anchor="middle" fill="#94a3b8">? &#160; (unseen)</text>
+          <rect x="336" y="98" width="150" height="24" fill="#dbeafe"/><text x="411" y="114" text-anchor="middle" fill="#1d4ed8" font-weight="700">$300</text>
+          <text x="560" y="114" text-anchor="middle" fill="#94a3b8">?</text>
+          <!-- row3 treated observed -->
+          <text x="70" y="142" fill="#334155">Cara</text>
+          <rect x="176" y="128" width="150" height="24" fill="#fae8ff"/><text x="251" y="144" text-anchor="middle" fill="#86198f" font-weight="700">$510</text>
+          <text x="411" y="144" text-anchor="middle" fill="#94a3b8">? &#160; (unseen)</text>
+          <text x="560" y="144" text-anchor="middle" fill="#94a3b8">?</text>
+          <!-- row4 control observed -->
+          <text x="70" y="172" fill="#334155">Dan</text>
+          <text x="251" y="174" text-anchor="middle" fill="#94a3b8">? &#160; (unseen)</text>
+          <rect x="336" y="158" width="150" height="24" fill="#dbeafe"/><text x="411" y="174" text-anchor="middle" fill="#1d4ed8" font-weight="700">$260</text>
+          <text x="560" y="174" text-anchor="middle" fill="#94a3b8">?</text>
+        </g>
+        <line x1="176" y1="62" x2="176" y2="182" stroke="#e2e8f0"/><line x1="336" y1="62" x2="336" y2="182" stroke="#e2e8f0"/><line x1="496" y1="62" x2="496" y2="182" stroke="#e2e8f0"/>
+        <text x="350" y="202" text-anchor="middle" font-size="8.6" fill="#64748b">the grayed cells are <tspan font-weight="700" fill="#a21caf">counterfactuals</tspan>: we infer their average, we never observe them</text>
+      </svg>
+    </figure>
+
+    <p>Because the individual effect is unknowable, causal inference targets an <strong>average</strong>. The
+       <strong>average treatment effect (ATE)</strong> is the mean of <code>Y(1) &#8722; Y(0)</code> across the population;
+       the <strong>ATT</strong> restricts it to those actually treated. The trap is the <strong>naive estimate</strong>:
+       simply comparing the average outcome of the treated with the average outcome of the untreated. That equals the causal
+       effect only when the two groups were <em>otherwise identical</em>, which, outside a randomized experiment, they almost
+       never are.</p>
+  </section>
+
+  <!-- ===== §2 confounding & DAGs ===== -->
+  <section id="confounding">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Confounding, DAGs, and the Backdoor</h2></div>
+    <p>A <strong>confounder</strong> is a common cause of both the treatment and the outcome. It opens a
+       <strong>backdoor path</strong>, a non-causal route along which association flows, making the naive comparison
+       misleading. A <strong>causal diagram (DAG)</strong> draws these dependencies as arrows and shows exactly what you must
+       adjust for.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 210" width="100%" font-family="Inter, sans-serif" aria-label="Left: a DAG where a confounder X points to both treatment T and outcome Y, opening a backdoor path that must be blocked by adjusting for X. Right: a collider where T and Y both point into C, so controlling for C would open a false path.">
+        <!-- confounder DAG -->
+        <rect x="16" y="34" width="330" height="150" rx="10" fill="#fdf4ff" stroke="#f5d0fe"/>
+        <text x="181" y="52" text-anchor="middle" font-size="9.6" fill="#86198f" font-weight="800">Confounder: adjust for X</text>
+        <circle cx="181" cy="80" r="20" fill="#f5d0fe" stroke="#a21caf" stroke-width="1.5"/><text x="181" y="84" text-anchor="middle" font-size="11" fill="#701a75" font-weight="800">X</text>
+        <circle cx="90" cy="150" r="20" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/><text x="90" y="154" text-anchor="middle" font-size="11" fill="#1d4ed8" font-weight="800">T</text>
+        <circle cx="272" cy="150" r="20" fill="#bbf7d0" stroke="#16a34a" stroke-width="1.5"/><text x="272" y="154" text-anchor="middle" font-size="11" fill="#15803d" font-weight="800">Y</text>
+        <defs><marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#64748b"/></marker></defs>
+        <line x1="166" y1="94" x2="103" y2="137" stroke="#a21caf" stroke-width="1.8" marker-end="url(#ar)"/>
+        <line x1="196" y1="94" x2="259" y2="137" stroke="#a21caf" stroke-width="1.8" marker-end="url(#ar)"/>
+        <line x1="110" y1="150" x2="252" y2="150" stroke="#2563eb" stroke-width="2.2" marker-end="url(#ar)"/>
+        <text x="181" y="168" text-anchor="middle" font-size="8.2" fill="#334155">T &#8594; Y is the causal effect we want</text>
+        <text x="181" y="180" text-anchor="middle" font-size="8.2" fill="#a21caf" font-weight="700">X &#8594; T &#8594; ... &#8592; X &#8594; Y is the backdoor</text>
+        <!-- collider DAG -->
+        <rect x="360" y="34" width="330" height="150" rx="10" fill="#fef2f2" stroke="#fecaca"/>
+        <text x="525" y="52" text-anchor="middle" font-size="9.6" fill="#b91c1c" font-weight="800">Collider: do NOT adjust for C</text>
+        <circle cx="434" cy="80" r="20" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/><text x="434" y="84" text-anchor="middle" font-size="11" fill="#1d4ed8" font-weight="800">T</text>
+        <circle cx="616" cy="80" r="20" fill="#bbf7d0" stroke="#16a34a" stroke-width="1.5"/><text x="616" y="84" text-anchor="middle" font-size="11" fill="#15803d" font-weight="800">Y</text>
+        <circle cx="525" cy="150" r="20" fill="#fecaca" stroke="#dc2626" stroke-width="1.5"/><text x="525" y="154" text-anchor="middle" font-size="11" fill="#991b1b" font-weight="800">C</text>
+        <line x1="449" y1="94" x2="512" y2="137" stroke="#dc2626" stroke-width="1.8" marker-end="url(#ar)"/>
+        <line x1="601" y1="94" x2="538" y2="137" stroke="#dc2626" stroke-width="1.8" marker-end="url(#ar)"/>
+        <line x1="454" y1="80" x2="596" y2="80" stroke="#2563eb" stroke-width="2.2" marker-end="url(#ar)"/>
+        <text x="525" y="176" text-anchor="middle" font-size="8.2" fill="#7f1d1d">controlling C opens a fake T &#8211; Y association</text>
+      </svg>
+    </figure>
+
+    <p>The rule is the <strong>backdoor criterion</strong>: to identify the effect of <code>T</code> on <code>Y</code>, adjust
+       for a set of variables that blocks every backdoor path, and no more. Adjusting for a genuine confounder
+       <strong>removes</strong> bias. But adjusting for a <strong>collider</strong> (a common <em>effect</em> of treatment and
+       outcome) or a <strong>mediator</strong> (a variable on the causal path itself) <em>introduces</em> bias. This is why
+       &#8220;controlling for everything&#8221; is not a strategy: the DAG tells you which variables to include and which to
+       leave alone. It is also the engine behind <strong>Simpson's paradox</strong>, where an effect reverses sign once a
+       lurking confounder is accounted for.</p>
+  </section>
+
+  <!-- ===== §3 methods ===== -->
+  <section id="methods">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The Causal Toolkit</h2></div>
+    <p>Once the DAG tells you what to adjust for, a family of designs does the adjusting. The gold standard breaks confounding
+       by force; the rest are quasi-experimental tricks for when you only have observational data.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 176" width="100%" font-family="Inter, sans-serif" aria-label="Randomization severs the arrow from the confounder X into treatment T, so in a randomized experiment there is no backdoor path and the naive comparison is unbiased.">
+        <text x="350" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">Why randomizing works: it cuts the confounder's arrow into T</text>
+        <!-- observational -->
+        <rect x="30" y="36" width="300" height="120" rx="10" fill="#fef2f2" stroke="#fecaca"/>
+        <text x="180" y="54" text-anchor="middle" font-size="9.4" fill="#b91c1c" font-weight="800">Observational: X -> T backdoor open</text>
+        <circle cx="180" cy="80" r="17" fill="#f5d0fe" stroke="#a21caf" stroke-width="1.4"/><text x="180" y="84" text-anchor="middle" font-size="10" fill="#701a75" font-weight="800">X</text>
+        <circle cx="110" cy="134" r="17" fill="#dbeafe" stroke="#2563eb" stroke-width="1.4"/><text x="110" y="138" text-anchor="middle" font-size="10" fill="#1d4ed8" font-weight="800">T</text>
+        <circle cx="250" cy="134" r="17" fill="#bbf7d0" stroke="#16a34a" stroke-width="1.4"/><text x="250" y="138" text-anchor="middle" font-size="10" fill="#15803d" font-weight="800">Y</text>
+        <defs><marker id="ar2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#64748b"/></marker></defs>
+        <line x1="167" y1="92" x2="122" y2="122" stroke="#a21caf" stroke-width="1.7" marker-end="url(#ar2)"/>
+        <line x1="193" y1="92" x2="238" y2="122" stroke="#a21caf" stroke-width="1.7" marker-end="url(#ar2)"/>
+        <line x1="127" y1="134" x2="233" y2="134" stroke="#2563eb" stroke-width="2" marker-end="url(#ar2)"/>
+        <!-- randomized -->
+        <rect x="370" y="36" width="300" height="120" rx="10" fill="#ecfdf5" stroke="#a7f3d0"/>
+        <text x="520" y="54" text-anchor="middle" font-size="9.4" fill="#047857" font-weight="800">Randomized: coin flip sets T</text>
+        <circle cx="520" cy="80" r="17" fill="#f5f5f4" stroke="#cbd5e1" stroke-width="1.4" stroke-dasharray="3 2"/><text x="520" y="84" text-anchor="middle" font-size="10" fill="#94a3b8" font-weight="800">X</text>
+        <circle cx="450" cy="134" r="17" fill="#dbeafe" stroke="#2563eb" stroke-width="1.4"/><text x="450" y="138" text-anchor="middle" font-size="10" fill="#1d4ed8" font-weight="800">T</text>
+        <circle cx="590" cy="134" r="17" fill="#bbf7d0" stroke="#16a34a" stroke-width="1.4"/><text x="590" y="138" text-anchor="middle" font-size="10" fill="#15803d" font-weight="800">Y</text>
+        <text x="483" y="104" text-anchor="middle" font-size="13" fill="#dc2626" font-weight="800">&#10006;</text>
+        <line x1="507" y1="92" x2="470" y2="120" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="3 2"/>
+        <line x1="533" y1="92" x2="578" y2="122" stroke="#a21caf" stroke-width="1.5" stroke-dasharray="3 2"/>
+        <line x1="467" y1="134" x2="573" y2="134" stroke="#2563eb" stroke-width="2" marker-end="url(#ar2)"/>
+        <text x="520" y="150" text-anchor="middle" font-size="7.8" fill="#047857">no arrow into T &#8594; naive difference is unbiased</text>
+      </svg>
+    </figure>
+
+    <ul class="tick">
+      <li><span class="ck">&#9679;</span><span><strong>Randomized experiment (RCT / A/B test)</strong>: assignment by coin flip severs the backdoor, so the groups are comparable by design. The gold standard when it is feasible and ethical.</span></li>
+      <li><span class="ck">&#9679;</span><span><strong>Regression adjustment</strong>: put the confounders in the model alongside the treatment; the treatment coefficient is the adjusted effect. Simple and strong when you have measured the confounders.</span></li>
+      <li><span class="ck">&#9679;</span><span><strong>Matching and propensity scores</strong>: model the probability of treatment, then compare treated and control units with similar scores (or reweight by them, IPW), rebuilding a pseudo-experiment.</span></li>
+      <li><span class="ck">&#9679;</span><span><strong>Difference-in-differences</strong>: compare the before-and-after change in a treated group to the change in a control group, canceling anything fixed about each group (Chapter 137).</span></li>
+      <li><span class="ck">&#9679;</span><span><strong>Instrumental variables</strong>: use a variable that shifts the treatment but has no other path to the outcome, to isolate causal variation even under unobserved confounding.</span></li>
+      <li><span class="ck">&#9679;</span><span><strong>Regression discontinuity</strong>: when treatment flips at a threshold (a test score, an income cutoff), units just above and below are near-identical, a natural experiment at the boundary.</span></li>
+    </ul>
+
+    <div class="callout key">
+      <div class="cico">&#9888;</div>
+      <div><div class="ctitle">Every method rests on an untestable assumption</div>
+        <p>Adjustment methods assume <strong>no unmeasured confounders</strong> (you controlled for everything that matters).
+           Instrumental variables assume the instrument is <strong>valid</strong>. Difference-in-differences assumes
+           <strong>parallel trends</strong>. The data cannot prove these; they are arguments you make from domain knowledge.
+           Honest causal work states its assumption plainly and probes how fragile the answer is if it fails, a
+           <strong>sensitivity analysis</strong>.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §4 real-world ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: Does the Loyalty Program Cause More Spending?</h2></div>
+    <p>A retailer launches a loyalty program and, a year later, notices enrolled customers spend far more than non-members.
+       Did the program <em>cause</em> that? The companion notebook works the full observational analysis with
+       <strong>statsmodels</strong> and <strong>scikit-learn</strong>.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · causal-inference--loyalty-program.xlsx</div>
+      <p style="margin:0.5rem 0 0"><strong>2,000 customers</strong>, observational (nobody was randomized into the program).
+        Columns: <code>customer_id</code>, <code>prior_spend</code> (last year, a confounder), <code>tenure_months</code>
+        (a confounder), <code>enrolled</code> (the treatment), and <code>spend</code> (this year, the outcome). The data is
+        built with a <strong>known true effect of $120</strong> so we can see which method recovers it.</p>
+      <ul class="rw-find">
+        <li><span class="ck">&#9679;</span><strong>Confounding is visible:</strong> enrollees had a higher prior spend (<strong>$244 vs $181</strong>) and longer tenure (<strong>37 vs 28 months</strong>) before the program even existed.</li>
+        <li><span class="ck">&#9679;</span><strong>Naive comparison:</strong> a raw difference in means says <strong>+$196</strong>, badly overstating the effect because enrollees were bigger spenders to begin with.</li>
+        <li><span class="ck">&#9679;</span><strong>After adjustment:</strong> regression on the confounders gives <strong>+$117</strong> (95% CI $111 to $123), and propensity weighting (IPW) about <strong>+$101</strong>, both close to the true $120 and far below the naive figure.</li>
+      </ul>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/causal-inference--loyalty-program.xlsx" download>📊 Download dataset &nbsp;<small>XLSX · 2,000 customers</small></a>
+      </div>
+    </div>
+
+    <p>The lesson is the whole chapter in one number: the naive <strong>+$196</strong> is not a smaller, noisier version of the
+       truth, it is <em>systematically wrong</em>, and no amount of extra data would fix it. Only once you block the backdoor,
+       by adjusting for the variables that drove both enrollment and spending, does the estimate collapse to the real
+       <strong>+$117</strong>. That gap between $196 and $117 is confounding bias made concrete, and telling them apart is the
+       entire value of causal inference.</p>
+  </section>
+
+  <!-- ===== §5 ML/AI ===== -->
+  <section id="mlai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Causal Inference in Machine Learning &amp; AI</h2></div>
+    <p>Standard machine learning is superb at prediction and silent about intervention: a churn model tells you <em>who</em>
+       will leave, not <em>whether</em> a discount would stop them. Causal machine learning fuses the two, using flexible
+       models to estimate effects, not just outcomes.</p>
+
+    <table class="ml-table">
+      <thead><tr><th>Where it shows up</th><th>What it does</th><th>Examples</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">Uplift modeling / CATE</td><td>Estimate the treatment effect per person and target the persuadable, not the already-loyal</td><td>Coupon targeting, churn-save campaigns, personalized offers</td></tr>
+        <tr><td class="nm">Causal forests &amp; meta-learners</td><td>Machine-learn how the effect varies across subgroups (S-, T-, X-learners)</td><td>EconML, causalml, generalized random forests</td></tr>
+        <tr><td class="nm">Double / debiased ML</td><td>Use ML for the nuisance parts and orthogonalize, giving valid effects with many covariates</td><td>Double ML (Chernozhukov et al.), partially linear models</td></tr>
+        <tr><td class="nm">Off-policy evaluation</td><td>Estimate how a new policy would perform from data logged under an old one</td><td>Recommenders, contextual bandits, reinforcement learning</td></tr>
+        <tr><td class="nm">Instrumental &amp; deep IV</td><td>Recover effects under unobserved confounding using instruments and neural first stages</td><td>Deep IV, demand estimation, pricing</td></tr>
+        <tr><td class="nm">Causal discovery</td><td>Learn the DAG itself from data rather than assuming it</td><td>PC / GES algorithms, NOTEARS, causal representation learning</td></tr>
+      </tbody>
+    </table>
+
+    <div class="research">
+      <div class="rtag">🔬 Research frontier</div>
+      <p style="margin:0.4rem 0 0">Causality is one of the liveliest frontiers in AI, driven by a simple ambition: to move
+        models from <strong>prediction to intervention and reasoning about what-if</strong>. Active threads include
+        <strong>debiased machine learning</strong> for trustworthy effect estimates at scale, <strong>causal discovery</strong>
+        that learns structure instead of assuming it, and a growing effort to test whether <strong>large language models can
+        reason causally</strong> or only mimic the patterns of causal language. The prize is systems that do not just forecast
+        the world but understand how acting on it changes what comes next.</p>
+    </div>
+  </section>
+
+  <!-- ===== notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body"><h3>Estimate a causal effect in Python</h3><p>The companion notebook loads the loyalty-program data, shows the baseline imbalance that betrays confounding, computes the misleading naive difference, then recovers the true effect three ways: regression adjustment with statsmodels, a propensity-score model with inverse-probability weighting, and a quick check that the covariates are balanced after weighting, each step with a plot.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/causal-inference.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/causal-inference.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/causal-inference.ipynb" target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)"><strong>View</strong> opens the rendered notebook instantly.
+      <strong>Open in Colab</strong> runs it live. To run locally, install <code>numpy</code>, <code>pandas</code>,
+      <code>matplotlib</code>, <code>statsmodels</code>, <code>scikit-learn</code>, and <code>openpyxl</code>.</p>
+  </section>
+
+  <!-- ===== takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Causation is about intervention</strong>: the effect is the gap between the two potential outcomes <code>Y(1)</code> and <code>Y(0)</code>, and you only ever see one of them.</span></li>
+        <li><span class="ck">✓</span><span><strong>The naive comparison is a trap</strong>: treated-minus-untreated equals the causal effect only when the groups are otherwise identical.</span></li>
+        <li><span class="ck">✓</span><span><strong>Confounders open backdoor paths</strong>: draw the DAG, adjust for confounders to remove bias, and never adjust for colliders or mediators.</span></li>
+        <li><span class="ck">✓</span><span><strong>A toolkit, not a formula</strong>: RCTs, regression adjustment, propensity scores, difference-in-differences, instrumental variables, and regression discontinuity.</span></li>
+        <li><span class="ck">✓</span><span><strong>Every method needs an untestable assumption</strong> (no unmeasured confounders, valid instrument, parallel trends); state it and stress-test it.</span></li>
+        <li><span class="ck">✓</span><span><strong>Adjustment matters</strong>: in the example the naive +$196 collapsed to the true +$117 only after blocking the backdoor.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== §6 challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five exercises on the loyalty-program data. Full solutions are in the companion solutions notebook.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Show the confounding</h4>
+        <p>Compare <code>prior_spend</code> and <code>tenure_months</code> across enrolled and non-enrolled groups. Why does this imbalance bias the naive estimate upward?</p>
+        <div class="chint">Hint: <code>df.groupby("enrolled")[[...]].mean()</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Naive vs adjusted</h4>
+        <p>Compute the naive difference in mean spend, then fit <code>spend ~ enrolled + prior_spend + tenure_months</code> and read the enrolled coefficient. How far apart are they?</p>
+        <div class="chint">Hint: <code>smf.ols(...).fit().params</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Propensity scores</h4>
+        <p>Fit a logistic model for enrollment on the two confounders and plot the propensity-score distributions for the two groups. Where do they overlap?</p>
+        <div class="chint">Hint: <code>LogisticRegression().predict_proba</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Inverse-probability weighting</h4>
+        <p>Use the propensity scores to compute the IPW estimate of the effect. How close is it to the regression estimate and the true $120?</p>
+        <div class="chint">Hint: weight treated by 1/p and controls by 1/(1-p).</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Control for a collider</h4>
+        <p>Invent a variable caused by both spend and enrollment, add it to the regression, and watch the estimate distort. Why is more controls not always better?</p>
+        <div class="chint">Hint: generate <code>C = a*spend + b*enrolled + noise</code>, then include C.</div></div></div>
+    </div>
+
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">📓</div>
+        <div class="nb-body"><h3>Solutions notebook</h3><p>All five challenges worked in code, the confounding imbalance, naive versus adjusted, propensity scores, inverse-probability weighting, and the collider trap, each with a short explanation.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/causal-inference--solutions.html">📓 View Solutions</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/causal-inference--solutions.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/causal-inference--solutions.ipynb" target="_blank" rel="noopener">⬇ GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §7 quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on potential outcomes, confounding, DAGs, and the causal toolkit. Answer them, hit <strong>Check
+       Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>Causal inference asked whether an action changes an outcome. Next, Part XXIV turns to outcomes that unfold over time.
+         <strong>Survival Analysis</strong> (coming soon) models <em>time until an event</em>, a customer churns, a machine
+         fails, a patient recovers, and handles the data that is still unfolding. Browse the full
+         <a href="../toc.html">Contents</a> for what is published and what is on the way.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="bayesian-inference-in-practice.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 142 · Previous</span><br><span class="cn-title">Bayesian Inference in Practice</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 143 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => { const h = document.documentElement; bar.style.width = ((h.scrollTop)/(h.scrollHeight-h.clientHeight)*100) + '%'; });
+</script>
+
+<script>
+  window.QUIZ_ID = "ch143";
+  window.QUIZ_DATA = [
+    {
+      q: "The 'fundamental problem of causal inference' is that…",
+      options: ["Data is always noisy", "For each unit you can observe only one of its two potential outcomes, never both", "Correlations are hard to compute", "Experiments are expensive"],
+      answer: 1,
+      explain: "You see Y(1) or Y(0) for a unit, never both, so the individual effect Y(1)-Y(0) is unobservable; we target an average instead."
+    },
+    {
+      q: "The average treatment effect (ATE) is…",
+      options: ["The correlation between T and Y", "The mean of Y(1) minus Y(0) across the population", "The treated group's average outcome", "The slope of a regression line"],
+      answer: 1,
+      explain: "The ATE averages the individual potential-outcome differences over the whole population."
+    },
+    {
+      q: "A confounder is a variable that…",
+      options: ["Is caused by the treatment", "Influences both the treatment and the outcome", "Is always unmeasured", "Sits on the causal path from T to Y"],
+      answer: 1,
+      explain: "A confounder is a common cause of treatment and outcome; it opens a backdoor path and biases the naive comparison."
+    },
+    {
+      q: "To identify a causal effect, the backdoor criterion says you should adjust for…",
+      options: ["Every variable you have", "A set of variables that blocks all backdoor paths, and no more", "Only the outcome", "Nothing, ever"],
+      answer: 1,
+      explain: "Block every backdoor path by adjusting for confounders, but do not add colliders or mediators."
+    },
+    {
+      q: "Adjusting for a collider (a common effect of T and Y)…",
+      options: ["Removes bias", "Introduces bias by opening a false association", "Has no effect", "Is always required"],
+      answer: 1,
+      explain: "Conditioning on a collider opens a non-causal path, so 'controlling for everything' can make things worse."
+    },
+    {
+      q: "Why does randomization make the naive difference in means unbiased?",
+      options: ["It increases the sample size", "It severs the arrow from confounders into treatment, so the groups are comparable", "It removes all noise", "It guarantees a large effect"],
+      answer: 1,
+      explain: "A coin flip sets treatment independently of any confounder, closing every backdoor path by design."
+    },
+    {
+      q: "In the loyalty-program example, the naive +$196 versus the adjusted +$117 gap is…",
+      options: ["Random sampling error", "Confounding bias: enrollees were already bigger spenders", "A rounding mistake", "The program getting better over time"],
+      answer: 1,
+      explain: "Enrollees had higher prior spend and longer tenure, so part of the raw gap was pre-existing, not caused by the program."
+    },
+    {
+      q: "Every observational causal method relies on an assumption the data cannot prove. For regression adjustment and propensity scores it is…",
+      options: ["Normally distributed errors", "No unmeasured confounders", "A large sample", "A linear outcome"],
+      answer: 1,
+      explain: "Adjustment is valid only if you measured and controlled for every confounder; that assumption is argued from domain knowledge, not tested."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

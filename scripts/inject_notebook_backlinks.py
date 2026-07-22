@@ -536,6 +536,10 @@ MAP = {
         ("../../bayesian-inference-in-practice.html#notebook", "Back to the book", "Chapter 142 · Bayesian Inference in Practice"),
     "bayesian-inference-in-practice--solutions.html":
         ("../../bayesian-inference-in-practice.html#challenges", "Back to the book", "Chapter 142 · Challenge solutions"),
+    "causal-inference.html":
+        ("../../causal-inference.html#notebook", "Back to the book", "Chapter 143 · Causal Inference"),
+    "causal-inference--solutions.html":
+        ("../../causal-inference.html#challenges", "Back to the book", "Chapter 143 · Challenge solutions"),
 }
 
 def card(href, kicker, title):
