@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 144 · Survival Analysis — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .ml-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.85rem; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .ml-table th,.ml-table td { padding:0.6rem 0.8rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .ml-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .ml-table td { color:var(--ink-soft); } .ml-table tr:last-child td { border-bottom:none; }
+    .ml-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#fdf4ff; border:1px solid #f5d0fe; border-left:4px solid #a21caf; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#86198f; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none; padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+    .rw-find { background:var(--panel-2); border-radius:10px; padding:0.5rem 1rem; margin-top:0.9rem; }
+    .rw-find li { font-size:0.85rem; color:var(--ink-soft); line-height:1.6; margin:0.2rem 0; }
+    .research { background:#fdf4ff; border:1px solid #f5d0fe; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#86198f; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/survival-analysis.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXIV · Advanced &amp; Applied Topics</span><span class="sep">/</span>
+      <span>Chapter 144</span>
+    </div>
+    <h1>Survival <span class="accent">Analysis</span></h1>
+    <p class="dek">How long until a customer churns, a machine fails, a patient relapses, a loan defaults? These are
+       <em>time-to-event</em> questions, and they come with a twist ordinary methods cannot handle: when the study ends, many
+       subjects have not had the event yet. Survival analysis is the toolkit built to use those unfinished stories instead of
+       throwing them away.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~24 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 144</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Suppose you want the average time a subscriber stays before canceling. The obvious move, average the
+       tenure of everyone who has canceled, is <span class="hl">badly biased</span>: it ignores every customer who is still
+       subscribed, who are precisely the loyal ones. Their tenure is not missing, it is <span class="hl">censored</span>: you
+       know it is <em>at least</em> this long, just not the final value. Survival analysis is the branch of statistics built
+       to squeeze information out of these partial observations, and it powers churn models, reliability engineering, and
+       clinical trials alike.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#9203;</div>
+      <div class="def-body">
+        <span class="def-kw">Survival analysis</span> models the time until an event. Its data is a
+        <span class="def-kw">duration</span> paired with an <span class="def-kw">event indicator</span>: 1 if the event was
+        observed, 0 if the observation was <span class="def-kw">censored</span> (the event had not happened by the end of
+        follow-up). The central object is the <span class="def-kw">survival function</span> <code>S(t) = P(T &gt; t)</code>,
+        the probability of lasting beyond time <code>t</code>.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">&#9986;</div>
+      <div><div class="ctitle">Why you cannot just delete the censored rows</div>
+        <p>Dropping still-active customers keeps only those who already churned, guaranteeing an underestimate of survival.
+           Treating censored times as if the event happened then is just as wrong in the other direction. Censoring is
+           <strong>information, not missingness</strong>: &#8220;survived at least 24 months&#8221; is a real fact, and survival
+           methods are designed to use exactly that.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §1 censoring ===== -->
+  <section id="censoring">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Time-to-Event Data and Censoring</h2></div>
+    <p>Every subject contributes a length of follow-up and a verdict at the end of it: the event happened, or it did not (yet).
+       Because subjects enter at different times and the study has a fixed end, most datasets are a mix of complete and
+       <strong>right-censored</strong> observations.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 214" width="100%" font-family="Inter, sans-serif" aria-label="Five subjects shown as horizontal follow-up bars of different lengths; some end in an X marking the event occurred, others end in an arrow at the study cutoff marking a censored observation where the event had not yet happened">
+        <text x="350" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">Each subject is followed until the event, or until the study ends</text>
+        <line x1="120" y1="40" x2="120" y2="188" stroke="#cbd5e1" stroke-width="1"/><text x="120" y="204" text-anchor="middle" font-size="8" fill="#64748b">start</text>
+        <line x1="600" y1="40" x2="600" y2="188" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="4 3"/><text x="600" y="204" text-anchor="middle" font-size="8" fill="#b91c1c">study ends (cutoff)</text>
+        <g font-size="9">
+          <!-- s1 event -->
+          <text x="34" y="58" fill="#334155">Ava</text>
+          <line x1="120" y1="54" x2="300" y2="54" stroke="#a21caf" stroke-width="3"/>
+          <text x="312" y="58" font-size="13" fill="#a21caf" font-weight="800">&#10006;</text>
+          <text x="340" y="58" font-size="7.6" fill="#86198f">churned at 9 mo (event)</text>
+          <!-- s2 censored at cutoff -->
+          <text x="34" y="86" fill="#334155">Ben</text>
+          <line x1="120" y1="82" x2="600" y2="82" stroke="#2563eb" stroke-width="3"/>
+          <path d="M600,82 l12,0" stroke="#2563eb" stroke-width="3" marker-end="url(#av)"/>
+          <text x="340" y="76" font-size="7.6" fill="#1d4ed8">still active at cutoff (censored)</text>
+          <!-- s3 event -->
+          <text x="34" y="114" fill="#334155">Cara</text>
+          <line x1="120" y1="110" x2="230" y2="110" stroke="#a21caf" stroke-width="3"/>
+          <text x="242" y="114" font-size="13" fill="#a21caf" font-weight="800">&#10006;</text>
+          <text x="270" y="114" font-size="7.6" fill="#86198f">churned at 5.5 mo (event)</text>
+          <!-- s4 censored dropout -->
+          <text x="34" y="142" fill="#334155">Dan</text>
+          <line x1="120" y1="138" x2="420" y2="138" stroke="#0891b2" stroke-width="3"/>
+          <path d="M420,138 l12,0" stroke="#0891b2" stroke-width="3" marker-end="url(#av2)"/>
+          <text x="444" y="142" font-size="7.6" fill="#0e7490">lost to follow-up (censored)</text>
+          <!-- s5 event -->
+          <text x="34" y="170" fill="#334155">Eve</text>
+          <line x1="120" y1="166" x2="520" y2="166" stroke="#a21caf" stroke-width="3"/>
+          <text x="532" y="170" font-size="13" fill="#a21caf" font-weight="800">&#10006;</text>
+          <text x="556" y="170" font-size="7.6" fill="#86198f">churned at 20 mo</text>
+        </g>
+        <defs>
+          <marker id="av" markerWidth="10" markerHeight="10" refX="7" refY="5" orient="auto"><path d="M0,1 L8,5 L0,9" fill="none" stroke="#2563eb" stroke-width="1.6"/></marker>
+          <marker id="av2" markerWidth="10" markerHeight="10" refX="7" refY="5" orient="auto"><path d="M0,1 L8,5 L0,9" fill="none" stroke="#0891b2" stroke-width="1.6"/></marker>
+        </defs>
+      </svg>
+    </figure>
+
+    <p>An <strong>X</strong> marks a subject whose event we saw; an <strong>arrow</strong> marks a censored subject, still
+       going when we stopped looking. Ben reached the study cutoff without churning; Dan simply dropped out of view. Both
+       carry the same message, &#8220;lasted at least this long,&#8221; and a good method credits them for the time they
+       survived without pretending to know when, or whether, they will eventually churn. The standard assumption is that
+       censoring is <strong>non-informative</strong>: leaving the study is unrelated to being about to have the event.</p>
+  </section>
+
+  <!-- ===== §2 survival & hazard, KM ===== -->
+  <section id="km">
+    <div class="section-eyebrow"><div class="num">2</div><h2>The Survival Curve and the Kaplan-Meier Estimator</h2></div>
+    <p>Two functions describe a time-to-event distribution. The <strong>survival function</strong> <code>S(t) = P(T &gt; t)</code>
+       starts at 1 and steps down toward 0. The <strong>hazard</strong> <code>h(t)</code> is the instantaneous risk of the
+       event <em>right now, given survival so far</em>, the engine that drives the curve down.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 220" width="100%" font-family="Inter, sans-serif" aria-label="A Kaplan-Meier survival curve: a staircase starting at 1.0 and stepping down at each event time, with small ticks marking censored observations, and a dashed line at 0.5 showing the median survival time where the curve crosses it">
+        <text x="350" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">A Kaplan-Meier curve: S(t) steps down at each event</text>
+        <line x1="70" y1="40" x2="70" y2="180" stroke="#94a3b8" stroke-width="1"/>
+        <line x1="70" y1="180" x2="660" y2="180" stroke="#94a3b8" stroke-width="1"/>
+        <text x="52" y="46" text-anchor="end" font-size="8" fill="#64748b">1.0</text>
+        <text x="52" y="114" text-anchor="end" font-size="8" fill="#64748b">0.5</text>
+        <text x="52" y="182" text-anchor="end" font-size="8" fill="#64748b">0.0</text>
+        <text x="660" y="196" text-anchor="end" font-size="8" fill="#64748b">time t &#8594;</text>
+        <!-- median line -->
+        <line x1="70" y1="110" x2="660" y2="110" stroke="#f5d0fe" stroke-width="1" stroke-dasharray="4 3"/>
+        <text x="648" y="106" text-anchor="end" font-size="7.4" fill="#a21caf">S = 0.5 (median)</text>
+        <!-- KM staircase -->
+        <polyline points="70,44 150,44 150,66 250,66 250,92 340,92 340,120 450,120 450,150 560,150 560,168 640,168"
+                  fill="none" stroke="#a21caf" stroke-width="2.6"/>
+        <!-- censor ticks -->
+        <g stroke="#0891b2" stroke-width="1.6">
+          <line x1="200" y1="60" x2="200" y2="72"/><line x1="300" y1="86" x2="300" y2="98"/><line x1="500" y1="144" x2="500" y2="156"/>
+        </g>
+        <text x="205" y="58" font-size="7" fill="#0e7490">+ censored</text>
+        <!-- median drop marker -->
+        <line x1="395" y1="110" x2="395" y2="180" stroke="#c026d3" stroke-width="1.4" stroke-dasharray="3 2"/>
+        <text x="395" y="196" text-anchor="middle" font-size="7.6" fill="#86198f" font-weight="700">median survival</text>
+      </svg>
+    </figure>
+
+    <p>The <strong>Kaplan-Meier estimator</strong> builds <code>S(t)</code> straight from the data without assuming any
+       distribution. At each moment an event occurs, it multiplies the running survival by the fraction who made it through
+       that instant, <code>(1 &#8722; events / at-risk)</code>. Censored subjects quietly leave the &#8220;at-risk&#8221; count
+       at their censoring time, so they shorten the denominator without ever counting as an event, which is precisely how
+       their partial information gets used. The result is the familiar <strong>staircase</strong>: flat between events,
+       dropping at each one, with little ticks marking censored points. Where the curve crosses <strong>0.5</strong> is the
+       <strong>median survival time</strong>, a far more honest summary than a mean when the longest-lived subjects are still
+       censored.</p>
+  </section>
+
+  <!-- ===== §3 log-rank & Cox ===== -->
+  <section id="cox">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Comparing Groups: Log-Rank and Cox Regression</h2></div>
+    <p>Two questions follow immediately. Do two groups survive differently? And how does survival depend on several variables
+       at once? Two tools answer them, both censoring-aware.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 214" width="100%" font-family="Inter, sans-serif" aria-label="Two Kaplan-Meier curves: an annual-contract group that stays high and a month-to-month group that drops much faster; the log-rank test compares the whole gap, and a Cox model summarizes it as a hazard ratio of about 2.24">
+        <text x="350" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">Two survival curves, compared by log-rank and summarized by a hazard ratio</text>
+        <line x1="66" y1="40" x2="66" y2="178" stroke="#94a3b8" stroke-width="1"/>
+        <line x1="66" y1="178" x2="560" y2="178" stroke="#94a3b8" stroke-width="1"/>
+        <text x="48" y="46" text-anchor="end" font-size="8" fill="#64748b">1.0</text>
+        <text x="48" y="112" text-anchor="end" font-size="8" fill="#64748b">0.5</text>
+        <text x="48" y="180" text-anchor="end" font-size="8" fill="#64748b">0.0</text>
+        <text x="313" y="196" text-anchor="middle" font-size="8" fill="#64748b">months since signup</text>
+        <!-- annual (stays high) -->
+        <polyline points="66,44 150,44 150,54 250,54 250,66 350,66 350,78 450,78 450,90 560,96" fill="none" stroke="#16a34a" stroke-width="2.6"/>
+        <text x="470" y="86" font-size="8.4" fill="#15803d" font-weight="800">annual</text>
+        <!-- month-to-month (drops fast) -->
+        <polyline points="66,44 130,44 130,70 210,70 210,100 300,100 300,128 400,128 400,150 500,158 560,166" fill="none" stroke="#c026d3" stroke-width="2.6"/>
+        <text x="430" y="150" font-size="8.4" fill="#a21caf" font-weight="800">month-to-month</text>
+        <!-- annotations panel -->
+        <rect x="576" y="44" width="112" height="134" rx="9" fill="#fdf4ff" stroke="#f5d0fe"/>
+        <text x="632" y="62" text-anchor="middle" font-size="8.2" fill="#86198f" font-weight="800">log-rank</text>
+        <text x="632" y="76" text-anchor="middle" font-size="7.6" fill="#701a75">p &lt; 0.0001</text>
+        <line x1="586" y1="86" x2="678" y2="86" stroke="#f5d0fe"/>
+        <text x="632" y="104" text-anchor="middle" font-size="8.2" fill="#86198f" font-weight="800">Cox HR</text>
+        <text x="632" y="120" text-anchor="middle" font-size="13" fill="#a21caf" font-weight="800">2.24</text>
+        <text x="632" y="134" text-anchor="middle" font-size="7" fill="#701a75">month-to-month</text>
+        <text x="632" y="146" text-anchor="middle" font-size="7" fill="#701a75">vs annual</text>
+        <text x="632" y="166" text-anchor="middle" font-size="6.8" fill="#701a75">2.2x the churn</text>
+        <text x="632" y="175" text-anchor="middle" font-size="6.8" fill="#701a75">hazard, any moment</text>
+      </svg>
+    </figure>
+
+    <ul class="tick">
+      <li><span class="ck">&#9679;</span><span><strong>The log-rank test</strong> compares two or more survival curves across all event times at once. Its null hypothesis is that the groups share one survival function; a small p-value says they genuinely differ.</span></li>
+      <li><span class="ck">&#9679;</span><span><strong>Cox proportional-hazards regression</strong> is the survival analog of multiple regression. It models the hazard as a baseline times <code>exp(&#946;&#8321;x&#8321; + &#946;&#8322;x&#8322; + ...)</code>, so each coefficient becomes a <strong>hazard ratio</strong>: the multiplicative effect on the instantaneous risk. It is semiparametric, it never assumes a shape for the baseline hazard, which is why it dominates applied work.</span></li>
+    </ul>
+
+    <div class="callout key">
+      <div class="cico">&#9888;</div>
+      <div><div class="ctitle">A hazard ratio, and its one assumption</div>
+        <p>An HR of <strong>2.0</strong> means twice the risk of the event at any given instant, not twice the total or half
+           the lifetime. Cox rests on the <strong>proportional-hazards assumption</strong>: the ratio between groups stays
+           constant over time (the curves do not cross). When it fails, you check it (with scaled residuals) and reach for
+           time-varying effects or stratification. As always, the model is only as good as the assumption you can defend.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §4 real-world ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: Subscription Churn</h2></div>
+    <p>A streaming service wants to know how long subscribers stay and what shortens their tenure. Half the customers are still
+       active, so their tenure is censored, exactly the setting survival analysis was built for. The companion notebook works
+       it end to end with <strong>statsmodels</strong>.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · survival-analysis--subscription-churn.xlsx</div>
+      <p style="margin:0.5rem 0 0"><strong>1,000 subscribers</strong> followed for up to 24 months. Columns:
+        <code>customer_id</code>, <code>contract</code> (month-to-month or annual), <code>monthly_charges</code>,
+        <code>tenure_months</code> (the duration), and <code>churned</code> (1 = churned, 0 = still active and therefore
+        censored). Just under half churned during the window; the rest are censored.</p>
+      <ul class="rw-find">
+        <li><span class="ck">&#9679;</span><strong>Censoring:</strong> <strong>487</strong> customers churned (49%) and <strong>513</strong> are censored, still subscribed at the 24-month cutoff.</li>
+        <li><span class="ck">&#9679;</span><strong>Kaplan-Meier:</strong> month-to-month subscribers have a median survival of about <strong>16 months</strong> and a 1-year survival of <strong>0.58</strong>; annual subscribers never reach the median in the window (1-year survival <strong>0.77</strong>).</li>
+        <li><span class="ck">&#9679;</span><strong>Log-rank and Cox:</strong> the gap is real (<strong>p &lt; 0.0001</strong>); adjusting for price, month-to-month carries <strong>2.24 times</strong> the churn hazard of annual (95% CI 1.86 to 2.71), and each standard-deviation increase in monthly charges multiplies the hazard by <strong>1.48</strong>.</li>
+      </ul>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/survival-analysis--subscription-churn.xlsx" download>📊 Download dataset &nbsp;<small>XLSX · 1,000 subscribers</small></a>
+      </div>
+    </div>
+
+    <p>The business reading is immediate: month-to-month customers are not a little riskier, they churn at more than double the
+       instantaneous rate, and pricier plans churn faster still. A retention team can turn that into action, nudging
+       high-charge month-to-month customers toward annual contracts, and the median-survival and hazard-ratio numbers put a
+       defensible figure on the expected payoff. None of it would be trustworthy if the 513 censored customers had been
+       ignored.</p>
+  </section>
+
+  <!-- ===== §5 ML/AI ===== -->
+  <section id="mlai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Survival Analysis in Machine Learning &amp; AI</h2></div>
+    <p>Time-to-event is a first-class prediction target in industry, and modern machine learning has grown censoring-aware
+       versions of its favorite models. The prize is predicting not just <em>whether</em> an event happens but <em>when</em>,
+       with the uncertainty intact.</p>
+
+    <table class="ml-table">
+      <thead><tr><th>Where it shows up</th><th>What it does</th><th>Examples</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">Survival ML models</td><td>Tree and boosting methods that respect censoring instead of dropping it</td><td>Random survival forests, gradient-boosted Cox, scikit-survival, XGBoost survival</td></tr>
+        <tr><td class="nm">Deep survival models</td><td>Neural networks with censoring-aware losses that learn an individual survival curve</td><td>DeepSurv, DeepHit, Nnet-survival for churn and clinical risk</td></tr>
+        <tr><td class="nm">Predictive maintenance</td><td>Remaining useful life of equipment, a Weibull or hazard model over sensor data</td><td>Reliability engineering, RUL estimation (Chapter 122)</td></tr>
+        <tr><td class="nm">Customer analytics</td><td>Time-to-churn and lifetime-value models that time interventions, not just flag risk</td><td>Retention, subscription and lifetime-value modeling</td></tr>
+        <tr><td class="nm">Competing risks</td><td>Several mutually exclusive events modeled together</td><td>Death from cause A vs B, churn vs upgrade vs downgrade</td></tr>
+        <tr><td class="nm">Evaluation</td><td>The concordance index (C-index), a survival-aware analog of AUC for ranking risk</td><td>Harrell's C, time-dependent AUC</td></tr>
+      </tbody>
+    </table>
+
+    <div class="research">
+      <div class="rtag">🔬 Research frontier</div>
+      <p style="margin:0.4rem 0 0">Survival analysis is having a deep-learning renaissance. Active threads include
+        <strong>individualized survival curves</strong> from neural networks, <strong>transformer models over electronic
+        health records</strong> that predict time-to-diagnosis, and <strong>discrete-time and competing-risk formulations</strong>
+        that free deep models from the proportional-hazards straitjacket. The unifying goal is calibrated, personalized
+        time-to-event prediction, a risk score that is honest about <em>when</em> and about how sure it is, which the classic
+        ideas in this chapter, censoring, the survival function, and the hazard, still anchor.</p>
+    </div>
+  </section>
+
+  <!-- ===== notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body"><h3>Do survival analysis in Python</h3><p>The companion notebook loads the churn data, plots a Kaplan-Meier survival curve with censoring marks, splits it by contract type and compares the two curves with a log-rank test, then fits a Cox proportional-hazards model for adjusted hazard ratios on contract and price, all with statsmodels, every step with a plot.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/survival-analysis.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/survival-analysis.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/survival-analysis.ipynb" target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)"><strong>View</strong> opens the rendered notebook instantly.
+      <strong>Open in Colab</strong> runs it live. To run locally, install <code>numpy</code>, <code>pandas</code>,
+      <code>matplotlib</code>, <code>statsmodels</code>, and <code>openpyxl</code> (the popular <code>lifelines</code> library
+      is a fine alternative and mirrors the same API).</p>
+  </section>
+
+  <!-- ===== takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Survival data is duration plus an event flag</strong>: the flag says whether the event was observed or the row is censored.</span></li>
+        <li><span class="ck">✓</span><span><strong>Censoring is information</strong>: &#8220;lasted at least this long&#8221; is a real fact, so you never delete censored rows or treat them as events.</span></li>
+        <li><span class="ck">✓</span><span><strong>S(t) and h(t)</strong>: the survival function is the probability of lasting past <code>t</code>; the hazard is the instantaneous risk given survival so far.</span></li>
+        <li><span class="ck">✓</span><span><strong>Kaplan-Meier</strong> estimates S(t) as a staircase directly from censored data; the median is where it crosses 0.5.</span></li>
+        <li><span class="ck">✓</span><span><strong>Log-rank</strong> compares curves; <strong>Cox regression</strong> gives adjusted <strong>hazard ratios</strong>, an HR of 2 means twice the instantaneous risk.</span></li>
+        <li><span class="ck">✓</span><span><strong>Cox assumes proportional hazards</strong> (a constant ratio over time); check it, and use time-varying effects when it fails.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== §6 challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five exercises on the churn data. Full solutions are in the companion solutions notebook.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Naive vs survival</h4>
+        <p>Average the tenure of churned customers only, then of everyone. Why does each mislead, and how does the KM median fix it?</p>
+        <div class="chint">Hint: compare with <code>SurvfuncRight</code> median.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Kaplan-Meier curve</h4>
+        <p>Plot the overall KM survival curve with its confidence band and read off S(6), S(12), and S(24).</p>
+        <div class="chint">Hint: <code>SurvfuncRight(t, event).plot()</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Compare contracts</h4>
+        <p>Overlay the KM curves for month-to-month and annual, and run the log-rank test. Report the p-value.</p>
+        <div class="chint">Hint: <code>survdiff(t, event, group)</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Cox hazard ratios</h4>
+        <p>Fit a Cox model on contract and monthly charges and interpret each hazard ratio in plain language.</p>
+        <div class="chint">Hint: <code>PHReg.from_formula(..., status=event).fit()</code>; HR = <code>exp(coef)</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Check proportional hazards</h4>
+        <p>Discuss how you would check the proportional-hazards assumption for the contract variable, and what to do if it fails.</p>
+        <div class="chint">Hint: scaled Schoenfeld residuals; stratify or add a time interaction.</div></div></div>
+    </div>
+
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">📓</div>
+        <div class="nb-body"><h3>Solutions notebook</h3><p>All five challenges worked in code, naive versus survival estimates, the Kaplan-Meier curve, the contract comparison with a log-rank test, the Cox hazard ratios, and how to check proportional hazards, each with a short explanation.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/survival-analysis--solutions.html">📓 View Solutions</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/survival-analysis--solutions.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/survival-analysis--solutions.ipynb" target="_blank" rel="noopener">⬇ GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §7 quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on censoring, the survival and hazard functions, Kaplan-Meier, log-rank, and Cox regression. Answer them,
+       hit <strong>Check Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>Survival analysis handled one specialized data structure. Next, Part XXIV takes on layered and multi-equation models.
+         <strong>Structural Equation Modeling &amp; Mixed Models</strong> (coming soon) fits systems of relationships and data
+         with nested structure, students within schools, measurements within patients. Browse the full
+         <a href="../toc.html">Contents</a> for what is published and what is on the way.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="causal-inference.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 143 · Previous</span><br><span class="cn-title">Causal Inference</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 144 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => { const h = document.documentElement; bar.style.width = ((h.scrollTop)/(h.scrollHeight-h.clientHeight)*100) + '%'; });
+</script>
+
+<script>
+  window.QUIZ_ID = "ch144";
+  window.QUIZ_DATA = [
+    {
+      q: "What is a censored observation in survival analysis?",
+      options: ["A data-entry error", "A subject whose event had not happened by the end of follow-up", "A subject with the event at time zero", "A duplicate row"],
+      answer: 1,
+      explain: "Right-censoring means you know the subject lasted at least this long, but the event was not observed within the study."
+    },
+    {
+      q: "Why can't you just drop the censored rows and average the rest?",
+      options: ["It is too slow", "It keeps only those who already had the event, biasing survival downward", "Censored rows have no data", "It violates privacy"],
+      answer: 1,
+      explain: "Deleting still-active subjects keeps only the ones who churned, systematically underestimating how long people last."
+    },
+    {
+      q: "The survival function S(t) is…",
+      options: ["The probability the event happens exactly at t", "The probability of lasting beyond time t, P(T > t)", "The number of events by time t", "The hazard rate"],
+      answer: 1,
+      explain: "S(t) = P(T > t) starts at 1 and steps down toward 0 as events accumulate."
+    },
+    {
+      q: "The hazard h(t) is…",
+      options: ["The total number of events", "The instantaneous risk of the event at t, given survival up to t", "The median survival time", "Always constant"],
+      answer: 1,
+      explain: "The hazard is the instantaneous event rate conditional on having survived so far; it drives the survival curve down."
+    },
+    {
+      q: "How does the Kaplan-Meier estimator use censored subjects?",
+      options: ["It ignores them", "It counts them as events", "They leave the at-risk set at their censoring time without counting as an event", "It deletes them first"],
+      answer: 2,
+      explain: "Censored subjects reduce the at-risk denominator at their censoring time, contributing their survived time without being treated as events."
+    },
+    {
+      q: "The median survival time is read off the KM curve where…",
+      options: ["The curve starts", "S(t) first drops to 0.5", "The hazard peaks", "The last event occurs"],
+      answer: 1,
+      explain: "The median is the time at which the survival probability crosses 0.5, more honest than a mean under heavy censoring."
+    },
+    {
+      q: "A Cox hazard ratio of 2.24 for month-to-month contracts means…",
+      options: ["They last 2.24 times longer", "They have 2.24 times the instantaneous churn risk at any moment", "2.24% more churn overall", "The median is 2.24 months"],
+      answer: 1,
+      explain: "A hazard ratio multiplies the instantaneous risk; 2.24 means more than double the churn hazard at any given time, not a lifetime or a total."
+    },
+    {
+      q: "The key assumption behind Cox proportional-hazards regression is that…",
+      options: ["The data is normally distributed", "The hazard ratio between groups stays constant over time", "There is no censoring", "The sample is small"],
+      answer: 1,
+      explain: "Proportional hazards means a constant ratio over time (curves do not cross); check it with residuals and use time-varying terms if it fails."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

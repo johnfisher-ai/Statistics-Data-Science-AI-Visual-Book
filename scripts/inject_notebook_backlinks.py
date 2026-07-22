@@ -540,6 +540,10 @@ MAP = {
         ("../../causal-inference.html#notebook", "Back to the book", "Chapter 143 · Causal Inference"),
     "causal-inference--solutions.html":
         ("../../causal-inference.html#challenges", "Back to the book", "Chapter 143 · Challenge solutions"),
+    "survival-analysis.html":
+        ("../../survival-analysis.html#notebook", "Back to the book", "Chapter 144 · Survival Analysis"),
+    "survival-analysis--solutions.html":
+        ("../../survival-analysis.html#challenges", "Back to the book", "Chapter 144 · Challenge solutions"),
 }
 
 def card(href, kicker, title):
