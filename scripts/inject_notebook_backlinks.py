@@ -544,6 +544,10 @@ MAP = {
         ("../../survival-analysis.html#notebook", "Back to the book", "Chapter 144 · Survival Analysis"),
     "survival-analysis--solutions.html":
         ("../../survival-analysis.html#challenges", "Back to the book", "Chapter 144 · Challenge solutions"),
+    "structural-equation-modeling-and-mixed-models.html":
+        ("../../structural-equation-modeling-and-mixed-models.html#notebook", "Back to the book", "Chapter 145 · Structural Equation Modeling &amp; Mixed Models"),
+    "structural-equation-modeling-and-mixed-models--solutions.html":
+        ("../../structural-equation-modeling-and-mixed-models.html#challenges", "Back to the book", "Chapter 145 · Challenge solutions"),
 }
 
 def card(href, kicker, title):
