@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 149 · Big Data &amp; Scaling — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .ml-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.85rem; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .ml-table th,.ml-table td { padding:0.6rem 0.8rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .ml-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .ml-table td { color:var(--ink-soft); } .ml-table tr:last-child td { border-bottom:none; }
+    .ml-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#fdf4ff; border:1px solid #f5d0fe; border-left:4px solid #a21caf; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#86198f; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none; padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+    .rw-find { background:var(--panel-2); border-radius:10px; padding:0.5rem 1rem; margin-top:0.9rem; }
+    .rw-find li { font-size:0.85rem; color:var(--ink-soft); line-height:1.6; margin:0.2rem 0; }
+    .research { background:#fdf4ff; border:1px solid #f5d0fe; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#86198f; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/big-data-and-scaling.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXIV · Advanced &amp; Applied Topics</span><span class="sep">/</span>
+      <span>Chapter 149</span>
+    </div>
+    <h1>Big Data &amp; <span class="accent">Scaling</span></h1>
+    <p class="dek">Big data is not a size. It is the moment your usual approach stops working: the file will not open, the
+       job does not finish, the machine runs out of memory. This chapter walks the ladder of fixes in order, from the
+       one-line change that buys you three times the headroom to the cluster you probably do not need yet.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~26 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 149</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">There is no row count at which data becomes big. The honest definition is relative:
+       <span class="hl">data is big when it no longer fits the way you are used to working</span>. On a laptop that
+       threshold might be ten million rows; for a bank it might be ten billion events a day. What matters is that the
+       symptoms are always the same, and so are the remedies, and they come in a <span class="hl">strict order of
+       cost</span>. Most teams skip straight to the expensive one.</p>
+
+    <div class="def-card">
+      <div class="sigma">🗄️</div>
+      <div class="def-body">
+        <span class="def-kw">Big data</span> describes datasets whose <span class="def-kw">volume</span>,
+        <span class="def-kw">velocity</span>, or <span class="def-kw">variety</span> exceed what a single machine and a
+        single pass can comfortably handle. <span class="def-kw">Scaling up</span> means a bigger machine;
+        <span class="def-kw">scaling out</span> means many machines, which buys capacity at the price of
+        <span class="def-kw">coordination</span>.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🪜</div>
+      <div><div class="ctitle">Climb the ladder in order</div>
+        <p>Before you reach for a cluster, ask three questions. <strong>Am I storing this wastefully?</strong> Better types
+           and a columnar file often cut the cost by more than half. <strong>Do I need it all at once?</strong> Streaming the
+           data in chunks turns a memory problem into a patience problem. <strong>Can the work be split?</strong> If so, more
+           cores may be enough. A cluster is the answer to the question that survives all three, and it brings a new set of
+           problems with it.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §1 when data outgrows one machine ===== -->
+  <section id="outgrows">
+    <div class="section-eyebrow"><div class="num">1</div><h2>When Data Outgrows One Machine</h2></div>
+    <p>The classic description of big data is the <strong>five Vs</strong>. They are worth knowing because each one breaks a
+       different part of your workflow, and the fix depends on which one is actually biting you.</p>
+
+    <table class="ml-table">
+      <thead><tr><th style="width:15%">The V</th><th style="width:33%">What it means</th><th>What it breaks, and the usual remedy</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">Volume</td><td>Sheer quantity: terabytes, billions of rows.</td>
+            <td>Memory and storage. Remedy: better types, columnar formats, chunking, partitioning, then distributed storage.</td></tr>
+        <tr><td class="nm">Velocity</td><td>Data arriving continuously and fast.</td>
+            <td>Batch thinking. A nightly job cannot answer a question about the last five minutes. Remedy: stream processing.</td></tr>
+        <tr><td class="nm">Variety</td><td>Text, images, logs, JSON, audio, not just neat tables.</td>
+            <td>The schema. Remedy: flexible storage (a data lake) plus a schema applied when you read, not when you write.</td></tr>
+        <tr><td class="nm">Veracity</td><td>How much of it you can trust.</td>
+            <td>Your conclusions. Scale multiplies noise, duplicates, and silent pipeline failures rather than averaging them away.</td></tr>
+        <tr><td class="nm">Value</td><td>Whether any of it is worth the cost.</td>
+            <td>The budget. The V that gets skipped, and the one that decides whether the project should exist.</td></tr>
+      </tbody>
+    </table>
+
+    <p>Notice that only the first is about size. A few gigabytes of messy, fast-moving, untrustworthy data is a harder
+       engineering problem than a clean hundred-gigabyte table. Once you know which V you have, the ladder below tells you
+       how far you actually need to climb.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 268" width="100%" font-family="Inter, sans-serif" aria-label="A three-step staircase of scaling strategies: step one fits in memory and uses ordinary tools, step two is bigger than memory and uses smaller types, columnar storage and chunked streaming, step three is genuinely distributed and uses a cluster; a note says most problems are solved at step two.">
+        <text x="350" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">The scaling ladder: climb only as far as you have to</text>
+
+        <!-- step 1 -->
+        <rect x="40" y="176" width="180" height="62" rx="9" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+        <text x="130" y="196" text-anchor="middle" font-size="10.5" fill="#166534" font-weight="800">1 &#183; Fits in memory</text>
+        <text x="130" y="212" text-anchor="middle" font-size="8.5" fill="#166534">pandas, one machine</text>
+        <text x="130" y="226" text-anchor="middle" font-size="8.5" fill="#166534">just do the work</text>
+
+        <!-- step 2 -->
+        <rect x="248" y="118" width="190" height="120" rx="9" fill="#fdf4ff" stroke="#f5d0fe" stroke-width="1.5"/>
+        <text x="343" y="138" text-anchor="middle" font-size="10.5" fill="#86198f" font-weight="800">2 &#183; Bigger than memory</text>
+        <text x="343" y="156" text-anchor="middle" font-size="8.5" fill="#86198f">smaller dtypes and categories</text>
+        <text x="343" y="171" text-anchor="middle" font-size="8.5" fill="#86198f">columnar storage (Parquet)</text>
+        <text x="343" y="186" text-anchor="middle" font-size="8.5" fill="#86198f">read it in chunks</text>
+        <text x="343" y="201" text-anchor="middle" font-size="8.5" fill="#86198f">use more cores</text>
+        <text x="343" y="222" text-anchor="middle" font-size="8.5" fill="#a21caf" font-weight="800">still one machine</text>
+
+        <!-- step 3 -->
+        <rect x="466" y="52" width="194" height="186" rx="9" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
+        <text x="563" y="72" text-anchor="middle" font-size="10.5" fill="#1d4ed8" font-weight="800">3 &#183; Genuinely distributed</text>
+        <text x="563" y="90" text-anchor="middle" font-size="8.5" fill="#1e40af">many machines: Spark</text>
+        <text x="563" y="105" text-anchor="middle" font-size="8.5" fill="#1e40af">distributed storage</text>
+        <text x="563" y="120" text-anchor="middle" font-size="8.5" fill="#1e40af">fault tolerance built in</text>
+        <text x="563" y="141" text-anchor="middle" font-size="8.5" fill="#b91c1c" font-weight="700">new costs:</text>
+        <text x="563" y="156" text-anchor="middle" font-size="8.5" fill="#b91c1c">network shuffles</text>
+        <text x="563" y="171" text-anchor="middle" font-size="8.5" fill="#b91c1c">skew and stragglers</text>
+        <text x="563" y="186" text-anchor="middle" font-size="8.5" fill="#b91c1c">cluster to operate</text>
+
+        <!-- rising arrow -->
+        <path d="M46 250 L654 250" stroke="#cbd5e1" stroke-width="1.4"/>
+        <text x="350" y="262" text-anchor="middle" font-size="8.5" fill="#64748b" font-style="italic">increasing cost, complexity, and number of things that can go wrong</text>
+
+        <!-- the punchline -->
+        <rect x="40" y="40" width="392" height="52" rx="9" fill="#fffbeb" stroke="#fcd34d" stroke-width="1.5"/>
+        <text x="236" y="60" text-anchor="middle" font-size="9.5" fill="#92400e" font-weight="800">Most &#8220;big data&#8221; problems end at step 2.</text>
+        <text x="236" y="78" text-anchor="middle" font-size="8.5" fill="#92400e">A modern laptop has more memory than the clusters that made Hadoop famous.</text>
+      </svg>
+      <figcaption style="font-size:0.78rem;color:var(--ink-soft);margin-top:0.9rem;line-height:1.55">
+        Each step up buys capacity and costs complexity. Step 2 is where the best returns are, and it is the step most often
+        skipped: teams jump from a struggling laptop straight to a cluster, and inherit shuffles, skew, and an operations
+        burden they did not need.
+      </figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== §2 store it smarter ===== -->
+  <section id="storage">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Store It Smarter: Types, Columns, and Partitions</h2></div>
+    <p>The cheapest capacity you will ever buy comes from storing the same data more sensibly. Three ideas do most of the
+       work, and none of them changes a single result.</p>
+
+    <p><strong>Right-size the types.</strong> By default a column of whole numbers becomes a 64-bit integer, whether it holds
+       nine-digit identifiers or the hour of the day. A text column becomes Python objects, one per row, even when it repeats
+       the same six city names for millions of rows. Store the hour as an 8-bit integer and the city as a
+       <strong>category</strong>, which keeps integer codes plus one small lookup table, and the footprint collapses. In the
+       notebook this one step takes the ride logs from <strong>2.70 MB to 0.80 MB</strong>, a <strong>70 percent</strong>
+       saving, with identical numbers coming out the other end.</p>
+
+    <p><strong>Store columns, not rows.</strong> A CSV is text laid out row by row, so reading one column means reading every
+       byte of every row and parsing it. <strong>Parquet</strong> stores each column together, compressed, with summary
+       statistics in the footer. Two things follow. The file shrinks, because a column of repeated city names compresses far
+       better than the same values scattered through rows. And you can read two columns out of eleven without touching the
+       rest, which is called <strong>column pruning</strong>. On the 500,000-row file in the notebook, Parquet is
+       <strong>4.7 times smaller</strong> (6.4 MB against 30.2 MB), and reading just two columns is about
+       <strong>32 times faster</strong> than reading the CSV.</p>
+
+    <p><strong>Partition on what you filter by.</strong> Split the data into folders by a column you query constantly, such as
+       date, and a query for one day can skip every other folder before reading a byte. Engines call this
+       <strong>predicate pushdown</strong>: the filter is pushed down to the storage layer instead of being applied after
+       loading everything. The catch is that partitioning on a column with very many distinct values, such as a customer id,
+       produces millions of tiny files and makes everything slower. Partition on something coarse.</p>
+
+    <div class="callout warn">
+      <div class="cico">⚠️</div>
+      <div><div class="ctitle">Do not average the averages</div>
+        <p>The moment you process data in pieces, one arithmetic rule starts to matter. Sums, counts, minimums, and maximums
+           can be computed per chunk and combined at the end. <strong>Means cannot</strong>: the average of ten chunk averages
+           is only correct when every chunk is the same size. Carry a <strong>sum and a count</strong> from each chunk and
+           divide once at the end. The same caution applies to medians and percentiles, which cannot be combined from pieces
+           at all without either a full pass or an approximation algorithm.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §3 divide and conquer ===== -->
+  <section id="mapreduce">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Divide and Conquer: MapReduce, Spark, and the Modern Stack</h2></div>
+    <p>When one machine really is not enough, the work has to be split across many. Almost every system for doing that rests
+       on a single pattern, introduced by Google and made famous by <strong>Hadoop</strong>: <strong>map</strong>,
+       <strong>shuffle</strong>, <strong>reduce</strong>.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 260" width="100%" font-family="Inter, sans-serif" aria-label="A MapReduce diagram: input rows are split across three mappers that emit key-value pairs, a shuffle stage routes all pairs sharing a key to the same reducer, and three reducers each produce one final total; the shuffle is highlighted as the step that moves data across the network.">
+        <text x="350" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Map, shuffle, reduce: the pattern under every distributed engine</text>
+
+        <g font-size="8" font-weight="700" text-anchor="middle">
+          <text x="78" y="42" fill="#64748b">INPUT SPLITS</text>
+          <text x="235" y="42" fill="#a21caf">MAP</text>
+          <text x="404" y="42" fill="#b45309">SHUFFLE</text>
+          <text x="573" y="42" fill="#1d4ed8">REDUCE</text>
+        </g>
+
+        <!-- input splits -->
+        <g font-size="8" text-anchor="middle">
+          <rect x="30" y="58" width="96" height="42" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+          <text x="78" y="75" fill="#475569">rides 1-8k</text><text x="78" y="90" fill="#94a3b8">block A</text>
+          <rect x="30" y="112" width="96" height="42" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+          <text x="78" y="129" fill="#475569">rides 8-16k</text><text x="78" y="144" fill="#94a3b8">block B</text>
+          <rect x="30" y="166" width="96" height="42" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+          <text x="78" y="183" fill="#475569">rides 16-25k</text><text x="78" y="198" fill="#94a3b8">block C</text>
+        </g>
+
+        <!-- mappers -->
+        <g font-size="8" text-anchor="middle">
+          <rect x="188" y="58" width="94" height="42" rx="6" fill="#fdf4ff" stroke="#f5d0fe"/>
+          <text x="235" y="76" fill="#86198f" font-weight="700">mapper 1</text><text x="235" y="90" fill="#a21caf">(city, fare)</text>
+          <rect x="188" y="112" width="94" height="42" rx="6" fill="#fdf4ff" stroke="#f5d0fe"/>
+          <text x="235" y="130" fill="#86198f" font-weight="700">mapper 2</text><text x="235" y="144" fill="#a21caf">(city, fare)</text>
+          <rect x="188" y="166" width="94" height="42" rx="6" fill="#fdf4ff" stroke="#f5d0fe"/>
+          <text x="235" y="184" fill="#86198f" font-weight="700">mapper 3</text><text x="235" y="198" fill="#a21caf">(city, fare)</text>
+        </g>
+        <g stroke="#cbd5e1" stroke-width="1.4" fill="none">
+          <path d="M126 79 L186 79"/><path d="M126 133 L186 133"/><path d="M126 187 L186 187"/>
+        </g>
+
+        <!-- shuffle band -->
+        <rect x="300" y="52" width="208" height="162" rx="9" fill="#fffbeb" stroke="#fcd34d" stroke-dasharray="4 3"/>
+        <g stroke="#d97706" stroke-width="1.3" fill="none" opacity="0.85">
+          <path d="M284 72 L520 72"/><path d="M284 86 L520 130"/><path d="M284 96 L520 186"/>
+          <path d="M284 126 L520 76"/><path d="M284 140 L520 132"/><path d="M284 150 L520 190"/>
+          <path d="M284 180 L520 80"/><path d="M284 194 L520 136"/><path d="M284 204 L520 194"/>
+        </g>
+        <text x="404" y="232" text-anchor="middle" font-size="8.5" fill="#92400e" font-weight="700">every pair with the same key is routed to one reducer</text>
+        <text x="404" y="246" text-anchor="middle" font-size="8" fill="#b45309" font-style="italic">this is the step that crosses the network, so this is the step that costs</text>
+
+        <!-- reducers -->
+        <g font-size="8" text-anchor="middle">
+          <rect x="522" y="58" width="140" height="42" rx="6" fill="#eff6ff" stroke="#bfdbfe"/>
+          <text x="592" y="75" fill="#1d4ed8" font-weight="700">reduce &#8220;Metro City&#8221;</text><text x="592" y="90" fill="#1e40af">186,700 total</text>
+          <rect x="522" y="112" width="140" height="42" rx="6" fill="#eff6ff" stroke="#bfdbfe"/>
+          <text x="592" y="129" fill="#1d4ed8" font-weight="700">reduce &#8220;Riverton&#8221;</text><text x="592" y="144" fill="#1e40af">92,353 total</text>
+          <rect x="522" y="166" width="140" height="42" rx="6" fill="#eff6ff" stroke="#bfdbfe"/>
+          <text x="592" y="183" fill="#1d4ed8" font-weight="700">reduce &#8220;Lakeside&#8221;</text><text x="592" y="198" fill="#1e40af">63,416 total</text>
+        </g>
+      </svg>
+      <figcaption style="font-size:0.78rem;color:var(--ink-soft);margin-top:0.9rem;line-height:1.55">
+        Mapping is embarrassingly parallel: each block is handled independently, anywhere. Reducing is cheap once the data has
+        arrived. The shuffle in the middle is the only stage that moves data between machines, which is why almost every
+        performance problem in a distributed job traces back to it.
+      </figcaption>
+    </figure>
+
+    <p>The notebook writes this out in about fifteen lines of plain Python and gets exactly what a one-line
+       <code>groupby</code> gets: <strong>25,000 records mapped into 6 shuffled keys</strong>. That equivalence is the point.
+       A distributed <code>groupby</code> is not a different idea, it is the same idea with a network in the middle.</p>
+
+    <p><strong>Hadoop</strong> made this practical at scale with a distributed file system and a job scheduler, but it wrote
+       every intermediate result to disk, which made multi-step work slow. <strong>Spark</strong> replaced it by keeping data
+       in memory between steps and by being <strong>lazy</strong>: your transformations (<code>filter</code>,
+       <code>select</code>, <code>join</code>) build up a plan rather than running, and nothing happens until an
+       <strong>action</strong> (<code>count</code>, <code>collect</code>, <code>write</code>) demands an answer. Because it
+       sees the whole plan first, it can optimize it, for instance by pushing your filter down to the read so that less data
+       ever leaves disk.</p>
+
+    <p>The stack kept moving. Storage split from compute, so a <strong>data lakehouse</strong> now holds Parquet files with a
+       transaction layer (Delta Lake, Apache Iceberg) over the top. Single-node engines got dramatically faster, so
+       <strong>DuckDB</strong> and <strong>Polars</strong> handle on one machine what once needed a cluster. And for the
+       velocity problem, <strong>Kafka</strong> and <strong>Flink</strong> process events as they arrive instead of waiting
+       for a nightly batch. The vocabulary changes every few years; map, shuffle, reduce does not.</p>
+
+    <div class="callout warn">
+      <div class="cico">🐢</div>
+      <div><div class="ctitle">The straggler problem</div>
+        <p>A parallel job finishes when its <strong>slowest</strong> worker finishes, not when the average one does. So the
+           thing that ruins distributed jobs is rarely total volume, it is <strong>imbalance</strong>. If one key holds half
+           the rows, one worker does half the work while the rest sit idle, and adding machines does not help at all. This is
+           <strong>data skew</strong>, and it is the single most common reason a cluster fails to deliver the speedup it
+           promised.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §4 real-world ===== -->
+  <section id="real-world">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: Scaling a Ride-Log Analysis</h2></div>
+    <p>Ride-hailing logs are a fair stand-in for the shape of real operational data: one row per event, a few numeric columns,
+       a few repeated text columns, and a geography that is nowhere near evenly distributed. The last property is what makes
+       it useful here.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">Real dataset</div>
+      <p style="margin:0.4rem 0 0"><strong>Ride logs, 25,000 trips across six cities.</strong> Each row is one completed
+         ride. <code>ride_id</code> identifies the trip and <code>rider_id</code> the passenger, so repeat riders appear many
+         times. <code>city</code> is where the ride started and <code>vehicle_type</code> is the tier booked (standard, xl,
+         premium, eco). <code>pickup_hour</code> is the hour of day from 0 to 23, <code>distance_km</code> the trip distance
+         and <code>duration_min</code> its length in minutes. <code>surge_multiplier</code> is the demand multiplier applied
+         to the price, <code>fare</code> the dollars charged, <code>payment_type</code> how it was paid (card, wallet, cash),
+         and <code>rating</code> the passenger's score from 1.0 to 5.0.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/big-data-and-scaling--ride-logs.xlsx" download>📊 Download dataset <small>xlsx</small></a>
+      </div>
+    </div>
+
+    <p>The file opens in Excel without complaint, and that is deliberate. Nothing here needs a cluster; the point is that the
+       <em>techniques</em> are what scale, and you can learn all of them at a size you can still check by eye. The notebook
+       inflates the logs to <strong>500,000 rows</strong> (30.2 MB on disk, about 54 MB once loaded) to make the streaming and
+       storage results honest.</p>
+
+    <ul class="rw-find">
+      <li><span class="ck">●</span> <strong>Types first.</strong> Categories and right-sized numbers cut the footprint from
+          <strong>2.70 MB to 0.80 MB</strong>, a 3.4x reduction, with identical results.</li>
+      <li><span class="ck">●</span> <strong>Streaming works.</strong> The 500,000-row file was aggregated while holding at
+          most <strong>5.4 MB</strong> in memory at any moment, and the totals matched the full-file answer exactly.</li>
+      <li><span class="ck">●</span> <strong>Columnar wins big.</strong> Parquet was <strong>4.7x smaller</strong> than the
+          CSV, and reading the two columns actually needed took <strong>0.005 seconds against 0.170</strong>.</li>
+      <li><span class="ck">●</span> <strong>Eight cores did not buy eight times the speed.</strong> A bootstrap of 3,200
+          resamples went from 0.93 to 0.36 seconds, a <strong>2.6x</strong> speedup.</li>
+      <li><span class="ck">●</span> <strong>The skew is severe.</strong> Metro City is <strong>46.1 percent</strong> of all
+          rides, so partitioning by city leaves one worker with <strong>2.8x the average</strong> load. Salting the key into
+          four pieces brought the largest partition down to <strong>11.7 percent</strong>, with the revenue totals
+          unchanged.</li>
+    </ul>
+
+    <p>One analytical finding is worth pausing on, because it is the kind of thing that only appears once the aggregation
+       runs. Metro City supplies <strong>46 percent of rides but the lowest average fare</strong>, about
+       <strong>16.19 dollars</strong> against roughly 19.60 everywhere else. It is not underpriced; its trips are simply
+       shorter, because a dense city center produces many short hops while the outlying towns produce fewer, longer journeys.
+       A revenue-per-ride league table would rank Metro City last and be badly misleading. This is the
+       <a href="correlation-vs-causation.html">confounding</a> pattern in operational clothing, and no amount of scale fixes
+       it. Scale gets you the number faster; it does not tell you what the number means.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 250" width="100%" font-family="Inter, sans-serif" aria-label="Two panels of worker load. On the left, partitioning by city gives one very tall bar and five short ones, and the job finish line sits at the tall bar. On the right, after salting the hot key into four pieces, the bars are nearly even and the finish line drops much lower.">
+        <text x="350" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">A job finishes when its slowest worker finishes</text>
+
+        <!-- LEFT: skewed -->
+        <text x="175" y="40" text-anchor="middle" font-size="9.5" fill="#b91c1c" font-weight="800">Partitioned by city: skewed</text>
+        <line x1="60" y1="186" x2="300" y2="186" stroke="#94a3b8" stroke-width="1.2"/>
+        <rect x="70"  y="66"  width="26" height="120" fill="#dc2626"/>
+        <rect x="106" y="137" width="26" height="49"  fill="#60a5fa"/>
+        <rect x="142" y="153" width="26" height="33"  fill="#60a5fa"/>
+        <rect x="178" y="160" width="26" height="26"  fill="#60a5fa"/>
+        <rect x="214" y="167" width="26" height="19"  fill="#60a5fa"/>
+        <rect x="250" y="173" width="26" height="13"  fill="#60a5fa"/>
+        <line x1="60" y1="66" x2="300" y2="66" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="5 3"/>
+        <text x="304" y="63" font-size="8" fill="#b91c1c" font-weight="700">job ends here</text>
+        <text x="83" y="60" text-anchor="middle" font-size="8" fill="#b91c1c" font-weight="800">46.1%</text>
+        <g font-size="7.5" fill="#64748b" text-anchor="middle">
+          <text x="83" y="198">w1</text><text x="119" y="198">w2</text><text x="155" y="198">w3</text>
+          <text x="191" y="198">w4</text><text x="227" y="198">w5</text><text x="263" y="198">w6</text>
+        </g>
+        <text x="175" y="216" text-anchor="middle" font-size="8" fill="#b91c1c">one worker carries 2.8x the average load</text>
+        <text x="175" y="230" text-anchor="middle" font-size="8" fill="#64748b" font-style="italic">five workers sit idle waiting</text>
+
+        <!-- RIGHT: salted -->
+        <text x="520" y="40" text-anchor="middle" font-size="9.5" fill="#166534" font-weight="800">Hot key salted into 4 pieces: balanced</text>
+        <line x1="400" y1="186" x2="655" y2="186" stroke="#94a3b8" stroke-width="1.2"/>
+        <g fill="#16a34a">
+          <rect x="408" y="155" width="17" height="31"/><rect x="429" y="155" width="17" height="31"/>
+          <rect x="450" y="156" width="17" height="30"/><rect x="471" y="156" width="17" height="30"/>
+          <rect x="492" y="163" width="17" height="23"/><rect x="513" y="164" width="17" height="22"/>
+          <rect x="534" y="166" width="17" height="20"/><rect x="555" y="167" width="17" height="19"/>
+          <rect x="576" y="172" width="17" height="14"/><rect x="597" y="174" width="17" height="12"/>
+          <rect x="618" y="176" width="17" height="10"/><rect x="639" y="178" width="17" height="8"/>
+        </g>
+        <line x1="400" y1="155" x2="655" y2="155" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="5 3"/>
+        <text x="521" y="150" text-anchor="middle" font-size="8" fill="#166534" font-weight="800">11.7%</text>
+        <text x="520" y="198" text-anchor="middle" font-size="7.5" fill="#64748b">more, smaller partitions</text>
+        <text x="520" y="216" text-anchor="middle" font-size="8" fill="#166534">the tall bar is gone, so the job ends far earlier</text>
+        <text x="520" y="230" text-anchor="middle" font-size="8" fill="#64748b" font-style="italic">cost: one extra combining stage</text>
+      </svg>
+      <figcaption style="font-size:0.78rem;color:var(--ink-soft);margin-top:0.9rem;line-height:1.55">
+        Salting appends a small random number to the hot key so it splits across several partitions, then combines the pieces
+        in a second stage. Total work is unchanged and so is the answer; what changes is how evenly the work is spread, and
+        therefore when the job ends. Use it only when one key genuinely dominates, since the extra stage is not free.
+      </figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== §5 ML/AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Scaling in Machine Learning &amp; AI</h2></div>
+    <p>Modern AI is the most demanding consumer of these ideas. Training a large model is a distributed systems problem at
+       least as much as a statistical one, and the same vocabulary of partitions, shuffles, and stragglers reappears with
+       different names.</p>
+
+    <table class="ml-table">
+      <thead><tr><th style="width:24%">Idea</th><th>What it does, and where you meet it</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">Data parallelism</td>
+            <td>Every worker holds a full copy of the model and a different slice of the batch, then gradients are averaged
+                across workers each step. The default way to use many GPUs, and the direct descendant of map and reduce.</td></tr>
+        <tr><td class="nm">Model parallelism</td>
+            <td>The model itself is too large for one device, so its layers or tensors are split across several. Necessary
+                once parameter counts run to billions.</td></tr>
+        <tr><td class="nm">AllReduce</td>
+            <td>The collective operation that averages gradients across all workers without a central bottleneck. This is the
+                shuffle of distributed training, and the step that network speed limits.</td></tr>
+        <tr><td class="nm">Mini-batch training</td>
+            <td>Stochastic gradient descent is itself an out-of-core algorithm: it never needs the whole dataset in memory,
+                only the current batch. Chunking is not a workaround here, it is the method.</td></tr>
+        <tr><td class="nm">Feature stores</td>
+            <td>A shared, versioned layer serving the same feature definitions to training and to production, so the
+                statistics a model learned from match the ones it later sees.</td></tr>
+        <tr><td class="nm">Data pipelines</td>
+            <td>At scale the GPU is often idle waiting for data. Prefetching, sharding files, and columnar formats keep it
+                fed, which is why storage layout is a training-speed decision.</td></tr>
+        <tr><td class="nm">Checkpointing</td>
+            <td>On thousands of machines running for weeks, hardware failure is routine rather than exceptional. Periodic
+                checkpoints turn a crash into a restart instead of a total loss.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="research">
+      <div class="rtag">Research note</div>
+      <p style="margin:0.4rem 0 0">Scale became a research subject in its own right with the <strong>neural scaling
+         laws</strong>, which found that loss falls as a smooth power law in model size, dataset size, and compute. The
+         <strong>Chinchilla</strong> result then showed the field had been building models too large for the data they were
+         trained on: for a fixed compute budget, a smaller model trained on more tokens wins. That is a statistical statement
+         about the efficient allocation of a budget, and it redirected an industry. Scaling is not only an engineering
+         concern; deciding <em>what</em> to scale is a modeling question.</p>
+    </div>
+  </section>
+
+  <!-- ===== notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta">
+      <div class="nb-ic">🐍</div>
+      <div class="nb-body">
+        <h3>Companion notebook</h3>
+        <p>Six demonstrations, one machine, no cluster: measure and shrink the memory footprint, aggregate a 500,000-row file
+           in chunks without ever loading it, compare CSV against Parquet for size and read speed, write map, shuffle, and
+           reduce by hand and check it against a groupby, parallelize a bootstrap across eight cores and see Amdahl's law bite,
+           then diagnose the data skew and repair it by salting.</p>
+        <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:1rem">
+          <a class="btn btn-primary" href="notebooks/html/big-data-and-scaling.html">📓 View Notebook</a>
+          <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/big-data-and-scaling.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+          <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/big-data-and-scaling.ipynb" target="_blank" rel="noopener">⬇ GitHub</a>
+        </div>
+      </div>
+    </div>
+    <p style="font-size:0.82rem;color:var(--ink-soft);margin-top:0.9rem">Requires <code>pandas</code>, <code>numpy</code>,
+      <code>matplotlib</code>, <code>pyarrow</code> (for Parquet), <code>joblib</code>, and <code>openpyxl</code>. All are
+      preinstalled on Colab.</p>
+  </section>
+
+  <!-- ===== takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Big data is a relative term</strong>: it starts where your current approach stops working, which depends on the machine, the deadline, and the question.</span></li>
+        <li><span class="ck">✓</span><span><strong>The five Vs</strong> (volume, velocity, variety, veracity, value) each break something different; identify which one is biting before choosing a fix.</span></li>
+        <li><span class="ck">✓</span><span><strong>Climb the ladder in order</strong>: right-size the types, store columnar, stream in chunks, add cores, and only then add machines.</span></li>
+        <li><span class="ck">✓</span><span><strong>Carry sums and counts, not means</strong>, when you process data in pieces; medians and percentiles do not combine from chunks at all.</span></li>
+        <li><span class="ck">✓</span><span><strong>Map, shuffle, reduce</strong> underlies every distributed engine, and the shuffle is the expensive step because it is the one that crosses the network.</span></li>
+        <li><span class="ck">✓</span><span><strong>Parallel speedup is always sublinear</strong>: coordination costs and Amdahl's law mean eight workers never give you eight times the speed.</span></li>
+        <li><span class="ck">✓</span><span><strong>Skew, not volume, is what usually kills a job</strong>: it ends when the slowest worker ends, so one dominant key can idle an entire cluster. Salting spreads it.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== §6 challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five exercises on the ride logs. Full solutions are in the companion solutions notebook.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Halve the memory footprint</h4>
+        <p>Downcast every numeric column and convert repeated text to categories. Report the saving, then prove the summary statistics did not move.</p>
+        <div class="chint">Hint: <code>pd.to_numeric(..., downcast=)</code> and <code>astype("category")</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Average distance, in chunks</h4>
+        <p>Compute the mean trip distance by vehicle type without ever holding the whole file. Remember why you cannot average the chunk averages.</p>
+        <div class="chint">Hint: <code>pd.read_csv(..., chunksize=)</code>, and carry sums and counts.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Price the format</h4>
+        <p>Write the data as both CSV and Parquet. Compare file size, and compare the time to read a single column from each.</p>
+        <div class="chint">Hint: <code>to_parquet</code>, then <code>read_parquet(columns=[...])</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>MapReduce the busiest hour</h4>
+        <p>Using map, shuffle, and reduce explicitly (no groupby), count rides per pickup hour and name the peak. Check it against <code>value_counts</code>.</p>
+        <div class="chint">Hint: the key is the hour and the value is 1.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Diagnose and repair the skew</h4>
+        <p>Quantify how lopsided the city partitions are, then salt the hot key with 2, 4, and 8 pieces and report how the largest partition shrinks. Confirm the totals survive.</p>
+        <div class="chint">Hint: imbalance = largest partition divided by the mean partition.</div></div></div>
+    </div>
+
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">📓</div>
+        <div class="nb-body"><h3>Solutions notebook</h3><p>All five challenges worked in code: automatic downcasting with a before-and-after check, a chunked groupby that matches the full-file answer, a CSV against Parquet comparison on size and single-column read time, MapReduce for the busiest hour, and a skew diagnosis with salting at several strengths.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/big-data-and-scaling--solutions.html">📓 View Solutions</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/big-data-and-scaling--solutions.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/big-data-and-scaling--solutions.ipynb" target="_blank" rel="noopener">⬇ GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §7 quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on the five Vs, storage formats, chunked processing, MapReduce, parallel speedup, and skew. Answer them,
+       hit <strong>Check Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">🔭</div>
+    <div><div class="ctitle">That completes Advanced &amp; Applied Topics</div>
+      <p>This part took the toolkit past the standard curriculum. <a href="bayesian-inference-in-practice.html">Bayesian
+         Inference in Practice</a> replaced a single estimate with a distribution over what you believe.
+         <a href="causal-inference.html">Causal Inference</a> asked what would happen if you intervened, not merely what
+         correlates. <a href="survival-analysis.html">Survival Analysis</a> handled the awkward reality that some outcomes
+         have not happened yet. <a href="structural-equation-modeling-and-mixed-models.html">Structural Equation Modeling
+         &amp; Mixed Models</a> dealt with nested data and constructs you cannot measure directly. Then
+         <a href="deep-learning-primer.html">Deep Learning</a>, <a href="recommendation-systems.html">Recommendation
+         Systems</a>, and <a href="nlp-and-large-language-models.html">NLP &amp; Large Language Models</a> built up the
+         machinery behind modern AI, and this chapter supplied the engineering that lets any of it run at size. Browse the
+         full <a href="../toc.html">Contents</a> for what is published and what is on the way.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="nlp-and-large-language-models.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 148 · Previous</span><br><span class="cn-title">NLP &amp; Large Language Models</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 149 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => { const h = document.documentElement; bar.style.width = ((h.scrollTop)/(h.scrollHeight-h.clientHeight)*100) + '%'; });
+</script>
+
+<script>
+  window.QUIZ_ID = "ch149";
+  window.QUIZ_DATA = [
+    {
+      q: "What best defines 'big data'?",
+      options: ["More than one terabyte", "Data that no longer fits the way you normally work", "Any data stored in the cloud", "More than a billion rows"],
+      answer: 1,
+      explain: "The threshold is relative to your machine, your deadline, and your question. There is no universal row count."
+    },
+    {
+      q: "Which of the five Vs describes data arriving continuously and fast?",
+      options: ["Volume", "Velocity", "Variety", "Veracity"],
+      answer: 1,
+      explain: "Velocity breaks batch thinking: a nightly job cannot answer a question about the last five minutes."
+    },
+    {
+      q: "Converting a repeated text column to a category type mainly saves memory because…",
+      options: ["It deletes duplicate rows", "It stores small integer codes plus one lookup table instead of a string per row", "It compresses the file on disk", "It drops rare values"],
+      answer: 1,
+      explain: "Six city names repeated across 25,000 rows become 25,000 small codes and one table of six strings."
+    },
+    {
+      q: "Why can Parquet read two columns out of eleven so much faster than a CSV can?",
+      options: ["It is stored on faster disks", "It stores each column together, so the others are never read", "It keeps the data in memory", "It uses fewer rows"],
+      answer: 1,
+      explain: "Columnar layout enables column pruning. A CSV is row-oriented text, so finding one column still means scanning every byte."
+    },
+    {
+      q: "You are aggregating a huge file in chunks. Which statistic can you NOT get by combining per-chunk results directly?",
+      options: ["Sum", "Count", "The mean, by averaging the chunk means", "Maximum"],
+      answer: 2,
+      explain: "Averaging averages is only valid when chunks are equal in size. Carry a sum and a count, then divide once at the end."
+    },
+    {
+      q: "In MapReduce, which stage moves data between machines and therefore usually dominates the cost?",
+      options: ["Map", "Shuffle", "Reduce", "The final write"],
+      answer: 1,
+      explain: "Mapping is independent per record and reducing is cheap once data has arrived; the shuffle is the network step."
+    },
+    {
+      q: "Eight workers gave only a 2.6x speedup on the bootstrap. The best explanation is…",
+      options: ["The code is wrong", "Coordination overhead plus a serial fraction, exactly what Amdahl's law predicts", "Bootstrapping cannot be parallelized", "The dataset is too small to matter"],
+      answer: 1,
+      explain: "Splitting work, starting workers, and shipping data all cost time, and any serial portion caps the achievable speedup."
+    },
+    {
+      q: "One city holds 46 percent of the rows, so partitioning by city leaves one worker with far more work. This is…",
+      options: ["A memory leak", "Data skew, which salting the hot key can spread across partitions", "Overfitting", "A shuffle failure"],
+      answer: 1,
+      explain: "A job ends when its slowest worker ends. Salting appends a random suffix to split the hot key, then a second stage combines the pieces."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

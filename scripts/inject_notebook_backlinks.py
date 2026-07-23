@@ -560,6 +560,10 @@ MAP = {
         ("../../nlp-and-large-language-models.html#notebook", "Back to the book", "Chapter 148 · NLP &amp; Large Language Models"),
     "nlp-and-large-language-models--solutions.html":
         ("../../nlp-and-large-language-models.html#challenges", "Back to the book", "Chapter 148 · Challenge solutions"),
+    "big-data-and-scaling.html":
+        ("../../big-data-and-scaling.html#notebook", "Back to the book", "Chapter 149 · Big Data &amp; Scaling"),
+    "big-data-and-scaling--solutions.html":
+        ("../../big-data-and-scaling.html#challenges", "Back to the book", "Chapter 149 · Challenge solutions"),
 }
 
 def card(href, kicker, title):
