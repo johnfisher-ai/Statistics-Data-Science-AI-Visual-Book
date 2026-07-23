@@ -548,6 +548,10 @@ MAP = {
         ("../../structural-equation-modeling-and-mixed-models.html#notebook", "Back to the book", "Chapter 145 · Structural Equation Modeling &amp; Mixed Models"),
     "structural-equation-modeling-and-mixed-models--solutions.html":
         ("../../structural-equation-modeling-and-mixed-models.html#challenges", "Back to the book", "Chapter 145 · Challenge solutions"),
+    "deep-learning-primer.html":
+        ("../../deep-learning-primer.html#notebook", "Back to the book", "Chapter 146 · Deep Learning Primer"),
+    "deep-learning-primer--solutions.html":
+        ("../../deep-learning-primer.html#challenges", "Back to the book", "Chapter 146 · Challenge solutions"),
 }
 
 def card(href, kicker, title):

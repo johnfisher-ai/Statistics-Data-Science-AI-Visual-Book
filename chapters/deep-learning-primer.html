@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 146 · Deep Learning Primer — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .ml-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.85rem; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .ml-table th,.ml-table td { padding:0.6rem 0.8rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .ml-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .ml-table td { color:var(--ink-soft); } .ml-table tr:last-child td { border-bottom:none; }
+    .ml-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#fdf4ff; border:1px solid #f5d0fe; border-left:4px solid #a21caf; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#86198f; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none; padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+    .rw-find { background:var(--panel-2); border-radius:10px; padding:0.5rem 1rem; margin-top:0.9rem; }
+    .rw-find li { font-size:0.85rem; color:var(--ink-soft); line-height:1.6; margin:0.2rem 0; }
+    .research { background:#fdf4ff; border:1px solid #f5d0fe; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#86198f; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/deep-learning-primer.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXIV · Advanced &amp; Applied Topics</span><span class="sep">/</span>
+      <span>Chapter 146</span>
+    </div>
+    <h1>Deep Learning <span class="accent">Primer</span></h1>
+    <p class="dek">A neural network is not magic. It is a logistic regression stacked on top of itself many times, with a simple
+       nonlinear twist between the layers, trained by the same gradient descent you already know. This chapter builds one
+       from a single neuron up, and shows exactly why that stacking lets it learn shapes a straight line never could.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~25 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 146</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">You already know the pieces. A <span class="hl">neuron</span> is a weighted sum plus a bias passed through
+       a squashing function, which is exactly <span class="hl">logistic regression</span>. Stack a row of them into a
+       <span class="hl">layer</span>, feed one layer's outputs into the next, and put a simple <span class="hl">nonlinear
+       activation</span> in between, and you have a <span class="hl">neural network</span>. It learns by
+       <span class="hl">backpropagation</span>, which is just the chain rule wiring gradient descent through every layer.
+       Deep learning is these familiar ideas, composed and scaled.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#129504;</div>
+      <div class="def-body">
+        A <span class="def-kw">neural network</span> is a stack of <span class="def-kw">layers</span>, each a set of
+        <span class="def-kw">neurons</span> that compute a weighted sum of their inputs plus a <span class="def-kw">bias</span>,
+        then apply a nonlinear <span class="def-kw">activation</span>. It is trained by <span class="def-kw">gradient
+        descent</span>, with gradients computed layer by layer through <span class="def-kw">backpropagation</span>.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">&#129518;</div>
+      <div><div class="ctitle">The one idea that makes depth worth it</div>
+        <p>Without the nonlinear activation, stacking layers is pointless: a chain of linear maps is still just one linear
+           map, a single straight boundary. The <strong>nonlinearity between layers</strong> is what lets a network
+           <strong>bend</strong> its decision boundary, compose simple features into complex ones, and fit shapes no line
+           can. Everything deep learning can do rests on that small twist.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §1 neuron to network ===== -->
+  <section id="neuron">
+    <div class="section-eyebrow"><div class="num">1</div><h2>From a Neuron to a Network</h2></div>
+    <p>Start with one neuron. It takes inputs <code>x</code>, multiplies each by a learned <strong>weight</strong>, adds a
+       learned <strong>bias</strong>, and squashes the result: <code>a = f(w&#183;x + b)</code>. That is it. With a sigmoid
+       for <code>f</code>, a single neuron <em>is</em> logistic regression. The power comes from wiring many neurons into
+       <strong>layers</strong> and stacking those layers.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 250" width="100%" font-family="Inter, sans-serif" aria-label="Left: one neuron takes three inputs, forms a weighted sum plus a bias, and applies an activation to produce an output. Right: a network stacks an input layer, two hidden layers, and an output layer, fully connected.">
+        <text x="175" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">One neuron: weighted sum + bias, then activation</text>
+        <!-- single neuron -->
+        <g font-size="9.5">
+          <circle cx="40" cy="70" r="12" fill="#eff6ff" stroke="#2563eb"/><text x="40" y="74" text-anchor="middle" fill="#1d4ed8">x&#8321;</text>
+          <circle cx="40" cy="120" r="12" fill="#eff6ff" stroke="#2563eb"/><text x="40" y="124" text-anchor="middle" fill="#1d4ed8">x&#8322;</text>
+          <circle cx="40" cy="170" r="12" fill="#eff6ff" stroke="#2563eb"/><text x="40" y="174" text-anchor="middle" fill="#1d4ed8">x&#8323;</text>
+        </g>
+        <circle cx="190" cy="120" r="30" fill="#fdf4ff" stroke="#a21caf" stroke-width="2"/>
+        <text x="190" y="116" text-anchor="middle" font-size="9" fill="#86198f" font-weight="800">&#931; w&#183;x + b</text>
+        <text x="190" y="130" text-anchor="middle" font-size="8.5" fill="#a21caf">then f( )</text>
+        <g stroke="#c4b5fd" stroke-width="1.6">
+          <line x1="52" y1="70" x2="163" y2="112"/><line x1="52" y1="120" x2="160" y2="120"/><line x1="52" y1="170" x2="163" y2="128"/>
+        </g>
+        <text x="105" y="86" font-size="7.5" fill="#7c3aed">w&#8321;</text><text x="105" y="114" font-size="7.5" fill="#7c3aed">w&#8322;</text><text x="105" y="158" font-size="7.5" fill="#7c3aed">w&#8323;</text>
+        <line x1="220" y1="120" x2="270" y2="120" stroke="#16a34a" stroke-width="2.2" marker-end="url(#dla)"/>
+        <circle cx="288" cy="120" r="12" fill="#f0fdf4" stroke="#16a34a"/><text x="288" y="124" text-anchor="middle" font-size="8.5" fill="#15803d">a</text>
+        <defs><marker id="dla" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#16a34a"/></marker></defs>
+        <text x="175" y="215" text-anchor="middle" font-size="8" fill="#64748b">a sigmoid neuron IS logistic regression</text>
+        <!-- network -->
+        <text x="530" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">A network: layers of neurons, stacked</text>
+        <g>
+          <!-- layer x positions: 410 input, 480 h1, 550 h2, 620 output -->
+          <g fill="#dbeafe" stroke="#2563eb"><circle cx="410" cy="80" r="9"/><circle cx="410" cy="120" r="9"/><circle cx="410" cy="160" r="9"/></g>
+          <g fill="#f5d0fe" stroke="#a21caf"><circle cx="490" cy="60" r="9"/><circle cx="490" cy="95" r="9"/><circle cx="490" cy="130" r="9"/><circle cx="490" cy="165" r="9"/><circle cx="490" cy="200" r="9"/></g>
+          <g fill="#f5d0fe" stroke="#a21caf"><circle cx="570" cy="70" r="9"/><circle cx="570" cy="110" r="9"/><circle cx="570" cy="150" r="9"/><circle cx="570" cy="190" r="9"/></g>
+          <g fill="#bbf7d0" stroke="#16a34a"><circle cx="650" cy="120" r="9"/></g>
+          <g stroke="#e9d5ff" stroke-width="0.8" opacity="0.9">
+            <line x1="419" y1="80" x2="481" y2="60"/><line x1="419" y1="80" x2="481" y2="95"/><line x1="419" y1="80" x2="481" y2="130"/><line x1="419" y1="80" x2="481" y2="165"/><line x1="419" y1="80" x2="481" y2="200"/>
+            <line x1="419" y1="120" x2="481" y2="60"/><line x1="419" y1="120" x2="481" y2="95"/><line x1="419" y1="120" x2="481" y2="130"/><line x1="419" y1="120" x2="481" y2="165"/><line x1="419" y1="120" x2="481" y2="200"/>
+            <line x1="419" y1="160" x2="481" y2="60"/><line x1="419" y1="160" x2="481" y2="95"/><line x1="419" y1="160" x2="481" y2="130"/><line x1="419" y1="160" x2="481" y2="165"/><line x1="419" y1="160" x2="481" y2="200"/>
+            <line x1="499" y1="60" x2="561" y2="70"/><line x1="499" y1="95" x2="561" y2="110"/><line x1="499" y1="130" x2="561" y2="150"/><line x1="499" y1="165" x2="561" y2="190"/><line x1="499" y1="200" x2="561" y2="190"/><line x1="499" y1="60" x2="561" y2="110"/><line x1="499" y1="130" x2="561" y2="70"/>
+            <line x1="579" y1="70" x2="641" y2="120"/><line x1="579" y1="110" x2="641" y2="120"/><line x1="579" y1="150" x2="641" y2="120"/><line x1="579" y1="190" x2="641" y2="120"/>
+          </g>
+        </g>
+        <text x="410" y="228" text-anchor="middle" font-size="8" fill="#1d4ed8">input</text>
+        <text x="530" y="228" text-anchor="middle" font-size="8" fill="#86198f">hidden layers</text>
+        <text x="650" y="228" text-anchor="middle" font-size="8" fill="#15803d">output</text>
+      </svg>
+    </figure>
+
+    <p>Each <strong>hidden layer</strong> transforms its inputs into a new set of features, and the next layer builds on
+       those. Early layers learn simple patterns; later layers combine them into complex ones. The final
+       <strong>output layer</strong> reads the last set of features and produces the prediction, a class probability, a
+       number, whatever the task needs. A network is nothing more than this: data flowing forward through a stack of
+       weighted sums and activations, a step called the <strong>forward pass</strong>.</p>
+  </section>
+
+  <!-- ===== §2 nonlinearity ===== -->
+  <section id="activations">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Activations: Why Depth Needs Nonlinearity</h2></div>
+    <p>The <strong>activation function</strong> is the small nonlinear step applied after each layer's weighted sum. It is
+       not a detail, it is the whole reason depth works. Stack two <em>linear</em> layers with nothing in between and the
+       math collapses: a linear function of a linear function is still linear, one flat boundary. Insert a nonlinearity and
+       the layers can no longer be merged, so each one genuinely adds shaping power.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 190" width="100%" font-family="Inter, sans-serif" aria-label="Three activation functions: sigmoid, an S-curve squashing to 0 and 1; tanh, an S-curve from -1 to 1; and ReLU, flat at zero for negatives and a straight 45-degree line for positives.">
+        <text x="350" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">The three workhorse activations</text>
+        <!-- sigmoid -->
+        <g><text x="105" y="40" text-anchor="middle" font-size="9.5" fill="#86198f" font-weight="800">sigmoid</text>
+          <line x1="35" y1="150" x2="175" y2="150" stroke="#cbd5e1" stroke-width="1"/><line x1="105" y1="55" x2="105" y2="160" stroke="#cbd5e1" stroke-width="1"/>
+          <path d="M40,148 C80,148 92,120 105,102 C118,84 130,58 170,56" fill="none" stroke="#a21caf" stroke-width="2.4"/>
+          <text x="105" y="176" text-anchor="middle" font-size="7.4" fill="#64748b">squashes to (0, 1)</text>
+        </g>
+        <!-- tanh -->
+        <g><text x="350" y="40" text-anchor="middle" font-size="9.5" fill="#86198f" font-weight="800">tanh</text>
+          <line x1="280" y1="102" x2="420" y2="102" stroke="#cbd5e1" stroke-width="1"/><line x1="350" y1="52" x2="350" y2="158" stroke="#cbd5e1" stroke-width="1"/>
+          <path d="M285,150 C320,150 335,120 350,102 C365,84 380,56 415,54" fill="none" stroke="#a21caf" stroke-width="2.4"/>
+          <text x="350" y="176" text-anchor="middle" font-size="7.4" fill="#64748b">squashes to (-1, 1)</text>
+        </g>
+        <!-- relu -->
+        <g><text x="595" y="40" text-anchor="middle" font-size="9.5" fill="#86198f" font-weight="800">ReLU</text>
+          <line x1="525" y1="150" x2="665" y2="150" stroke="#cbd5e1" stroke-width="1"/><line x1="595" y1="55" x2="595" y2="160" stroke="#cbd5e1" stroke-width="1"/>
+          <path d="M530,150 L595,150 L655,58" fill="none" stroke="#a21caf" stroke-width="2.4"/>
+          <text x="595" y="176" text-anchor="middle" font-size="7.4" fill="#64748b">0 for x&lt;0, else x (the default)</text>
+        </g>
+      </svg>
+    </figure>
+
+    <p><strong>ReLU</strong> (<code>max(0, x)</code>) is the modern default: cheap to compute, and it keeps gradients flowing
+       instead of vanishing the way the saturating S-curves do in deep stacks. <strong>Sigmoid</strong> and
+       <strong>tanh</strong> still appear, sigmoid to turn a final score into a probability, tanh inside some recurrent
+       layers. With a nonlinearity in place, a network of enough neurons is a <strong>universal approximator</strong>: given
+       enough hidden units, it can represent essentially any continuous function. Depth just makes that vastly more
+       efficient than width.</p>
+  </section>
+
+  <!-- ===== §3 training ===== -->
+  <section id="training">
+    <div class="section-eyebrow"><div class="num">3</div><h2>How a Network Learns: Backpropagation</h2></div>
+    <p>Training is a loop. Run a <strong>forward pass</strong> to get predictions, measure how wrong they are with a
+       <strong>loss function</strong>, then figure out how to nudge every weight to shrink that loss, and take a small step.
+       Repeat for many <strong>epochs</strong>. The only new machinery is how the gradients are computed.</p>
+    <ul class="tick">
+      <li><span class="ck">&#9679;</span><span><strong>Forward pass</strong>: push the batch through the layers to get predictions.</span></li>
+      <li><span class="ck">&#9679;</span><span><strong>Loss</strong>: score the predictions against the truth (cross-entropy for classification, squared error for regression).</span></li>
+      <li><span class="ck">&#9679;</span><span><strong>Backpropagation</strong>: apply the <em>chain rule</em> backward through the network to get the gradient of the loss with respect to every weight, reusing each layer's work.</span></li>
+      <li><span class="ck">&#9679;</span><span><strong>Update</strong>: step every weight a little way downhill (gradient descent, usually the Adam optimizer), and loop.</span></li>
+    </ul>
+    <p>Backpropagation is the reason deep networks are trainable at all: it computes millions of partial derivatives in one
+       efficient backward sweep rather than one at a time. Modern frameworks do it for you through
+       <strong>automatic differentiation</strong>, so you define the forward pass and the gradients come free. The mechanics
+       of the downhill step, learning rate, momentum, Adam, are exactly the optimization ideas from the
+       <a href="optimization-and-gradient-descent.html">Optimization &amp; Gradient Descent</a> chapter, now driving
+       thousands of parameters at once.</p>
+  </section>
+
+  <!-- ===== §4 real-world ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: A Boundary No Line Can Draw</h2></div>
+    <p>The clearest way to see what a network buys you is a problem a linear model <em>cannot</em> solve. The companion
+       notebook trains a small network on it with <strong>PyTorch</strong> and watches it succeed where logistic regression
+       stalls.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 210" width="100%" font-family="Inter, sans-serif" aria-label="Left: a ring-shaped pass region with a straight linear boundary slicing through it, getting most points wrong. Right: the same ring with a curved neural-network boundary that traces the ring, getting almost all points right.">
+        <text x="350" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">The pass region is a ring: a line cannot separate it, a network can</text>
+        <!-- linear -->
+        <rect x="30" y="34" width="300" height="150" rx="10" fill="#fef2f2" stroke="#fecaca"/>
+        <text x="180" y="52" text-anchor="middle" font-size="9.4" fill="#b91c1c" font-weight="800">Linear model &#183; 61% accuracy</text>
+        <circle cx="180" cy="118" r="52" fill="none" stroke="#22c55e" stroke-width="9" opacity="0.28"/>
+        <text x="180" y="121" text-anchor="middle" font-size="7.6" fill="#15803d">PASS (ring)</text>
+        <line x1="70" y1="170" x2="290" y2="70" stroke="#dc2626" stroke-width="2.4" stroke-dasharray="5 3"/>
+        <text x="180" y="176" text-anchor="middle" font-size="7.4" fill="#7f1d1d">one straight cut, half the ring is wrong</text>
+        <!-- neural -->
+        <rect x="370" y="34" width="300" height="150" rx="10" fill="#ecfdf5" stroke="#a7f3d0"/>
+        <text x="520" y="52" text-anchor="middle" font-size="9.4" fill="#047857" font-weight="800">Neural network &#183; 91% accuracy</text>
+        <circle cx="520" cy="118" r="52" fill="none" stroke="#22c55e" stroke-width="9" opacity="0.28"/>
+        <circle cx="520" cy="118" r="52" fill="none" stroke="#15803d" stroke-width="2.2" stroke-dasharray="4 3"/>
+        <circle cx="520" cy="118" r="30" fill="none" stroke="#15803d" stroke-width="2.2" stroke-dasharray="4 3"/>
+        <text x="520" y="176" text-anchor="middle" font-size="7.4" fill="#065f46">the boundary bends into a ring</text>
+      </svg>
+    </figure>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · deep-learning-primer--sensor-qc.xlsx</div>
+      <p style="margin:0.5rem 0 0"><strong>1,200 parts</strong>, two sensor readings each (<code>sensor_a</code>,
+        <code>sensor_b</code>) and a label <code>passed_qc</code>. A part passes only when its combined sensor magnitude sits
+        in a mid-band, a <strong>ring</strong> in the two-sensor plane, which no straight line can carve out.</p>
+      <ul class="rw-find">
+        <li><span class="ck">&#9679;</span><strong>Linear model:</strong> logistic regression reaches only <strong>61%</strong> accuracy, barely above guessing, because a single straight boundary cannot enclose a ring.</li>
+        <li><span class="ck">&#9679;</span><strong>Neural network:</strong> a tiny MLP (two hidden layers of 16 ReLU units, just <strong>337 parameters</strong>) reaches <strong>91%</strong>, learning a curved, ring-shaped boundary.</li>
+        <li><span class="ck">&#9679;</span><strong>Training:</strong> over 300 epochs the loss falls from about <strong>0.72 to 0.22</strong> as gradient descent tunes the weights.</li>
+      </ul>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/deep-learning-primer--sensor-qc.xlsx" download>📊 Download dataset &nbsp;<small>XLSX · 1,200 parts</small></a>
+      </div>
+    </div>
+
+    <p>Same data, same optimizer, same loss. The only difference is the two hidden layers and their ReLU activations, and
+       that difference is the entire jump from 61 to 91 percent. Scale this idea up, millions of neurons, specialized layer
+       types, mountains of data, and you have the models behind modern image, speech, and language systems.</p>
+  </section>
+
+  <!-- ===== §5 ML/AI ===== -->
+  <section id="mlai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>The Architecture Landscape</h2></div>
+    <p>The neuron-and-layer recipe stays the same; what changes across deep learning is <em>how the layers are wired</em> to
+       match the data. A handful of architectures cover most of the field.</p>
+
+    <table class="ml-table">
+      <thead><tr><th>Architecture</th><th>Wiring idea</th><th>Best for</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">Feedforward (MLP)</td><td>Fully-connected layers, every neuron to every neuron</td><td>Tabular data, the general-purpose default (this chapter)</td></tr>
+        <tr><td class="nm">Convolutional (CNN)</td><td>Small filters slid across the input, sharing weights to detect local patterns</td><td>Images, audio spectrograms, any grid with spatial structure</td></tr>
+        <tr><td class="nm">Recurrent (RNN / LSTM / GRU)</td><td>A loop that carries a hidden state along a sequence, a memory</td><td>Text and time series (now often replaced by transformers)</td></tr>
+        <tr><td class="nm">Transformer</td><td>Self-attention: every position looks at every other and decides what matters</td><td>Language, vision, and the backbone of modern foundation models</td></tr>
+        <tr><td class="nm">Embeddings</td><td>Learned dense vectors that place similar items near each other</td><td>Words, users, products; the input layer of most modern models</td></tr>
+        <tr><td class="nm">Autoencoders / GANs / diffusion</td><td>Networks that learn to compress or generate data</td><td>Representation learning, image and audio generation</td></tr>
+      </tbody>
+    </table>
+
+    <div class="research">
+      <div class="rtag">🔬 Research frontier</div>
+      <p style="margin:0.4rem 0 0">The defining trend is <strong>scale</strong>: the transformer plus enormous data and
+        compute produced <strong>foundation models</strong>, pre-trained once and adapted to countless tasks, and the
+        <strong>large language models</strong> built on them. Research now pushes on <strong>scaling laws</strong> (how
+        performance grows with size), <strong>multimodal</strong> models that fuse text, images, and audio, and making these
+        systems cheaper, safer, and more reliable. Every one of them is still, at bottom, the neuron and the backward pass
+        in this chapter, composed billions of times.</p>
+    </div>
+  </section>
+
+  <!-- ===== notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body"><h3>Build and train a neural network in Python</h3><p>The companion notebook computes a single neuron's forward pass by hand, plots the sigmoid, tanh, and ReLU activations, shows a logistic regression failing on the ring dataset, then builds a small network in PyTorch, trains it with an explicit loop (forward, loss, backward, step), plots the falling loss, and draws the curved decision boundary it learns, every step with a picture.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/deep-learning-primer.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/deep-learning-primer.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/deep-learning-primer.ipynb" target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)"><strong>View</strong> opens the rendered notebook instantly.
+      <strong>Open in Colab</strong> runs it live (with a free GPU if you want one). To run locally, install
+      <code>numpy</code>, <code>pandas</code>, <code>matplotlib</code>, <code>scikit-learn</code>, <code>torch</code>, and
+      <code>openpyxl</code>.</p>
+  </section>
+
+  <!-- ===== takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>A neuron is logistic regression</strong>: a weighted sum of inputs plus a bias, through an activation.</span></li>
+        <li><span class="ck">✓</span><span><strong>A network stacks layers</strong> of neurons; early layers learn simple features, later layers compose them.</span></li>
+        <li><span class="ck">✓</span><span><strong>Nonlinear activations are the point</strong>: without them, stacked layers collapse to one straight boundary. ReLU is the modern default.</span></li>
+        <li><span class="ck">✓</span><span><strong>Training is a loop</strong>: forward pass, loss, backpropagation (the chain rule backward), gradient-descent update, repeat.</span></li>
+        <li><span class="ck">✓</span><span><strong>Depth buys shape</strong>: on the ring data a linear model got 61% and a tiny network got 91%, purely from two hidden layers.</span></li>
+        <li><span class="ck">✓</span><span><strong>Architectures specialize the wiring</strong>: CNNs for grids, RNNs for sequences, transformers for almost everything now.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== §6 challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five exercises on the sensor-QC network. Full solutions are in the companion solutions notebook.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Neuron by hand</h4>
+        <p>Given weights, a bias, and an input vector, compute one neuron's output with a sigmoid activation. Confirm it matches a one-unit model.</p>
+        <div class="chint">Hint: <code>sigmoid(w @ x + b)</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Linear baseline</h4>
+        <p>Fit logistic regression on the ring data and report its accuracy. Why can it not beat about 60%?</p>
+        <div class="chint">Hint: a line cannot enclose a ring.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Train the network</h4>
+        <p>Build a 2-16-16-1 MLP in PyTorch and train it with a forward/loss/backward/step loop. Plot the loss per epoch.</p>
+        <div class="chint">Hint: <code>nn.Sequential</code>, <code>BCEWithLogitsLoss</code>, <code>Adam</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Remove the nonlinearity</h4>
+        <p>Rebuild the network with the ReLU layers deleted (linear only). What accuracy do you get, and why?</p>
+        <div class="chint">Hint: stacked linear layers are still linear.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Draw the boundary</h4>
+        <p>Predict over a grid of sensor values and plot the network's decision boundary. Does it trace the ring?</p>
+        <div class="chint">Hint: <code>np.meshgrid</code> + <code>contourf</code>.</div></div></div>
+    </div>
+
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">📓</div>
+        <div class="nb-body"><h3>Solutions notebook</h3><p>All five challenges worked in code, the hand-computed neuron, the linear baseline, the trained network with its loss curve, the ablation that removes the nonlinearity, and the decision-boundary plot, each with a short explanation.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/deep-learning-primer--solutions.html">📓 View Solutions</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/deep-learning-primer--solutions.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/deep-learning-primer--solutions.ipynb" target="_blank" rel="noopener">⬇ GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §7 quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on neurons, activations, backpropagation, and architectures. Answer them, hit <strong>Check
+       Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>You can build and train a neural network. Next, <strong>Recommendation Systems</strong> (coming soon) puts these
+         tools to work on one of the most valuable problems in industry: predicting what a user will want next, from
+         collaborative filtering to the neural recommenders behind modern feeds. Browse the full
+         <a href="../toc.html">Contents</a> for what is published and what is on the way.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="structural-equation-modeling-and-mixed-models.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 145 · Previous</span><br><span class="cn-title">Structural Equation Modeling &amp; Mixed Models</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 146 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => { const h = document.documentElement; bar.style.width = ((h.scrollTop)/(h.scrollHeight-h.clientHeight)*100) + '%'; });
+</script>
+
+<script>
+  window.QUIZ_ID = "ch146";
+  window.QUIZ_DATA = [
+    {
+      q: "A single neuron computes…",
+      options: ["A median", "A weighted sum of its inputs plus a bias, passed through an activation function", "A correlation", "A random number"],
+      answer: 1,
+      explain: "a = f(w·x + b). With a sigmoid activation, one neuron is exactly logistic regression."
+    },
+    {
+      q: "Why is the nonlinear activation between layers essential?",
+      options: ["It speeds up training", "Without it, stacked linear layers collapse into a single linear map (one straight boundary)", "It saves memory", "It removes the need for a bias"],
+      answer: 1,
+      explain: "A linear function of a linear function is still linear; the nonlinearity is what lets depth bend the boundary."
+    },
+    {
+      q: "What role does a hidden layer play?",
+      options: ["It stores the data", "It transforms its inputs into new features that later layers build on", "It computes the loss", "It shuffles the rows"],
+      answer: 1,
+      explain: "Early layers learn simple patterns; later layers compose them into complex ones."
+    },
+    {
+      q: "ReLU is defined as…",
+      options: ["1 / (1 + e^-x)", "max(0, x): zero for negatives, the input itself for positives", "x squared", "the average of x"],
+      answer: 1,
+      explain: "ReLU is cheap and keeps gradients flowing in deep stacks, which is why it is the modern default activation."
+    },
+    {
+      q: "Backpropagation is…",
+      options: ["A way to shuffle data", "The chain rule applied backward through the network to get the gradient of the loss for every weight", "A type of activation", "A loss function"],
+      answer: 1,
+      explain: "It computes all the partial derivatives in one efficient backward sweep, making deep networks trainable."
+    },
+    {
+      q: "The training loop, in order, is…",
+      options: ["Loss, forward, update, backward", "Forward pass, compute loss, backpropagate, update weights, repeat", "Update, forward, loss", "Backward, forward, loss"],
+      answer: 1,
+      explain: "Predict (forward), score (loss), get gradients (backprop), step downhill (update), and repeat for many epochs."
+    },
+    {
+      q: "On the ring dataset, logistic regression got about 61% and a small network about 91%. Why?",
+      options: ["The network had more data", "A straight line cannot enclose a ring, but stacked nonlinear layers can bend the boundary into one", "Logistic regression is always worse", "The network memorized the test set"],
+      answer: 1,
+      explain: "The jump came purely from the two hidden layers and their ReLU activations bending the decision boundary."
+    },
+    {
+      q: "Which architecture is the backbone of modern large language models?",
+      options: ["Convolutional network (CNN)", "The transformer, built on self-attention", "A single perceptron", "K-means"],
+      answer: 1,
+      explain: "Transformers use self-attention so every position can weigh every other; they power today's foundation models."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
