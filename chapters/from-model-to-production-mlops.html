@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 150 · From Model to Production (MLOps) — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .ml-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.85rem; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .ml-table th,.ml-table td { padding:0.6rem 0.8rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .ml-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .ml-table td { color:var(--ink-soft); } .ml-table tr:last-child td { border-bottom:none; }
+    .ml-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#fdf4ff; border:1px solid #f5d0fe; border-left:4px solid #a21caf; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#86198f; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none; padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+    .rw-find { background:var(--panel-2); border-radius:10px; padding:0.5rem 1rem; margin-top:0.9rem; }
+    .rw-find li { font-size:0.85rem; color:var(--ink-soft); line-height:1.6; margin:0.2rem 0; }
+    .research { background:#fdf4ff; border:1px solid #f5d0fe; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#86198f; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/from-model-to-production-mlops.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXIV · Advanced &amp; Applied Topics</span><span class="sep">/</span>
+      <span>Chapter 150</span>
+    </div>
+    <h1>From Model to Production <span class="accent">(MLOps)</span></h1>
+    <p class="dek">A model that scores well in a notebook has cleared the first hurdle, not the finish line. Production is a
+       different discipline: packaging the model so it behaves the same when it is served, watching the world it learned from
+       for signs of change, and retraining before quiet decay becomes a visible failure. This is the engineering that keeps a
+       model useful after launch.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~27 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 150</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Most of this book has been about building a good model. This chapter is about the far longer part of its
+       life: <span class="hl">everything after training</span>. A deployed model is a piece of software with a peculiar
+       weakness, it was fitted to a snapshot of the world, and <span class="hl">the world does not hold still</span>. MLOps is
+       the set of practices that turns a one-off model into a dependable service: reproducible packaging, monitored serving,
+       and a loop that notices decay and responds to it.</p>
+
+    <div class="def-card">
+      <div class="sigma">🚀</div>
+      <div class="def-body">
+        <span class="def-kw">MLOps</span> applies software engineering discipline to the machine-learning lifecycle:
+        <span class="def-kw">packaging</span> a model as a reproducible artifact, <span class="def-kw">deploying</span> it to
+        serve predictions, <span class="def-kw">monitoring</span> its inputs and performance for
+        <span class="def-kw">drift</span>, and <span class="def-kw">retraining</span> to recover. It closes the loop from data
+        back to data.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🔁</div>
+      <div><div class="ctitle">A notebook is a line; production is a loop</div>
+        <p>Training runs once, top to bottom, and ends with a saved model. Production never ends: the model serves, the inputs
+           it sees slowly change, its accuracy erodes, and something has to catch that and trigger a retrain. The single most
+           important shift in mindset is from <strong>build it and ship it</strong> to <strong>ship it and keep watching
+           it</strong>. A model is not a deliverable you finish; it is a service you operate.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §1 the gap ===== -->
+  <section id="the-gap">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Gap Between a Notebook and a Service</h2></div>
+    <p>The phrase every team learns to dread is <strong>&#8220;but it worked in my notebook.&#8221;</strong> The gap between a
+       model that scores well in development and one that behaves in production is wide, and it is made of a handful of
+       specific, recurring failures.</p>
+
+    <table class="ml-table">
+      <thead><tr><th style="width:26%">The failure</th><th>What goes wrong, and what closes the gap</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">Train/serve skew</td>
+            <td>Development scales or encodes a feature one way; the serving code does it slightly differently. The model sees
+                inputs it never trained on and quietly degrades. Closed by shipping preprocessing and model as one artifact.</td></tr>
+        <tr><td class="nm">Irreproducibility</td>
+            <td>&#8220;Which data, which code, which random seed produced this model?&#8221; If you cannot answer, you cannot debug
+                it or roll it back. Closed by versioning data, code, and the artifact together.</td></tr>
+        <tr><td class="nm">Unvalidated inputs</td>
+            <td>A model returns a confident number for a negative price or a missing field. Closed by a schema and range check
+                at the serving boundary, before the model is called.</td></tr>
+        <tr><td class="nm">Silent drift</td>
+            <td>The world shifts, the model keeps answering, and no one notices until a business metric falls. Closed by
+                monitoring inputs and performance continuously.</td></tr>
+        <tr><td class="nm">No path to update</td>
+            <td>Decay is found but there is no safe, repeatable way to retrain and redeploy. Closed by an automated pipeline
+                with a champion/challenger check before promotion.</td></tr>
+      </tbody>
+    </table>
+
+    <p>Notice that none of these is about the model being <em>wrong</em>. Each is about the machinery <em>around</em> the
+       model. That is the whole subject: a mediocre model that is well operated will out-serve a brilliant model that is
+       shipped and forgotten.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 262" width="100%" font-family="Inter, sans-serif" aria-label="A diagram contrasting a straight-line notebook workflow (data to model, then stop) with the MLOps loop: data, train, package, deploy, monitor, and an arrow from monitor back to data via a retrain trigger, forming a closed cycle.">
+        <text x="350" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Training ends; operating a model does not</text>
+
+        <!-- linear notebook -->
+        <text x="150" y="52" text-anchor="middle" font-size="9.5" fill="#64748b" font-weight="800">THE NOTEBOOK: a line</text>
+        <g font-size="8.5" text-anchor="middle">
+          <rect x="60" y="66" width="80" height="34" rx="7" fill="#f8fafc" stroke="#e2e8f0"/><text x="100" y="87" fill="#475569">data</text>
+          <rect x="170" y="66" width="80" height="34" rx="7" fill="#f8fafc" stroke="#e2e8f0"/><text x="210" y="87" fill="#475569">model</text>
+        </g>
+        <path d="M140 83 L168 83" stroke="#cbd5e1" stroke-width="1.6" marker-end="url(#ar)"/>
+        <text x="262" y="87" font-size="12" fill="#dc2626" font-weight="800">&#8865;</text>
+        <text x="150" y="118" text-anchor="middle" font-size="8" fill="#b91c1c" font-style="italic">stops at a saved file</text>
+
+        <!-- the loop -->
+        <text x="470" y="52" text-anchor="middle" font-size="9.5" fill="#86198f" font-weight="800">MLOps: a loop</text>
+        <g font-size="8" text-anchor="middle" font-weight="700">
+          <rect x="418" y="64" width="104" height="30" rx="7" fill="#fdf4ff" stroke="#f5d0fe"/><text x="470" y="83" fill="#86198f">1 &#183; data</text>
+          <rect x="566" y="98" width="104" height="30" rx="7" fill="#fdf4ff" stroke="#f5d0fe"/><text x="618" y="117" fill="#86198f">2 &#183; train</text>
+          <rect x="566" y="150" width="104" height="30" rx="7" fill="#fdf4ff" stroke="#f5d0fe"/><text x="618" y="169" fill="#86198f">3 &#183; package</text>
+          <rect x="418" y="184" width="104" height="30" rx="7" fill="#fdf4ff" stroke="#f5d0fe"/><text x="470" y="203" fill="#86198f">4 &#183; deploy</text>
+          <rect x="270" y="150" width="104" height="30" rx="7" fill="#fdf4ff" stroke="#f5d0fe"/><text x="322" y="169" fill="#86198f">5 &#183; monitor</text>
+          <rect x="270" y="98" width="104" height="30" rx="7" fill="#fff7ed" stroke="#fed7aa"/><text x="322" y="113" fill="#9a3412">6 &#183; retrain</text>
+          <text x="322" y="123" fill="#9a3412" font-weight="400" font-size="7">when drift bites</text>
+        </g>
+        <g stroke="#c026d3" stroke-width="1.7" fill="none" marker-end="url(#ap)">
+          <path d="M522 79 Q560 82 566 106"/>
+          <path d="M618 128 L618 148"/>
+          <path d="M566 170 Q540 182 522 194"/>
+          <path d="M418 199 Q396 182 374 170"/>
+          <path d="M322 150 L322 130"/>
+        </g>
+        <path d="M322 98 Q360 82 416 79" stroke="#ea580c" stroke-width="1.9" fill="none" marker-end="url(#ao)" stroke-dasharray="4 3"/>
+        <defs>
+          <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0 0 L6 3.5 L0 7 z" fill="#cbd5e1"/></marker>
+          <marker id="ap" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0 0 L6 3.5 L0 7 z" fill="#c026d3"/></marker>
+          <marker id="ao" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0 0 L6 3.5 L0 7 z" fill="#ea580c"/></marker>
+        </defs>
+        <text x="470" y="250" text-anchor="middle" font-size="8" fill="#9a3412" font-style="italic">the dashed arrow, monitor back to data, is the step the notebook never has</text>
+      </svg>
+      <figcaption style="font-size:0.78rem;color:var(--ink-soft);margin-top:0.9rem;line-height:1.55">
+        A notebook is a line that ends at a saved model. Production is a cycle: data, train, package, deploy, monitor, and back
+        to data when monitoring says the model has decayed. Every practice in this chapter is one edge of that loop.
+      </figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== §2 package & version ===== -->
+  <section id="package">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Package and Version: The Reproducible Artifact</h2></div>
+    <p>The first job is to make the model something you can ship, reload, and trust to behave. Two ideas do most of the work.</p>
+
+    <p><strong>Ship preprocessing with the model.</strong> If your model expects standardized features, the standardizer is
+       part of the model, not a separate step to reimplement in the serving code. Bundle every transform and the estimator
+       into a single <strong>pipeline</strong>, fit it once, and serialize the whole object. Now serving loads one artifact
+       and hands it raw input; there is no second code path to drift out of sync. In the notebook, the reloaded pipeline
+       scores raw week-7 orders <strong>identically</strong> to the original, which is the definition of no train/serve skew.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 236" width="100%" font-family="Inter, sans-serif" aria-label="Two designs compared. On the left, training and serving each have their own separate preprocessing step feeding the model, and the two steps have drifted apart, shown in red, causing train/serve skew. On the right, a single pipeline artifact bundles preprocessing and the model together, and both training and serving use that same object, so there is nothing to drift.">
+        <text x="350" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Two preprocessing paths drift apart; one artifact cannot</text>
+
+        <!-- LEFT: skew risk -->
+        <text x="176" y="46" text-anchor="middle" font-size="9.5" fill="#b91c1c" font-weight="800">Two code paths: skew risk</text>
+        <g font-size="8" text-anchor="middle">
+          <rect x="40" y="62" width="90" height="30" rx="6" fill="#f8fafc" stroke="#e2e8f0"/><text x="85" y="81" fill="#475569">training data</text>
+          <rect x="40" y="150" width="90" height="30" rx="6" fill="#f8fafc" stroke="#e2e8f0"/><text x="85" y="169" fill="#475569">live request</text>
+          <rect x="152" y="62" width="94" height="30" rx="6" fill="#fef2f2" stroke="#fecaca"/><text x="199" y="76" fill="#b91c1c" font-weight="700">scaler A</text><text x="199" y="88" fill="#b91c1c" font-size="7">mean 3.4, sd 1.9</text>
+          <rect x="152" y="150" width="94" height="30" rx="6" fill="#fef2f2" stroke="#fecaca"/><text x="199" y="164" fill="#b91c1c" font-weight="700">scaler B</text><text x="199" y="176" fill="#b91c1c" font-size="7">mean 3.9, sd 2.2</text>
+          <rect x="268" y="106" width="76" height="30" rx="6" fill="#eef2ff" stroke="#c7d2fe"/><text x="306" y="125" fill="#3730a3" font-weight="700">model</text>
+        </g>
+        <g stroke="#cbd5e1" stroke-width="1.5" fill="none">
+          <path d="M130 77 L150 77"/><path d="M130 165 L150 165"/>
+          <path d="M246 77 L268 118"/><path d="M246 165 L268 124"/>
+        </g>
+        <text x="199" y="121" text-anchor="middle" font-size="9" fill="#dc2626" font-weight="800">&#8800;</text>
+        <text x="176" y="206" text-anchor="middle" font-size="8" fill="#b91c1c">the two scalers were coded separately and diverged</text>
+        <text x="176" y="219" text-anchor="middle" font-size="8" fill="#64748b" font-style="italic">the model now sees inputs it never trained on</text>
+
+        <!-- divider -->
+        <line x1="366" y1="52" x2="366" y2="214" stroke="#e2e8f0" stroke-width="1.2" stroke-dasharray="3 3"/>
+
+        <!-- RIGHT: one artifact -->
+        <text x="528" y="46" text-anchor="middle" font-size="9.5" fill="#166534" font-weight="800">One artifact: no skew possible</text>
+        <g font-size="8" text-anchor="middle">
+          <rect x="392" y="62" width="86" height="30" rx="6" fill="#f8fafc" stroke="#e2e8f0"/><text x="435" y="81" fill="#475569">training data</text>
+          <rect x="392" y="150" width="86" height="30" rx="6" fill="#f8fafc" stroke="#e2e8f0"/><text x="435" y="169" fill="#475569">live request</text>
+          <rect x="506" y="86" width="150" height="70" rx="9" fill="#f0fdf4" stroke="#86efac" stroke-width="1.6"/>
+          <text x="581" y="104" fill="#166534" font-weight="800" font-size="8.5">pipeline artifact</text>
+          <rect x="522" y="112" width="54" height="30" rx="5" fill="#dcfce7" stroke="#86efac"/><text x="549" y="131" fill="#166534" font-size="7.5">scaler</text>
+          <rect x="586" y="112" width="54" height="30" rx="5" fill="#dcfce7" stroke="#86efac"/><text x="613" y="131" fill="#166534" font-size="7.5">model</text>
+        </g>
+        <g stroke="#16a34a" stroke-width="1.7" fill="none">
+          <path d="M478 77 L504 108"/><path d="M478 165 L504 134"/>
+        </g>
+        <text x="528" y="206" text-anchor="middle" font-size="8" fill="#166534">fit once, serialized whole; both paths load the same object</text>
+        <text x="528" y="219" text-anchor="middle" font-size="8" fill="#64748b" font-style="italic">there is no second scaler to keep in sync</text>
+      </svg>
+      <figcaption style="font-size:0.78rem;color:var(--ink-soft);margin-top:0.9rem;line-height:1.55">
+        Train/serve skew is a structural bug, not a modeling one. When preprocessing lives in two places it will eventually
+        diverge; when it is bundled with the model into a single fitted artifact, there is only ever one transform, so serving
+        cannot disagree with training.
+      </figcaption>
+    </figure>
+
+    <p><strong>Version everything that produced it.</strong> A model is a function of its code, its data, and its
+       configuration. To reproduce or roll back a model you need all three pinned together. A <strong>model registry</strong>
+       records that: a name and version, a hash of the exact artifact bytes, the training window, the feature list, and the
+       validation metrics. In the notebook the registered record stamps the v1 model as trained on weeks 1 to 6 with a
+       validation accuracy of <strong>0.727</strong> and a Brier score of <strong>0.192</strong>, so there is never a question
+       of which model is live or how it scored.</p>
+
+    <div class="callout">
+      <div class="cico">🧬</div>
+      <div><div class="ctitle">Reproducibility is the foundation, not a nicety</div>
+        <p>Every practice in this chapter assumes you can answer &#8220;what exactly is deployed?&#8221; Pin your library
+           versions, set random seeds, snapshot the training data, and record it all with the artifact. The
+           later <strong>Reproducibility &amp; Version Control</strong> chapter goes deeper on
+           the tooling; here it is enough to see that a registry entry, not a file called <code>model_final_v3.pkl</code>, is
+           what makes a model operable.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §3 serve & monitor ===== -->
+  <section id="serve-monitor">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Serve, then Watch: Deployment and Drift</h2></div>
+    <p>A packaged model has to be reachable and, once it is, watched. Serving comes in two shapes.
+       <strong>Batch</strong> scoring runs on a schedule over many rows at once, which suits overnight risk scores or weekly
+       churn lists. <strong>Online</strong> serving answers one request at a time behind an API, which suits a fraud check at
+       checkout. Either way, the serving boundary is where you <strong>validate inputs</strong>: reject a missing column or an
+       out-of-range value before the model is ever called, because a model will return a confident, meaningless answer for
+       nonsense input rather than an error.</p>
+
+    <p>Then comes the practice that separates a maintained model from an abandoned one: <strong>drift monitoring</strong>.
+       There are two distinct things to watch, and confusing them is a classic mistake.</p>
+
+    <table class="ml-table">
+      <thead><tr><th style="width:22%">Kind of drift</th><th style="width:40%">What changes</th><th>How you catch it</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">Data drift</td><td>The input distribution moves. Yesterday's customers are not today's.
+            The relationship the model learned may still hold.</td>
+            <td><strong>No labels needed.</strong> Compare incoming feature distributions to the training baseline, e.g. with
+                the Population Stability Index. Visible immediately.</td></tr>
+        <tr><td class="nm">Concept drift</td><td>The relationship itself changes. The same inputs now lead to a different
+            outcome, so the learned mapping is stale.</td>
+            <td><strong>Needs labels.</strong> Only measurable once true outcomes arrive, by watching performance fall. Always
+                lags the event.</td></tr>
+      </tbody>
+    </table>
+
+    <p>The reason data drift matters so much is timing. Labels are slow: a &#8220;was this delivery late?&#8221; answer arrives
+       hours later, a loan default answer arrives in years. But the inputs are visible the instant a request lands. Watching
+       the inputs gives you an <strong>early warning that needs no labels at all</strong>, which is often the only warning you
+       get before the damage is done.</p>
+
+    <div class="callout warn">
+      <div class="cico">📉</div>
+      <div><div class="ctitle">Do not trust a single headline metric</div>
+        <p>When the world shifts, different metrics can move in different directions and mislead you. In the case below, the
+           model's raw <strong>recall went up</strong> after the shift, which looks like good news, purely because the event it
+           predicts became more common. Meanwhile accuracy fell and the probabilities became miscalibrated. Watch a
+           <strong>proper score</strong> like the Brier score, which is not flattered by a change in the base rate, alongside
+           input drift. One number is never the whole picture.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §4 real-world ===== -->
+  <section id="real-world">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: A Model That Decays, and the Retrain That Saves It</h2></div>
+    <p>A food-delivery company deploys a model that predicts whether an order will arrive late, so it can warn the customer and
+       nudge the courier. It works well at launch. Then, at week 8, the company expands into the suburbs, and the model begins
+       to fail, quietly at first. This is the full production loop in one story.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">Real dataset</div>
+      <p style="margin:0.4rem 0 0"><strong>Delivery orders, 8,400 across 12 weeks.</strong> Each row is one order.
+         <code>week</code> is 1 to 12; the model is trained on the early weeks. <code>distance_km</code> is the delivery
+         distance, <code>prep_time_min</code> the kitchen preparation time, and <code>courier_load</code> how many orders the
+         assigned courier already had in flight, a congestion proxy. <code>order_hour</code> is the hour placed,
+         <code>is_weekend</code> flags weekends, and <code>basket_size</code> is the order value in dollars. The target
+         <code>late</code> is 1 if the order arrived late. From week 8, a suburban expansion pushes distances and courier
+         loads up, and worse traffic makes each kilometer run later, so both the inputs and the input-to-lateness
+         relationship shift at once.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/from-model-to-production-mlops--delivery-orders.xlsx" download>📊 Download dataset <small>xlsx</small></a>
+      </div>
+    </div>
+
+    <p>The model is a logistic-regression pipeline trained on weeks 1 to 6 and validated on week 7, all before the expansion.
+       Then it is frozen and left to serve while the notebook plays out twelve weeks of monitoring. The story unfolds in the
+       order a real on-call engineer would live it.</p>
+
+    <ul class="rw-find">
+      <li><span class="ck">●</span> <strong>The inputs raise the alarm first, with no labels.</strong> The distance PSI is a
+          quiet <strong>0.021</strong> at week 7, then jumps to <strong>0.477</strong> at week 8, far past the 0.2
+          significant-drift line, the instant the expansion launches. Nobody has reported a late delivery yet.</li>
+      <li><span class="ck">●</span> <strong>The labels confirm the cost.</strong> Once outcomes arrive, accuracy slips from
+          <strong>0.727</strong> before the shift toward <strong>0.67</strong>, and the Brier score worsens from
+          <strong>0.192</strong> to about <strong>0.20</strong>: the probabilities are now miscalibrated.</li>
+      <li><span class="ck">●</span> <strong>A single metric would have fooled you.</strong> Raw recall actually
+          <em>rose</em> after the shift, because late orders became common, not because the model improved. The proper score
+          and the input drift told the truth.</li>
+      <li><span class="ck">●</span> <strong>Retraining closes the loop.</strong> Refitting on recent weeks 6 to 9 and testing
+          on the unseen weeks 10 to 12 lifts mean accuracy from <strong>0.689 to 0.735</strong>, cuts the Brier score from
+          <strong>0.194 to 0.170</strong>, and raises recall from <strong>0.64 to 0.83</strong>. The challenger beats the
+          frozen champion on every metric, so it earns promotion to v2.</li>
+    </ul>
+
+    <p>The shape of this story is the entire point of MLOps. Nothing went wrong with the model; the world moved, and the
+       system was built to notice and respond. The input monitor bought time before the labels arrived, a proper score kept a
+       misleading metric from hiding the damage, and a champion/challenger check made the update safe. That loop, not any one
+       clever model, is what keeps machine learning working in the real world.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 250" width="100%" font-family="Inter, sans-serif" aria-label="A two-line monitoring chart across weeks 7 to 12. The input drift PSI is near zero at week 7 then spikes above the 0.2 threshold from week 8 onward, while model accuracy is high at week 7 then drops after week 8. A marker at week 10 shows retraining lifting accuracy back up.">
+        <text x="350" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">The production loop, week by week</text>
+
+        <!-- axes -->
+        <line x1="70" y1="200" x2="640" y2="200" stroke="#94a3b8" stroke-width="1.2"/>
+        <line x1="70" y1="50" x2="70" y2="200" stroke="#94a3b8" stroke-width="1.2"/>
+        <g font-size="8" fill="#64748b" text-anchor="middle">
+          <text x="107" y="214">wk7</text><text x="196" y="214">wk8</text><text x="285" y="214">wk9</text>
+          <text x="374" y="214">wk10</text><text x="463" y="214">wk11</text><text x="552" y="214">wk12</text>
+        </g>
+        <text x="196" y="234" text-anchor="middle" font-size="8.5" fill="#b45309" font-weight="700">&#9650; suburban expansion launches</text>
+        <line x1="196" y1="50" x2="196" y2="200" stroke="#fdba74" stroke-width="1.3" stroke-dasharray="4 3"/>
+
+        <!-- PSI line (data drift): low then high. scale: PSI 0->0 at y200, 0.6 at y60 -->
+        <text x="118" y="66" font-size="8.5" fill="#a21caf" font-weight="800">input drift (PSI)</text>
+        <polyline points="107,195 196,89 285,76 374,62 463,77 552,82" fill="none" stroke="#a21caf" stroke-width="2.4"/>
+        <g fill="#a21caf"><circle cx="107" cy="195" r="3.2"/><circle cx="196" cy="89" r="3.2"/><circle cx="285" cy="76" r="3.2"/><circle cx="374" cy="62" r="3.2"/><circle cx="463" cy="77" r="3.2"/><circle cx="552" cy="82" r="3.2"/></g>
+        <line x1="70" y1="153" x2="640" y2="153" stroke="#dc2626" stroke-width="1" stroke-dasharray="3 3"/>
+        <text x="636" y="150" text-anchor="end" font-size="7.5" fill="#b91c1c">PSI 0.2 threshold</text>
+
+        <!-- accuracy line: high then drop, recover at wk10 via retrain. scale: acc 0.66->y185, 0.75->y120 -->
+        <text x="118" y="112" font-size="8.5" fill="#2563eb" font-weight="800">accuracy (frozen)</text>
+        <polyline points="107,120 196,155 285,156 463,164 552,172" fill="none" stroke="#2563eb" stroke-width="2.4"/>
+        <g fill="#2563eb"><circle cx="107" cy="120" r="3.2"/><circle cx="196" cy="155" r="3.2"/><circle cx="285" cy="156" r="3.2"/><circle cx="463" cy="164" r="3.2"/><circle cx="552" cy="172" r="3.2"/></g>
+
+        <!-- retrain recovery marker at wk10 -->
+        <circle cx="374" cy="120" r="4" fill="#16a34a"/>
+        <path d="M374 160 L374 128" stroke="#16a34a" stroke-width="1.8" stroke-dasharray="3 2" marker-end="url(#up)"/>
+        <defs><marker id="up" markerWidth="8" markerHeight="8" refX="4" refY="6" orient="auto"><path d="M4 0 L8 8 L0 8 z" fill="#16a34a"/></marker></defs>
+        <text x="384" y="116" font-size="8.5" fill="#166534" font-weight="800">retrain &#8594; recover</text>
+        <text x="384" y="127" font-size="7.5" fill="#166534">accuracy back to 0.74</text>
+      </svg>
+      <figcaption style="font-size:0.78rem;color:var(--ink-soft);margin-top:0.9rem;line-height:1.55">
+        The input-drift PSI (purple) spikes past its threshold the moment the expansion launches, before any labels exist. The
+        frozen model's accuracy (blue) sags in the weeks after. Retraining on recent data (green) lifts it back. Watching the
+        inputs is what turns a lagging alarm into a leading one.
+      </figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== §5 ML/AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>MLOps in the Machine Learning &amp; AI Stack</h2></div>
+    <p>Everything above was done by hand on one machine to make the moving parts visible. In practice a platform automates each
+       step, and a shared vocabulary has grown up around them.</p>
+
+    <table class="ml-table">
+      <thead><tr><th style="width:24%">Practice</th><th>What it automates, and where you meet it</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">Experiment tracking</td>
+            <td>Every training run's parameters, data version, and metrics are logged so results are comparable and
+                reproducible. Tools: MLflow, Weights &amp; Biases.</td></tr>
+        <tr><td class="nm">Model registry</td>
+            <td>A versioned store of artifacts with stages (staging, production, archived) and a promotion history, so you
+                always know what is live and can roll back.</td></tr>
+        <tr><td class="nm">Feature store</td>
+            <td>A shared, versioned source of feature definitions serving training and production alike, so the numbers a model
+                learned from match the ones it later sees. The structural cure for train/serve skew.</td></tr>
+        <tr><td class="nm">CI/CD for models</td>
+            <td>An automated pipeline that tests, validates, and deploys a model on a trigger, with a champion/challenger gate
+                before promotion. The retrain loop, made safe and repeatable.</td></tr>
+        <tr><td class="nm">Monitoring &amp; alerting</td>
+            <td>Continuous drift and performance dashboards that page a human when a metric crosses a threshold, instead of
+                waiting for a business report to reveal the failure.</td></tr>
+        <tr><td class="nm">Serving infrastructure</td>
+            <td>Containerized endpoints that scale with traffic, with A/B or canary rollout so a new model is tested on a slice
+                before it takes all the load.</td></tr>
+        <tr><td class="nm">LLMOps</td>
+            <td>The same loop for large language models, with new instruments: prompt and version management, evaluation
+                harnesses, guardrails, retrieval freshness, and cost and latency budgets.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="research">
+      <div class="rtag">Research note</div>
+      <p style="margin:0.4rem 0 0">A widely cited paper from Google, <em>Hidden Technical Debt in Machine Learning
+         Systems</em>, made the case that the model is a small box in a large diagram: the code that actually runs in
+         production is dominated by data plumbing, configuration, monitoring, and glue. The influential
+         <em>&#8220;ML Test Score&#8221;</em> rubric that followed turned that observation into a checklist of tests for data,
+         model, and infrastructure. The research consensus is blunt and useful: in a deployed system, the statistics is the
+         easy part, and the engineering around it is where reliability is won or lost.</p>
+    </div>
+  </section>
+
+  <!-- ===== notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta">
+      <div class="nb-ic">🐍</div>
+      <div class="nb-body">
+        <h3>Companion notebook</h3>
+        <p>The whole production loop on one machine, no platform: package preprocessing and model into one artifact and prove
+           the reloaded copy scores raw input identically, register the version with a content hash and its metrics, serve
+           predictions behind an input-validation gate, detect the week-8 shift from the inputs alone before any labels arrive,
+           confirm the cost with accuracy and a calibration score once labels come back, and retrain to recover, promoting the
+           challenger only after it beats the champion on held-out weeks.</p>
+        <div style="display:flex;gap:0.7rem;flex-wrap:wrap;margin-top:1rem">
+          <a class="btn btn-primary" href="notebooks/html/from-model-to-production-mlops.html">📓 View Notebook</a>
+          <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/from-model-to-production-mlops.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+          <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/from-model-to-production-mlops.ipynb" target="_blank" rel="noopener">⬇ GitHub</a>
+        </div>
+      </div>
+    </div>
+    <p style="font-size:0.82rem;color:var(--ink-soft);margin-top:0.9rem">Requires <code>scikit-learn</code>,
+      <code>joblib</code>, <code>pandas</code>, <code>numpy</code>, <code>matplotlib</code>, and <code>openpyxl</code>. All are
+      preinstalled on Colab.</p>
+  </section>
+
+  <!-- ===== takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Training is a line; production is a loop</strong>: data, train, package, deploy, monitor, and back to data. The loop, not the model alone, is the deliverable.</span></li>
+        <li><span class="ck">✓</span><span><strong>Ship preprocessing with the model</strong> as one artifact to kill train/serve skew, and version it in a registry so you always know what is deployed.</span></li>
+        <li><span class="ck">✓</span><span><strong>Validate inputs at the serving boundary</strong>: a model returns a confident answer for nonsense, so reject bad schemas and out-of-range values before scoring.</span></li>
+        <li><span class="ck">✓</span><span><strong>Data drift needs no labels and warns early</strong>; concept drift needs labels and always lags. Watch the inputs (e.g. PSI) to catch trouble before outcomes arrive.</span></li>
+        <li><span class="ck">✓</span><span><strong>No single metric tells the truth under drift</strong>: recall rose here while accuracy fell and calibration worsened. Track a proper score like the Brier score alongside drift.</span></li>
+        <li><span class="ck">✓</span><span><strong>Close the loop with retraining</strong>, and promote a challenger only after it beats the frozen champion on held-out data.</span></li>
+        <li><span class="ck">✓</span><span><strong>In production the engineering dwarfs the model</strong>: platforms automate packaging, registry, feature stores, CI/CD, and monitoring, but they add no step you have not now seen by hand.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== §6 challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five exercises on the delivery-orders data. Full solutions are in the companion solutions notebook.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Package with no skew</h4>
+        <p>Fit a preprocessing-plus-model pipeline on weeks 1 to 6, serialize it, reload it, and prove the reloaded artifact scores raw input identically.</p>
+        <div class="chint">Hint: <code>joblib.dump</code> / <code>joblib.load</code>, then compare <code>predict</code> and <code>predict_proba</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Register the model</h4>
+        <p>Build a JSON registry record with a hash of the artifact bytes, the training window, the feature list, and the week-7 metrics.</p>
+        <div class="chint">Hint: <code>hashlib.md5(open(path,"rb").read())</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Harden the endpoint</h4>
+        <p>Write a serve function that rejects missing columns and out-of-range values, then returns the label and probability for valid input.</p>
+        <div class="chint">Hint: check a ranges dictionary before calling <code>predict_proba</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Monitor every feature</h4>
+        <p>Compute PSI for all six features at week 10 versus the weeks 1 to 6 baseline, and rank which drifted most.</p>
+        <div class="chint">Hint: bin on the baseline quantiles, then sum the PSI contributions.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Trigger and gate a retrain</h4>
+        <p>Retrain on weeks 6 to 9, evaluate champion and challenger on weeks 10 to 12, and only &#8220;promote&#8221; if the challenger improves accuracy.</p>
+        <div class="chint">Hint: compare accuracies and print the promotion decision.</div></div></div>
+    </div>
+
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">📓</div>
+        <div class="nb-body"><h3>Solutions notebook</h3><p>All five challenges worked in code: a packaged pipeline that reloads with identical predictions, a registry record with a content hash, a hardened serve function that rejects bad input, a per-feature PSI ranking at week 10, and a champion/challenger retrain with an explicit promotion decision.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/from-model-to-production-mlops--solutions.html">📓 View Solutions</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/from-model-to-production-mlops--solutions.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/from-model-to-production-mlops--solutions.ipynb" target="_blank" rel="noopener">⬇ GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §7 quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on the production loop: packaging, versioning, serving, drift, monitoring, and retraining. Answer them,
+       hit <strong>Check Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">🔭</div>
+    <div><div class="ctitle">That completes Advanced &amp; Applied Topics</div>
+      <p>This part carried the toolkit past the standard curriculum and into the machinery behind modern practice.
+         <a href="bayesian-inference-in-practice.html">Bayesian Inference in Practice</a> replaced a single estimate with a
+         distribution over belief; <a href="causal-inference.html">Causal Inference</a> asked what an intervention would do,
+         not merely what correlates; <a href="survival-analysis.html">Survival Analysis</a> handled outcomes that have not
+         happened yet; and <a href="structural-equation-modeling-and-mixed-models.html">Structural Equation Modeling &amp;
+         Mixed Models</a> dealt with nested data and constructs you cannot measure directly. Then
+         <a href="deep-learning-primer.html">Deep Learning</a>, <a href="recommendation-systems.html">Recommendation
+         Systems</a>, and <a href="nlp-and-large-language-models.html">NLP &amp; Large Language Models</a> built up the models
+         behind modern AI, <a href="big-data-and-scaling.html">Big Data &amp; Scaling</a> supplied the engineering to run them
+         at size, and this chapter closed the loop from a trained model to a maintained service. Next, the
+         <strong>Tools &amp; Workflow</strong> part turns to the practical craft, the languages and software that carry all of
+         this out. Browse the full <a href="../toc.html">Contents</a> for what is published and what is on the way.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="big-data-and-scaling.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 149 · Previous</span><br><span class="cn-title">Big Data &amp; Scaling</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 150 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => { const h = document.documentElement; bar.style.width = ((h.scrollTop)/(h.scrollHeight-h.clientHeight)*100) + '%'; });
+</script>
+
+<script>
+  window.QUIZ_ID = "ch150";
+  window.QUIZ_DATA = [
+    {
+      q: "What is the main difference between a notebook workflow and a production ML system?",
+      options: ["Production uses a faster language", "Production is a loop that keeps monitoring and retraining, not a line that ends at a saved model", "Notebooks cannot train models", "Production never uses Python"],
+      answer: 1,
+      explain: "Training runs once and stops; production serves, monitors for decay, and retrains, closing the loop from data back to data."
+    },
+    {
+      q: "'Train/serve skew' means…",
+      options: ["The training set is too small", "Preprocessing differs between training and serving, so the model sees inputs it was not trained on", "The model is biased", "Serving is slower than training"],
+      answer: 1,
+      explain: "The cure is to bundle preprocessing and the model into one artifact, so there is no second code path to drift out of sync."
+    },
+    {
+      q: "Why register a model with a content hash, training window, and metrics?",
+      options: ["To make the file smaller", "So you always know exactly what is deployed and can reproduce or roll it back", "To speed up predictions", "It is required by scikit-learn"],
+      answer: 1,
+      explain: "A registry makes a model traceable to its data and numbers; a file named model_final_v3.pkl does not."
+    },
+    {
+      q: "What should happen at the serving boundary before a model scores a request?",
+      options: ["Nothing, the model handles it", "The input is validated against a schema and value ranges, rejecting bad rows", "The model is retrained", "The request is logged and ignored"],
+      answer: 1,
+      explain: "A model returns a confident, meaningless answer for nonsense input, so invalid rows must be caught before it is called."
+    },
+    {
+      q: "The key advantage of monitoring DATA drift (e.g. with PSI) over performance is that…",
+      options: ["It is more accurate", "It needs no labels, so it warns you the moment inputs shift, before outcomes arrive", "It never gives false alarms", "It replaces the need to retrain"],
+      answer: 1,
+      explain: "Labels lag, sometimes by years; input distributions are visible immediately, giving an early, label-free warning."
+    },
+    {
+      q: "In the delivery example, the frozen model's recall ROSE after the shift. Why was that misleading?",
+      options: ["Recall is always unreliable", "Late orders became far more common, so recall rose even as accuracy fell and calibration worsened", "The model was actually improving", "Recall measures speed"],
+      answer: 1,
+      explain: "A single metric can move with the base rate; a proper score like the Brier score, plus input drift, told the real story."
+    },
+    {
+      q: "Concept drift differs from data drift in that…",
+      options: ["It is always larger", "The input-to-output relationship itself changes, so it can only be measured once labels arrive", "It needs no monitoring", "It only affects deep learning"],
+      answer: 1,
+      explain: "Data drift is a shift in the inputs (label-free to detect); concept drift is a shift in the mapping (needs outcomes, so it lags)."
+    },
+    {
+      q: "Before promoting a retrained model to production, you should…",
+      options: ["Deploy it immediately", "Compare the challenger against the frozen champion on held-out data and promote only if it wins", "Delete the old model first", "Retrain once more"],
+      answer: 1,
+      explain: "A champion/challenger check makes the update safe: the new model earns promotion only by beating the current one on unseen data."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
