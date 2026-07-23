@@ -568,6 +568,18 @@ MAP = {
         ("../../from-model-to-production-mlops.html#notebook", "Back to the book", "Chapter 150 · From Model to Production (MLOps)"),
     "from-model-to-production-mlops--solutions.html":
         ("../../from-model-to-production-mlops.html#challenges", "Back to the book", "Chapter 150 · Challenge solutions"),
+    "python-for-data-analysis--1-python-foundations.html":
+        ("../../python-for-data-analysis.html#notebook", "Back to the book", "Chapter 151 · Notebook 1 · Python Foundations"),
+    "python-for-data-analysis--2-numpy.html":
+        ("../../python-for-data-analysis.html#notebook", "Back to the book", "Chapter 151 · Notebook 2 · NumPy"),
+    "python-for-data-analysis--3-pandas-essentials.html":
+        ("../../python-for-data-analysis.html#notebook", "Back to the book", "Chapter 151 · Notebook 3 · pandas Essentials"),
+    "python-for-data-analysis--4-reshaping-and-aggregation.html":
+        ("../../python-for-data-analysis.html#notebook", "Back to the book", "Chapter 151 · Notebook 4 · Reshaping &amp; Aggregating"),
+    "python-for-data-analysis--5-visualization.html":
+        ("../../python-for-data-analysis.html#notebook", "Back to the book", "Chapter 151 · Notebook 5 · Visualization"),
+    "python-for-data-analysis--solutions.html":
+        ("../../python-for-data-analysis.html#challenges", "Back to the book", "Chapter 151 · Challenge solutions"),
 }
 
 def card(href, kicker, title):
