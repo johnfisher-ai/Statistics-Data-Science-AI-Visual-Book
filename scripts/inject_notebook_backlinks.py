@@ -552,6 +552,10 @@ MAP = {
         ("../../deep-learning-primer.html#notebook", "Back to the book", "Chapter 146 · Deep Learning Primer"),
     "deep-learning-primer--solutions.html":
         ("../../deep-learning-primer.html#challenges", "Back to the book", "Chapter 146 · Challenge solutions"),
+    "recommendation-systems.html":
+        ("../../recommendation-systems.html#notebook", "Back to the book", "Chapter 147 · Recommendation Systems"),
+    "recommendation-systems--solutions.html":
+        ("../../recommendation-systems.html#challenges", "Back to the book", "Chapter 147 · Challenge solutions"),
 }
 
 def card(href, kicker, title):

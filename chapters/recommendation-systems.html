@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 147 · Recommendation Systems — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .ml-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.85rem; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .ml-table th,.ml-table td { padding:0.6rem 0.8rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .ml-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .ml-table td { color:var(--ink-soft); } .ml-table tr:last-child td { border-bottom:none; }
+    .ml-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#fdf4ff; border:1px solid #f5d0fe; border-left:4px solid #a21caf; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#86198f; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none; padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+    .rw-find { background:var(--panel-2); border-radius:10px; padding:0.5rem 1rem; margin-top:0.9rem; }
+    .rw-find li { font-size:0.85rem; color:var(--ink-soft); line-height:1.6; margin:0.2rem 0; }
+    .research { background:#fdf4ff; border:1px solid #f5d0fe; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#86198f; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/recommendation-systems.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXIV · Advanced &amp; Applied Topics</span><span class="sep">/</span>
+      <span>Chapter 147</span>
+    </div>
+    <h1>Recommendation <span class="accent">Systems</span></h1>
+    <p class="dek">Every feed, storefront, and streaming home page is a recommender guessing what you want next. Underneath the
+       personalization is a strikingly simple object, a giant, mostly-empty table of who liked what, and a clever way to fill
+       in the blanks. This chapter builds that intuition from a similarity score up to the latent-factor models that won the
+       Netflix Prize.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~24 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 147</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">A recommender is a machine for answering one question at massive scale: <span class="hl">given everything
+       this person has done, what will they want next?</span> The raw material is an <span class="hl">interaction
+       matrix</span>, users down the side, items across the top, a rating or a click in a cell. The catch is that the matrix
+       is almost entirely <span class="hl">blank</span>: any one user has touched a tiny fraction of the catalog. Every
+       recommendation method is, at heart, a way to <span class="hl">predict the missing cells</span> and surface the
+       highest ones.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#127916;</div>
+      <div class="def-body">
+        A <span class="def-kw">recommendation system</span> predicts a user's preference for items they have not seen, from
+        a sparse <span class="def-kw">user-item matrix</span>. <span class="def-kw">Content-based</span> methods match items
+        by their features; <span class="def-kw">collaborative filtering</span> uses the wisdom of similar users;
+        <span class="def-kw">matrix factorization</span> learns hidden <span class="def-kw">latent factors</span> for both.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">&#129513;</div>
+      <div><div class="ctitle">Sparsity is the whole challenge</div>
+        <p>A catalog has millions of items; a user rates a handful. The interaction matrix is often <strong>over 99 percent
+           empty</strong>, so you cannot just average what is there. The art is borrowing strength: filling a blank cell from
+           <strong>similar users</strong>, <strong>similar items</strong>, or a compact set of <strong>learned taste
+           dimensions</strong> that explain the ratings you <em>can</em> see.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §1 the matrix ===== -->
+  <section id="matrix">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The User-Item Matrix</h2></div>
+    <p>Lay every user's ratings in a grid. A filled cell is a known preference; a blank is what you want to predict. Fill the
+       blanks well and recommending is easy: for each user, sort their predicted cells and show the top few.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 210" width="100%" font-family="Inter, sans-serif" aria-label="A grid of users by movies with a few star ratings filled in and most cells shown as blank question marks; the recommendation task is to predict the blanks and recommend the highest.">
+        <text x="350" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Users &#215; items: fill the blanks, then recommend the highest</text>
+        <!-- column headers -->
+        <g font-size="8" fill="#86198f" font-weight="700" text-anchor="middle">
+          <text x="150" y="46">Movie A</text><text x="230" y="46">Movie B</text><text x="310" y="46">Movie C</text><text x="390" y="46">Movie D</text><text x="470" y="46">Movie E</text>
+        </g>
+        <g font-size="8.5" fill="#1d4ed8" font-weight="700" text-anchor="end">
+          <text x="105" y="76">Ava</text><text x="105" y="106">Ben</text><text x="105" y="136">Cara</text><text x="105" y="166">Dan</text>
+        </g>
+        <!-- cells: filled = star rating (fuchsia), blank = ? (gray) -->
+        <g font-size="10" text-anchor="middle">
+          <!-- row Ava -->
+          <rect x="115" y="62" width="70" height="24" fill="#fae8ff" stroke="#f5d0fe"/><text x="150" y="79" fill="#86198f" font-weight="700">5</text>
+          <rect x="195" y="62" width="70" height="24" fill="#f8fafc" stroke="#e2e8f0"/><text x="230" y="79" fill="#cbd5e1">?</text>
+          <rect x="275" y="62" width="70" height="24" fill="#fae8ff" stroke="#f5d0fe"/><text x="310" y="79" fill="#86198f" font-weight="700">4</text>
+          <rect x="355" y="62" width="70" height="24" fill="#f8fafc" stroke="#e2e8f0"/><text x="390" y="79" fill="#cbd5e1">?</text>
+          <rect x="435" y="62" width="70" height="24" fill="#dcfce7" stroke="#86efac"/><text x="470" y="79" fill="#15803d" font-weight="800">4.6?</text>
+          <!-- row Ben -->
+          <rect x="115" y="92" width="70" height="24" fill="#f8fafc" stroke="#e2e8f0"/><text x="150" y="109" fill="#cbd5e1">?</text>
+          <rect x="195" y="92" width="70" height="24" fill="#fae8ff" stroke="#f5d0fe"/><text x="230" y="109" fill="#86198f" font-weight="700">2</text>
+          <rect x="275" y="92" width="70" height="24" fill="#fae8ff" stroke="#f5d0fe"/><text x="310" y="109" fill="#86198f" font-weight="700">3</text>
+          <rect x="355" y="92" width="70" height="24" fill="#f8fafc" stroke="#e2e8f0"/><text x="390" y="109" fill="#cbd5e1">?</text>
+          <rect x="435" y="92" width="70" height="24" fill="#f8fafc" stroke="#e2e8f0"/><text x="470" y="109" fill="#cbd5e1">?</text>
+          <!-- row Cara -->
+          <rect x="115" y="122" width="70" height="24" fill="#fae8ff" stroke="#f5d0fe"/><text x="150" y="139" fill="#86198f" font-weight="700">4</text>
+          <rect x="195" y="122" width="70" height="24" fill="#f8fafc" stroke="#e2e8f0"/><text x="230" y="139" fill="#cbd5e1">?</text>
+          <rect x="275" y="122" width="70" height="24" fill="#f8fafc" stroke="#e2e8f0"/><text x="310" y="139" fill="#cbd5e1">?</text>
+          <rect x="355" y="122" width="70" height="24" fill="#fae8ff" stroke="#f5d0fe"/><text x="390" y="139" fill="#86198f" font-weight="700">5</text>
+          <rect x="435" y="122" width="70" height="24" fill="#fae8ff" stroke="#f5d0fe"/><text x="470" y="139" fill="#86198f" font-weight="700">4</text>
+          <!-- row Dan -->
+          <rect x="115" y="152" width="70" height="24" fill="#f8fafc" stroke="#e2e8f0"/><text x="150" y="169" fill="#cbd5e1">?</text>
+          <rect x="195" y="152" width="70" height="24" fill="#fae8ff" stroke="#f5d0fe"/><text x="230" y="169" fill="#86198f" font-weight="700">1</text>
+          <rect x="275" y="152" width="70" height="24" fill="#f8fafc" stroke="#e2e8f0"/><text x="310" y="169" fill="#cbd5e1">?</text>
+          <rect x="355" y="152" width="70" height="24" fill="#fae8ff" stroke="#f5d0fe"/><text x="390" y="169" fill="#86198f" font-weight="700">4</text>
+          <rect x="435" y="152" width="70" height="24" fill="#f8fafc" stroke="#e2e8f0"/><text x="470" y="169" fill="#cbd5e1">?</text>
+        </g>
+        <text x="595" y="79" font-size="8" fill="#15803d" font-weight="700">predicted</text>
+        <text x="595" y="92" font-size="8" fill="#15803d">&#8594; recommend!</text>
+        <text x="350" y="196" text-anchor="middle" font-size="8.2" fill="#64748b">most cells are blank; a good model estimates them and ranks the best unseen items per user</text>
+      </svg>
+    </figure>
+
+    <p>Because most of the grid is empty, you evaluate a recommender by <strong>hiding some known ratings</strong>, predicting
+       them, and measuring the error (<strong>RMSE</strong> for star ratings) or how many of a user's true favorites land in
+       the top-N list (<strong>precision and recall at K</strong>). The rest of the chapter is three increasingly powerful
+       ways to fill those blanks.</p>
+  </section>
+
+  <!-- ===== §2 content vs collaborative ===== -->
+  <section id="strategies">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Content-Based vs Collaborative Filtering</h2></div>
+    <p>The two classic families differ in what they lean on: the <em>items' features</em> or <em>other users' behavior</em>.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 210" width="100%" font-family="Inter, sans-serif" aria-label="Left: content-based filtering recommends items whose features match items the user already liked. Right: collaborative filtering finds users with similar tastes and recommends what they liked.">
+        <!-- content-based -->
+        <rect x="20" y="34" width="320" height="150" rx="10" fill="#eff6ff" stroke="#bfdbfe"/>
+        <text x="180" y="54" text-anchor="middle" font-size="10" fill="#1d4ed8" font-weight="800">Content-based: match item features</text>
+        <text x="180" y="76" text-anchor="middle" font-size="8.4" fill="#334155">you liked a sci-fi thriller...</text>
+        <rect x="60" y="90" width="90" height="30" rx="6" fill="#dbeafe" stroke="#2563eb"/><text x="105" y="109" text-anchor="middle" font-size="8" fill="#1d4ed8">liked: SciFi</text>
+        <text x="180" y="108" text-anchor="middle" font-size="14" fill="#64748b">&#8594;</text>
+        <rect x="210" y="90" width="100" height="30" rx="6" fill="#dbeafe" stroke="#2563eb"/><text x="260" y="109" text-anchor="middle" font-size="8" fill="#1d4ed8">rec: more SciFi</text>
+        <text x="180" y="150" text-anchor="middle" font-size="7.8" fill="#1e40af">uses only YOUR history + item tags</text>
+        <text x="180" y="166" text-anchor="middle" font-size="7.6" fill="#64748b">works for new items; can be too narrow</text>
+        <!-- collaborative -->
+        <rect x="360" y="34" width="320" height="150" rx="10" fill="#fdf4ff" stroke="#f5d0fe"/>
+        <text x="520" y="54" text-anchor="middle" font-size="10" fill="#86198f" font-weight="800">Collaborative: match similar users</text>
+        <circle cx="420" cy="95" r="14" fill="#f5d0fe" stroke="#a21caf"/><text x="420" y="99" text-anchor="middle" font-size="8" fill="#701a75">you</text>
+        <circle cx="470" cy="80" r="12" fill="#fae8ff" stroke="#c084fc"/><circle cx="470" cy="112" r="12" fill="#fae8ff" stroke="#c084fc"/>
+        <line x1="433" y1="90" x2="459" y2="82" stroke="#c084fc" stroke-width="1.4"/><line x1="433" y1="100" x2="459" y2="110" stroke="#c084fc" stroke-width="1.4"/>
+        <text x="470" y="132" text-anchor="middle" font-size="7.4" fill="#7c3aed">similar tastes</text>
+        <text x="540" y="90" text-anchor="middle" font-size="14" fill="#64748b">&#8594;</text>
+        <rect x="565" y="82" width="100" height="28" rx="6" fill="#f5d0fe" stroke="#a21caf"/><text x="615" y="100" text-anchor="middle" font-size="8" fill="#701a75">rec: what THEY liked</text>
+        <text x="520" y="166" text-anchor="middle" font-size="7.6" fill="#64748b">needs no item features; struggles on brand-new items</text>
+      </svg>
+    </figure>
+
+    <ul class="tick">
+      <li><span class="ck">&#9679;</span><span><strong>Content-based</strong>: describe each item by features (genre, tags, text) and recommend items similar to what a user already liked. It needs no other users, and it handles brand-new items, but it can trap a user in a narrow bubble of the familiar.</span></li>
+      <li><span class="ck">&#9679;</span><span><strong>Collaborative filtering</strong>: ignore item features and lean on the crowd, &#8220;users who liked what you liked also liked X.&#8221; It is computed from <strong>similarity</strong> (often cosine) between rows (user-based) or columns (item-based) of the matrix. Powerful and feature-free, but it stumbles on the <strong>cold-start</strong> problem: a brand-new user or item has no history to match.</span></li>
+    </ul>
+  </section>
+
+  <!-- ===== §3 matrix factorization ===== -->
+  <section id="mf">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Matrix Factorization: Learning Latent Taste</h2></div>
+    <p>The idea that won the <strong>Netflix Prize</strong> is deceptively simple. Approximate the giant, sparse rating matrix
+       <code>R</code> as the product of two skinny matrices: one row of <strong>latent factors</strong> per user, one per
+       item. Each factor is an unnamed taste dimension, learned from the data, and a predicted rating is just the
+       <strong>dot product</strong> of a user's factors with an item's.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 200" width="100%" font-family="Inter, sans-serif" aria-label="The big sparse ratings matrix R (users by items) is approximated by a tall thin user-factor matrix P times a short wide item-factor matrix Q transpose; a predicted rating is the dot product of a user's factor row and an item's factor column.">
+        <text x="350" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">R &#8776; P &#215; Q&#7488;  &#183;  a rating is a user's factors dotted with an item's</text>
+        <!-- R -->
+        <rect x="40" y="46" width="150" height="120" rx="6" fill="#fdf4ff" stroke="#a21caf" stroke-width="1.6"/>
+        <text x="115" y="112" text-anchor="middle" font-size="15" fill="#86198f" font-weight="800">R</text>
+        <text x="115" y="182" text-anchor="middle" font-size="8" fill="#a21caf">ratings (mostly blank)</text>
+        <text x="35" y="106" text-anchor="end" font-size="8" fill="#64748b" transform="rotate(-90 35 106)">users</text>
+        <text x="222" y="112" text-anchor="middle" font-size="18" fill="#64748b">&#8776;</text>
+        <!-- P -->
+        <rect x="254" y="46" width="52" height="120" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.6"/>
+        <text x="280" y="112" text-anchor="middle" font-size="13" fill="#1d4ed8" font-weight="800">P</text>
+        <text x="280" y="182" text-anchor="middle" font-size="8" fill="#1d4ed8">user factors</text>
+        <text x="322" y="112" text-anchor="middle" font-size="16" fill="#64748b">&#215;</text>
+        <!-- Q^T -->
+        <rect x="342" y="76" width="150" height="52" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.6"/>
+        <text x="417" y="107" text-anchor="middle" font-size="13" fill="#15803d" font-weight="800">Q&#7488;</text>
+        <text x="417" y="146" text-anchor="middle" font-size="8" fill="#15803d">item factors</text>
+        <text x="417" y="68" text-anchor="middle" font-size="8" fill="#64748b">items &#8594;</text>
+        <!-- dot product callout -->
+        <line x1="500" y1="106" x2="540" y2="106" stroke="#94a3b8" stroke-width="1.2" marker-end="url(#rsa)"/>
+        <defs><marker id="rsa" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#94a3b8"/></marker></defs>
+        <rect x="546" y="70" width="140" height="72" rx="8" fill="#fdf4ff" stroke="#f5d0fe"/>
+        <text x="616" y="90" text-anchor="middle" font-size="8.4" fill="#86198f" font-weight="800">r&#770;&#7512;&#7522; = p&#7512; &#183; q&#7522;</text>
+        <text x="616" y="108" text-anchor="middle" font-size="7.6" fill="#701a75">e.g. [0.9, &#8722;0.2, 0.4]</text>
+        <text x="616" y="120" text-anchor="middle" font-size="7.6" fill="#701a75">&#183; [0.7, 0.1, 0.5]</text>
+        <text x="616" y="134" text-anchor="middle" font-size="7.6" fill="#15803d" font-weight="700">= predicted stars</text>
+      </svg>
+    </figure>
+
+    <p>You never label the factors, the model discovers them, but they often line up with things like &#8220;action versus
+       drama&#8221; or &#8220;mainstream versus niche.&#8221; The factors are learned by <strong>gradient descent</strong>,
+       minimizing the squared error on the <em>observed</em> ratings with a little regularization, plus per-user and per-item
+       <strong>bias</strong> terms to soak up easy raters and popular items. This is the same <strong>latent-variable</strong>
+       idea from the <a href="structural-equation-modeling-and-mixed-models.html">Structural Equation Modeling &amp; Mixed
+       Models</a> chapter and the cousin of <a href="dimensionality-reduction.html">dimensionality reduction</a>: compress
+       thousands of items into a handful of meaningful dimensions.</p>
+  </section>
+
+  <!-- ===== §4 real-world ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: Movie Ratings</h2></div>
+    <p>The companion notebook builds a recommender from the ground up, comparing three ways to fill the blanks on a real
+       ratings table, with <strong>numpy</strong> and <strong>scikit-learn</strong>.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · recommendation-systems--movie-ratings.xlsx</div>
+      <p style="margin:0.5rem 0 0"><strong>4,383 ratings</strong> from <strong>300 users</strong> across <strong>60
+        movies</strong>, in the standard long format (<code>user_id</code>, <code>movie_id</code>, <code>rating</code> 1 to
+        5), plus a Movies sheet with each film's genre. The user-item matrix is only about <strong>24 percent</strong>
+        filled, sparse by design.</p>
+      <ul class="rw-find">
+        <li><span class="ck">&#9679;</span><strong>Global-mean baseline:</strong> predicting everyone's average scores <strong>RMSE 0.95</strong>, the bar to beat.</li>
+        <li><span class="ck">&#9679;</span><strong>User + item bias:</strong> adding &#8220;this user rates high / this movie is popular&#8221; drops it to <strong>0.85</strong>.</li>
+        <li><span class="ck">&#9679;</span><strong>Matrix factorization:</strong> learning just <strong>3 latent factors</strong> per user and movie reaches <strong>RMSE 0.74</strong>, a clear win, and yields ranked top-N recommendations per user.</li>
+      </ul>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/recommendation-systems--movie-ratings.xlsx" download>📊 Download dataset &nbsp;<small>XLSX · 4,383 ratings</small></a>
+      </div>
+    </div>
+
+    <p>The progression is the lesson: a plain average is blind to who is rating and what they are rating; adding biases helps;
+       but only the <strong>latent factors</strong> capture that a given user loves a given <em>kind</em> of movie. Sort each
+       user's predicted ratings, drop the ones they have already seen, and the top of that list is the recommendation. The
+       same machinery, scaled to millions of users and items and fed clicks instead of stars, is what drives the feeds you
+       scroll every day.</p>
+  </section>
+
+  <!-- ===== §5 ML/AI ===== -->
+  <section id="mlai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Recommenders in Machine Learning &amp; AI</h2></div>
+    <p>Production recommenders have grown far past a single rating prediction, but every layer traces back to the matrix and
+       the latent factor. The modern stack is usually <strong>retrieve then rank</strong>: cheaply pull a few hundred
+       candidates, then score them precisely.</p>
+
+    <table class="ml-table">
+      <thead><tr><th>Approach</th><th>How it works</th><th>Where it shows up</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">Neighborhood methods</td><td>User-user or item-item similarity (cosine, Pearson) over the interaction matrix</td><td>&#8220;Customers who bought this also bought&#8221;</td></tr>
+        <tr><td class="nm">Matrix factorization</td><td>Latent factors via SVD, ALS, or SGD, with bias terms and implicit-feedback weighting</td><td>The classic personalization workhorse</td></tr>
+        <tr><td class="nm">Two-tower neural models</td><td>Deep embeddings for user and item; a dot product retrieves candidates at scale</td><td>Large-scale candidate retrieval (YouTube, ads)</td></tr>
+        <tr><td class="nm">Learning to rank</td><td>Score and order the retrieved candidates by predicted engagement</td><td>The ranking stage of every feed</td></tr>
+        <tr><td class="nm">Sequential / session models</td><td>Transformers over a user's recent actions to predict the next one</td><td>Next-video, next-song, session-based rec</td></tr>
+        <tr><td class="nm">Implicit feedback</td><td>Learn from clicks, views, and dwell time (not just ratings), weighting confidence</td><td>Nearly all real systems, where stars are rare</td></tr>
+      </tbody>
+    </table>
+
+    <div class="research">
+      <div class="rtag">🔬 Research frontier</div>
+      <p style="margin:0.4rem 0 0">Recommendation is where much of the money and much of the scale in applied ML live, so the
+        research is intense. Active fronts include <strong>sequential and transformer-based recommenders</strong> that model
+        a session as a sequence, <strong>LLM-powered recommendation</strong> that reasons over item text and user intent,
+        and hard perennial problems: the <strong>cold-start</strong> of new users and items, the <strong>feedback loops</strong>
+        and filter bubbles that recommenders create, and how to optimize for long-term satisfaction rather than the next
+        click. The math still rests on predicting a sparse matrix, now with far richer signals.</p>
+    </div>
+  </section>
+
+  <!-- ===== notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body"><h3>Build a recommender in Python</h3><p>The companion notebook loads the ratings, builds the sparse user-item matrix, computes item-item cosine similarity for collaborative filtering, scores a global-mean and a bias baseline, then trains a matrix-factorization model by hand with gradient descent, compares all three by RMSE, and generates a top-N recommendation list for a sample user, every step with a plot.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/recommendation-systems.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/recommendation-systems.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/recommendation-systems.ipynb" target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)"><strong>View</strong> opens the rendered notebook instantly.
+      <strong>Open in Colab</strong> runs it live. To run locally, install <code>numpy</code>, <code>pandas</code>,
+      <code>matplotlib</code>, <code>scikit-learn</code>, and <code>openpyxl</code> (the <code>surprise</code> and
+      <code>implicit</code> libraries add production-grade recommenders).</p>
+  </section>
+
+  <!-- ===== takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>A recommender predicts a sparse user-item matrix</strong>: fill the blanks, then rank the highest unseen items per user.</span></li>
+        <li><span class="ck">✓</span><span><strong>Content-based</strong> matches item features to your history; <strong>collaborative filtering</strong> leans on similar users, needing no features.</span></li>
+        <li><span class="ck">✓</span><span><strong>Matrix factorization</strong> approximates R as user-factors times item-factors; a rating is a dot product of learned latent tastes.</span></li>
+        <li><span class="ck">✓</span><span><strong>Bias terms matter</strong>: model &#8220;this user rates high&#8221; and &#8220;this item is popular&#8221; before the factors.</span></li>
+        <li><span class="ck">✓</span><span><strong>Cold start</strong> is the recurring headache: brand-new users and items have no history to match.</span></li>
+        <li><span class="ck">✓</span><span><strong>Modern systems retrieve then rank</strong> with two-tower and sequential neural models, usually on implicit feedback, not stars.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== §6 challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five exercises on the movie-ratings data. Full solutions are in the companion solutions notebook.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Build the matrix</h4>
+        <p>Pivot the long ratings table into a user-by-movie matrix and report its sparsity (fraction of cells filled).</p>
+        <div class="chint">Hint: <code>df.pivot_table(index, columns, values)</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Two baselines</h4>
+        <p>On a held-out split, compute RMSE for the global mean and for a user+item bias predictor. How much does bias help?</p>
+        <div class="chint">Hint: RMSE = sqrt(mean of squared errors).</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Item-item similarity</h4>
+        <p>Compute cosine similarity between movies and list the five most similar to a chosen film. Do their genres agree?</p>
+        <div class="chint">Hint: <code>cosine_similarity</code> on the item vectors.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Train matrix factorization</h4>
+        <p>Fit a biased MF model with SGD (K = 3) and report its test RMSE. Confirm it beats both baselines.</p>
+        <div class="chint">Hint: predict = mu + b_u + b_i + p_u · q_i.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Recommend for a user</h4>
+        <p>For one user, predict every unseen movie, drop the ones they have rated, and print the top 5 recommendations.</p>
+        <div class="chint">Hint: sort predicted ratings, exclude seen items.</div></div></div>
+    </div>
+
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">📓</div>
+        <div class="nb-body"><h3>Solutions notebook</h3><p>All five challenges worked in code, the sparse matrix, the two baselines, item-item similarity, the trained matrix-factorization model, and a top-N recommendation list, each with a short explanation.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/recommendation-systems--solutions.html">📓 View Solutions</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/recommendation-systems--solutions.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/recommendation-systems--solutions.ipynb" target="_blank" rel="noopener">⬇ GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §7 quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on the user-item matrix, filtering strategies, matrix factorization, and cold start. Answer them, hit
+       <strong>Check Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>Recommenders learn from what users do. Next, <strong>NLP &amp; Large Language Models</strong> (coming soon) turns to
+         what they <em>say</em>, how machines represent, understand, and generate human language, from word vectors to the
+         transformer models reshaping the field. Browse the full <a href="../toc.html">Contents</a> for what is published and
+         what is on the way.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="deep-learning-primer.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 146 · Previous</span><br><span class="cn-title">Deep Learning Primer</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 147 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => { const h = document.documentElement; bar.style.width = ((h.scrollTop)/(h.scrollHeight-h.clientHeight)*100) + '%'; });
+</script>
+
+<script>
+  window.QUIZ_ID = "ch147";
+  window.QUIZ_DATA = [
+    {
+      q: "What is the core data object behind a recommender?",
+      options: ["A single ranked list", "A sparse user-item interaction matrix, mostly blank", "A decision tree", "A confusion matrix"],
+      answer: 1,
+      explain: "Users down the side, items across the top, a rating or click in a cell; recommending is predicting the blank cells."
+    },
+    {
+      q: "Why can't you just average the ratings you have to make recommendations?",
+      options: ["Averages are slow", "The matrix is extremely sparse, so most user-item cells are empty and need to be predicted", "Ratings are always wrong", "Averages need a GPU"],
+      answer: 1,
+      explain: "Any user has touched a tiny slice of the catalog; the whole task is filling the missing cells."
+    },
+    {
+      q: "Content-based filtering recommends items by…",
+      options: ["What similar users liked", "Matching item features to the items a user already liked", "Random sampling", "The newest releases"],
+      answer: 1,
+      explain: "It uses item features (genre, tags, text) and the user's own history; it needs no other users and handles new items."
+    },
+    {
+      q: "Collaborative filtering works by…",
+      options: ["Reading item descriptions", "Finding users (or items) with similar interaction patterns and borrowing their preferences", "Sorting by price", "Using a neural network only"],
+      answer: 1,
+      explain: "'Users who liked what you liked also liked X', computed from similarity between rows or columns of the matrix."
+    },
+    {
+      q: "Matrix factorization predicts a rating as…",
+      options: ["The global average", "The dot product of a user's latent factors with an item's latent factors (plus biases)", "The number of ratings", "A median"],
+      answer: 1,
+      explain: "R is approximated as P times Q-transpose; each factor is a learned, unnamed taste dimension."
+    },
+    {
+      q: "On the movie data, RMSE went 0.95 (global mean) to 0.85 (bias) to 0.74 (matrix factorization). Why did MF win?",
+      options: ["It saw more data", "Only the latent factors capture that a user prefers a particular KIND of movie", "The others had bugs", "It memorized the test set"],
+      answer: 1,
+      explain: "Averages and biases ignore taste; the latent factors model user-item affinity, the actual signal."
+    },
+    {
+      q: "The 'cold-start' problem is…",
+      options: ["Slow servers at launch", "A brand-new user or item has no interaction history to match on", "Ratings below 1 star", "Too many items"],
+      answer: 1,
+      explain: "With no history, collaborative methods have nothing to compare; content features or defaults are used to bridge the gap."
+    },
+    {
+      q: "Most large modern recommenders are structured as…",
+      options: ["One giant matrix inverse", "Retrieve then rank: cheaply pull candidates (two-tower), then score them precisely", "A single if-else rule", "Pure content-based filtering"],
+      answer: 1,
+      explain: "A retrieval stage narrows millions of items to a few hundred, then a ranking model orders them, usually on implicit feedback."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
