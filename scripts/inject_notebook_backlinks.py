@@ -556,6 +556,10 @@ MAP = {
         ("../../recommendation-systems.html#notebook", "Back to the book", "Chapter 147 · Recommendation Systems"),
     "recommendation-systems--solutions.html":
         ("../../recommendation-systems.html#challenges", "Back to the book", "Chapter 147 · Challenge solutions"),
+    "nlp-and-large-language-models.html":
+        ("../../nlp-and-large-language-models.html#notebook", "Back to the book", "Chapter 148 · NLP &amp; Large Language Models"),
+    "nlp-and-large-language-models--solutions.html":
+        ("../../nlp-and-large-language-models.html#challenges", "Back to the book", "Chapter 148 · Challenge solutions"),
 }
 
 def card(href, kicker, title):

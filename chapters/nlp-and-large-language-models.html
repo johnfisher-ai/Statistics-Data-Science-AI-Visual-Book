@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 148 · NLP &amp; Large Language Models — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .ml-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.85rem; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .ml-table th,.ml-table td { padding:0.6rem 0.8rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .ml-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .ml-table td { color:var(--ink-soft); } .ml-table tr:last-child td { border-bottom:none; }
+    .ml-table .nm { font-weight:700; color:var(--ink); }
+    .rw-card { background:#fdf4ff; border:1px solid #f5d0fe; border-left:4px solid #a21caf; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#86198f; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none; padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+    .rw-find { background:var(--panel-2); border-radius:10px; padding:0.5rem 1rem; margin-top:0.9rem; }
+    .rw-find li { font-size:0.85rem; color:var(--ink-soft); line-height:1.6; margin:0.2rem 0; }
+    .research { background:#fdf4ff; border:1px solid #f5d0fe; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#86198f; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/nlp-and-large-language-models.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXIV · Advanced &amp; Applied Topics</span><span class="sep">/</span>
+      <span>Chapter 148</span>
+    </div>
+    <h1>NLP &amp; Large <span class="accent">Language Models</span></h1>
+    <p class="dek">Statistics needs numbers, and language is not numbers. Everything in natural language processing follows from
+       how you bridge that gap: counting words, then embedding them as vectors, then letting a model weigh which words matter
+       to which. This chapter walks that ladder from a word count to the attention mechanism behind every modern LLM, and
+       shows how to tell whether the output is any good.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~26 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 148</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Every model in this book eats numbers. Text is not numbers, so the first and most consequential decision in
+       NLP is <span class="hl">how to represent it</span>. The history of the field is essentially three answers, each richer
+       than the last: <span class="hl">count the words</span>, <span class="hl">embed them as dense vectors</span> that place
+       related meanings near each other, and finally let the model compute, for every word, <span class="hl">which other
+       words matter</span>. That last idea is <span class="hl">attention</span>, and it is what makes a large language model
+       work.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#128172;</div>
+      <div class="def-body">
+        <span class="def-kw">NLP</span> turns text into numbers a model can use. A <span class="def-kw">token</span> is the
+        unit (word or sub-word); <span class="def-kw">bag-of-words</span> and <span class="def-kw">TF-IDF</span> represent a
+        document as sparse counts; an <span class="def-kw">embedding</span> is a dense vector whose geometry encodes meaning.
+        A <span class="def-kw">large language model</span> is a transformer trained to predict the next token.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">&#128300;</div>
+      <div><div class="ctitle">One objective explains most of modern AI</div>
+        <p>An LLM is trained on a task a child could state: <strong>given the text so far, predict the next token</strong>.
+           Run that over a large fraction of the written internet, with enough parameters, and grammar, facts, translation,
+           summarizing, and a passable imitation of reasoning all fall out as side effects. No part of the recipe says
+           &#8220;learn to reason&#8221;, it emerges from relentless next-token prediction.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §1 text to numbers ===== -->
+  <section id="representation">
+    <div class="section-eyebrow"><div class="num">1</div><h2>From Text to Numbers</h2></div>
+    <p>Start simple. <strong>Tokenize</strong> the text into words, build a <strong>vocabulary</strong>, and represent each
+       document by how often each vocabulary word appears. That is the <strong>bag-of-words</strong> vector: it throws away
+       word order entirely and still works remarkably well for classification.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 200" width="100%" font-family="Inter, sans-serif" aria-label="A sentence is split into tokens, then converted into a bag-of-words count vector over the vocabulary, then reweighted by TF-IDF so common words count less.">
+        <text x="350" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">text &#8594; tokens &#8594; counts &#8594; TF-IDF weights</text>
+        <!-- sentence -->
+        <rect x="20" y="40" width="180" height="34" rx="7" fill="#f8fafc" stroke="#cbd5e1"/>
+        <text x="110" y="62" text-anchor="middle" font-size="9" fill="#334155">"love this, works great"</text>
+        <text x="212" y="60" text-anchor="middle" font-size="14" fill="#64748b">&#8594;</text>
+        <!-- tokens -->
+        <g font-size="8">
+          <rect x="228" y="42" width="42" height="20" rx="4" fill="#eff6ff" stroke="#bfdbfe"/><text x="249" y="56" text-anchor="middle" fill="#1d4ed8">love</text>
+          <rect x="274" y="42" width="42" height="20" rx="4" fill="#eff6ff" stroke="#bfdbfe"/><text x="295" y="56" text-anchor="middle" fill="#1d4ed8">this</text>
+          <rect x="228" y="66" width="42" height="20" rx="4" fill="#eff6ff" stroke="#bfdbfe"/><text x="249" y="80" text-anchor="middle" fill="#1d4ed8">works</text>
+          <rect x="274" y="66" width="42" height="20" rx="4" fill="#eff6ff" stroke="#bfdbfe"/><text x="295" y="80" text-anchor="middle" fill="#1d4ed8">great</text>
+        </g>
+        <text x="272" y="104" text-anchor="middle" font-size="7.6" fill="#64748b">tokens</text>
+        <text x="332" y="60" text-anchor="middle" font-size="14" fill="#64748b">&#8594;</text>
+        <!-- count vector -->
+        <g font-size="8" text-anchor="middle">
+          <text x="400" y="38" font-size="7.6" fill="#64748b">vocabulary</text>
+          <rect x="350" y="42" width="46" height="18" fill="#fdf4ff" stroke="#f5d0fe"/><text x="373" y="55" fill="#86198f">love</text>
+          <rect x="396" y="42" width="34" height="18" fill="#fae8ff" stroke="#f5d0fe"/><text x="413" y="55" fill="#701a75" font-weight="700">1</text>
+          <rect x="350" y="60" width="46" height="18" fill="#fdf4ff" stroke="#f5d0fe"/><text x="373" y="73" fill="#86198f">great</text>
+          <rect x="396" y="60" width="34" height="18" fill="#fae8ff" stroke="#f5d0fe"/><text x="413" y="73" fill="#701a75" font-weight="700">1</text>
+          <rect x="350" y="78" width="46" height="18" fill="#fdf4ff" stroke="#f5d0fe"/><text x="373" y="91" fill="#86198f">this</text>
+          <rect x="396" y="78" width="34" height="18" fill="#fae8ff" stroke="#f5d0fe"/><text x="413" y="91" fill="#701a75" font-weight="700">1</text>
+          <rect x="350" y="96" width="46" height="18" fill="#fdf4ff" stroke="#f5d0fe"/><text x="373" y="109" fill="#86198f">broke</text>
+          <rect x="396" y="96" width="34" height="18" fill="#f8fafc" stroke="#e2e8f0"/><text x="413" y="109" fill="#cbd5e1">0</text>
+        </g>
+        <text x="390" y="130" text-anchor="middle" font-size="7.6" fill="#a21caf">bag-of-words counts</text>
+        <text x="452" y="72" text-anchor="middle" font-size="14" fill="#64748b">&#8594;</text>
+        <!-- tfidf -->
+        <rect x="476" y="42" width="200" height="76" rx="8" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="576" y="60" text-anchor="middle" font-size="9" fill="#15803d" font-weight="800">TF-IDF reweighting</text>
+        <text x="576" y="78" text-anchor="middle" font-size="7.8" fill="#166534">"this" appears everywhere &#8594; down</text>
+        <text x="576" y="92" text-anchor="middle" font-size="7.8" fill="#166534">"great" is distinctive &#8594; up</text>
+        <text x="576" y="108" text-anchor="middle" font-size="7.6" fill="#15803d">rare + frequent-here = informative</text>
+        <text x="350" y="164" text-anchor="middle" font-size="8.4" fill="#64748b">bag-of-words discards word order: "dog bites man" and "man bites dog" get the identical vector</text>
+        <text x="350" y="182" text-anchor="middle" font-size="8.4" fill="#a21caf" font-weight="700">that limitation is exactly what embeddings and attention were invented to fix</text>
+      </svg>
+    </figure>
+
+    <p><strong>TF-IDF</strong> refines the raw counts. A word matters if it is frequent <em>in this document</em> (term
+       frequency) but rare <em>across the corpus</em> (inverse document frequency). That pushes down &#8220;the&#8221; and
+       &#8220;this&#8221;, which appear everywhere and distinguish nothing, and pushes up the words that actually carry the
+       signal. The result is still a sparse vector with one dimension per vocabulary word, and still order-blind, but it is a
+       genuinely strong baseline for classification.</p>
+  </section>
+
+  <!-- ===== §2 embeddings ===== -->
+  <section id="embeddings">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Embeddings: Meaning as Geometry</h2></div>
+    <p>Bag-of-words has a fatal blind spot: every word is its own dimension, so <em>excellent</em> and <em>superb</em> are as
+       unrelated as <em>excellent</em> and <em>toaster</em>. <strong>Embeddings</strong> fix this by mapping each token to a
+       dense vector of a few hundred numbers, learned so that words used in similar contexts land near each other. Meaning
+       becomes <strong>geometry</strong>.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 210" width="100%" font-family="Inter, sans-serif" aria-label="A two-dimensional embedding space where positive words cluster together, negative words cluster elsewhere, and an analogy arrow shows king minus man plus woman landing near queen.">
+        <text x="350" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Words become points; similar meanings sit close together</text>
+        <!-- cluster panel -->
+        <rect x="20" y="34" width="320" height="152" rx="10" fill="#f8fafc" stroke="#e2e8f0"/>
+        <g font-size="8.4">
+          <circle cx="90" cy="70" r="4" fill="#16a34a"/><text x="100" y="73" fill="#15803d">excellent</text>
+          <circle cx="120" cy="92" r="4" fill="#16a34a"/><text x="130" y="95" fill="#15803d">superb</text>
+          <circle cx="82" cy="108" r="4" fill="#16a34a"/><text x="92" y="111" fill="#15803d">great</text>
+          <ellipse cx="105" cy="90" rx="52" ry="36" fill="none" stroke="#86efac" stroke-dasharray="3 3"/>
+          <circle cx="248" cy="140" r="4" fill="#dc2626"/><text x="248" y="153" fill="#b91c1c" text-anchor="middle">terrible</text>
+          <circle cx="224" cy="114" r="4" fill="#dc2626"/><text x="217" y="110" fill="#b91c1c" text-anchor="end">awful</text>
+          <circle cx="274" cy="114" r="4" fill="#dc2626"/><text x="282" y="110" fill="#b91c1c">poor</text>
+          <ellipse cx="248" cy="127" rx="54" ry="32" fill="none" stroke="#fecaca" stroke-dasharray="3 3"/>
+          <circle cx="285" cy="60" r="4" fill="#64748b"/><text x="295" y="63" fill="#475569">toaster</text>
+        </g>
+        <text x="180" y="176" text-anchor="middle" font-size="7.8" fill="#64748b">similar words cluster; unrelated words sit far away</text>
+        <!-- analogy panel -->
+        <rect x="360" y="34" width="320" height="152" rx="10" fill="#fdf4ff" stroke="#f5d0fe"/>
+        <text x="520" y="54" text-anchor="middle" font-size="9.4" fill="#86198f" font-weight="800">Directions carry meaning</text>
+        <g font-size="8.4">
+          <circle cx="420" cy="140" r="4" fill="#a21caf"/><text x="410" y="154" fill="#701a75" text-anchor="middle">man</text>
+          <circle cx="420" cy="90" r="4" fill="#a21caf"/><text x="408" y="86" fill="#701a75" text-anchor="middle">king</text>
+          <circle cx="560" cy="140" r="4" fill="#a21caf"/><text x="562" y="154" fill="#701a75" text-anchor="middle">woman</text>
+          <circle cx="560" cy="90" r="4" fill="#c026d3"/><text x="574" y="86" fill="#701a75" text-anchor="middle">queen</text>
+        </g>
+        <defs><marker id="nla" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#a21caf"/></marker></defs>
+        <line x1="420" y1="134" x2="420" y2="98" stroke="#a21caf" stroke-width="1.6" marker-end="url(#nla)"/>
+        <line x1="560" y1="134" x2="560" y2="98" stroke="#a21caf" stroke-width="1.6" stroke-dasharray="3 2" marker-end="url(#nla)"/>
+        <line x1="428" y1="140" x2="552" y2="140" stroke="#c4b5fd" stroke-width="1.2" stroke-dasharray="3 2"/>
+        <text x="520" y="176" text-anchor="middle" font-size="7.8" fill="#7c3aed">king &#8722; man + woman lands near queen</text>
+      </svg>
+    </figure>
+
+    <p>Two useful consequences. First, <strong>similarity</strong> becomes a number: the <strong>cosine</strong> of the angle
+       between two vectors tells you how related two words or documents are, which is what powers semantic search and the
+       retrieval step in modern AI systems. Second, <strong>directions</strong> in the space are meaningful, the classic
+       demonstration being that <code>king &#8722; man + woman</code> lands near <code>queen</code>. Modern models go further
+       with <strong>contextual</strong> embeddings: the vector for &#8220;bank&#8221; differs in <em>river bank</em> and
+       <em>savings bank</em>, because the representation now depends on the surrounding words.</p>
+  </section>
+
+  <!-- ===== §3 attention / transformers ===== -->
+  <section id="transformers">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Attention, Transformers, and How an LLM Works</h2></div>
+    <p>Contextual embeddings need a mechanism that lets each token look at the others and decide what is relevant. That
+       mechanism is <strong>self-attention</strong>. For every token the model forms a <strong>query</strong>, and every token
+       offers a <strong>key</strong> and a <strong>value</strong>. Compare a query against all keys, turn the scores into
+       weights with a softmax, and the token's new representation is that weighted blend of values.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 200" width="100%" font-family="Inter, sans-serif" aria-label="The word it forms a query that is compared against every other word in the sentence; the attention weights are highest on the noun animal, so it resolves to that word.">
+        <text x="350" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Self-attention: each token decides which others matter</text>
+        <g font-size="9" text-anchor="middle">
+          <rect x="40" y="44" width="72" height="26" rx="6" fill="#eff6ff" stroke="#bfdbfe"/><text x="76" y="61" fill="#1d4ed8">The animal</text>
+          <rect x="122" y="44" width="66" height="26" rx="6" fill="#eff6ff" stroke="#bfdbfe"/><text x="155" y="61" fill="#1d4ed8">did not</text>
+          <rect x="198" y="44" width="62" height="26" rx="6" fill="#eff6ff" stroke="#bfdbfe"/><text x="229" y="61" fill="#1d4ed8">cross</text>
+          <rect x="270" y="44" width="86" height="26" rx="6" fill="#eff6ff" stroke="#bfdbfe"/><text x="313" y="61" fill="#1d4ed8">the street</text>
+          <rect x="366" y="44" width="76" height="26" rx="6" fill="#eff6ff" stroke="#bfdbfe"/><text x="404" y="61" fill="#1d4ed8">because</text>
+          <rect x="452" y="44" width="44" height="26" rx="6" fill="#fae8ff" stroke="#a21caf" stroke-width="2"/><text x="474" y="61" fill="#701a75" font-weight="800">it</text>
+          <rect x="506" y="44" width="88" height="26" rx="6" fill="#eff6ff" stroke="#bfdbfe"/><text x="550" y="61" fill="#1d4ed8">was tired</text>
+        </g>
+        <!-- attention arcs from "it" back to tokens, thickness = weight -->
+        <g fill="none" stroke="#a21caf">
+          <path d="M474,74 C400,120 150,120 76,74" stroke-width="4.5" opacity="0.85"/>
+          <path d="M474,74 C450,110 340,112 313,74" stroke-width="1.4" opacity="0.45"/>
+          <path d="M474,74 C462,100 420,104 404,74" stroke-width="1" opacity="0.35"/>
+          <path d="M474,74 C490,104 530,102 550,74" stroke-width="1.8" opacity="0.5"/>
+        </g>
+        <text x="76" y="104" text-anchor="middle" font-size="8.4" fill="#86198f" font-weight="800">0.61</text>
+        <text x="313" y="104" text-anchor="middle" font-size="7.6" fill="#a21caf">0.11</text>
+        <text x="404" y="102" text-anchor="middle" font-size="7.6" fill="#a21caf">0.08</text>
+        <text x="550" y="104" text-anchor="middle" font-size="7.6" fill="#a21caf">0.14</text>
+        <text x="350" y="146" text-anchor="middle" font-size="8.6" fill="#334155">attention weights = softmax(query &#183; keys / &#8730;d), then blend the values</text>
+        <text x="350" y="168" text-anchor="middle" font-size="8.4" fill="#86198f" font-weight="700">"it" attends most to "animal", so the model resolves the pronoun</text>
+        <text x="350" y="188" text-anchor="middle" font-size="7.8" fill="#64748b">every token does this in parallel, in many heads, stacked over many layers</text>
+      </svg>
+    </figure>
+
+    <p>Stack that operation, many <strong>heads</strong> in parallel and many layers deep, add a feed-forward block and
+       positional information, and you have a <strong>transformer</strong>. Because attention compares every token to every
+       other in parallel, it trains far faster than the sequential recurrent models it replaced, which is exactly what made
+       scaling possible. A <strong>large language model</strong> is such a transformer <strong>pre-trained</strong> on a huge
+       corpus to predict the next token, then usually <strong>fine-tuned</strong>, often with human feedback, to follow
+       instructions helpfully. Generation is just that prediction run in a loop, one token at a time.</p>
+  </section>
+
+  <!-- ===== §4 real-world ===== -->
+  <section id="realworld">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: Classifying Product Reviews</h2></div>
+    <p>Before reaching for a language model, know what the classical pipeline gets you. The companion notebook runs the full
+       text-classification workflow with <strong>scikit-learn</strong>.</p>
+
+    <div class="rw-card">
+      <div class="rw-tag">📂 Dataset · nlp-and-large-language-models--product-reviews.xlsx</div>
+      <p style="margin:0.5rem 0 0"><strong>800 product reviews</strong> labeled positive or negative (404 / 396), in three
+        columns: <code>review_id</code>, <code>review_text</code>, and <code>sentiment</code>. About <strong>8 percent of
+        the labels are deliberately flipped</strong>, so perfect accuracy is impossible, exactly like real annotated data.</p>
+      <ul class="rw-find">
+        <li><span class="ck">&#9679;</span><strong>The vocabulary is tiny:</strong> just <strong>80 distinct words</strong> across all 800 reviews, enough for a sparse vector per document.</li>
+        <li><span class="ck">&#9679;</span><strong>Both representations tie:</strong> bag-of-words and TF-IDF each reach <strong>92.9% accuracy</strong> (F1 <strong>0.93</strong>), right at the ceiling the 8% label noise allows.</li>
+        <li><span class="ck">&#9679;</span><strong>The model is readable:</strong> its strongest positive words are <em>great, highly, works, excellent</em>; its strongest negative words are <em>poor, waste, terrible, not</em>.</li>
+      </ul>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/nlp-and-large-language-models--product-reviews.xlsx" download>📊 Download dataset &nbsp;<small>XLSX · 800 reviews</small></a>
+      </div>
+    </div>
+
+    <p>Two honest lessons hide in that result. First, <strong>TF-IDF did not beat raw counts here</strong>: on short, clean
+       documents with a small vocabulary there are no long rambling texts for it to down-weight, so the reweighting has
+       nothing to fix. Its advantage shows up on longer, noisier corpora. Second, the model stalls at about 93 percent not
+       because it is weak but because <strong>8 percent of the labels are wrong</strong>, an irreducible error no
+       architecture can beat. A transformer would not do better here; knowing that saves you from reaching for one.</p>
+  </section>
+
+  <!-- ===== §5 evaluation + landscape ===== -->
+  <section id="mlai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Evaluating Language Models &amp; the AI Landscape</h2></div>
+    <p>Classification has accuracy and F1. <em>Generated</em> text is harder: there is rarely one right answer, so the field
+       uses a family of proxies, each measuring something different and each easy to game.</p>
+
+    <table class="ml-table">
+      <thead><tr><th>Metric</th><th>What it measures</th><th>Used for</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">Accuracy / F1</td><td>Right-or-wrong against a label, balancing precision and recall</td><td>Classification: sentiment, topic, intent, spam</td></tr>
+        <tr><td class="nm">Perplexity</td><td>How <em>surprised</em> the model is by real text; lower is better (roughly, how many words it is choosing among)</td><td>Language modeling and pre-training progress</td></tr>
+        <tr><td class="nm">BLEU</td><td>N-gram <strong>precision</strong> against reference text: how much of what you produced appears in the reference</td><td>Machine translation</td></tr>
+        <tr><td class="nm">ROUGE</td><td>N-gram <strong>recall</strong>: how much of the reference your output covered</td><td>Summarization</td></tr>
+        <tr><td class="nm">BERTScore</td><td>Similarity of <em>embeddings</em> rather than exact words, so paraphrases still score well</td><td>Generation, where wording legitimately varies</td></tr>
+        <tr><td class="nm">Human eval / LLM-as-judge</td><td>People (or a strong model) rate helpfulness, accuracy, and safety</td><td>Open-ended assistants, where n-gram overlap fails</td></tr>
+      </tbody>
+    </table>
+
+    <p>The word-overlap metrics share a weakness worth remembering: they reward matching <em>tokens</em>, not matching
+       <em>meaning</em>. A perfect paraphrase can score badly on BLEU, and a fluent, confidently wrong answer can score well.
+       That is why embedding-based scores and human judgment have become essential for anything open-ended.</p>
+
+    <div class="research">
+      <div class="rtag">🔬 Research frontier</div>
+      <p style="margin:0.4rem 0 0">NLP is the fastest-moving corner of AI. The live threads: <strong>scaling laws</strong> and
+        how far next-token prediction goes; <strong>instruction tuning and RLHF</strong> to make raw models useful and safe;
+        <strong>retrieval-augmented generation</strong>, which grounds answers in real documents to fight
+        <strong>hallucination</strong>; efficiency work (quantization, distillation, small capable models); and
+        <strong>multimodal</strong> systems that treat text, images, and audio as one token stream. Running underneath is an
+        <strong>evaluation crisis</strong>: benchmarks saturate almost as fast as they are built, so measuring genuine
+        capability, and genuine reliability, is itself an open research problem.</p>
+    </div>
+  </section>
+
+  <!-- ===== notebook CTA ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body"><h3>Do NLP in Python</h3><p>The companion notebook tokenizes the reviews and builds bag-of-words and TF-IDF vectors, trains and compares classifiers on both, reads out the most predictive words, builds a small embedding space from the corpus and finds nearest neighbours by cosine similarity, computes self-attention by hand with softmax over query-key scores, and finally implements perplexity, BLEU, and ROUGE from scratch so the metrics stop being magic.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/nlp-and-large-language-models.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/nlp-and-large-language-models.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/nlp-and-large-language-models.ipynb" target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-faint)"><strong>View</strong> opens the rendered notebook instantly.
+      <strong>Open in Colab</strong> runs it live. To run locally, install <code>numpy</code>, <code>pandas</code>,
+      <code>matplotlib</code>, <code>scikit-learn</code>, and <code>openpyxl</code> (the <code>transformers</code> library
+      adds pre-trained models and tokenizers).</p>
+  </section>
+
+  <!-- ===== takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Representation is the first decision</strong>: tokenize, then counts (bag-of-words), then TF-IDF weighting, then dense embeddings.</span></li>
+        <li><span class="ck">✓</span><span><strong>Bag-of-words is order-blind</strong>: &#8220;dog bites man&#8221; and &#8220;man bites dog&#8221; get identical vectors, yet it is still a strong baseline.</span></li>
+        <li><span class="ck">✓</span><span><strong>Embeddings make meaning geometric</strong>: similar words sit close, cosine similarity measures relatedness, and directions carry analogies.</span></li>
+        <li><span class="ck">✓</span><span><strong>Self-attention</strong> lets every token weigh every other (softmax over query-key scores); stacking it gives a transformer.</span></li>
+        <li><span class="ck">✓</span><span><strong>An LLM is next-token prediction at scale</strong>, pre-trained then fine-tuned; generation is that prediction looped.</span></li>
+        <li><span class="ck">✓</span><span><strong>Match the metric to the task</strong>: accuracy/F1 for classification, perplexity for language modeling, BLEU (precision) for translation, ROUGE (recall) for summarization, BERTScore or humans for open-ended text.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== §6 challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five exercises on the reviews corpus. Full solutions are in the companion solutions notebook.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Bag-of-words vs TF-IDF</h4>
+        <p>Vectorize the reviews both ways, train a classifier on each, and compare accuracy. Why is the difference so small here?</p>
+        <div class="chint">Hint: <code>CountVectorizer</code> vs <code>TfidfVectorizer</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Read the model</h4>
+        <p>Pull the largest positive and negative coefficients and list the words behind them. Do they make sense?</p>
+        <div class="chint">Hint: <code>get_feature_names_out()</code> + <code>clf.coef_</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Similar words by cosine</h4>
+        <p>Build a term-document matrix, reduce it with SVD, and find each word's nearest neighbours by cosine similarity.</p>
+        <div class="chint">Hint: <code>TruncatedSVD</code> then <code>cosine_similarity</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Attention by hand</h4>
+        <p>Given small query, key, and value matrices, compute softmax(QK<sup>T</sup>/&#8730;d)V and confirm the weights sum to 1.</p>
+        <div class="chint">Hint: subtract the max before exponentiating for a stable softmax.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Perplexity and BLEU</h4>
+        <p>Compute perplexity for a unigram and a bigram model, and BLEU and ROUGE for a candidate sentence against a reference.</p>
+        <div class="chint">Hint: perplexity = exp(mean negative log probability).</div></div></div>
+    </div>
+
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">📓</div>
+        <div class="nb-body"><h3>Solutions notebook</h3><p>All five challenges worked in code, the two representations compared, the model's most predictive words, cosine nearest neighbours, self-attention computed by hand, and perplexity, BLEU, and ROUGE implemented from scratch, each with a short explanation.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/nlp-and-large-language-models--solutions.html">📓 View Solutions</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/nlp-and-large-language-models--solutions.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/nlp-and-large-language-models--solutions.ipynb" target="_blank" rel="noopener">⬇ GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §7 quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on text representation, embeddings, attention, and evaluation metrics. Answer them, hit
+       <strong>Check Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>Language models are trained on data far too large for one machine. <strong>Big Data &amp; Scaling</strong> (coming
+         soon) closes this part with the engineering that makes that possible: distributed storage and compute, parallel
+         processing, and the practical limits of scale. Browse the full <a href="../toc.html">Contents</a> for what is
+         published and what is on the way.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="recommendation-systems.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 147 · Previous</span><br><span class="cn-title">Recommendation Systems</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 148 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => { const h = document.documentElement; bar.style.width = ((h.scrollTop)/(h.scrollHeight-h.clientHeight)*100) + '%'; });
+</script>
+
+<script>
+  window.QUIZ_ID = "ch148";
+  window.QUIZ_DATA = [
+    {
+      q: "What is the first problem NLP has to solve?",
+      options: ["Choosing a GPU", "Turning text into numbers a model can use", "Removing all punctuation", "Translating to English"],
+      answer: 1,
+      explain: "Models eat numbers; representation (tokens, counts, TF-IDF, embeddings) is the foundational decision."
+    },
+    {
+      q: "A bag-of-words vector represents a document by…",
+      options: ["The order of its words", "How often each vocabulary word appears, ignoring order", "Its length only", "A single number"],
+      answer: 1,
+      explain: "It is order-blind: 'dog bites man' and 'man bites dog' produce identical vectors."
+    },
+    {
+      q: "TF-IDF up-weights a word when it is…",
+      options: ["Frequent everywhere", "Frequent in this document but rare across the corpus", "Very long", "Capitalized"],
+      answer: 1,
+      explain: "Term frequency times inverse document frequency pushes down 'the' and up genuinely distinctive words."
+    },
+    {
+      q: "What advantage do embeddings have over bag-of-words?",
+      options: ["They are sparser", "Similar meanings get nearby vectors, so 'excellent' and 'superb' are related", "They need no data", "They are always faster"],
+      answer: 1,
+      explain: "Embeddings map tokens to dense vectors where geometry encodes meaning; cosine similarity then measures relatedness."
+    },
+    {
+      q: "Self-attention computes a token's new representation as…",
+      options: ["The average of all tokens equally", "A weighted blend of values, with weights from softmax over query-key scores", "The first token", "A random sample"],
+      answer: 1,
+      explain: "Each token queries every other; softmax(QK^T/sqrt(d)) gives the weights that blend the values."
+    },
+    {
+      q: "A large language model is trained primarily to…",
+      options: ["Classify sentiment", "Predict the next token given the text so far", "Sort words alphabetically", "Compress files"],
+      answer: 1,
+      explain: "Next-token prediction at scale; instruction-following and other abilities emerge from that objective plus fine-tuning."
+    },
+    {
+      q: "Perplexity measures…",
+      options: ["Model size", "How surprised the model is by real text (lower is better)", "Training speed", "Vocabulary size"],
+      answer: 1,
+      explain: "It is exp(mean negative log probability); in the notebook a bigram model cut perplexity from about 65 to about 5."
+    },
+    {
+      q: "BLEU and ROUGE differ in that…",
+      options: ["BLEU is for images", "BLEU emphasizes n-gram precision (translation); ROUGE emphasizes recall (summarization)", "They are identical", "ROUGE needs no reference"],
+      answer: 1,
+      explain: "Both compare n-grams to a reference; neither understands meaning, which is why BERTScore and human evaluation exist."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
