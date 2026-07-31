@@ -580,6 +580,18 @@ MAP = {
         ("../../python-for-data-analysis.html#notebook", "Back to the book", "Chapter 151 · Notebook 5 · Visualization"),
     "python-for-data-analysis--solutions.html":
         ("../../python-for-data-analysis.html#challenges", "Back to the book", "Chapter 151 · Challenge solutions"),
+    "sql-and-databases--1-foundations.html":
+        ("../../sql-and-databases.html#notebook", "Back to the book", "Chapter 154 · Notebook 1 · SQL Foundations"),
+    "sql-and-databases--2-aggregation.html":
+        ("../../sql-and-databases.html#notebook", "Back to the book", "Chapter 154 · Notebook 2 · Aggregation"),
+    "sql-and-databases--3-joins.html":
+        ("../../sql-and-databases.html#notebook", "Back to the book", "Chapter 154 · Notebook 3 · Joins"),
+    "sql-and-databases--4-window-functions.html":
+        ("../../sql-and-databases.html#notebook", "Back to the book", "Chapter 154 · Notebook 4 · Window Functions"),
+    "sql-and-databases--5-subqueries-and-pandas.html":
+        ("../../sql-and-databases.html#notebook", "Back to the book", "Chapter 154 · Notebook 5 · Subqueries &amp; pandas"),
+    "sql-and-databases--solutions.html":
+        ("../../sql-and-databases.html#challenges", "Back to the book", "Chapter 154 · Challenge solutions"),
 }
 
 def card(href, kicker, title):
