@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 153 · Statistical Software — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .ml-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.85rem; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .ml-table th,.ml-table td { padding:0.6rem 0.8rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .ml-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .ml-table td { color:var(--ink-soft); } .ml-table tr:last-child td { border-bottom:none; }
+    .ml-table .nm { font-weight:700; color:var(--ink); }
+    .ml-table code { font-size:0.82em; }
+    .research { background:#f0fdfa; border:1px solid #99f6e4; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#115e59; }
+    .codecmp { display:grid; grid-template-columns:1fr 1fr; gap:0.9rem; margin:1.2rem 0; }
+    @media (max-width:640px){ .codecmp{ grid-template-columns:1fr; } }
+    .codebox { border:1px solid var(--line); border-radius:10px; overflow:hidden; background:var(--panel-2); }
+    .codebox .cbh { font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; padding:0.4rem 0.85rem; color:#fff; }
+    .codebox.spss .cbh { background:#c8102e; }
+    .codebox.stata .cbh { background:#1a476f; }
+    .codebox.sas .cbh { background:#0766d1; }
+    .codebox.rlang .cbh { background:#276DC3; }
+    .codebox pre { margin:0; padding:0.85rem; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:0.78rem; line-height:1.55; overflow-x:auto; color:var(--ink); white-space:pre; }
+    .codebox .cmt { color:#64748b; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="r-for-statistics.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">📊 R chapter</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXV · Tools &amp; Workflow</span><span class="sep">/</span>
+      <span>Chapter 153</span>
+    </div>
+    <h1>Statistical <span class="accent">Software</span></h1>
+    <p class="dek">Long before R and Python, statistics ran on dedicated commercial packages, and it still does across
+       health, government, business, and finance. SPSS, Stata, SAS, EViews, and Minitab wear different interfaces, but under
+       every one of them is the same statistics you have learned. This tour shows you the landscape, and the one skill that
+       carries across all of them: reading the output.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~25 min</b>&nbsp;read</div>
+      <div class="m">📖 <b>Overview</b>&nbsp;chapter</div>
+      <div class="m">📊 <b>Chapter 153</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Not everyone who does statistics writes code. In hospitals, government agencies, market-research firms,
+       central banks, and factory floors, a great deal of analysis runs on <span class="hl">commercial statistical
+       packages</span>, tools you drive largely by clicking menus, with a long pedigree and deep trust in their fields. This
+       chapter is an orientation to that world: what these packages are, who uses which, and how to get data in. But the part
+       that matters most, and the part that <span class="hl">transfers to every one of them</span>, is knowing how to read the
+       tables they hand back. A p-value is a p-value whether it is labeled <code>Sig.</code>, <code>P&gt;|t|</code>, or
+       <code>Pr(&gt;|t|)</code>.</p>
+
+    <div class="def-card">
+      <div class="sigma">🖥️</div>
+      <div class="def-body">
+        <span class="def-kw">Statistical software</span> here means dedicated commercial packages, mostly
+        <span class="def-kw">menu-driven</span>, that specialize in classical statistics and reporting:
+        <span class="def-kw">SPSS</span>, <span class="def-kw">Stata</span>, <span class="def-kw">SAS</span>,
+        <span class="def-kw">EViews</span>, <span class="def-kw">Minitab</span>, and <span class="def-kw">JMP</span>. Each has
+        a loyal home field, and each produces output built from the same underlying statistics.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🔁</div>
+      <div><div class="ctitle">The interface changes; the statistics does not</div>
+        <p>Whether you click <em>Analyze &#8594; Compare Means</em> in SPSS, type <code>ttest</code> in Stata, or write
+           <code>PROC TTEST</code> in SAS, you are running the very same test from the <a href="t-tests.html">t-tests
+           chapter</a>, and the output reports the same t statistic, degrees of freedom, p-value, and confidence interval.
+           Learn to read one results table and you can read them all. That is the transferable skill this chapter is really
+           about.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §1 the paradigm ===== -->
+  <section id="paradigm">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Point-and-Click Tradition</h2></div>
+    <p>The commercial packages grew up in the mainframe era. SPSS and SAS both date to the late 1960s and 1970s, decades
+       before R or Python, and they were built for researchers who were experts in their subject, not in programming. That
+       origin shaped a distinctive way of working that most of them still share.</p>
+
+    <p>A typical package gives you a few linked windows. A <strong>data window</strong> shows your dataset as a spreadsheet;
+       often a companion view holds the <strong>metadata</strong> (each variable's name, type, labels, and measurement level).
+       You choose an analysis from <strong>menus</strong>, fill in a dialog box, and click OK. The package then does two
+       things: it writes the equivalent <strong>syntax command</strong> into a script, and it sends the results to a separate
+       <strong>output viewer</strong> as formatted tables and charts. You can save that syntax and rerun it, which is how even
+       point-and-click users build reproducible analyses.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 214" width="100%" font-family="Inter, sans-serif" aria-label="The typical workflow of a statistical package. A data window and a menu feed into a point-and-click dialog; choosing an analysis both writes a syntax command into a saved script and sends formatted result tables to an output viewer. The saved syntax makes the analysis reproducible.">
+        <text x="350" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">One analysis, three windows</text>
+
+        <!-- data + menu -->
+        <rect x="30" y="46" width="150" height="60" rx="9" fill="#f0fdfa" stroke="#14b8a6" stroke-width="1.4"/>
+        <text x="105" y="66" text-anchor="middle" font-size="9" fill="#115e59" font-weight="800">data window</text>
+        <text x="105" y="80" text-anchor="middle" font-size="7.5" fill="#0f766e">rows and columns,</text>
+        <text x="105" y="92" text-anchor="middle" font-size="7.5" fill="#0f766e">plus a variable view</text>
+
+        <rect x="30" y="120" width="150" height="52" rx="9" fill="#eff6ff" stroke="#4B8BBE" stroke-width="1.4"/>
+        <text x="105" y="140" text-anchor="middle" font-size="9" fill="#1e40af" font-weight="800">menus &amp; dialogs</text>
+        <text x="105" y="154" text-anchor="middle" font-size="7.5" fill="#1d4ed8">Analyze &#8594; Compare Means</text>
+        <text x="105" y="165" text-anchor="middle" font-size="7.5" fill="#1d4ed8">point, click, OK</text>
+
+        <!-- center: the click generates two things -->
+        <rect x="270" y="86" width="150" height="46" rx="9" fill="#1a2138"/>
+        <text x="345" y="106" text-anchor="middle" font-size="9" fill="#fff" font-weight="800">choose an analysis</text>
+        <text x="345" y="120" text-anchor="middle" font-size="7.5" fill="#9fb3c8">the package runs it</text>
+
+        <g stroke="#94a3b8" stroke-width="1.6" fill="none" marker-end="url(#a3)">
+          <path d="M180 76 Q230 90 268 100"/>
+          <path d="M180 146 Q230 130 268 118"/>
+        </g>
+
+        <!-- right outputs: syntax + output viewer -->
+        <rect x="510" y="46" width="162" height="56" rx="9" fill="#f8fafc" stroke="#cbd5e1"/>
+        <text x="591" y="66" text-anchor="middle" font-size="9" fill="#334155" font-weight="800">syntax script</text>
+        <text x="591" y="80" text-anchor="middle" font-size="7" fill="#64748b" font-family="ui-monospace,monospace">T-TEST GROUPS=g(0 1)</text>
+        <text x="591" y="92" text-anchor="middle" font-size="7.5" fill="#16a34a" font-weight="700">saved &#8594; reproducible</text>
+
+        <rect x="510" y="116" width="162" height="60" rx="9" fill="#fffbeb" stroke="#fcd34d"/>
+        <text x="591" y="136" text-anchor="middle" font-size="9" fill="#92400e" font-weight="800">output viewer</text>
+        <text x="591" y="150" text-anchor="middle" font-size="7.5" fill="#b45309">formatted result tables</text>
+        <text x="591" y="163" text-anchor="middle" font-size="7.5" fill="#b45309">t, df, Sig., 95% CI</text>
+
+        <g stroke="#0f766e" stroke-width="1.8" fill="none" marker-end="url(#a3b)">
+          <path d="M420 100 Q470 84 508 74"/>
+          <path d="M420 118 Q470 134 508 144"/>
+        </g>
+        <defs>
+          <marker id="a3" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0 0 L6 3.5 L0 7 z" fill="#94a3b8"/></marker>
+          <marker id="a3b" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0 0 L6 3.5 L0 7 z" fill="#0f766e"/></marker>
+        </defs>
+      </svg>
+      <figcaption style="font-size:0.78rem;color:var(--ink-soft);margin-top:0.9rem;line-height:1.55">
+        A single click on a menu does double duty: it records a reusable syntax command and it produces a formatted output
+        table. The point-and-click front end is friendly, and the saved syntax underneath keeps the work reproducible.
+      </figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== §2 tour of packages ===== -->
+  <section id="the-packages">
+    <div class="section-eyebrow"><div class="num">2</div><h2>A Tour of the Major Packages</h2></div>
+    <p>Each package has a field where it is the local standard, a reputation earned over decades. Knowing the landscape helps
+       you recognize which tool produced a table you are handed, and what it is likely to be strong at.</p>
+
+    <table class="ml-table">
+      <thead><tr><th style="width:14%">Package</th><th style="width:30%">Best known for</th><th>Typical users and style</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">SPSS</td><td>Surveys and social-science statistics; the most menu-driven of all.</td>
+            <td>Psychology, sociology, education, health, market research. Now IBM SPSS Statistics. Very approachable.</td></tr>
+        <tr><td class="nm">Stata</td><td>Econometrics, epidemiology, panel and survey data.</td>
+            <td>Economists, epidemiologists, political scientists. A crisp command language plus menus and reproducible do-files.</td></tr>
+        <tr><td class="nm">SAS</td><td>Large-scale, validated enterprise analytics.</td>
+            <td>Pharmaceutical trials (regulatory submissions), banking, government. Scripted DATA and PROC steps; the gold standard where validation is required.</td></tr>
+        <tr><td class="nm">EViews</td><td>Time series and econometric forecasting.</td>
+            <td>Macroeconomists, central banks, financial analysts. ARIMA, VAR, and forecasting front and center.</td></tr>
+        <tr><td class="nm">Minitab</td><td>Quality improvement and Six Sigma.</td>
+            <td>Manufacturing and engineering. Control charts, capability analysis, and design of experiments, all menu-driven.</td></tr>
+        <tr><td class="nm">JMP</td><td>Interactive, visual data exploration and DOE.</td>
+            <td>Scientists and engineers. From SAS Institute, known for dynamic, linked graphics; strong on the Mac.</td></tr>
+      </tbody>
+    </table>
+
+    <p>Two axes separate them. One is <strong>how you drive them</strong>, from pure point-and-click at one end to
+       script-first at the other. The other is <strong>how general they are</strong>, from broad all-purpose statistics to a
+       specialized niche. Placing the packages on those axes shows why each found its home.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 300" width="100%" font-family="Inter, sans-serif" aria-label="A quadrant chart. The horizontal axis runs from point-and-click on the left to command and script on the right. The vertical axis runs from broad general-purpose statistics at the top to a specialized niche at the bottom. SPSS sits upper-left (general, menu-driven), Stata upper-center-right, SAS upper-right (general, scripted), Minitab lower-left (specialized quality, menus), JMP lower-center-left (specialized visual DOE), and EViews lower-right (specialized time series).">
+        <text x="350" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Where each package lives</text>
+        <!-- axes -->
+        <line x1="70" y1="150" x2="640" y2="150" stroke="#cbd5e1" stroke-width="1.3"/>
+        <line x1="355" y1="44" x2="355" y2="262" stroke="#cbd5e1" stroke-width="1.3"/>
+        <text x="70" y="286" font-size="8" fill="#64748b" font-weight="700">point-and-click</text>
+        <text x="640" y="286" text-anchor="end" font-size="8" fill="#64748b" font-weight="700">command / script</text>
+        <text x="360" y="52" font-size="8" fill="#64748b" font-weight="700">broad, general-purpose</text>
+        <text x="360" y="258" font-size="8" fill="#64748b" font-weight="700">specialized niche</text>
+
+        <!-- points -->
+        <g font-size="8.5" font-weight="800" text-anchor="middle">
+          <circle cx="160" cy="92" r="6" fill="#c8102e"/><text x="160" y="80" fill="#c8102e">SPSS</text><text x="160" y="110" font-size="7" font-weight="400" fill="#64748b">surveys, social science</text>
+          <circle cx="410" cy="100" r="6" fill="#1a476f"/><text x="410" y="88" fill="#1a476f">Stata</text><text x="410" y="118" font-size="7" font-weight="400" fill="#64748b">econometrics, epi</text>
+          <circle cx="560" cy="86" r="6" fill="#0766d1"/><text x="560" y="74" fill="#0766d1">SAS</text><text x="560" y="104" font-size="7" font-weight="400" fill="#64748b">enterprise, pharma</text>
+          <circle cx="150" cy="206" r="6" fill="#6ba43a"/><text x="150" y="194" fill="#4d7c0f">Minitab</text><text x="150" y="224" font-size="7" font-weight="400" fill="#64748b">quality, Six Sigma</text>
+          <circle cx="288" cy="224" r="6" fill="#0891b2"/><text x="288" y="212" fill="#0e7490">JMP</text><text x="288" y="242" font-size="7" font-weight="400" fill="#64748b">visual DOE, engineering</text>
+          <circle cx="556" cy="214" r="6" fill="#2e7d32"/><text x="556" y="202" fill="#2e7d32">EViews</text><text x="556" y="232" font-size="7" font-weight="400" fill="#64748b">time series, forecasting</text>
+        </g>
+      </svg>
+      <figcaption style="font-size:0.78rem;color:var(--ink-soft);margin-top:0.9rem;line-height:1.55">
+        SPSS and Minitab win on approachability; SAS and Stata reward a scripted, reproducible style; EViews, Minitab, and
+        JMP each own a specialty. There is no single best package, only the one that fits the field and the task.
+      </figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== §3 data in, output out ===== -->
+  <section id="reading-output">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Getting Data In, and Reading the Output</h2></div>
+    <p>Every package imports the usual formats, Excel, CSV, and databases, and each keeps its own native file too
+       (<code>.sav</code> for SPSS, <code>.dta</code> for Stata, <code>.sas7bdat</code> for SAS). Importing is rarely the hard
+       part. The skill that pays off forever is <strong>reading the results table</strong>, and the good news is that you
+       already learned every number in it, just under different names.</p>
+
+    <p>Here is a regression output, the sort every package prints. The labels differ from tool to tool, but each cell is a
+       quantity from this book. Read the annotations and you are reading SPSS, Stata, and SAS all at once.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 268" width="100%" font-family="Inter, sans-serif" aria-label="An annotated regression output table. Columns are the predictor, its coefficient, standard error, t statistic, p-value, and 95 percent confidence interval. Callouts explain that the coefficient is the slope, the standard error is its uncertainty, t is the test statistic, the p-value is labeled Sig. in SPSS and P greater-than bar t bar in Stata, and the confidence interval is the plausible range. A line below reports R-squared and the F statistic.">
+        <text x="350" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Reading a regression table (any package)</text>
+
+        <!-- table header -->
+        <g font-size="8" font-weight="700" fill="#fff" text-anchor="middle">
+          <rect x="60" y="86" width="120" height="24" fill="#0f766e"/><text x="120" y="102">predictor</text>
+          <rect x="180" y="86" width="96" height="24" fill="#0f766e"/><text x="228" y="102">coefficient</text>
+          <rect x="276" y="86" width="96" height="24" fill="#0f766e"/><text x="324" y="102">std. error</text>
+          <rect x="372" y="86" width="70" height="24" fill="#0f766e"/><text x="407" y="102">t</text>
+          <rect x="442" y="86" width="82" height="24" fill="#0f766e"/><text x="483" y="102">p-value</text>
+          <rect x="524" y="86" width="116" height="24" fill="#0f766e"/><text x="582" y="102">95% CI</text>
+        </g>
+        <!-- table rows -->
+        <g font-size="8.5" text-anchor="middle" fill="#334155">
+          <rect x="60" y="110" width="580" height="24" fill="#f8fafc" stroke="#e2e8f0"/>
+          <text x="120" y="126" font-weight="700" fill="#1a2138">education</text>
+          <text x="228" y="126" fill="#0f766e" font-weight="800">2.83</text>
+          <text x="324" y="126">0.41</text>
+          <text x="407" y="126">6.90</text>
+          <text x="483" y="126" fill="#b45309" font-weight="800">0.000</text>
+          <text x="582" y="126">[2.02, 3.64]</text>
+          <rect x="60" y="134" width="580" height="22" fill="#fff" stroke="#e2e8f0"/>
+          <text x="120" y="149" fill="#64748b">(constant)</text>
+          <text x="228" y="149">18.40</text><text x="324" y="149">3.10</text><text x="407" y="149">5.94</text><text x="483" y="149">0.000</text><text x="582" y="149">[12.3, 24.5]</text>
+        </g>
+
+        <!-- callouts -->
+        <text x="228" y="72" text-anchor="middle" font-size="7.5" fill="#0f766e" font-weight="700">the slope (B / coef. / Estimate)</text>
+        <path d="M228 74 L228 84" stroke="#0f766e" stroke-width="1.1"/>
+        <text x="324" y="176" text-anchor="middle" font-size="7.5" fill="#64748b" font-weight="700">its uncertainty (SE)</text>
+        <path d="M324 156 L324 170" stroke="#94a3b8" stroke-width="1.1"/>
+        <text x="407" y="196" text-anchor="middle" font-size="7.5" fill="#64748b" font-weight="700">test statistic</text>
+        <path d="M407 156 L407 190" stroke="#94a3b8" stroke-width="1.1"/>
+        <text x="483" y="212" text-anchor="middle" font-size="7.5" fill="#b45309" font-weight="700">p-value: SPSS &#8220;Sig.&#8221;, Stata &#8220;P&gt;|t|&#8221;</text>
+        <path d="M483 156 L483 206" stroke="#d97706" stroke-width="1.1"/>
+        <text x="582" y="176" text-anchor="middle" font-size="7.5" fill="#64748b" font-weight="700">plausible range</text>
+        <path d="M582 156 L582 170" stroke="#94a3b8" stroke-width="1.1"/>
+
+        <!-- model summary -->
+        <rect x="60" y="228" width="580" height="28" rx="6" fill="#f0fdfa" stroke="#99f6e4"/>
+        <text x="72" y="246" font-size="8.5" fill="#115e59" font-weight="700">Model:  R&#178; = 0.62    Adjusted R&#178; = 0.61    F(1, 98) = 47.6    p &lt; 0.001</text>
+        <text x="628" y="246" text-anchor="end" font-size="7" fill="#0f766e" font-style="italic">the overall fit</text>
+      </svg>
+      <figcaption style="font-size:0.78rem;color:var(--ink-soft);margin-top:0.9rem;line-height:1.55">
+        Every quantity here comes from the regression chapters: a coefficient, its standard error, a t statistic, a p-value,
+        a confidence interval, and R-squared for the overall fit. SPSS calls the p-value <code>Sig.</code>, Stata calls it
+        <code>P&gt;|t|</code>, SAS calls it <code>Pr &gt; |t|</code>. Same number, three labels.
+      </figcaption>
+    </figure>
+
+    <p>That label problem is the single biggest source of confusion, so it is worth a small dictionary. Whenever you meet an
+       unfamiliar results table, translate its headings back into the vocabulary you already own.</p>
+
+    <table class="ml-table">
+      <thead><tr><th style="width:34%">What this book calls it</th><th>What the packages call it</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">Regression coefficient (slope)</td><td><code>B</code> (SPSS), <code>Coef.</code> (Stata), <code>Estimate</code> (SAS, R)</td></tr>
+        <tr><td class="nm">Standard error</td><td><code>Std. Error</code>, <code>Std. Err.</code></td></tr>
+        <tr><td class="nm">Test statistic</td><td><code>t</code>, <code>z</code>, or <code>Wald</code></td></tr>
+        <tr><td class="nm">p-value</td><td><code>Sig.</code> (SPSS), <code>P&gt;|t|</code> (Stata), <code>Pr &gt; |t|</code> (SAS), <code>Pr(&gt;|t|)</code> (R)</td></tr>
+        <tr><td class="nm">Confidence interval</td><td><code>95% CI</code>, <code>[95% Conf. Interval]</code></td></tr>
+        <tr><td class="nm">Coefficient of determination</td><td><code>R Square</code>, <code>R-squared</code>, <code>R&#178;</code></td></tr>
+        <tr><td class="nm">Standardized coefficient</td><td><code>Beta</code> (SPSS)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout warn">
+      <div class="cico">⚠️</div>
+      <div><div class="ctitle">&#8220;Sig.&#8221; is a p-value, not significance itself</div>
+        <p>SPSS labels the p-value column <code>Sig.</code>, which tempts readers to announce a result &#8220;significant&#8221;
+           the moment it is small. Resist it. The number is the same p-value you learned to interpret carefully in the
+           <a href="significance-p-values-and-errors.html">p-values chapter</a>: it is the probability of data this extreme if
+           the null were true, judged against a threshold <em>you</em> set, and read alongside the effect size and confidence
+           interval. The label is a shortcut, not a verdict.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §4 same test everywhere ===== -->
+  <section id="same-test">
+    <div class="section-eyebrow"><div class="num">4</div><h2>The Same Analysis, Across the Packages</h2></div>
+    <p>To see how thin the differences really are, here is one ordinary linear regression, predicting income from years of
+       education, written in four tools. The commands look nothing alike, yet each fits the identical model and prints the
+       identical coefficients.</p>
+
+    <div class="codecmp">
+      <div class="codebox spss"><div class="cbh">SPSS syntax</div><pre>REGRESSION
+  /DEPENDENT income
+  /METHOD=ENTER education.</pre></div>
+      <div class="codebox stata"><div class="cbh">Stata</div><pre>regress income education</pre></div>
+    </div>
+    <div class="codecmp">
+      <div class="codebox sas"><div class="cbh">SAS</div><pre>PROC REG DATA=work;
+  MODEL income = education;
+RUN;</pre></div>
+      <div class="codebox rlang"><div class="cbh">R (for comparison)</div><pre>lm(income ~ education,
+   data = d)</pre></div>
+    </div>
+
+    <p>Four dialects, one model. And a point-and-click user in SPSS or Minitab would never type any of this; they would pick
+       the analysis from a menu and the software would write the command for them. The output, a coefficient of about 2.83
+       dollars of income per year of education, a standard error, a t of roughly 6.9, and a p-value below 0.001, is the same
+       in every one, because it is a property of the data and the method, not the tool.</p>
+
+    <div class="callout key">
+      <div class="cico">🎓</div>
+      <div><div class="ctitle">Your book knowledge, in any package</div>
+        <p>A t-test is <em>Analyze &#8594; Compare Means</em> in SPSS, <code>ttest</code> in Stata, <code>PROC TTEST</code> in
+           SAS. ANOVA, chi-square, correlation, logistic regression, and factor analysis each have their menu item or
+           procedure name in every package. You do not need to memorize them all. You need to recognize the analysis and read
+           its output, and both of those you already can do.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §5 where it fits ===== -->
+  <section id="where-it-fits">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Commercial Packages, Code, and Where Each Fits</h2></div>
+    <p>Given free and powerful R and Python, why do organizations still pay for these packages? The reasons are real, and they
+       explain where commercial software remains the right choice, and where it does not.</p>
+
+    <table class="ml-table">
+      <thead><tr><th style="width:30%">Strength of the commercial packages</th><th>The trade-off against R and Python</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">No coding required</td><td>Analysts productive in hours, not weeks, but point-and-click work is harder to reproduce and audit unless the syntax is saved.</td></tr>
+        <tr><td class="nm">Validated, trusted procedures</td><td>SAS in particular is accepted for regulatory submissions to bodies like the FDA, where a validated tool is a requirement, not a preference.</td></tr>
+        <tr><td class="nm">Support and stability</td><td>A vendor to call and decades of stability, paid for with licenses that can be expensive and closed.</td></tr>
+        <tr><td class="nm">Polished, standard output</td><td>Publication-ready tables out of the box, but less flexible than fully programmable graphics.</td></tr>
+        <tr><td class="nm">Deep classical statistics</td><td>Excellent for tests, regression, and reporting; not the home of modern machine learning, deep learning, or large-scale data engineering, which live in Python.</td></tr>
+      </tbody>
+    </table>
+
+    <p>The honest summary mirrors the last two chapters. For <strong>classical statistics, surveys, clinical and regulatory
+       work, and quick menu-driven analysis</strong>, the commercial packages are excellent and often the field standard. For
+       <strong>machine learning, deep learning, automation, and production systems</strong>, the momentum is with R and,
+       above all, Python. Many organizations run both: SPSS or SAS for the validated statistical report, Python for the
+       predictive model. And whichever produced the table in front of you, the numbers mean exactly what this book taught
+       you they mean.</p>
+
+    <div class="research">
+      <div class="rtag">Research note</div>
+      <p style="margin:0.4rem 0 0">These tools shaped how results are reported. The <strong>SPSS output table</strong>, with
+         its blocks for the model summary, the ANOVA, and the coefficients, became a de facto template that millions of
+         published papers follow, and the <strong>SAS PROC output</strong> set conventions still visible in R and Python
+         summaries today. When statsmodels prints a regression table that looks familiar, it is echoing a layout the
+         commercial packages standardized decades ago. The interfaces compete; the grammar of a results table is largely
+         shared.</p>
+    </div>
+  </section>
+
+  <!-- ===== takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Commercial statistical packages</strong> (SPSS, Stata, SAS, EViews, Minitab, JMP) run much of the world's applied statistics, mostly through menus rather than code.</span></li>
+        <li><span class="ck">✓</span><span><strong>A menu click does double duty</strong>: it writes reusable syntax and produces a formatted output table, so even point-and-click work can be reproducible.</span></li>
+        <li><span class="ck">✓</span><span><strong>Each package owns a field</strong>: SPSS surveys and social science, Stata econometrics and epidemiology, SAS regulated enterprise work, EViews time series, Minitab quality, JMP visual DOE.</span></li>
+        <li><span class="ck">✓</span><span><strong>Reading output is the transferable skill</strong>: coefficient, standard error, test statistic, p-value, confidence interval, and R-squared appear in every package under different labels.</span></li>
+        <li><span class="ck">✓</span><span><strong>&#8220;Sig.&#8221; is just the p-value</strong>: a small number is not an automatic verdict; interpret it with a threshold, an effect size, and a confidence interval.</span></li>
+        <li><span class="ck">✓</span><span><strong>The same test looks different but computes the same result</strong> in SPSS, Stata, SAS, and R; the command changes, the statistics does not.</span></li>
+        <li><span class="ck">✓</span><span><strong>Commercial tools lead in classical, validated, menu-driven statistics</strong>; R and Python lead in machine learning and production. Knowing how to read any of their output is what carries across all of it.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== §6 quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on the major packages, the point-and-click paradigm, and reading their output. Answer them, hit
+       <strong>Check Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">➡️</div>
+    <div><div class="ctitle">Up next</div>
+      <p>Whatever tool runs the analysis, the data usually starts in a database. <strong>SQL &amp; Databases</strong> (coming
+         soon) covers the language every one of these packages uses to pull data: querying, joins, aggregation, and window
+         functions, and how to get data ready for analysis. Browse the full <a href="../toc.html">Contents</a> for what is
+         published and what is on the way.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="r-for-statistics.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 152 · Previous</span><br><span class="cn-title">R for Statistics</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 153 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => { const h = document.documentElement; bar.style.width = ((h.scrollTop)/(h.scrollHeight-h.clientHeight)*100) + '%'; });
+</script>
+
+<script>
+  window.QUIZ_ID = "ch153";
+  window.QUIZ_DATA = [
+    {
+      q: "What is the defining working style of most commercial statistical packages?",
+      options: ["Command-line only", "Point-and-click menus that also generate reusable syntax", "Writing C code", "Spreadsheet formulas"],
+      answer: 1,
+      explain: "You choose an analysis from menus; the package runs it, writes the equivalent syntax, and sends results to an output viewer."
+    },
+    {
+      q: "Which package is most associated with surveys and social-science research?",
+      options: ["SAS", "SPSS", "EViews", "Minitab"],
+      answer: 1,
+      explain: "SPSS, the Statistical Package for the Social Sciences, is the most menu-driven and a longtime standard in psychology, sociology, and health."
+    },
+    {
+      q: "Which package is the usual standard for regulated pharmaceutical and clinical-trial submissions?",
+      options: ["Minitab", "JMP", "SAS", "EViews"],
+      answer: 2,
+      explain: "SAS is accepted for regulatory submissions to bodies like the FDA, where a validated tool is required."
+    },
+    {
+      q: "Minitab is best known for work in…",
+      options: ["Macroeconomic forecasting", "Quality improvement and Six Sigma", "Deep learning", "Survey weighting"],
+      answer: 1,
+      explain: "Minitab specializes in control charts, capability analysis, and design of experiments for manufacturing and engineering."
+    },
+    {
+      q: "In SPSS output, the column labeled 'Sig.' is…",
+      options: ["The effect size", "The p-value", "The sample size", "The R-squared"],
+      answer: 1,
+      explain: "'Sig.' is SPSS's name for the p-value; Stata labels the same column P>|t| and SAS labels it Pr > |t|."
+    },
+    {
+      q: "You see a results table with columns B, Std. Error, t, and Sig. This is…",
+      options: ["Something entirely new to learn", "A regression table whose quantities you already know under different labels", "A machine-learning model", "A database schema"],
+      answer: 1,
+      explain: "B is the coefficient, Std. Error the standard error, t the test statistic, and Sig. the p-value, all from the regression chapters."
+    },
+    {
+      q: "Running the same linear regression in SPSS, Stata, SAS, and R will…",
+      options: ["Give different coefficients", "Give the same coefficients, because the result depends on the data and method, not the tool", "Only work in SAS", "Require deep learning"],
+      answer: 1,
+      explain: "The commands differ, but each fits the identical model and reports the identical estimates."
+    },
+    {
+      q: "For which work do R and Python generally have the edge over the commercial packages?",
+      options: ["Classical hypothesis tests", "Menu-driven survey analysis", "Machine learning, deep learning, and production systems", "Regulatory submissions"],
+      answer: 2,
+      explain: "Commercial tools lead in classical, validated, menu-driven statistics; R and especially Python lead in machine learning and production."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
