@@ -592,6 +592,18 @@ MAP = {
         ("../../sql-and-databases.html#notebook", "Back to the book", "Chapter 154 · Notebook 5 · Subqueries &amp; pandas"),
     "sql-and-databases--solutions.html":
         ("../../sql-and-databases.html#challenges", "Back to the book", "Chapter 154 · Challenge solutions"),
+    "reproducibility-and-version-control--1-reproducibility.html":
+        ("../../reproducibility-and-version-control.html#notebook", "Back to the book", "Chapter 156 · Notebook 1 · Reproducibility"),
+    "reproducibility-and-version-control--2-project-structure.html":
+        ("../../reproducibility-and-version-control.html#notebook", "Back to the book", "Chapter 156 · Notebook 2 · Project Structure"),
+    "reproducibility-and-version-control--3-git-basics.html":
+        ("../../reproducibility-and-version-control.html#notebook", "Back to the book", "Chapter 156 · Notebook 3 · Git Basics"),
+    "reproducibility-and-version-control--4-branching-and-merging.html":
+        ("../../reproducibility-and-version-control.html#notebook", "Back to the book", "Chapter 156 · Notebook 4 · Branching &amp; Merging"),
+    "reproducibility-and-version-control--5-experiment-tracking.html":
+        ("../../reproducibility-and-version-control.html#notebook", "Back to the book", "Chapter 156 · Notebook 5 · Experiment Tracking"),
+    "reproducibility-and-version-control--solutions.html":
+        ("../../reproducibility-and-version-control.html#challenges", "Back to the book", "Chapter 156 · Challenge solutions"),
 }
 
 def card(href, kicker, title):

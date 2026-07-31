@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 156 · Reproducibility &amp; Version Control — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .ml-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.85rem; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .ml-table th,.ml-table td { padding:0.6rem 0.8rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .ml-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .ml-table td { color:var(--ink-soft); } .ml-table tr:last-child td { border-bottom:none; }
+    .ml-table .nm { font-weight:700; color:var(--ink); }
+    .ml-table code { font-size:0.82em; }
+    .rw-card { background:#f0fdfa; border:1px solid #99f6e4; border-left:4px solid #0f766e; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#115e59; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none; padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+    .research { background:#f0fdfa; border:1px solid #99f6e4; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#115e59; }
+    .nbgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:0.9rem; margin:1.3rem 0; }
+    .nbk { border:1px solid var(--line); border-radius:12px; padding:1rem 1.1rem; background:var(--panel); display:flex; flex-direction:column; }
+    .nbk .nbk-n { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#0f766e; }
+    .nbk h4 { margin:0.25rem 0 0.4rem; font-size:1rem; color:var(--ink); }
+    .nbk p { font-size:0.82rem; color:var(--ink-soft); line-height:1.55; margin:0 0 0.8rem; flex:1; }
+    .nbk .nbk-links { display:flex; gap:0.5rem; flex-wrap:wrap; }
+    .nbk .nbk-links a { font-size:0.75rem; font-weight:700; text-decoration:none; padding:0.35rem 0.7rem; border-radius:7px; }
+    .nbk .b-view { background:#0f766e; color:#fff; }
+    .nbk .b-colab { background:#f9ab00; color:#1a2138; }
+    .gitbox { border:1px solid var(--line); border-radius:10px; overflow:hidden; background:#0b1220; margin:1rem 0; }
+    .gitbox .cbh { font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; padding:0.4rem 0.85rem; color:#fff; background:#0f766e; }
+    .gitbox pre { margin:0; padding:0.85rem; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:0.8rem; line-height:1.6; overflow-x:auto; color:#e2e8f0; white-space:pre; }
+    .gitbox .p { color:#5eead4; }
+    .gitbox .cmt { color:#64748b; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/reproducibility-and-version-control--1-reproducibility.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebooks</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXV · Tools &amp; Workflow</span><span class="sep">/</span>
+      <span>Chapter 156</span>
+    </div>
+    <h1>Reproducibility &amp; <span class="accent">Version Control</span></h1>
+    <p class="dek">An analysis nobody can rerun is a story, not a result. This closing chapter of the toolkit is about making
+       your work trustworthy: fixing randomness, pinning environments, versioning data, and above all tracking code with Git,
+       so that you, or a stranger, can run it again and get the same answer. Five runnable notebooks, real Git included.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~30 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>5 Notebooks</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 156</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Somewhere in your future is a moment of quiet panic: a result you produced months ago, a stakeholder
+       asking how, and no way to rerun it. <span class="hl">Reproducibility</span> is the discipline that prevents that
+       moment. It means anyone with your project can run it and get <span class="hl">the same answer</span>, and it rests on
+       four things being captured: the <span class="hl">code</span>, the <span class="hl">data</span>, the
+       <span class="hl">randomness</span>, and the <span class="hl">environment</span>. Get those under control and your
+       analysis stops being a personal artifact and becomes something the world can check, which is what turns a claim into
+       evidence.</p>
+
+    <div class="def-card">
+      <div class="sigma">🔁</div>
+      <div class="def-body">
+        <span class="def-kw">Reproducibility</span> is the ability to obtain the same result from the same inputs.
+        <span class="def-kw">Version control</span> (chiefly <span class="def-kw">Git</span>) records the full history of your
+        code as <span class="def-kw">commits</span> you can inspect, revert, and share, and it is the backbone of a
+        reproducible, collaborative workflow.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🧰</div>
+      <div><div class="ctitle">Five runnable notebooks, real Git</div>
+        <p>This is a doing skill, so the chapter is a <strong>five-notebook mini-course</strong>: reproducibility
+           (seeds, environments, data hashes), project structure, Git basics, Git branching and merging, and end-to-end
+           experiment tracking. The Git notebooks run <strong>real <code>git</code> commands</strong> against a throwaway
+           repository created just for the demo, so you watch an actual commit history and a real merge conflict form and
+           resolve, with nothing installed and nothing of yours touched.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §1 four pillars ===== -->
+  <section id="four-pillars">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Four Pillars of a Reproducible Result</h2></div>
+    <p>&#8220;It works on my machine&#8221; is the enemy. A result reproduces only when four separate things are the same as
+       when it was first produced. Miss any one and the answer can quietly change.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 224" width="100%" font-family="Inter, sans-serif" aria-label="Four inputs feeding a reproducible result: code captured by version control, data captured by a hash, randomness captured by a fixed seed, and environment captured by pinned dependencies. All four arrows converge on a single box labeled the same answer, every run, every machine. A caption asks: would a stranger get the same result?">
+        <text x="350" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Four things must match for a result to reproduce</text>
+        <g font-size="8.5" text-anchor="middle">
+          <rect x="30" y="40" width="176" height="34" rx="8" fill="#f0fdfa" stroke="#0f766e" stroke-width="1.3"/><text x="86" y="57" fill="#115e59" font-weight="800">CODE</text><text x="86" y="69" fill="#0f766e" font-size="7">the code</text><text x="170" y="61" fill="#0f766e" font-size="7">version control (Git)</text>
+          <rect x="30" y="82" width="176" height="34" rx="8" fill="#f0fdfa" stroke="#0f766e" stroke-width="1.3"/><text x="86" y="99" fill="#115e59" font-weight="800">DATA</text><text x="86" y="111" fill="#0f766e" font-size="7">the inputs</text><text x="170" y="103" fill="#0f766e" font-size="7">a content hash</text>
+          <rect x="30" y="124" width="176" height="34" rx="8" fill="#f0fdfa" stroke="#0f766e" stroke-width="1.3"/><text x="82" y="141" fill="#115e59" font-weight="800">RANDOMNESS</text><text x="82" y="153" fill="#0f766e" font-size="7">the chance</text><text x="172" y="145" fill="#0f766e" font-size="7">a fixed seed</text>
+          <rect x="30" y="166" width="176" height="34" rx="8" fill="#eff6ff" stroke="#4B8BBE" stroke-width="1.3"/><text x="82" y="183" fill="#1e40af" font-weight="800">ENVIRONMENT</text><text x="82" y="195" fill="#2563eb" font-size="7">the libraries</text><text x="172" y="187" fill="#2563eb" font-size="7">pinned deps</text>
+        </g>
+        <!-- result -->
+        <rect x="452" y="90" width="218" height="60" rx="10" fill="#042f2e"/>
+        <text x="561" y="115" text-anchor="middle" font-size="11" fill="#5eead4" font-weight="800">the same answer</text>
+        <text x="561" y="132" text-anchor="middle" font-size="8" fill="#99f6e4">every run, every machine</text>
+        <!-- arrows converge to the left edge of the result -->
+        <g stroke="#0f766e" stroke-width="1.6" fill="none" marker-end="url(#c1)">
+          <path d="M206 57 Q350 70 450 108"/>
+          <path d="M206 99 Q340 108 450 116"/>
+          <path d="M206 141 Q340 130 450 124"/>
+          <path d="M206 183 Q350 168 450 132"/>
+        </g>
+        <defs><marker id="c1" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0 0 L6 3.5 L0 7 z" fill="#0f766e"/></marker></defs>
+        <text x="350" y="218" text-anchor="middle" font-size="8.5" fill="#64748b" font-style="italic">the test of reproducibility: would a stranger, given only your project, get this exact result?</text>
+      </svg>
+      <figcaption style="font-size:0.78rem;color:var(--ink-soft);margin-top:0.9rem;line-height:1.55">
+        Code, data, randomness, and environment. Version control handles the first, a hash pins the second, a seed pins the
+        third, and a pinned requirements file pins the fourth. This chapter covers all four, and the notebooks make each one
+        concrete.
+      </figcaption>
+    </figure>
+
+    <p>Three of the four are quick habits. Set a <strong>seed</strong> (<code>np.random.default_rng(42)</code>) and random
+       operations repeat exactly. <strong>Pin the environment</strong> by listing every package at an exact version in a
+       <code>requirements.txt</code>, ideally inside a per-project virtual environment. And <strong>hash the data</strong>, a
+       short fingerprint of its exact contents, so you can prove later whether it changed. The fourth pillar, versioning the
+       code, is big enough to be the rest of this chapter.</p>
+  </section>
+
+  <!-- ===== §2 what git is ===== -->
+  <section id="what-git-is">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Git: A History You Can Trust</h2></div>
+    <p>Git is a <strong>version control system</strong>: it records your project as a sequence of snapshots called
+       <strong>commits</strong>, each with a message, an author, and a timestamp. It answers <em>what changed, when, why, and
+       by whom</em>, lets you return to any past state, and makes experimentation safe because nothing is ever truly lost.</p>
+
+    <p>The everyday loop is three steps. You <strong>edit</strong> files in your working folder. You <strong>stage</strong> the
+       changes you want to record with <code>git add</code>, choosing what goes in. And you <strong>commit</strong> them with
+       <code>git commit</code>, saving a snapshot with a message. That is 90 percent of Git.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 200" width="100%" font-family="Inter, sans-serif" aria-label="Git's three areas. The working directory holds your edited files; git add stages selected changes into the staging area; git commit saves them into the repository as a snapshot. Below, a chain of four commit dots connected by arrows shows the growing history, each a labeled snapshot.">
+        <text x="350" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Edit, add, commit: the everyday loop</text>
+        <g font-size="9" text-anchor="middle">
+          <rect x="30" y="42" width="170" height="52" rx="9" fill="#f8fafc" stroke="#cbd5e1"/><text x="115" y="64" fill="#334155" font-weight="800">working directory</text><text x="115" y="80" fill="#64748b" font-size="7.5">your edited files</text>
+          <rect x="265" y="42" width="170" height="52" rx="9" fill="#fffbeb" stroke="#fcd34d"/><text x="350" y="64" fill="#92400e" font-weight="800">staging area</text><text x="350" y="80" fill="#b45309" font-size="7.5">changes you chose to record</text>
+          <rect x="500" y="42" width="170" height="52" rx="9" fill="#f0fdfa" stroke="#0f766e"/><text x="585" y="64" fill="#115e59" font-weight="800">repository</text><text x="585" y="80" fill="#0f766e" font-size="7.5">the permanent history</text>
+        </g>
+        <g stroke="#0f766e" stroke-width="1.8" fill="none" marker-end="url(#g2)">
+          <path d="M200 68 L263 68"/><path d="M435 68 L498 68"/>
+        </g>
+        <text x="231" y="60" text-anchor="middle" font-size="7.5" fill="#0f766e" font-weight="700">git add</text>
+        <text x="466" y="60" text-anchor="middle" font-size="7.5" fill="#0f766e" font-weight="700">git commit</text>
+        <defs><marker id="g2" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0 0 L6 3.5 L0 7 z" fill="#0f766e"/></marker></defs>
+        <!-- commit chain -->
+        <text x="40" y="132" font-size="8" fill="#64748b" font-weight="700">history:</text>
+        <g>
+          <line x1="140" y1="150" x2="560" y2="150" stroke="#99f6e4" stroke-width="2"/>
+          <circle cx="150" cy="150" r="8" fill="#0f766e"/><circle cx="290" cy="150" r="8" fill="#0f766e"/><circle cx="430" cy="150" r="8" fill="#0f766e"/><circle cx="560" cy="150" r="8" fill="#2dd4bf" stroke="#0f766e" stroke-width="1.5"/>
+        </g>
+        <g font-size="7" fill="#334155" text-anchor="middle">
+          <text x="150" y="172">Initial</text><text x="290" y="172">Add mean</text><text x="430" y="172">Round it</text><text x="560" y="172" font-weight="800" fill="#0f766e">HEAD</text>
+        </g>
+        <text x="350" y="192" text-anchor="middle" font-size="8" fill="#64748b" font-style="italic">every dot is a full, recoverable snapshot you can inspect, compare, or return to</text>
+      </svg>
+      <figcaption style="font-size:0.78rem;color:var(--ink-soft);margin-top:0.9rem;line-height:1.55">
+        Staging is Git's superpower: you decide exactly what each commit contains, so history reads as a series of deliberate,
+        meaningful changes. <code>git status</code>, <code>git diff</code>, and <code>git log</code> let you see it all.
+      </figcaption>
+    </figure>
+
+    <p>A companion habit lives here too: the <strong><code>.gitignore</code></strong> file, a list of things Git should never
+       track. Large data files, generated outputs, and above all <strong>secrets</strong> like API keys and passwords belong
+       out of version control. Notebook 3 shows a <code>.gitignore</code> making a committed secret and a data folder vanish
+       from Git's view, which is a mistake you very much want to prevent, not fix.</p>
+  </section>
+
+  <!-- ===== §3 branching ===== -->
+  <section id="branching">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Branching, Merging, and Working Together</h2></div>
+    <p>A <strong>branch</strong> is a parallel line of work. You branch off <code>main</code> to try an idea, commit freely
+       without risking the stable version, and when it is ready you <strong>merge</strong> it back. This is how one person
+       experiments safely and how a whole team builds in parallel without overwriting each other.</p>
+
+    <div class="gitbox"><div class="cbh">a branch, merged back into main</div><pre><span class="p">git</span> switch -c add-feature     <span class="cmt"># branch off and move onto it</span>
+<span class="p">git</span> commit -am "Add region feature"
+<span class="p">git</span> switch main
+<span class="p">git</span> merge --no-ff add-feature   <span class="cmt"># bring the finished work back</span></pre></div>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 180" width="100%" font-family="Inter, sans-serif" aria-label="A branch-and-merge commit graph. The main branch runs left to right with two commits. A feature branch splits off from the first commit, gets its own commit, and merges back into main at a merge commit further right.">
+        <text x="350" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Branch off, work safely, merge back</text>
+        <!-- main line -->
+        <line x1="90" y1="66" x2="600" y2="66" stroke="#0f766e" stroke-width="2.4"/>
+        <text x="70" y="70" text-anchor="end" font-size="8" fill="#0f766e" font-weight="800">main</text>
+        <!-- feature line -->
+        <path d="M150 66 Q210 66 250 116 L420 116 Q470 116 560 70" fill="none" stroke="#4B8BBE" stroke-width="2.2"/>
+        <text x="250" y="136" font-size="8" fill="#1e40af" font-weight="800">add-feature</text>
+        <!-- commit dots -->
+        <circle cx="150" cy="66" r="9" fill="#0f766e"/><text x="150" y="48" text-anchor="middle" font-size="7.5" fill="#334155">baseline</text>
+        <circle cx="340" cy="66" r="9" fill="#0f766e"/><text x="340" y="48" text-anchor="middle" font-size="7.5" fill="#334155">main work</text>
+        <circle cx="560" cy="66" r="10" fill="#2dd4bf" stroke="#0f766e" stroke-width="1.6"/><text x="560" y="48" text-anchor="middle" font-size="7.5" fill="#0f766e" font-weight="800">merge</text>
+        <circle cx="360" cy="116" r="9" fill="#4B8BBE"/><text x="360" y="106" text-anchor="middle" font-size="7.5" fill="#1e40af">feature commit</text>
+        <text x="350" y="166" text-anchor="middle" font-size="8" fill="#64748b" font-style="italic">the feature branch never disturbs main until it is finished and merged back in</text>
+      </svg>
+      <figcaption style="font-size:0.78rem;color:var(--ink-soft);margin-top:0.9rem;line-height:1.55">
+        The stable <code>main</code> line keeps working while an idea grows on its own branch. When the branch is ready it
+        rejoins <code>main</code> at a merge commit, and the graph permanently records that the branch happened.
+      </figcaption>
+    </figure>
+
+    <p>Sometimes two branches change the same line differently, and Git cannot know which is right. It stops and marks the
+       spot, a <strong>merge conflict</strong>. This is not an error but a request for a human decision: Git kept both versions
+       safe and is asking you to choose. You edit the file to the version you want, remove Git's marker lines, and commit the
+       resolution. Notebook 4 creates a real conflict over a threshold value and walks the resolution end to end, finishing
+       with the branching commit graph.</p>
+
+    <table class="ml-table">
+      <thead><tr><th style="width:26%">Command</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td class="nm"><code>git switch -c name</code></td><td>Create a branch and move onto it, to work without touching main.</td></tr>
+        <tr><td class="nm"><code>git merge name</code></td><td>Bring a branch's finished commits into the current branch.</td></tr>
+        <tr><td class="nm"><code>git log --graph</code></td><td>Draw the history, branches and merges included, as a graph.</td></tr>
+        <tr><td class="nm"><code>git clone</code> / <code>push</code> / <code>pull</code></td><td>Copy, upload, and download a repository shared on a host like GitHub.</td></tr>
+      </tbody>
+    </table>
+
+    <p>Scale this branch-commit-merge cycle across a team on a shared host, <strong>GitHub</strong>, GitLab, or Bitbucket,
+       and you have how essentially all modern software and data science is built. A <strong>pull request</strong> proposes a
+       branch's changes for review before they merge, adding a human check to the version history.</p>
+  </section>
+
+  <!-- ===== notebooks hub ===== -->
+  <section id="notebooks">
+    <div class="section-eyebrow"><div class="num" style="background:#0f766e">🐍</div><h2>The Five-Notebook Mini-Course</h2></div>
+    <p>Work through these in order. The Git notebooks run real commands against a disposable repository, so you see an actual
+       history, branch, and conflict, not a description of one.</p>
+
+    <div class="nbgrid">
+      <div class="nbk">
+        <div class="nbk-n">Notebook 1</div><h4>Reproducibility</h4>
+        <p>The other three pillars: seeds for repeatable randomness, an environment report and requirements.txt, and a data hash that detects a single changed value.</p>
+        <div class="nbk-links">
+          <a class="b-view" href="notebooks/html/reproducibility-and-version-control--1-reproducibility.html">📓 View</a>
+          <a class="b-colab" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/reproducibility-and-version-control--1-reproducibility.ipynb" target="_blank" rel="noopener">▶ Colab</a>
+        </div>
+      </div>
+      <div class="nbk">
+        <div class="nbk-n">Notebook 2</div><h4>Project Structure</h4>
+        <p>Scaffold a standard project (data / src / notebooks / outputs), separate config from code, use relative paths, and run a pipeline that reproduces its output byte for byte.</p>
+        <div class="nbk-links">
+          <a class="b-view" href="notebooks/html/reproducibility-and-version-control--2-project-structure.html">📓 View</a>
+          <a class="b-colab" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/reproducibility-and-version-control--2-project-structure.ipynb" target="_blank" rel="noopener">▶ Colab</a>
+        </div>
+      </div>
+      <div class="nbk">
+        <div class="nbk-n">Notebook 3</div><h4>Git Basics</h4>
+        <p>Real git: init, add, commit, then status, diff, and log on a growing history, plus a .gitignore that hides a secret and a data folder from version control.</p>
+        <div class="nbk-links">
+          <a class="b-view" href="notebooks/html/reproducibility-and-version-control--3-git-basics.html">📓 View</a>
+          <a class="b-colab" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/reproducibility-and-version-control--3-git-basics.ipynb" target="_blank" rel="noopener">▶ Colab</a>
+        </div>
+      </div>
+      <div class="nbk">
+        <div class="nbk-n">Notebook 4</div><h4>Branching &amp; Merging</h4>
+        <p>Branch off, commit, and merge back with a real merge commit, then create a genuine merge conflict over a threshold and resolve it, ending on the commit graph.</p>
+        <div class="nbk-links">
+          <a class="b-view" href="notebooks/html/reproducibility-and-version-control--4-branching-and-merging.html">📓 View</a>
+          <a class="b-colab" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/reproducibility-and-version-control--4-branching-and-merging.ipynb" target="_blank" rel="noopener">▶ Colab</a>
+        </div>
+      </div>
+      <div class="nbk">
+        <div class="nbk-n">Notebook 5</div><h4>Experiment Tracking</h4>
+        <p>Read a run log, prove which runs are reproducible by grouping on code, data, and seed, catch the unseeded run that is not, and chart accuracy across runs.</p>
+        <div class="nbk-links">
+          <a class="b-view" href="notebooks/html/reproducibility-and-version-control--5-experiment-tracking.html">📓 View</a>
+          <a class="b-colab" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/reproducibility-and-version-control--5-experiment-tracking.ipynb" target="_blank" rel="noopener">▶ Colab</a>
+        </div>
+      </div>
+      <div class="nbk" style="border-color:#99f6e4;background:#f0fdfa">
+        <div class="nbk-n">Solutions</div><h4>Challenge Solutions</h4>
+        <p>Worked answers to the five practice challenges below, from proving determinism through auditing a run for reproducibility.</p>
+        <div class="nbk-links">
+          <a class="b-view" href="notebooks/html/reproducibility-and-version-control--solutions.html">📓 View</a>
+          <a class="b-colab" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/reproducibility-and-version-control--solutions.ipynb" target="_blank" rel="noopener">▶ Colab</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <div class="rw-tag">Real dataset</div>
+      <p style="margin:0.4rem 0 0"><strong>An experiment-tracking log, 20 model runs.</strong> Each row records what a
+         reproducible result needs: the code version (<code>git_commit</code>), the input fingerprint
+         (<code>data_hash</code>), the random <code>seed</code>, the environment (<code>python_version</code>,
+         <code>sklearn_version</code>), and the <code>accuracy</code> produced. Notebook 5 uses it to prove the point: runs
+         that share code, data, and seed give <em>identical</em> accuracy (runs 1 and 2 both score <strong>0.8793</strong>),
+         while the single run that <strong>set no seed</strong> drifts off on its own, the classic reproducibility bug, found
+         in one line.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/reproducibility-and-version-control--experiment-log.xlsx" download>📊 Download dataset <small>xlsx</small></a>
+      </div>
+    </div>
+    <p style="font-size:0.82rem;color:var(--ink-soft)">Notebooks run on <code>pandas</code>, <code>numpy</code>,
+      <code>matplotlib</code>, and the built-in <code>subprocess</code> plus a real <code>git</code> (preinstalled on Colab).</p>
+  </section>
+
+  <!-- ===== §5 reproducibility in ML/AI ===== -->
+  <section id="ml-ai">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Reproducibility in Data Science, ML &amp; AI</h2></div>
+    <p>In machine learning the stakes are higher, because a model has more moving parts to pin: not just code and data but the
+       exact split, the hyperparameters, the framework versions, and every seed. The field has built dedicated tools for it,
+       and they are all doing, at scale, what the notebooks here do by hand.</p>
+
+    <table class="ml-table">
+      <thead><tr><th style="width:26%">Tool or practice</th><th>What it versions, and where you meet it</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">Git + GitHub</td><td>The code and its history, plus collaboration through branches and pull requests. The universal base layer.</td></tr>
+        <tr><td class="nm">Experiment trackers</td><td><strong>MLflow</strong>, Weights &amp; Biases: log every run's parameters, metrics, and artifacts automatically, the run log of Notebook 5, industrialized.</td></tr>
+        <tr><td class="nm">Data &amp; model versioning</td><td><strong>DVC</strong>, model registries: version large datasets and trained models alongside the code that made them.</td></tr>
+        <tr><td class="nm">Environment capture</td><td><code>requirements.txt</code>, <strong>conda</strong>, and <strong>Docker</strong> containers that freeze the entire software stack, not just Python packages.</td></tr>
+        <tr><td class="nm">Pipelines &amp; CI</td><td>Automated, version-controlled pipelines (the MLOps chapter) that rerun the whole analysis on a trigger and fail loudly if a result changes.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="research">
+      <div class="rtag">Research note</div>
+      <p style="margin:0.4rem 0 0">This is not housekeeping; it is a scientific crisis. A widely discussed 2016 <em>Nature</em>
+         survey found that most researchers had failed to reproduce someone else's results, and many had failed to reproduce
+         their own. In computational fields the fix is unusually tractable, because a result <em>is</em> its code, data, seed,
+         and environment, and all four can be captured and shared. That is why version control and reproducible pipelines have
+         moved from nice-to-have to the baseline of credible quantitative work. A result no one can rerun is, increasingly,
+         not accepted as a result at all.</p>
+    </div>
+  </section>
+
+  <!-- ===== takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Reproducibility rests on four pillars</strong>: versioned code, versioned data, a fixed random seed, and a pinned environment. Miss one and the answer can silently change.</span></li>
+        <li><span class="ck">✓</span><span><strong>Three are quick habits</strong>: seed your randomness, pin dependencies in a requirements.txt inside a virtual environment, and hash your data to detect changes.</span></li>
+        <li><span class="ck">✓</span><span><strong>Git versions the code</strong>: the loop is edit, <code>add</code>, <code>commit</code>, building a trustworthy history you inspect with <code>status</code>, <code>diff</code>, and <code>log</code>.</span></li>
+        <li><span class="ck">✓</span><span><strong>A <code>.gitignore</code> keeps the wrong things out</strong>: big data, generated outputs, and secrets like API keys must never be committed.</span></li>
+        <li><span class="ck">✓</span><span><strong>Branches make work safe</strong>: experiment on a branch, merge it back, and treat a merge conflict as a request for your decision, not an error.</span></li>
+        <li><span class="ck">✓</span><span><strong>An experiment log makes reproducibility checkable</strong>: record code, data, seed, and environment per run, and identical inputs provably give identical results.</span></li>
+        <li><span class="ck">✓</span><span><strong>ML scales this up</strong> with MLflow, DVC, and Docker, but they only automate the same four pillars. A result no one can rerun is not really a result.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== §6 challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Practice Challenges</h2></div>
+    <p>Five exercises, one per notebook area. Full solutions are in the companion solutions notebook.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Prove determinism</h4>
+        <p>Write a seeded random summary and show two calls with the same seed match, while two unseeded calls differ.</p>
+        <div class="chint">Hint: <code>np.random.default_rng(seed)</code>, then compare the results.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Detect a changed dataset</h4>
+        <p>Hash a dataframe, change one value, and confirm the hash changes.</p>
+        <div class="chint">Hint: <code>hashlib.sha256(df.to_csv(index=False).encode())</code>.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Scaffold a project</h4>
+        <p>Create the standard folders and a <code>.gitignore</code> that excludes data and outputs.</p>
+        <div class="chint">Hint: <code>Path.mkdir</code> for folders, then write the ignore patterns.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Build a commit history</h4>
+        <p>Initialize a repository and make three commits, then print the one-line log.</p>
+        <div class="chint">Hint: loop over three messages, doing <code>add</code> then <code>commit</code> each time.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Audit a run</h4>
+        <p>Given a run record, report whether all four pillars (code, data, seed, environment) are present.</p>
+        <div class="chint">Hint: check each field is not missing, and list any that are.</div></div></div>
+    </div>
+
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">📓</div>
+        <div class="nb-body"><h3>Solutions notebook</h3><p>All five challenges worked in code: a determinism proof, a data-hash change detector, a project scaffold with a .gitignore, a real three-commit git history, and a four-pillar reproducibility audit.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/reproducibility-and-version-control--solutions.html">📓 View Solutions</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/reproducibility-and-version-control--solutions.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/reproducibility-and-version-control--solutions.ipynb" target="_blank" rel="noopener">⬇ GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §7 quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on the four pillars, Git basics, branching, and experiment tracking. Answer them, hit
+       <strong>Check Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">🧰</div>
+    <div><div class="ctitle">That completes Tools &amp; Workflow</div>
+      <p>This part turned the statistics of the book into a working practice. <a href="python-for-data-analysis.html">Python
+         for Data Analysis</a> and <a href="r-for-statistics.html">R for Statistics</a> gave you the two great open-source
+         languages; <a href="statistical-software.html">Statistical Software</a> read the output of the commercial packages;
+         <a href="sql-and-databases.html">SQL &amp; Databases</a> got the data out at the source;
+         <a href="excel-and-bi-tools.html">Excel &amp; BI Tools</a> covered the spreadsheet and the dashboard; and this
+         chapter made the whole workflow reproducible and version-controlled. Next, the <strong>Communicating Results &amp;
+         Data Ethics</strong> part turns from producing analysis to sharing it responsibly. Browse the full
+         <a href="../toc.html">Contents</a> for what is published and what is on the way.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="excel-and-bi-tools.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 155 · Previous</span><br><span class="cn-title">Excel &amp; BI Tools</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 156 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => { const h = document.documentElement; bar.style.width = ((h.scrollTop)/(h.scrollHeight-h.clientHeight)*100) + '%'; });
+</script>
+
+<script>
+  window.QUIZ_ID = "ch156";
+  window.QUIZ_DATA = [
+    {
+      q: "What does reproducibility require to be captured?",
+      options: ["Only the code", "The code, the data, the random seed, and the environment", "Only the final chart", "A faster computer"],
+      answer: 1,
+      explain: "A result reproduces only when all four pillars match: versioned code, versioned data, a fixed seed, and a pinned environment."
+    },
+    {
+      q: "Why set a random seed before an analysis that samples or splits data?",
+      options: ["It makes the code faster", "So the random operations produce the same result every run", "To use less memory", "It is never necessary"],
+      answer: 1,
+      explain: "A fixed seed makes randomness repeatable; without one, the same code can give a different answer each time."
+    },
+    {
+      q: "What is a Git commit?",
+      options: ["A promise to finish work", "A saved snapshot of the project with a message, author, and timestamp", "A type of branch", "A data file"],
+      answer: 1,
+      explain: "Each commit records a full, recoverable snapshot, so you can inspect, compare, and return to any point in history."
+    },
+    {
+      q: "The everyday Git loop is…",
+      options: ["clone, push, delete", "edit, git add (stage), git commit (save)", "open, close, save", "branch, merge, branch"],
+      answer: 1,
+      explain: "You edit files, stage the changes you want with git add, then commit them as a snapshot with a message."
+    },
+    {
+      q: "What belongs in a .gitignore file?",
+      options: ["Your best code", "Large data files, generated outputs, and secrets like API keys", "Commit messages", "The README"],
+      answer: 1,
+      explain: "A .gitignore lists patterns Git should never track, keeping big data, outputs, and especially secrets out of version control."
+    },
+    {
+      q: "A merge conflict happens when…",
+      options: ["Git runs out of memory", "Two branches change the same line differently and Git asks you to choose", "You forget to commit", "A file is deleted"],
+      answer: 1,
+      explain: "Git keeps both versions safe and marks the spot; resolving it is a normal human decision, not an error."
+    },
+    {
+      q: "In the experiment log, two runs sharing the same code, data, and seed produced…",
+      options: ["Different accuracy", "The identical accuracy, proving the run reproduces", "An error", "No output"],
+      answer: 1,
+      explain: "Identical inputs give identical results; runs 1 and 2 both scored 0.8793. The run that set no seed drifted off on its own."
+    },
+    {
+      q: "Tools like MLflow, DVC, and Docker exist mainly to…",
+      options: ["Replace Git", "Automate, at scale, the same pillars: versioning code, data, runs, and the environment", "Speed up training only", "Make charts"],
+      answer: 1,
+      explain: "They industrialize the by-hand practices of this chapter: tracking experiments, versioning data and models, and freezing the environment."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
