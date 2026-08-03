@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 158 · Data Ethics, Bias &amp; Fairness — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .ml-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.85rem; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .ml-table th,.ml-table td { padding:0.6rem 0.8rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .ml-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .ml-table td { color:var(--ink-soft); } .ml-table tr:last-child td { border-bottom:none; }
+    .ml-table .nm { font-weight:700; color:var(--ink); }
+    .ml-table code { font-size:0.82em; }
+    .rw-card { background:#fff1f2; border:1px solid #fecdd3; border-left:4px solid #be123c; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#9f1239; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none; padding:0.48rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.75; }
+    .research { background:#fff1f2; border:1px solid #fecdd3; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#9f1239; }
+    .nbgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:0.9rem; margin:1.3rem 0; }
+    .nbk { border:1px solid var(--line); border-radius:12px; padding:1rem 1.1rem; background:var(--panel); display:flex; flex-direction:column; }
+    .nbk .nbk-n { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#be123c; }
+    .nbk h4 { margin:0.25rem 0 0.4rem; font-size:1rem; color:var(--ink); }
+    .nbk p { font-size:0.82rem; color:var(--ink-soft); line-height:1.55; margin:0 0 0.8rem; flex:1; }
+    .nbk .nbk-links { display:flex; gap:0.5rem; flex-wrap:wrap; }
+    .nbk .nbk-links a { font-size:0.75rem; font-weight:700; text-decoration:none; padding:0.35rem 0.7rem; border-radius:7px; }
+    .nbk .b-view { background:#be123c; color:#fff; }
+    .nbk .b-colab { background:#f9ab00; color:#1a2138; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/data-ethics--1-measuring-fairness.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebooks</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXVI · Communicating Results &amp; Data Ethics</span><span class="sep">/</span>
+      <span>Chapter 158</span>
+    </div>
+    <h1>Data Ethics, Bias &amp; <span class="accent">Fairness</span></h1>
+    <p class="dek">Statistics and machine learning increasingly decide who gets a loan, a job, or bail. That power comes with
+       responsibility: to see the bias hiding in data, to measure fairness honestly, to protect privacy, and to build systems
+       people can trust. This closing chapter makes those duties concrete, fairness metrics you can compute included.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~30 min</b>&nbsp;read</div>
+      <div class="m">🐍 <b>2 Notebooks</b>&nbsp;included</div>
+      <div class="m">📊 <b>Chapter 158</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Every technique in this book can be used well or badly. A model that predicts creditworthiness can widen
+       opportunity or entrench discrimination; a dataset can inform policy or expose people's secrets. As the reach of data
+       grows, so does the <span class="hl">ethical weight of the analyst's choices</span>. The uncomfortable truth is that
+       <span class="hl">a model learns the world as it is, biases and all</span>, and left unexamined it will faithfully
+       reproduce, and often amplify, the very inequities we would hope to fix. Doing this work responsibly is not a soft
+       add-on. It is part of doing it correctly.</p>
+
+    <div class="def-card">
+      <div class="sigma">⚖️</div>
+      <div class="def-body">
+        <span class="def-kw">Data ethics</span> is the practice of collecting, analyzing, and deploying data in ways that are
+        fair, transparent, and respectful of the people it describes. Its pillars are <span class="def-kw">fairness</span>
+        (no unjust bias), <span class="def-kw">privacy</span> (protecting individuals), <span class="def-kw">transparency</span>
+        (explainable decisions), and <span class="def-kw">accountability</span> (someone answerable for the outcome).
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🧭</div>
+      <div><div class="ctitle">Fairness is measurable, and choosing it is a value judgement</div>
+        <p>This chapter has a hands-on core: two notebooks train a lending model and <strong>compute the fairness
+           metrics</strong>, selection rates, error rates, and calibration, then confront the hard result that you cannot
+           satisfy them all at once. The math tells you where a model is unfair; it cannot tell you which kind of fairness to
+           want. That choice belongs to people, made openly, which is the theme that ties this whole part together.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §1 sources of bias ===== -->
+  <section id="sources-of-bias">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Where Bias Comes From</h2></div>
+    <p>Bias in a model rarely comes from a malicious line of code. It seeps in through the <strong>data</strong> and the
+       <strong>choices</strong> around it, at every stage of the pipeline. Knowing the entry points is the first defense.</p>
+
+    <table class="ml-table">
+      <thead><tr><th style="width:24%">Kind of bias</th><th>Where it enters</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">Historical bias</td><td>The data faithfully records an unjust world. If past lending discriminated, a model trained on it learns to discriminate, even with perfect data.</td></tr>
+        <tr><td class="nm">Representation bias</td><td>Some groups are under-sampled, so the model performs worse for them (facial recognition trained mostly on light skin, for example).</td></tr>
+        <tr><td class="nm">Measurement bias</td><td>The features or labels are proxies that mean different things across groups. &#8220;Arrests&#8221; is not &#8220;crime&#8221; if policing is uneven.</td></tr>
+        <tr><td class="nm">Proxy variables</td><td>A model that never sees race can still discriminate through correlated features like zip code, the statistical echo of historical redlining.</td></tr>
+        <tr><td class="nm">Aggregation bias</td><td>One model forced on distinct subgroups fits none of them well, papering over differences that matter.</td></tr>
+        <tr><td class="nm">Feedback loops</td><td>A biased model shapes the next batch of data (predictive policing sends patrols where it already predicted crime), which confirms and deepens the bias.</td></tr>
+      </tbody>
+    </table>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 208" width="100%" font-family="Inter, sans-serif" aria-label="A pipeline showing bias entering at every stage: an unequal world feeds data collection, which feeds labeling, which trains a model, which makes decisions that affect people. A feedback arrow loops from decisions back to the world, showing that biased decisions reshape the world the next model learns from.">
+        <text x="350" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Bias enters at every stage, and loops back</text>
+        <g font-size="8.5" text-anchor="middle" font-weight="800">
+          <rect x="20" y="66" width="104" height="42" rx="8" fill="#4c0519"/><text x="72" y="85" fill="#fecdd3">the world</text><text x="72" y="98" fill="#fb7185" font-size="7" font-weight="400">unequal to begin with</text>
+          <rect x="150" y="66" width="104" height="42" rx="8" fill="#be123c"/><text x="202" y="85" fill="#fff">data</text><text x="202" y="98" fill="#ffe4e6" font-size="7" font-weight="400">who is sampled</text>
+          <rect x="280" y="66" width="104" height="42" rx="8" fill="#be123c"/><text x="332" y="85" fill="#fff">labels</text><text x="332" y="98" fill="#ffe4e6" font-size="7" font-weight="400">proxies, not truth</text>
+          <rect x="410" y="66" width="104" height="42" rx="8" fill="#fb7185"/><text x="462" y="85" fill="#4c0519">model</text><text x="462" y="98" fill="#4c0519" font-size="7" font-weight="400">learns the pattern</text>
+          <rect x="540" y="66" width="120" height="42" rx="8" fill="#fecdd3" stroke="#be123c" stroke-width="1.3"/><text x="600" y="85" fill="#9f1239">decisions</text><text x="600" y="98" fill="#be123c" font-size="7" font-weight="400">who gets the loan</text>
+        </g>
+        <g stroke="#be123c" stroke-width="2" fill="none" marker-end="url(#ar)">
+          <path d="M124 87 L148 87"/><path d="M254 87 L278 87"/><path d="M384 87 L408 87"/><path d="M514 87 L538 87"/>
+        </g>
+        <defs><marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0 0 L6 3.5 L0 7 z" fill="#be123c"/></marker></defs>
+        <!-- feedback loop -->
+        <path d="M600 108 L600 168 Q600 180 588 180 L84 180 Q72 180 72 168 L72 110" stroke="#dc2626" stroke-width="1.8" fill="none" stroke-dasharray="5 3" marker-end="url(#arr)"/>
+        <defs><marker id="arr" markerWidth="8" markerHeight="8" refX="4" refY="6" orient="auto"><path d="M4 0 L8 8 L0 8 z" fill="#dc2626"/></marker></defs>
+        <text x="350" y="176" text-anchor="middle" font-size="8" fill="#b91c1c" font-weight="700">feedback loop: biased decisions reshape the world the next model learns from</text>
+      </svg>
+      <figcaption style="font-size:0.78rem;color:var(--ink-soft);margin-top:0.9rem;line-height:1.55">
+        Because bias enters upstream, in the world, the sampling, and the labels, you cannot remove it just by deleting a
+        sensitive column downstream. Worse, the feedback loop lets a biased model entrench the very disparity it was trained on.
+      </figcaption>
+    </figure>
+
+    <div class="callout warn">
+      <div class="cico">🙈</div>
+      <div><div class="ctitle">&#8220;Fairness through unawareness&#8221; does not work</div>
+        <p>The tempting fix, just don't give the model the protected attribute, fails. Sensitive traits are encoded in
+           <strong>proxies</strong>: zip code stands in for race, first name for gender, shopping history for pregnancy. In the
+           notebook, a lending model that never sees group membership still approves one group far less, because the features
+           it does see already carry the disadvantage. You cannot fix what you refuse to measure.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== §2 measuring fairness ===== -->
+  <section id="measuring-fairness">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Measuring Fairness</h2></div>
+    <p>&#8220;Is this model fair?&#8221; is not one question but several, and they can disagree. The main definitions each
+       compare the model's behavior across groups, but they compare <em>different</em> things. Knowing which is which is the
+       core literacy of responsible ML.</p>
+
+    <table class="ml-table">
+      <thead><tr><th style="width:26%">Fairness definition</th><th>What it requires (across groups)</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">Demographic parity</td><td>Equal <strong>selection rates</strong>: the model approves each group at the same rate. The US &#8220;four-fifths rule&#8221; flags a violation below 80 percent.</td></tr>
+        <tr><td class="nm">Equal opportunity</td><td>Equal <strong>true positive rates</strong>: among those who truly qualify, each group is approved equally. Focuses on not denying deserving people.</td></tr>
+        <tr><td class="nm">Equalized odds</td><td>Equal true positive <em>and</em> false positive rates: the model's errors fall evenly on every group.</td></tr>
+        <tr><td class="nm">Calibration</td><td>A given score means the same thing for everyone: of all applicants scored 0.7, the same share actually repay, in every group.</td></tr>
+        <tr><td class="nm">Individual fairness</td><td>Similar individuals get similar predictions, regardless of group. Intuitive, but &#8220;similar&#8221; is hard to define.</td></tr>
+      </tbody>
+    </table>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 200" width="100%" font-family="Inter, sans-serif" aria-label="Three fairness metrics illustrated as questions about a confusion matrix split by group. Demographic parity asks whether the overall approval rate is equal. Equal opportunity asks whether the true positive rate is equal. Calibration asks whether a given score means the same repayment chance in each group. A caption notes each measures a different thing.">
+        <text x="350" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Three fair-sounding questions, three different answers</text>
+        <g>
+          <rect x="24" y="44" width="210" height="128" rx="10" fill="#fff1f2" stroke="#fecdd3"/>
+          <text x="129" y="66" text-anchor="middle" font-size="9.5" fill="#9f1239" font-weight="800">Demographic parity</text>
+          <text x="129" y="86" text-anchor="middle" font-size="8" fill="#be123c">approve each group</text>
+          <text x="129" y="99" text-anchor="middle" font-size="8" fill="#be123c">at the same rate?</text>
+          <text x="129" y="126" text-anchor="middle" font-size="7.5" fill="#64748b">ignores who actually qualifies</text>
+          <text x="129" y="150" text-anchor="middle" font-size="8" fill="#334155" font-weight="700">selection rate</text>
+          <text x="129" y="162" text-anchor="middle" font-size="7" fill="#64748b">A 74%  vs  B 27%</text>
+
+          <rect x="245" y="44" width="210" height="128" rx="10" fill="#fff1f2" stroke="#fecdd3"/>
+          <text x="350" y="66" text-anchor="middle" font-size="9.5" fill="#9f1239" font-weight="800">Equal opportunity</text>
+          <text x="350" y="86" text-anchor="middle" font-size="8" fill="#be123c">among those who WOULD</text>
+          <text x="350" y="99" text-anchor="middle" font-size="8" fill="#be123c">repay, approve equally?</text>
+          <text x="350" y="126" text-anchor="middle" font-size="7.5" fill="#64748b">focuses on deserving applicants</text>
+          <text x="350" y="150" text-anchor="middle" font-size="8" fill="#334155" font-weight="700">true positive rate</text>
+          <text x="350" y="162" text-anchor="middle" font-size="7" fill="#64748b">A 81%  vs  B 41%</text>
+
+          <rect x="466" y="44" width="210" height="128" rx="10" fill="#f0fdf4" stroke="#bbf7d0"/>
+          <text x="571" y="66" text-anchor="middle" font-size="9.5" fill="#166534" font-weight="800">Calibration</text>
+          <text x="571" y="86" text-anchor="middle" font-size="8" fill="#15803d">does a 0.4 score mean</text>
+          <text x="571" y="99" text-anchor="middle" font-size="8" fill="#15803d">40% repay in each group?</text>
+          <text x="571" y="126" text-anchor="middle" font-size="7.5" fill="#64748b">the scores are honest</text>
+          <text x="571" y="150" text-anchor="middle" font-size="8" fill="#334155" font-weight="700">predicted vs actual</text>
+          <text x="571" y="162" text-anchor="middle" font-size="7" fill="#166534">holds for both groups ✓</text>
+        </g>
+        <text x="350" y="192" text-anchor="middle" font-size="8.5" fill="#64748b" font-style="italic">the model in the notebook satisfies the green one while failing the two red ones, all at once</text>
+      </svg>
+      <figcaption style="font-size:0.78rem;color:var(--ink-soft);margin-top:0.9rem;line-height:1.55">
+        Each metric compares groups on a different quantity. A model can pass one and fail another, which is exactly what the
+        notebook's calibrated-but-unequal lending model does. There is no single number called &#8220;fairness.&#8221;
+      </figcaption>
+    </figure>
+  </section>
+
+  <!-- ===== §3 impossibility ===== -->
+  <section id="impossibility">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The Impossibility of Being &#8220;Fair&#8221;</h2></div>
+    <p>Here is the result that turns fairness from a checkbox into a genuine dilemma. When two groups have
+       <strong>different base rates</strong>, and in an unequal world they usually do, it is <strong>mathematically
+       impossible</strong> to satisfy demographic parity, equalized odds, and calibration all at once. Improving one
+       necessarily worsens another. This is not a modeling failure to engineer away; it is a theorem.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 210" width="100%" font-family="Inter, sans-serif" aria-label="A triangle with the three fairness criteria at its corners: demographic parity, equalized odds, and calibration. A label in the center says pick at most two; you cannot have all three when group base rates differ. Below, a small tradeoff note shows that forcing equal approval rates lowers accuracy.">
+        <text x="350" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Different base rates: pick at most two</text>
+        <polygon points="350,44 168,168 532,168" fill="none" stroke="#be123c" stroke-width="1.8"/>
+        <circle cx="350" cy="44" r="5" fill="#be123c"/><text x="350" y="38" text-anchor="middle" font-size="9" fill="#9f1239" font-weight="800">Demographic parity</text>
+        <circle cx="168" cy="168" r="5" fill="#be123c"/><text x="150" y="186" text-anchor="middle" font-size="9" fill="#9f1239" font-weight="800">Equalized odds</text>
+        <circle cx="532" cy="168" r="5" fill="#16a34a"/><text x="552" y="186" text-anchor="middle" font-size="9" fill="#166534" font-weight="800">Calibration</text>
+        <text x="350" y="118" text-anchor="middle" font-size="10" fill="#1a2138" font-weight="800">you cannot have</text>
+        <text x="350" y="133" text-anchor="middle" font-size="10" fill="#1a2138" font-weight="800">all three at once</text>
+        <text x="350" y="204" text-anchor="middle" font-size="8.5" fill="#64748b" font-style="italic">in the notebook, forcing equal approval rates cut group-B accuracy from 66% to 55% and broke calibration on purpose</text>
+      </svg>
+      <figcaption style="font-size:0.78rem;color:var(--ink-soft);margin-top:0.9rem;line-height:1.55">
+        The three most-cited group-fairness criteria are mutually incompatible under different base rates (Kleinberg, Chouldechova,
+        and others, 2016). Because you must give something up, fairness becomes a deliberate choice about which harm is least
+        acceptable, not a formula that returns &#8220;fair.&#8221;
+      </figcaption>
+    </figure>
+
+    <p>The practical consequence runs through the whole field. There is also a <strong>fairness-accuracy tradeoff</strong>:
+       forcing a model to treat groups equally on one metric usually lowers its overall accuracy, as the notebook shows when
+       equalizing approval rates approves more applicants who will not repay. None of this means fairness is hopeless. It means
+       the honest move is to <strong>name the definition you are optimizing, justify it for the specific harm at stake, and
+       disclose what it costs</strong>, rather than pretending a single objective &#8220;fair&#8221; model exists.</p>
+  </section>
+
+  <!-- ===== §4 privacy ===== -->
+  <section id="privacy">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Privacy, Consent, and Governance</h2></div>
+    <p>Fairness is about how a model treats people; <strong>privacy</strong> is about what you are allowed to know and keep
+       about them in the first place. Data describes real individuals, and mishandling it does real harm.</p>
+
+    <table class="ml-table">
+      <thead><tr><th style="width:26%">Concept</th><th>What it means for the analyst</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">PII and sensitive data</td><td>Personally identifiable information (name, address, national id) and sensitive attributes (health, race, religion) demand extra care, and often legal protection.</td></tr>
+        <tr><td class="nm">Anonymization is fragile</td><td>Removing names is not enough: individuals are routinely <strong>re-identified</strong> by combining a few &#8220;anonymous&#8221; fields (zip, birth date, gender pinpoint most people).</td></tr>
+        <tr><td class="nm">k-anonymity &amp; differential privacy</td><td>Formal protections: make each record indistinguishable from at least k others, or add calibrated noise so no single person's data changes the result.</td></tr>
+        <tr><td class="nm">Consent &amp; data minimization</td><td>Collect only what you need, for a stated purpose, with informed consent, and keep it no longer than necessary.</td></tr>
+        <tr><td class="nm">Regulation</td><td><strong>GDPR</strong> (EU) and <strong>CCPA</strong> (California) grant rights to access, correct, and delete personal data, with real penalties. Compliance is a floor, not a ceiling.</td></tr>
+        <tr><td class="nm">Data governance</td><td>The organizational side: who may access what, how data is documented and secured, and who is accountable when something goes wrong.</td></tr>
+      </tbody>
+    </table>
+
+    <p>The throughline is <strong>respect for the person behind the row</strong>. The fact that data is available, or that a
+       clever join would re-identify someone, does not make it ethical to do so. &#8220;Can we?&#8221; and &#8220;should
+       we?&#8221; are different questions, and the second is the analyst's to ask.</p>
+  </section>
+
+  <!-- ===== notebooks hub ===== -->
+  <section id="notebooks">
+    <div class="section-eyebrow"><div class="num" style="background:#be123c">🐍</div><h2>Measure It Yourself</h2></div>
+    <p>Two notebooks turn the ideas above into numbers, on a lending dataset where group B is structurally disadvantaged.
+       They compute the fairness metrics and then confront the tradeoff between them.</p>
+
+    <div class="nbgrid">
+      <div class="nbk">
+        <div class="nbk-n">Notebook 1</div><h4>Measuring Bias and Fairness</h4>
+        <p>Train a model that never sees the protected attribute, then measure selection rate and the 80% rule, true and false positive rates by group, and calibration, and watch a &#8216;blind&#8217; model fail anyway.</p>
+        <div class="nbk-links">
+          <a class="b-view" href="notebooks/html/data-ethics--1-measuring-fairness.html">📓 View</a>
+          <a class="b-colab" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/data-ethics--1-measuring-fairness.ipynb" target="_blank" rel="noopener">▶ Colab</a>
+        </div>
+      </div>
+      <div class="nbk">
+        <div class="nbk-n">Notebook 2</div><h4>The Fairness-Accuracy Tradeoff</h4>
+        <p>Force demographic parity with per-group thresholds and measure the cost in accuracy and calibration, see the impossibility result made concrete, and read the tradeoff curve.</p>
+        <div class="nbk-links">
+          <a class="b-view" href="notebooks/html/data-ethics--2-fairness-tradeoff.html">📓 View</a>
+          <a class="b-colab" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/data-ethics--2-fairness-tradeoff.ipynb" target="_blank" rel="noopener">▶ Colab</a>
+        </div>
+      </div>
+      <div class="nbk" style="border-color:#fecdd3;background:#fff1f2">
+        <div class="nbk-n">Solutions</div><h4>Challenge Solutions</h4>
+        <p>Worked answers to the five practice challenges, the disparate impact ratio, the equal-opportunity gap, a calibration check, a parity intervention, and a reasoned choice of definition.</p>
+        <div class="nbk-links">
+          <a class="b-view" href="notebooks/html/data-ethics--solutions.html">📓 View</a>
+          <a class="b-colab" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/data-ethics--solutions.ipynb" target="_blank" rel="noopener">▶ Colab</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <div class="rw-tag">Real dataset</div>
+      <p style="margin:0.4rem 0 0"><strong>Lending decisions, 4,000 applicants.</strong> Each row has a protected
+         <code>group</code> (A or B), financial features (<code>income_k</code>, <code>debt_to_income</code>,
+         <code>credit_history_years</code>, <code>prior_defaults</code>), and the ground-truth outcome <code>repaid</code>.
+         Group B is structurally disadvantaged, lower income, higher debt, shorter history, but the label depends
+         <em>only</em> on the financial features, with no direct group penalty. That is the point: a model trained without the
+         group attribute still approves group B at <strong>27% versus 74%</strong> for A (a disparate-impact ratio of
+         <strong>0.37</strong>, failing the 80% rule) and approves deserving applicants at <strong>41% versus 81%</strong>,
+         all while staying well-calibrated for both groups.</p>
+      <div class="ex-files">
+        <a class="ex-file xls" href="../data/data-ethics--lending.xlsx" download>📊 Download dataset <small>xlsx</small></a>
+      </div>
+    </div>
+    <p style="font-size:0.82rem;color:var(--ink-soft)">Notebooks run on <code>pandas</code>, <code>numpy</code>,
+      <code>matplotlib</code>, and <code>scikit-learn</code>, all preinstalled on Colab.</p>
+  </section>
+
+  <!-- ===== §5 responsible AI ===== -->
+  <section id="responsible-ai">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Responsible AI in Practice</h2></div>
+    <p>Ethics becomes real only when it is built into the workflow. A handful of concrete practices turn good intentions into
+       accountable systems, and most of them are things you have already met in this book, pointed at a new goal.</p>
+
+    <table class="ml-table">
+      <thead><tr><th style="width:26%">Practice</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">Bias audits</td><td>Compute the fairness metrics across groups, before and after deployment, and monitor them like any other production metric.</td></tr>
+        <tr><td class="nm">Model cards &amp; datasheets</td><td>Short standardized documents stating a model's intended use, its performance across groups, and its known limitations; and the equivalent for datasets.</td></tr>
+        <tr><td class="nm">Transparency &amp; explainability</td><td>The interpretability tools from the ML chapters, feature importance, example-based explanations, so a person can understand and contest a decision.</td></tr>
+        <tr><td class="nm">Human oversight</td><td>Keep a person in the loop for high-stakes decisions, with a real path to appeal an automated one.</td></tr>
+        <tr><td class="nm">Governance &amp; frameworks</td><td>Organizational review, plus emerging standards like the <strong>EU AI Act</strong> and the <strong>NIST AI Risk Management Framework</strong>, that set expectations for high-risk systems.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="research">
+      <div class="rtag">Research note</div>
+      <p style="margin:0.4rem 0 0">The field's turning point was empirical. In 2016 a <em>ProPublica</em> investigation of the
+         <strong>COMPAS</strong> recidivism tool found it flagged Black defendants as future criminals at nearly twice the rate
+         of white defendants who did not reoffend. The company countered that the tool was equally <em>calibrated</em> for both
+         races, and both sides were right, which is precisely how the <strong>impossibility results</strong> (Kleinberg and
+         colleagues; Chouldechova) were formalized soon after: with unequal base rates, equal error rates and equal calibration
+         cannot both hold. The episode moved fairness from a slogan to a measurable, contested engineering decision, and it is
+         why the metrics in this chapter, not good intentions, are the language of responsible AI.</p>
+    </div>
+  </section>
+
+  <!-- ===== takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>A model learns the world as it is</strong>: bias enters through historical data, sampling, labels, and proxies, and feedback loops can entrench it, so it must be actively examined, not assumed away.</span></li>
+        <li><span class="ck">✓</span><span><strong>&#8220;Fairness through unawareness&#8221; fails</strong>: dropping the protected attribute does not help, because proxies (zip code, name) carry the same information.</span></li>
+        <li><span class="ck">✓</span><span><strong>Fairness is measurable, and plural</strong>: demographic parity, equal opportunity, equalized odds, and calibration each compare groups on a different quantity, and a model can pass one while failing another.</span></li>
+        <li><span class="ck">✓</span><span><strong>You cannot have it all</strong>: with different base rates, demographic parity, equalized odds, and calibration are mathematically incompatible, and forcing one costs accuracy.</span></li>
+        <li><span class="ck">✓</span><span><strong>Choosing a fairness definition is a value judgement</strong>: the math shows the tradeoffs; people must decide which harm is least acceptable, and say so openly.</span></li>
+        <li><span class="ck">✓</span><span><strong>Privacy is respect for the person behind the row</strong>: anonymization is fragile, &#8220;can we?&#8221; is not &#8220;should we?&#8221;, and consent, minimization, and regulation set the floor.</span></li>
+        <li><span class="ck">✓</span><span><strong>Responsible AI is built into the workflow</strong>: bias audits, model cards, explainability, human oversight, and governance, doing the work ethically is part of doing it correctly.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== §6 challenges ===== -->
+  <section id="challenges">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <p>Five exercises on the lending dataset. Full solutions are in the companion solutions notebook.</p>
+    <div class="challenges">
+      <div class="challenge"><div class="cnum">1</div><div class="cbody">
+        <h4>Disparate impact</h4>
+        <p>Compute the ratio of group B's approval rate to group A's, and state whether it passes the 80% (four-fifths) rule.</p>
+        <div class="chint">Hint: selection rate is the mean of the approval column within each group.</div></div></div>
+      <div class="challenge"><div class="cnum">2</div><div class="cbody">
+        <h4>Equal-opportunity gap</h4>
+        <p>Among applicants who would actually repay, compare the approval (true positive) rates of the two groups.</p>
+        <div class="chint">Hint: filter to <code>repaid == 1</code>, then take the mean approval by group.</div></div></div>
+      <div class="challenge"><div class="cnum">3</div><div class="cbody">
+        <h4>Check calibration</h4>
+        <p>Compare each group's mean predicted probability to its actual repayment rate, and explain what a small gap tells you.</p>
+        <div class="chint">Hint: group by the protected attribute; compare mean predicted score to mean outcome.</div></div></div>
+      <div class="challenge"><div class="cnum">4</div><div class="cbody">
+        <h4>Force parity, measure the cost</h4>
+        <p>Lower group B's decision threshold until its approval rate matches A's, and report the change in group-B accuracy.</p>
+        <div class="chint">Hint: a quantile of B's scores gives the threshold for a target approval rate.</div></div></div>
+      <div class="challenge"><div class="cnum">5</div><div class="cbody">
+        <h4>Which definition fits?</h4>
+        <p>For a lending decision, argue which fairness definition should be the primary target, and justify the choice by the harm it prevents.</p>
+        <div class="chint">Hint: what is worse here, unequal approval overall, or denying deserving applicants unequally?</div></div></div>
+    </div>
+
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">📓</div>
+        <div class="nb-body"><h3>Solutions notebook</h3><p>All five challenges worked in code and prose: the disparate impact ratio against the 80% rule, the equal-opportunity gap, a per-group calibration check, a parity intervention with its accuracy cost, and a reasoned argument for which fairness definition a lending model should target.</p></div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/data-ethics--solutions.html">📓 View Solutions</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/data-ethics--solutions.ipynb" target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)" href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/data-ethics--solutions.ipynb" target="_blank" rel="noopener">⬇ GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== §7 quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on bias, fairness metrics, the impossibility result, privacy, and responsible AI. Answer them, hit
+       <strong>Check Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">📣</div>
+    <div><div class="ctitle">That completes Communicating Results &amp; Data Ethics</div>
+      <p>This part turned finished analysis into responsible impact. <a href="communicating-insights-and-storytelling-with-data.html">Communicating
+         Insights &amp; Storytelling with Data</a> made results clear and honest, leading with the answer, choosing effective
+         tables and charts, and avoiding the visuals that mislead, and this chapter made sure the work is fair and
+         trustworthy, measuring bias, weighing the fairness tradeoffs, and respecting privacy. Analysis that is both
+         understood and trusted is the real finish line. Next, the <strong>Capstone</strong> part puts the whole book to work
+         on end-to-end projects. Browse the full <a href="../toc.html">Contents</a> for what is published and what is on the
+         way.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="communicating-insights-and-storytelling-with-data.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 157 · Previous</span><br><span class="cn-title">Communicating Insights &amp; Storytelling with Data</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 158 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => { const h = document.documentElement; bar.style.width = ((h.scrollTop)/(h.scrollHeight-h.clientHeight)*100) + '%'; });
+</script>
+
+<script>
+  window.QUIZ_ID = "ch158";
+  window.QUIZ_DATA = [
+    {
+      q: "Why does a model trained without the protected attribute still discriminate?",
+      options: ["It secretly reads the attribute", "Proxy variables (like zip code or name) carry the same information", "It is a coding bug", "It cannot, this always removes bias"],
+      answer: 1,
+      explain: "'Fairness through unawareness' fails because sensitive traits are encoded in correlated features the model does see."
+    },
+    {
+      q: "'Historical bias' means…",
+      options: ["The data is old", "The data faithfully records a world that was already unjust, so the model learns the injustice", "A bug in old code", "Missing values"],
+      answer: 1,
+      explain: "Even with perfect, current data, a model trained on past discriminatory decisions learns to reproduce them."
+    },
+    {
+      q: "Demographic parity requires equal…",
+      options: ["Accuracy", "Selection (approval) rates across groups", "True positive rates only", "Predicted probabilities"],
+      answer: 1,
+      explain: "Demographic parity asks that each group be approved at the same rate; the 80% rule flags a violation below four-fifths."
+    },
+    {
+      q: "Equal opportunity requires equal…",
+      options: ["Overall approval rates", "True positive rates: among those who truly qualify, each group is approved equally", "False positive rates only", "Sample sizes"],
+      answer: 1,
+      explain: "Equal opportunity focuses on not denying deserving applicants: everyone who would repay should have the same chance of approval."
+    },
+    {
+      q: "A model is well-calibrated for both groups but approves them at very different rates. This is…",
+      options: ["Impossible", "Expected: calibration and demographic parity can conflict when base rates differ", "Proof the model is broken", "A privacy violation"],
+      answer: 1,
+      explain: "Calibration (honest scores) and demographic parity measure different things and need not agree; the notebook's model does exactly this."
+    },
+    {
+      q: "The 'impossibility' result about fairness says that, with different base rates, you cannot simultaneously have…",
+      options: ["Any fairness at all", "Demographic parity, equalized odds, and calibration all at once", "A model and a dataset", "Accuracy above 50%"],
+      answer: 1,
+      explain: "It is a proven theorem: the three group-fairness criteria are mutually incompatible unless base rates are equal or prediction is perfect."
+    },
+    {
+      q: "Why is removing names not enough to anonymize a dataset?",
+      options: ["Names are not private", "People can be re-identified by combining a few remaining fields like zip, birth date, and gender", "It is always enough", "Names are encrypted anyway"],
+      answer: 1,
+      explain: "A small combination of 'anonymous' attributes uniquely identifies most individuals; true anonymization is much harder."
+    },
+    {
+      q: "Given the impossibility result, the responsible way to choose a fairness definition is to…",
+      options: ["Let the model pick automatically", "Name the definition you optimize, justify it for the harm at stake, and disclose the cost", "Always use accuracy", "Avoid measuring fairness"],
+      answer: 1,
+      explain: "The math shows the tradeoffs but cannot choose; people must decide which harm is least acceptable and document that choice openly."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

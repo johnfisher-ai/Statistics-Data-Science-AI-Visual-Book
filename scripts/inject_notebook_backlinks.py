@@ -616,6 +616,12 @@ MAP = {
         ("../../communicating-insights-and-storytelling-with-data.html#notebooks", "Back to the book", "Chapter 157 · Report 3 · Analytical Report"),
     "communicating-insights--solutions.html":
         ("../../communicating-insights-and-storytelling-with-data.html#challenges", "Back to the book", "Chapter 157 · Challenge solutions"),
+    "data-ethics--1-measuring-fairness.html":
+        ("../../data-ethics-bias-and-fairness.html#notebooks", "Back to the book", "Chapter 158 · Notebook 1 · Measuring Bias and Fairness"),
+    "data-ethics--2-fairness-tradeoff.html":
+        ("../../data-ethics-bias-and-fairness.html#notebooks", "Back to the book", "Chapter 158 · Notebook 2 · The Fairness-Accuracy Tradeoff"),
+    "data-ethics--solutions.html":
+        ("../../data-ethics-bias-and-fairness.html#challenges", "Back to the book", "Chapter 158 · Challenge solutions"),
 }
 
 def card(href, kicker, title):
