@@ -604,6 +604,16 @@ MAP = {
         ("../../reproducibility-and-version-control.html#notebook", "Back to the book", "Chapter 156 · Notebook 5 · Experiment Tracking"),
     "reproducibility-and-version-control--solutions.html":
         ("../../reproducibility-and-version-control.html#challenges", "Back to the book", "Chapter 156 · Challenge solutions"),
+    "communicating-insights--A-chart-toolkit.html":
+        ("../../communicating-insights-and-storytelling-with-data.html#notebooks", "Back to the book", "Chapter 157 · Toolkit A · Chart Recipes"),
+    "communicating-insights--B-table-toolkit.html":
+        ("../../communicating-insights-and-storytelling-with-data.html#notebooks", "Back to the book", "Chapter 157 · Toolkit B · Table Recipes"),
+    "communicating-insights--1-executive-report.html":
+        ("../../communicating-insights-and-storytelling-with-data.html#notebooks", "Back to the book", "Chapter 157 · Report 1 · Executive One-Pager"),
+    "communicating-insights--2-ab-test-report.html":
+        ("../../communicating-insights-and-storytelling-with-data.html#notebooks", "Back to the book", "Chapter 157 · Report 2 · A/B Test Readout"),
+    "communicating-insights--3-analytical-report.html":
+        ("../../communicating-insights-and-storytelling-with-data.html#notebooks", "Back to the book", "Chapter 157 · Report 3 · Analytical Report"),
 }
 
 def card(href, kicker, title):
