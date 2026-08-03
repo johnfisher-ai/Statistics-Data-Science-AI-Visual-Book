@@ -37,6 +37,9 @@
     .gitbox pre { margin:0; padding:0.85rem; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:0.8rem; line-height:1.6; overflow-x:auto; color:#e2e8f0; white-space:pre; }
     .gitbox .p { color:#5eead4; }
     .gitbox .cmt { color:#64748b; }
+    .gitbox .pr { color:#5eead4; font-weight:700; }
+    .gitbox .o { color:#94a3b8; }
+    .gitbox .k { color:#fcd34d; }
   </style>
 </head>
 <body class="chapter">
@@ -69,7 +72,7 @@
        your work trustworthy: fixing randomness, pinning environments, versioning data, and above all tracking code with Git,
        so that you, or a stranger, can run it again and get the same answer. Five runnable notebooks, real Git included.</p>
     <div class="hero-meta">
-      <div class="m">⏱️ <b>~30 min</b>&nbsp;read</div>
+      <div class="m">⏱️ <b>~38 min</b>&nbsp;read</div>
       <div class="m">🐍 <b>5 Notebooks</b>&nbsp;included</div>
       <div class="m">📊 <b>Chapter 156</b></div>
     </div>
@@ -254,6 +257,159 @@
        branch's changes for review before they merge, adding a human check to the version history.</p>
   </section>
 
+  <!-- ===== §4 command line ===== -->
+  <section id="command-line">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Everyday Version Control at the Command Line</h2></div>
+    <p>Editors and desktop apps put a friendly face on Git, but underneath, and for most developers and statisticians day to
+       day, version control lives in the <strong>command line</strong>. The terminal is universal (the same commands work on
+       every machine and every host), scriptable (you can automate it), and it is where every tutorial, error message, and
+       teammate's instructions are written. A handful of commands cover almost everything you will ever do.</p>
+
+    <p>Here is the whole everyday rhythm of working with a shared repository, from getting a copy to sending your work back,
+       as it actually looks in a terminal.</p>
+
+    <div class="gitbox"><div class="cbh">a normal day with a shared repository</div><pre><span class="cmt"># get your own copy of a project that lives on GitHub</span>
+<span class="pr">$</span> <span class="p">git</span> clone https://github.com/acme/sales-analysis.git
+<span class="pr">$</span> cd sales-analysis
+
+<span class="cmt"># before starting work, pull the latest changes teammates have pushed</span>
+<span class="pr">$</span> <span class="p">git</span> pull
+
+<span class="cmt"># make a branch for your task, so main stays stable</span>
+<span class="pr">$</span> <span class="p">git</span> switch -c add-region-breakdown
+
+<span class="cmt"># ...edit analysis.py, add a chart... then see what changed</span>
+<span class="pr">$</span> <span class="p">git</span> status
+<span class="o">  modified:   analysis.py</span>
+<span class="pr">$</span> <span class="p">git</span> diff                          <span class="cmt"># review the exact line changes</span>
+
+<span class="cmt"># stage, commit with a clear message, and push the branch to GitHub</span>
+<span class="pr">$</span> <span class="p">git</span> add -A
+<span class="pr">$</span> <span class="p">git</span> commit -m "Add revenue breakdown by region"
+<span class="pr">$</span> <span class="p">git</span> push -u origin add-region-breakdown
+
+<span class="cmt"># open a pull request on GitHub, get review, then it merges into main</span></pre></div>
+
+    <p>That is the loop nearly everyone repeats many times a day: <strong>pull, branch, edit, add, commit, push, open a pull
+       request</strong>. The one golden habit inside it is <strong>pull before you push</strong>, so you build on your
+       teammates' latest work and avoid surprise conflicts. When a conflict does happen, it is the same event from the
+       branching section, resolved the same way.</p>
+
+    <table class="ml-table">
+      <thead><tr><th style="width:26%">Command</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td class="nm"><code>git clone &lt;url&gt;</code></td><td>Copy a remote repository to your machine, ready to work on.</td></tr>
+        <tr><td class="nm"><code>git init</code></td><td>Start version control in a new, local folder (then add a remote to share it).</td></tr>
+        <tr><td class="nm"><code>git status</code> / <code>git diff</code></td><td>See what has changed since the last commit, by file and by line.</td></tr>
+        <tr><td class="nm"><code>git add</code> / <code>git commit</code></td><td>Stage changes, then save them as a snapshot with a message.</td></tr>
+        <tr><td class="nm"><code>git pull</code> / <code>git push</code></td><td>Download teammates' commits; upload yours to the shared host.</td></tr>
+        <tr><td class="nm"><code>git switch</code> / <code>git merge</code></td><td>Move between branches; bring a finished branch's work back in.</td></tr>
+        <tr><td class="nm"><code>git remote -v</code> / <code>git log</code></td><td>List the shared hosts this repo talks to; read its history.</td></tr>
+      </tbody>
+    </table>
+
+    <p>A developer runs these dozens of times a day almost without thinking. A statistician or data scientist uses the very
+       same commands to version analysis scripts, notebooks, and reports, and to sync a project with collaborators through a
+       shared remote. Learn these ten and you are fluent in the language every team, tool, and tutorial speaks.</p>
+  </section>
+
+  <!-- ===== §5 CI/CD ===== -->
+  <section id="cicd">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Automating the Flow: CI/CD</h2></div>
+    <p>Once your code lives in a shared repository, you can make a robot watch it. <strong>Continuous Integration (CI)</strong>
+       means that every push automatically triggers a fresh build and a run of your tests, in a clean environment, so a broken
+       change is caught in minutes rather than discovered in production. <strong>Continuous Delivery / Deployment (CD)</strong>
+       goes one step further: when the tests pass, the result is automatically packaged and released, or even deployed live.</p>
+
+    <p>For this book the connection is direct. CI is <strong>reproducibility enforced by machine</strong>. The pipeline checks
+       out your exact commit, rebuilds the pinned environment, reruns the analysis from scratch, and fails loudly if a number
+       moves or a test breaks. If it cannot reproduce your result on a clean server, neither can anyone else.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
+      <svg viewBox="0 0 700 176" width="100%" font-family="Inter, sans-serif" aria-label="A CI/CD pipeline. A developer pushes a commit to the shared repository, which triggers an automated pipeline that builds the environment, runs the tests, and if everything passes, deploys the result. A red branch shows that if tests fail, the pipeline stops and alerts the team instead of deploying.">
+        <text x="350" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Push once; the pipeline does the rest</text>
+        <g font-size="8.5" text-anchor="middle" font-weight="800">
+          <rect x="18" y="60" width="96" height="42" rx="8" fill="#eff6ff" stroke="#4B8BBE"/><text x="66" y="80" fill="#1e40af">git push</text><text x="66" y="93" fill="#2563eb" font-size="7" font-weight="400">a new commit</text>
+          <rect x="150" y="60" width="96" height="42" rx="8" fill="#042f2e"/><text x="198" y="80" fill="#99f6e4">build</text><text x="198" y="93" fill="#5eead4" font-size="7" font-weight="400">pin the environment</text>
+          <rect x="282" y="60" width="96" height="42" rx="8" fill="#0f766e"/><text x="330" y="80" fill="#fff">test</text><text x="330" y="93" fill="#ccfbf1" font-size="7" font-weight="400">rerun the analysis</text>
+          <rect x="414" y="60" width="96" height="42" rx="8" fill="#14b8a6"/><text x="462" y="80" fill="#fff">pass?</text><text x="462" y="93" fill="#f0fdfa" font-size="7" font-weight="400">the gate</text>
+          <rect x="560" y="36" width="120" height="36" rx="8" fill="#f0fdfa" stroke="#16a34a" stroke-width="1.4"/><text x="620" y="52" fill="#166534">deploy / release</text><text x="620" y="64" fill="#16a34a" font-size="7" font-weight="400">ship it automatically</text>
+          <rect x="560" y="94" width="120" height="36" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="1.4"/><text x="620" y="110" fill="#b91c1c">stop &amp; alert</text><text x="620" y="122" fill="#dc2626" font-size="7" font-weight="400">nothing ships</text>
+        </g>
+        <g stroke="#0f766e" stroke-width="2" fill="none">
+          <line x1="114" y1="81" x2="147" y2="81"/><line x1="246" y1="81" x2="279" y2="81"/><line x1="378" y1="81" x2="411" y2="81"/>
+        </g>
+        <g fill="#0f766e"><path d="M143 76 L150 81 L143 86 Z"/><path d="M275 76 L282 81 L275 86 Z"/><path d="M407 76 L414 81 L407 86 Z"/></g>
+        <path d="M510 72 Q540 60 558 54" stroke="#16a34a" stroke-width="2" fill="none"/><path d="M552 50 L560 54 L553 60 Z" fill="#16a34a"/>
+        <text x="536" y="48" font-size="7" fill="#166534" font-weight="700">yes</text>
+        <path d="M510 90 Q540 104 558 110" stroke="#dc2626" stroke-width="2" fill="none"/><path d="M553 104 L560 112 L551 114 Z" fill="#dc2626"/>
+        <text x="536" y="118" font-size="7" fill="#b91c1c" font-weight="700">no</text>
+        <text x="350" y="164" text-anchor="middle" font-size="8" fill="#64748b" font-style="italic">every push is rebuilt and retested from scratch, so a result that cannot be reproduced never ships</text>
+      </svg>
+      <figcaption style="font-size:0.78rem;color:var(--ink-soft);margin-top:0.9rem;line-height:1.55">
+        A CI/CD pipeline is a script that runs on every push. It rebuilds the environment, reruns the tests, and only releases
+        when they pass. The same idea powers the automated retraining pipelines of the MLOps chapter.
+      </figcaption>
+    </figure>
+
+    <p>The pipeline itself is just a file in your repository, so it is versioned like everything else. Here is a minimal
+       <strong>GitHub Actions</strong> workflow that, on every push, sets up Python, installs the pinned dependencies, and runs
+       the test suite.</p>
+
+    <div class="gitbox"><div class="cbh">.github/workflows/ci.yml</div><pre><span class="k">name:</span> tests
+<span class="k">on:</span> [push]                       <span class="cmt"># run on every push</span>
+<span class="k">jobs:</span>
+  <span class="k">test:</span>
+    <span class="k">runs-on:</span> ubuntu-latest          <span class="cmt"># a fresh, clean machine each time</span>
+    <span class="k">steps:</span>
+      - <span class="k">uses:</span> actions/checkout@v4    <span class="cmt"># get the exact commit</span>
+      - <span class="k">run:</span> pip install -r requirements.txt   <span class="cmt"># rebuild the pinned environment</span>
+      - <span class="k">run:</span> pytest                   <span class="cmt"># rerun the tests; fail loudly if anything broke</span></pre></div>
+
+    <table class="ml-table">
+      <thead><tr><th style="width:24%">Tool</th><th>What it is, and where you meet it</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">Jenkins</td><td>The long-established, self-hosted automation server; highly customizable through plugins, common in enterprises.</td></tr>
+        <tr><td class="nm">GitHub Actions</td><td>CI/CD built into GitHub, configured with a YAML file in the repo. The most common choice for open-source and new projects.</td></tr>
+        <tr><td class="nm">GitLab CI/CD</td><td>The same, native to GitLab, driven by a <code>.gitlab-ci.yml</code> file.</td></tr>
+        <tr><td class="nm">CircleCI / Travis CI</td><td>Popular hosted CI services that connect to your repository.</td></tr>
+        <tr><td class="nm">Azure Pipelines</td><td>Microsoft's CI/CD in Azure DevOps, widely used in enterprise and .NET shops.</td></tr>
+      </tbody>
+    </table>
+
+    <p>Data scientists lean on the same machinery: a pipeline can rerun a notebook end to end, validate that a model still
+       clears an accuracy bar, regenerate a report, or trigger a retraining job. It is the automated backbone of the
+       reproducible, monitored workflow the <a href="from-model-to-production-mlops.html">MLOps chapter</a> describes.</p>
+  </section>
+
+  <!-- ===== §6 git in tooling ===== -->
+  <section id="git-in-tools">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Git Everywhere: Version Control in Your Tools</h2></div>
+    <p>You rarely have to leave your editor to use Git, because version control is now built into nearly every serious
+       development and analysis tool. The commands underneath are identical; the difference is a graphical front door, staging
+       changes with a checkbox, seeing a colored diff in the margin, committing from a panel, and resolving a conflict in a
+       visual three-way view.</p>
+
+    <table class="ml-table">
+      <thead><tr><th style="width:26%">Tool or platform</th><th>How Git shows up in it</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">VS Code</td><td>A built-in Source Control panel for staging, committing, branching, and pushing; the popular <strong>GitLens</strong> extension adds inline blame and rich history.</td></tr>
+        <tr><td class="nm">Visual Studio</td><td>Full Git integration in the IDE: clone, branch, commit, and manage pull requests to GitHub or Azure DevOps without a terminal.</td></tr>
+        <tr><td class="nm">RStudio / Posit</td><td>A <strong>Git pane</strong> for staging and committing, and project-level integration with GitHub, the standard way R users version their analyses.</td></tr>
+        <tr><td class="nm">JupyterLab</td><td>The <code>jupyterlab-git</code> extension adds a Git panel and diff viewer for notebooks right in the browser.</td></tr>
+        <tr><td class="nm">SAS</td><td><strong>SAS Studio</strong>, Enterprise Guide, and SAS Viya include built-in Git integration, so even a menu-driven analyst can clone, commit, and push program versions.</td></tr>
+        <tr><td class="nm">JetBrains (PyCharm, etc.)</td><td>Deep, first-class version control with a visual merge tool and change lists across the whole IDE.</td></tr>
+        <tr><td class="nm">Desktop clients</td><td><strong>GitHub Desktop</strong>, GitKraken, Sourcetree: standalone graphical apps for people who prefer buttons to the terminal.</td></tr>
+      </tbody>
+    </table>
+
+    <p>The lesson is that Git is the shared plumbing beneath a dozen different front doors. A developer might commit from the
+       VS Code sidebar, a statistician from the RStudio or SAS Studio Git pane, and a data engineer from the terminal, and they
+       all push to the same GitHub repository and see the same history. That commercial statistical platforms like SAS now
+       build in Git is the clearest sign of how universal version control has become: it is no longer a programmer's tool, but
+       everyone's.</p>
+  </section>
+
   <!-- ===== notebooks hub ===== -->
   <section id="notebooks">
     <div class="section-eyebrow"><div class="num" style="background:#0f766e">🐍</div><h2>The Five-Notebook Mini-Course</h2></div>
@@ -330,7 +486,7 @@
 
   <!-- ===== §5 reproducibility in ML/AI ===== -->
   <section id="ml-ai">
-    <div class="section-eyebrow"><div class="num">4</div><h2>Reproducibility in Data Science, ML &amp; AI</h2></div>
+    <div class="section-eyebrow"><div class="num">7</div><h2>Reproducibility in Data Science, ML &amp; AI</h2></div>
     <p>In machine learning the stakes are higher, because a model has more moving parts to pin: not just code and data but the
        exact split, the hyperparameters, the framework versions, and every seed. The field has built dedicated tools for it,
        and they are all doing, at scale, what the notebooks here do by hand.</p>
@@ -367,6 +523,9 @@
         <li><span class="ck">✓</span><span><strong>Git versions the code</strong>: the loop is edit, <code>add</code>, <code>commit</code>, building a trustworthy history you inspect with <code>status</code>, <code>diff</code>, and <code>log</code>.</span></li>
         <li><span class="ck">✓</span><span><strong>A <code>.gitignore</code> keeps the wrong things out</strong>: big data, generated outputs, and secrets like API keys must never be committed.</span></li>
         <li><span class="ck">✓</span><span><strong>Branches make work safe</strong>: experiment on a branch, merge it back, and treat a merge conflict as a request for your decision, not an error.</span></li>
+        <li><span class="ck">✓</span><span><strong>The everyday loop lives at the command line</strong>: pull, branch, edit, add, commit, push, open a pull request; and always pull before you push to avoid surprise conflicts.</span></li>
+        <li><span class="ck">✓</span><span><strong>CI/CD automates reproducibility</strong>: every push triggers a fresh build, rerun, and test (Jenkins, GitHub Actions, GitLab CI), and only releases when it passes, so a result that cannot be reproduced never ships.</span></li>
+        <li><span class="ck">✓</span><span><strong>Git is built into your tools</strong>: VS Code, RStudio, JupyterLab, JetBrains, and even SAS Studio put a graphical front door on the same commands, all pushing to the same shared history.</span></li>
         <li><span class="ck">✓</span><span><strong>An experiment log makes reproducibility checkable</strong>: record code, data, seed, and environment per run, and identical inputs provably give identical results.</span></li>
         <li><span class="ck">✓</span><span><strong>ML scales this up</strong> with MLflow, DVC, and Docker, but they only automate the same four pillars. A result no one can rerun is not really a result.</span></li>
       </ul>
@@ -375,7 +534,7 @@
 
   <!-- ===== §6 challenges ===== -->
   <section id="challenges">
-    <div class="section-eyebrow"><div class="num">5</div><h2>Practice Challenges</h2></div>
+    <div class="section-eyebrow"><div class="num">8</div><h2>Practice Challenges</h2></div>
     <p>Five exercises, one per notebook area. Full solutions are in the companion solutions notebook.</p>
     <div class="challenges">
       <div class="challenge"><div class="cnum">1</div><div class="cbody">
@@ -415,7 +574,7 @@
 
   <!-- ===== §7 quiz ===== -->
   <section id="quiz">
-    <div class="section-eyebrow"><div class="num">6</div><h2>Quiz: Test Yourself</h2></div>
+    <div class="section-eyebrow"><div class="num">9</div><h2>Quiz: Test Yourself</h2></div>
     <p>Eight questions on the four pillars, Git basics, branching, and experiment tracking. Answer them, hit
        <strong>Check Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
     <div id="quiz-root"></div>
@@ -483,6 +642,18 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
       options: ["clone, push, delete", "edit, git add (stage), git commit (save)", "open, close, save", "branch, merge, branch"],
       answer: 1,
       explain: "You edit files, stage the changes you want with git add, then commit them as a snapshot with a message."
+    },
+    {
+      q: "At the command line, which pair downloads teammates' commits and uploads yours to a shared host?",
+      options: ["git add and git commit", "git pull and git push", "git status and git diff", "git init and git clone"],
+      answer: 1,
+      explain: "git pull brings down others' work, git push sends yours up. The golden habit is to pull before you push to avoid conflicts."
+    },
+    {
+      q: "What does Continuous Integration (CI) do?",
+      options: ["Writes your code for you", "On every push, automatically rebuilds the environment and reruns the tests in a clean setting", "Replaces version control", "Only runs once a year"],
+      answer: 1,
+      explain: "CI (Jenkins, GitHub Actions, GitLab CI) is reproducibility enforced by machine: if a clean server cannot rebuild and pass, the change is caught at once."
     },
     {
       q: "What belongs in a .gitignore file?",
