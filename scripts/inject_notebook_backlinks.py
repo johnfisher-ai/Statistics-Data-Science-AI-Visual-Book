@@ -614,6 +614,8 @@ MAP = {
         ("../../communicating-insights-and-storytelling-with-data.html#notebooks", "Back to the book", "Chapter 157 · Report 2 · A/B Test Readout"),
     "communicating-insights--3-analytical-report.html":
         ("../../communicating-insights-and-storytelling-with-data.html#notebooks", "Back to the book", "Chapter 157 · Report 3 · Analytical Report"),
+    "communicating-insights--solutions.html":
+        ("../../communicating-insights-and-storytelling-with-data.html#challenges", "Back to the book", "Chapter 157 · Challenge solutions"),
 }
 
 def card(href, kicker, title):
