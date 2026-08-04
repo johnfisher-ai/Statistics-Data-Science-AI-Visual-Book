@@ -622,6 +622,8 @@ MAP = {
         ("../../data-ethics-bias-and-fairness.html#notebooks", "Back to the book", "Chapter 158 · Notebook 2 · The Fairness-Accuracy Tradeoff"),
     "data-ethics--solutions.html":
         ("../../data-ethics-bias-and-fairness.html#challenges", "Back to the book", "Chapter 158 · Challenge solutions"),
+    "capstone-coffee-fill-weight.html":
+        ("../../capstone-coffee-fill-weight.html#notebook", "Back to the book", "Chapter 160 · One-Sample t-Test: Coffee Fill Weight"),
 }
 
 def card(href, kicker, title):

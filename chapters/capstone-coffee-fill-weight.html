@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 160 · One-Sample t-Test: Coffee Fill Weight — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .goldbox { background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #b45309; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .goldbox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .rw-card { background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #b45309; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file.doc { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #b45309; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/capstone-coffee-fill-weight.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXVII &#183; Capstone Projects: Statistical Testing</span><span class="sep">/</span>
+      <span>Chapter 160</span>
+    </div>
+    <h1>Is the Coffee <span class="accent">Underfilled?</span></h1>
+    <p class="dek">Capstone 1. A coffee roaster prints 340 g on every bag. Quality control weighs a day's sample, and the file
+       arrives messy: blanks, a decimal typo, an impossible zero. We walk the full framework, clean it, check whether the
+       weights are normal enough for a t-test, and test the mean against 340 g, the simplest test in statistics, done properly.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~15 min</b>&nbsp;read</div>
+      <div class="m">🧪 <b>One-sample t-test</b></div>
+      <div class="m">📊 <b>Chapter 160</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">This is the first capstone, so it doubles as a template: one real, slightly broken dataset taken the
+       whole way through <a href="the-analysis-framework.html">the twelve-step framework</a>, narrating every decision out
+       loud. The statistical question is the gentlest in the book, <span class="hl">is a mean equal to a target value?</span>,
+       which is exactly why it is the right place to build the habits that the harder capstones will lean on: describe before
+       you test, clean honestly, check the assumption, and report the effect, not just the p-value.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#9878;</div>
+      <div class="def-body">
+        The <span class="def-kw">one-sample t-test</span> asks whether the mean of one <span class="def-kw">continuous</span>
+        sample differs from a single <span class="def-kw">target value</span>. It assumes the data are roughly
+        <span class="def-kw">normal</span> (or that the sample is large enough for the Central Limit Theorem), and it returns
+        a <span class="def-kw">t statistic</span>, a p-value, and a confidence interval for the mean.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">☕</div>
+      <div><div class="ctitle">The finding, up front</div>
+        <p>After cleaning, 70 bags average <strong>341.23 g</strong> against a 340 g label. The gap is small but
+           unmistakable: <strong>t(69) = 4.88, p &lt; 0.001</strong>, with a 95% interval of <strong>[340.73, 341.73] g</strong>
+           that sits entirely above the target. The line runs slightly <strong>heavy</strong>, giving away about a gram of
+           coffee per bag, though no customer is ever shorted.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== 1 ===== -->
+  <section id="question">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Question, the Hypotheses, the Design</h2></div>
+    <p>Bay Roasters fills whole-bean bags labeled 340 g (12 oz). Overfilling gives away product and margin; underfilling
+       shorts the customer and breaks net-content law. Quality control pulled a sample of bags across one production day and
+       weighed each. The manager's question is plain: <em>is the line on target, or is it running light or heavy?</em></p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Framework step</th><th>This project</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Goal</td><td>Decide whether the mean fill weight equals the 340 g target.</td></tr>
+          <tr><td class="nm">Hypotheses</td><td>H&#8320;: mean = 340 g&nbsp;&nbsp;vs&nbsp;&nbsp;H&#8321;: mean &#8800; 340 g, two-sided, &#945; = 0.05.</td></tr>
+          <tr><td class="nm">Data type</td><td>One <strong>continuous</strong> outcome, <code>fill_g</code> (grams). The rest are labels.</td></tr>
+          <tr><td class="nm">Design</td><td>One sample of independent measurements vs a single fixed value. No groups, no pairing.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>A continuous outcome measured against one target, with no groups, is the textbook home of the one-sample t-test,
+       <em>if</em> its normality assumption survives the check in Section 3.</p>
+  </section>
+
+  <!-- ===== 2 ===== -->
+  <section id="clean">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Meet the Data, Then Clean It</h2></div>
+    <p>The raw export has 78 rows but only 76 unique bag IDs, and its summary is nonsense: a minimum of 0 g and a maximum of
+       3410 g. Those are not light and heavy bags, they are recording errors, and a histogram makes that obvious at a glance.
+       The real distribution is hiding inside a sensible range while three stray values stretch the axis.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-coffee-cleaning.png" alt="Two histograms. On the left, the raw fill weights span from 0 to over 3400 grams because of a few impossible values, so the real data is squashed into one bar. On the right, zoomed to a plausible 300 to 380 gram range, a clean bell-shaped distribution appears, centered just above the 340 gram label line.">
+      <figcaption><strong>Left:</strong> the raw weights, dragged across a useless axis by an empty-pan zero, a decimal typo (34.1), and a fat-finger 3410. <strong>Right:</strong> zoom to a plausible range and the true, roughly bell-shaped distribution appears, centered a touch above 340 g.</figcaption>
+    </figure>
+
+    <p>Cleaning is three deletions, in order, and we keep a written trail so the count is defensible: drop
+       <strong>duplicate log rows</strong>, drop <strong>blank weights</strong>, and drop <strong>impossible values</strong>
+       outside a 300 to 380 g range. Seventy-eight rows become seventy clean measurements.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.1rem">
+      <svg viewBox="0 0 700 168" width="100%" font-family="Inter, sans-serif" aria-label="A cleaning funnel. Start with 78 raw rows. Remove 2 duplicate rows to get 76. Remove 3 blank weights to get 73. Remove 3 impossible values (0, 34.1, and 3410 grams) to get 70 clean measurements.">
+        <text x="350" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">From 78 raw rows to 70 clean measurements</text>
+        <g font-size="10">
+          <rect x="18" y="52" width="118" height="60" rx="10" fill="#fffbeb" stroke="#b45309"/>
+          <text x="77" y="78" text-anchor="middle" font-size="20" fill="#78350f" font-weight="800">78</text>
+          <text x="77" y="98" text-anchor="middle" fill="#92400e">raw rows</text>
+
+          <rect x="196" y="52" width="118" height="60" rx="10" fill="#fffdf7" stroke="#fcd34d"/>
+          <text x="255" y="78" text-anchor="middle" font-size="20" fill="#78350f" font-weight="800">76</text>
+          <text x="255" y="98" text-anchor="middle" fill="#92400e">deduplicated</text>
+
+          <rect x="374" y="52" width="118" height="60" rx="10" fill="#fffdf7" stroke="#fcd34d"/>
+          <text x="433" y="78" text-anchor="middle" font-size="20" fill="#78350f" font-weight="800">73</text>
+          <text x="433" y="98" text-anchor="middle" fill="#92400e">blanks dropped</text>
+
+          <rect x="552" y="52" width="130" height="60" rx="10" fill="#78350f"/>
+          <text x="617" y="78" text-anchor="middle" font-size="20" fill="#fff" font-weight="800">70</text>
+          <text x="617" y="98" text-anchor="middle" fill="#fde68a">clean sample</text>
+
+          <g fill="#b45309"><polygon points="150,82 138,76 138,88"/><polygon points="328,82 316,76 316,88"/><polygon points="506,82 494,76 494,88"/></g>
+          <g font-size="8.5" fill="#dc2626" text-anchor="middle" font-weight="700">
+            <text x="166" y="128">&#8722;2 duplicates</text>
+            <text x="344" y="128">&#8722;3 blank</text>
+            <text x="524" y="128">&#8722;3 impossible</text>
+          </g>
+          <text x="350" y="150" text-anchor="middle" font-size="8.5" fill="#64748b" font-style="italic">Impossible values removed: 0 g, 34.1 g, 3410 g, all outside any believable fill weight.</text>
+        </g>
+      </svg>
+    </figure>
+
+    <p>The clean sample of <strong>n = 70</strong> has a mean of <strong>341.23 g</strong> and a standard deviation of
+       <strong>2.11 g</strong>, already about 1.2 g above the label. Whether that gap is real, or just the luck of which bags
+       were sampled, is the question the test settles, but only after we earn the right to use it.</p>
+  </section>
+
+  <!-- ===== 3 ===== -->
+  <section id="assumption">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Check the Assumption Before the Test</h2></div>
+    <p>The one-sample t-test trusts that the data are roughly normal. We check three ways, and we let the picture carry as
+       much weight as the p-values.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-coffee-normality.png" alt="Two panels. On the left, a histogram of the 70 clean weights with a fitted normal curve overlaid; the bars follow the bell shape and the target line at 340 grams sits just left of center. On the right, a normal quantile-quantile plot where the points fall close to the straight diagonal reference line, indicating approximate normality.">
+      <figcaption><strong>Left:</strong> the clean weights track a fitted normal curve well. <strong>Right:</strong> on the Q-Q plot the points hug the diagonal, the visual signature of an approximately normal sample.</figcaption>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Check</th><th>Result</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Shapiro-Wilk</td><td>W = 0.973, p = 0.14</td><td>fails to reject normality</td></tr>
+          <tr><td class="nm">Kolmogorov-Smirnov</td><td>D = 0.080, p = 0.74</td><td>fails to reject normality</td></tr>
+          <tr><td class="nm">Q-Q plot</td><td>points close to the line</td><td>normal is reasonable</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Both tests keep the normality assumption, and with n = 70 the Central Limit Theorem is a second safety net for the mean
+       even if the tails were a little heavy. No transformation is needed. We proceed with the
+       <strong>parametric one-sample t-test</strong>, and to be safe we will also run its rank-based twin, the
+       <strong>Wilcoxon signed-rank test</strong>, which assumes nothing about normality. If they disagreed we would trust
+       the rank-based one; here they will not.</p>
+  </section>
+
+  <!-- ===== 4 ===== -->
+  <section id="test">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Run the Test, Report the Whole Result</h2></div>
+    <p>The test compares the sample mean to 340 g, scaled by how much sample means naturally wobble (the standard error). A
+       t of 4.88 says the observed gap is almost five standard errors from the target, far more than sampling noise could
+       plausibly produce.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">t statistic</div><div class="rv">4.88</div><div class="rd">on 69 degrees of freedom</div></div>
+      <div class="rchip"><div class="rk">p-value</div><div class="rv">&lt; 0.001</div><div class="rd">6.5 &#215; 10<sup>&#8722;6</sup>, two-sided</div></div>
+      <div class="rchip"><div class="rk">95% CI for the mean</div><div class="rv">340.73 &#8211; 341.73</div><div class="rd">grams, excludes 340</div></div>
+      <div class="rchip"><div class="rk">Cohen's d</div><div class="rv">0.58</div><div class="rd">a medium effect</div></div>
+    </div>
+
+    <p>The confidence interval is the most useful line for a non-statistician: we are 95% confident the true mean sits between
+       <strong>340.73 and 341.73 g</strong>. Because that whole range is above 340, we can say with confidence the line runs
+       heavy, and by roughly one gram, not five and not a tenth. The <strong>Wilcoxon signed-rank test agrees</strong>
+       (p &#8776; 0.0000075), so the conclusion does not depend on the normality assumption at all.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-coffee-result.png" alt="A histogram of the 70 clean fill weights. A dashed red vertical line marks the 340 gram target on the left. A solid dark vertical line marks the sample mean at 341.23 grams. A shaded gold band spanning 340.73 to 341.73 grams marks the 95% confidence interval, and the entire band sits to the right of the 340 gram target line.">
+      <figcaption>The result in one picture. The <strong>95% confidence interval</strong> (gold band) sits entirely to the right of the <strong>340 g target</strong> (dashed red), which is what statistical significance looks like: the plausible range for the mean never touches the label.</figcaption>
+    </figure>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.1rem">
+      <svg viewBox="0 0 700 150" width="100%" font-family="Inter, sans-serif" aria-label="A number line from 339 to 342 grams. The target of 340 grams is marked with a red dashed line. The sample mean of 341.23 grams is marked with a gold dot, and its 95 percent confidence interval from 340.73 to 341.73 grams is drawn as a gold bar. The whole bar lies to the right of the 340 gram target, so the null hypothesis that the mean equals 340 is rejected.">
+        <text x="350" y="22" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">A confidence interval that misses 340 g rejects H&#8320;</text>
+        <line x1="70" y1="92" x2="640" y2="92" stroke="#94a3b8" stroke-width="1.3"/>
+        <g font-size="9" fill="#475569" text-anchor="middle">
+          <line x1="70" y1="88" x2="70" y2="96" stroke="#94a3b8"/><text x="70" y="112">339</text>
+          <line x1="260" y1="88" x2="260" y2="96" stroke="#94a3b8"/><text x="260" y="112">340</text>
+          <line x1="450" y1="88" x2="450" y2="96" stroke="#94a3b8"/><text x="450" y="112">341</text>
+          <line x1="640" y1="88" x2="640" y2="96" stroke="#94a3b8"/><text x="640" y="112">342</text>
+        </g>
+        <line x1="260" y1="54" x2="260" y2="110" stroke="#dc2626" stroke-width="2" stroke-dasharray="4 3"/>
+        <text x="260" y="46" text-anchor="middle" font-size="9.5" fill="#dc2626" font-weight="800">target 340 g (H&#8320;)</text>
+        <rect x="399" y="86" width="190" height="12" rx="6" fill="#b45309" opacity="0.30"/>
+        <line x1="399" y1="80" x2="399" y2="104" stroke="#b45309" stroke-width="1.6"/>
+        <line x1="589" y1="80" x2="589" y2="104" stroke="#b45309" stroke-width="1.6"/>
+        <circle cx="494" cy="92" r="6" fill="#78350f"/>
+        <text x="494" y="74" text-anchor="middle" font-size="9.5" fill="#78350f" font-weight="800">mean 341.23 g</text>
+        <text x="494" y="128" text-anchor="middle" font-size="8.5" fill="#92400e">95% CI [340.73, 341.73], entirely above target &#8594; reject H&#8320;</text>
+      </svg>
+    </figure>
+  </section>
+
+  <!-- ===== 5 ===== -->
+  <section id="verdict">
+    <div class="section-eyebrow"><div class="num">5</div><h2>The Verdict, the Cost, and the Ethics</h2></div>
+    <p>Statistically, the mean is above target. But a good analyst asks the second question the p-value cannot answer:
+       <strong>does it matter?</strong> The overfill is about <strong>1.23 g per bag</strong>, roughly a third of one percent.
+       Per bag that is nothing; across a million-bag run it is about <strong>1,229 kg of coffee given away</strong>, real money
+       for a commodity product. So the effect is both statistically significant and, at scale, practically meaningful, two
+       things that do not always travel together.</p>
+
+    <div class="goldbox">
+      <span class="gb-tag">The honest three-part read</span>
+      <p style="margin:0.4rem 0 0">A tiny <strong>p-value</strong> (chance is ruled out), a medium <strong>effect size</strong>
+         (d &#8776; 0.58, the overfill is real but modest per bag), and a <strong>confidence interval</strong> that says how
+         precisely we know it (about one gram over, give or take a third of a gram). Reporting only the p would have hidden
+         how small the per-bag effect is; reporting only the mean would have hidden how sure we are.</p>
+    </div>
+
+    <p>And the framework's last step, a skeptical look before acting:</p>
+    <ul>
+      <li><strong>Sampling.</strong> The bags came from one day on two lines. If QC tends to weigh bags right after a
+          calibration, the true overfill could be understated. A claim about "the process" needs samples spread across machine
+          states, not one convenient window.</li>
+      <li><strong>Measurement.</strong> Everything rides on the scale. A scale reading half a gram high would invent an
+          overfill that is not there, so calibration against a certified weight is part of trusting this number.</li>
+      <li><strong>Generalization.</strong> This supports a claim about this run, not a permanent property of the brand, until
+          more days confirm it.</li>
+      <li><strong>The safe action.</strong> Nudge the fill target down toward roughly 340.5 g: it recovers most of the wasted
+          coffee while staying comfortably above the label. Cutting straight to 340 g would push about half of future bags
+          <em>below</em> the printed weight, which is exactly what net-content law forbids.</li>
+    </ul>
+  </section>
+
+  <!-- ===== 6 ===== -->
+  <section id="in-ds-ai">
+    <div class="section-eyebrow"><div class="num">6</div><h2>The One-Sample t-Test in Data Science &amp; AI</h2></div>
+    <p>This "compare a mean to a target" test is quietly everywhere in modern data work, usually under a different name.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Where it appears</th><th>The target value</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Model monitoring</td><td>Is this week's mean prediction error still at its baseline, or has the model drifted?</td></tr>
+          <tr><td class="nm">SLA / latency checks</td><td>Is mean response time at or below the 200 ms service-level target?</td></tr>
+          <tr><td class="nm">Guardrail metrics</td><td>During a rollout, has a key average (session length, error rate) moved off its historical level?</td></tr>
+          <tr><td class="nm">Calibration</td><td>Does a sensor or an annotation pipeline read, on average, to its reference standard?</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="research">
+      <span class="rtag">Practice note</span>
+      <p style="margin:0.4rem 0 0">In production these tests run on huge samples, where the danger flips: with millions of
+         observations, a drift of no practical importance becomes "significant" instantly. That is why serious monitoring
+         pairs the test with an <strong>effect size and a tolerance band</strong> (a minimum meaningful drift), and alerts only
+         when both fire, exactly the discipline this capstone practiced on seventy bags of coffee.</p>
+    </div>
+  </section>
+
+  <!-- ===== Notebook + downloads ===== -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook runs all twelve framework steps end to end: it loads the raw file, describes and plots
+             it, cleans the duplicates, blanks, and impossible values with a printed audit trail, checks normality
+             (Shapiro-Wilk, Kolmogorov-Smirnov, Q-Q), runs the one-sample t-test with <code>scipy</code> and confirms the
+             effect size, interval, and power with <code>pingouin</code>, and cross-checks it with the Wilcoxon signed-rank
+             test. Every number in this chapter comes from its output.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-coffee-fill-weight.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-coffee-fill-weight.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-coffee-fill-weight.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Download the project files</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong> (<code>capstone-coffee-fill-weight.xlsx</code>) holds the raw
+         QC log on the <em>fills</em> sheet, with a codebook and notes, deliberately including the blanks, duplicates, and
+         impossible values so you can practice the cleaning yourself. <strong>The report</strong> is the one-page memo a
+         statistician wrote for the plant manager: the recommendation first, the statistics in plain language, and the same
+         figures you see above.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-1-coffee-fill-weight.docx">📄 Download report <small>Word .docx</small></a>
+        <a class="ex-file xls" href="../data/capstone-coffee-fill-weight.xlsx">📊 Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>The one-sample t-test</strong> compares a continuous mean to a fixed target; here 70 bags averaged 341.23 g against a 340 g label.</span></li>
+        <li><span class="ck">✓</span><span><strong>Clean first, and show your work</strong>: 78 raw rows became 70 after dropping 2 duplicates, 3 blanks, and 3 impossible values.</span></li>
+        <li><span class="ck">✓</span><span><strong>Earn the test</strong>: Shapiro-Wilk (p = 0.14) and the Q-Q plot kept normality, so the parametric test was valid; Wilcoxon confirmed it.</span></li>
+        <li><span class="ck">✓</span><span><strong>Report three things</strong>: t(69) = 4.88, p &lt; 0.001, 95% CI [340.73, 341.73], and Cohen's d = 0.58, significant and, at scale, meaningful.</span></li>
+        <li><span class="ck">✓</span><span><strong>End with judgment</strong>: the fix is to trim the target toward 340.5 g, saving coffee while staying legal, not to chase 340 g exactly.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on this capstone, from cleaning to the confidence interval. Answer them, hit
+       <strong>Check Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="the-analysis-framework.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 159 · Previous</span><br><span class="cn-title">The Analysis Framework</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 160 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch160";
+  window.QUIZ_DATA = [
+    {
+      q: "Why is a one-sample t-test the right choice here?",
+      options: ["Two groups are compared", "One continuous mean is compared to a single fixed target (340 g)", "The outcome is categorical", "The data are paired"],
+      answer: 1,
+      explain: "A continuous outcome tested against one target value, with no groups, is the one-sample t-test's job."
+    },
+    {
+      q: "The raw file had a 0 g and a 3410 g weight. These are…",
+      options: ["Real light and heavy bags to keep", "Recording errors to remove before analysis", "The most important data points", "Evidence the line is broken"],
+      answer: 1,
+      explain: "They fall outside any believable fill weight; they are data-entry errors, cleaned out in Step 5."
+    },
+    {
+      q: "Cleaning took the sample from 78 rows to…",
+      options: ["78 (nothing removed)", "70 (after dropping 2 duplicates, 3 blanks, 3 impossible values)", "40", "76"],
+      answer: 1,
+      explain: "Two duplicate rows, three blank weights, and three impossible values were removed, leaving n = 70."
+    },
+    {
+      q: "Shapiro-Wilk returned p = 0.14. This means…",
+      options: ["The data are badly skewed", "We do not reject normality, so the t-test's assumption is satisfied", "The test failed", "The mean equals 340"],
+      answer: 1,
+      explain: "A large p from Shapiro-Wilk gives no evidence against normality, so the parametric test is valid."
+    },
+    {
+      q: "The 95% CI for the mean was [340.73, 341.73] g. Because it excludes 340…",
+      options: ["The result is not significant", "We are confident the true mean is above the 340 g target", "The sample was too small", "We must use a different test"],
+      answer: 1,
+      explain: "An interval that misses the target value corresponds to a statistically significant result."
+    },
+    {
+      q: "The Wilcoxon signed-rank test was run as well because…",
+      options: ["It replaces the t-test", "It is a rank-based cross-check that does not assume normality; agreement adds confidence", "It measures a different thing", "The t-test was invalid"],
+      answer: 1,
+      explain: "Running the nonparametric twin confirms the conclusion does not hinge on the normality assumption."
+    },
+    {
+      q: "Cohen's d was about 0.58. Together with the tiny p-value, this says…",
+      options: ["The effect is huge", "The overfill is statistically real and a medium-sized, modest per-bag effect", "There is no effect", "The data are wrong"],
+      answer: 1,
+      explain: "The p says it is real; the effect size says it is medium, about a gram over per bag."
+    },
+    {
+      q: "The recommended action is to…",
+      options: ["Set the target to exactly 340 g", "Trim the target toward about 340.5 g to save coffee while staying above the label", "Ignore the result", "Overfill more to be safe"],
+      answer: 1,
+      explain: "Cutting to 340 g would push half of bags below the label (illegal); 340.5 g saves coffee and stays legal."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
