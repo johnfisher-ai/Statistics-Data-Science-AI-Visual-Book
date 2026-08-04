@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 159 · The Analysis Framework — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .stepn { font-weight:800; color:#b45309; text-align:center; width:2.2rem; }
+    .cap-group { margin:1.5rem 0 0.5rem; font-size:0.7rem; font-weight:800; text-transform:uppercase;
+                 letter-spacing:0.06em; color:#92400e; border-bottom:2px solid #fde68a; padding-bottom:0.3rem; }
+    .cap-card { display:flex; gap:0.85rem; align-items:flex-start; border:1px solid var(--line);
+                border-left:4px solid #b45309; border-radius:11px; padding:0.75rem 1.05rem; margin:0.55rem 0; background:#fffbeb44; }
+    .cap-card .cap-n { flex:0 0 auto; width:30px; height:30px; border-radius:50%; background:#b45309; color:#fff;
+                       font-weight:800; font-size:0.82rem; display:flex; align-items:center; justify-content:center; margin-top:2px; }
+    .cap-card .cap-body { flex:1; }
+    .cap-card .cap-tag { font-size:0.65rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#b45309; }
+    .cap-card .cap-t { font-weight:700; color:var(--ink); font-size:0.95rem; margin:1px 0; }
+    .cap-card .cap-q { color:var(--ink-soft); font-size:0.85rem; }
+    .goldbox { background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #b45309; border-radius:12px;
+               padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .goldbox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .research { background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="#roadmap" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🏆 The Projects</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXVII &#183; Capstone Projects: Statistical Testing</span><span class="sep">/</span>
+      <span>Chapter 159</span>
+    </div>
+    <h1>The Analysis <span class="accent">Framework</span></h1>
+    <p class="dek">The next fifteen chapters are full projects, each one taking a real, messy dataset from a plain-English
+       question to a defensible answer. They all walk the same twelve-step path. Learn it once here and every capstone
+       becomes a variation on a theme: know your data, check before you test, choose deliberately, and report the whole truth.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~18 min</b>&nbsp;read</div>
+      <div class="m">🧭 <b>Framework</b>&nbsp;guide</div>
+      <div class="m">📊 <b>Chapter 159</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Everything in this book so far has been a piece of a puzzle: describing data, visualizing it, cleaning it,
+       the logic of a test, the family of tests, effect sizes, correlation. A <span class="term">capstone</span> puts the
+       pieces together on one real problem, start to finish. The hard part is rarely the arithmetic, which a single line of
+       Python now handles. The hard part is <span class="hl">judgment</span>: what kind of data is this, what is actually
+       being asked, do the assumptions hold, and if they do not, what then? This chapter is the shared playbook for all of it.</p>
+
+    <div class="def-card">
+      <div class="sigma">🧭</div>
+      <div class="def-body">
+        A <span class="def-kw">capstone analysis</span> is a complete study built on one repeatable
+        <span class="def-kw">framework</span>: classify the <span class="def-kw">data type</span>, understand the
+        <span class="def-kw">goal</span>, describe and visualize, prepare and clean, identify the
+        <span class="def-kw">groups and design</span>, <span class="def-kw">check the assumptions</span>, choose and run the
+        right <span class="def-kw">test</span>, and report the result with an effect size, an interval, and an honest look at
+        its limits.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🗺️</div>
+      <div><div class="ctitle">The whole method in one line</div>
+        <p>Let the <strong>data type and design</strong> narrow the choice, let the <strong>assumptions</strong> settle it,
+           run the test, and finish with an <strong>effect size, a confidence interval, and the ethics</strong>, never a bare
+           p-value. Every capstone ahead follows exactly this arc, out loud.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Section 1: the framework ===== -->
+  <section id="framework">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Twelve-Step Framework</h2></div>
+    <p>The same twelve steps, grouped into four phases, run through every project. The first phase decides <em>what</em> you
+       are studying, the middle two get the data honest and pick a valid test, and the last one turns a number into a
+       decision. Skipping a step is where analyses go wrong: choosing a test before checking its assumptions, or reporting
+       a p-value with no sense of how big the effect is.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.1rem">
+      <svg viewBox="0 0 720 250" width="100%" font-family="Inter, sans-serif" aria-label="The twelve-step analysis framework in four phases. Phase one, Frame: step 1 goal and hypotheses, step 2 data types. Phase two, Explore and prepare: step 3 describe, step 4 visualize, step 5 clean and prepare, step 6 design. Phase three, Validate and choose: step 7 check assumptions, step 8 decide and fix, step 9 choose the test. Phase four, Test and conclude: step 10 run and report, step 11 interpret, step 12 ethics and bias. Each phase flows into the next.">
+        <text x="360" y="18" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">One framework, four phases, twelve steps</text>
+
+        <!-- phase 1 -->
+        <rect x="8" y="30" width="160" height="188" rx="10" fill="#fffdf7" stroke="#fde68a"/>
+        <rect x="8" y="30" width="160" height="26" rx="10" fill="#b45309"/>
+        <rect x="8" y="44" width="160" height="12" fill="#b45309"/>
+        <text x="88" y="47" text-anchor="middle" font-size="10" fill="#fff" font-weight="800">1 &#183; FRAME</text>
+        <g font-size="9.5">
+          <rect x="18" y="66" width="140" height="30" rx="7" fill="#fffbeb" stroke="#fcd34d"/><circle cx="34" cy="81" r="9" fill="#b45309"/><text x="34" y="84.5" text-anchor="middle" fill="#fff" font-weight="800" font-size="9">1</text><text x="48" y="84.5" fill="#78350f" font-weight="700">Goal &amp; H&#8320;/H&#8321;</text>
+          <rect x="18" y="102" width="140" height="30" rx="7" fill="#fffbeb" stroke="#fcd34d"/><circle cx="34" cy="117" r="9" fill="#b45309"/><text x="34" y="120.5" text-anchor="middle" fill="#fff" font-weight="800" font-size="9">2</text><text x="48" y="120.5" fill="#78350f" font-weight="700">Data types</text>
+        </g>
+
+        <!-- phase 2 -->
+        <rect x="184" y="30" width="160" height="188" rx="10" fill="#fffdf7" stroke="#fde68a"/>
+        <rect x="184" y="30" width="160" height="26" rx="10" fill="#d97706"/>
+        <rect x="184" y="44" width="160" height="12" fill="#d97706"/>
+        <text x="264" y="47" text-anchor="middle" font-size="10" fill="#fff" font-weight="800">2 &#183; EXPLORE &amp; PREP</text>
+        <g font-size="9.5">
+          <rect x="194" y="66" width="140" height="30" rx="7" fill="#fffbeb" stroke="#fcd34d"/><circle cx="210" cy="81" r="9" fill="#d97706"/><text x="210" y="84.5" text-anchor="middle" fill="#fff" font-weight="800" font-size="9">3</text><text x="224" y="84.5" fill="#78350f" font-weight="700">Describe</text>
+          <rect x="194" y="102" width="140" height="30" rx="7" fill="#fffbeb" stroke="#fcd34d"/><circle cx="210" cy="117" r="9" fill="#d97706"/><text x="210" y="120.5" text-anchor="middle" fill="#fff" font-weight="800" font-size="9">4</text><text x="224" y="120.5" fill="#78350f" font-weight="700">Visualize</text>
+          <rect x="194" y="138" width="140" height="30" rx="7" fill="#fffbeb" stroke="#fcd34d"/><circle cx="210" cy="153" r="9" fill="#d97706"/><text x="210" y="156.5" text-anchor="middle" fill="#fff" font-weight="800" font-size="9">5</text><text x="224" y="156.5" fill="#78350f" font-weight="700">Clean &amp; prep</text>
+          <rect x="194" y="174" width="140" height="30" rx="7" fill="#fffbeb" stroke="#fcd34d"/><circle cx="210" cy="189" r="9" fill="#d97706"/><text x="210" y="192.5" text-anchor="middle" fill="#fff" font-weight="800" font-size="9">6</text><text x="224" y="192.5" fill="#78350f" font-weight="700">Design</text>
+        </g>
+
+        <!-- phase 3 -->
+        <rect x="360" y="30" width="160" height="188" rx="10" fill="#fffdf7" stroke="#fde68a"/>
+        <rect x="360" y="30" width="160" height="26" rx="10" fill="#b45309"/>
+        <rect x="360" y="44" width="160" height="12" fill="#b45309"/>
+        <text x="440" y="47" text-anchor="middle" font-size="10" fill="#fff" font-weight="800">3 &#183; VALIDATE &amp; CHOOSE</text>
+        <g font-size="9.5">
+          <rect x="370" y="66" width="140" height="30" rx="7" fill="#fffbeb" stroke="#fcd34d"/><circle cx="386" cy="81" r="9" fill="#b45309"/><text x="386" y="84.5" text-anchor="middle" fill="#fff" font-weight="800" font-size="9">7</text><text x="400" y="84.5" fill="#78350f" font-weight="700">Assumptions</text>
+          <rect x="370" y="102" width="140" height="30" rx="7" fill="#fffbeb" stroke="#fcd34d"/><circle cx="386" cy="117" r="9" fill="#b45309"/><text x="386" y="120.5" text-anchor="middle" fill="#fff" font-weight="800" font-size="9">8</text><text x="400" y="120.5" fill="#78350f" font-weight="700">Decide &amp; fix</text>
+          <rect x="370" y="138" width="140" height="30" rx="7" fill="#fffbeb" stroke="#fcd34d"/><circle cx="386" cy="153" r="9" fill="#b45309"/><text x="386" y="156.5" text-anchor="middle" fill="#fff" font-weight="800" font-size="9">9</text><text x="400" y="156.5" fill="#78350f" font-weight="700">Choose test</text>
+        </g>
+
+        <!-- phase 4 -->
+        <rect x="536" y="30" width="176" height="188" rx="10" fill="#fffdf7" stroke="#fde68a"/>
+        <rect x="536" y="30" width="176" height="26" rx="10" fill="#78350f"/>
+        <rect x="536" y="44" width="176" height="12" fill="#78350f"/>
+        <text x="624" y="47" text-anchor="middle" font-size="10" fill="#fff" font-weight="800">4 &#183; TEST &amp; CONCLUDE</text>
+        <g font-size="9.5">
+          <rect x="546" y="66" width="156" height="30" rx="7" fill="#fffbeb" stroke="#fcd34d"/><circle cx="562" cy="81" r="9" fill="#78350f"/><text x="562" y="84.5" text-anchor="middle" fill="#fff" font-weight="800" font-size="8.5">10</text><text x="576" y="84.5" fill="#78350f" font-weight="700">Run &amp; report</text>
+          <rect x="546" y="102" width="156" height="30" rx="7" fill="#fffbeb" stroke="#fcd34d"/><circle cx="562" cy="117" r="9" fill="#78350f"/><text x="562" y="120.5" text-anchor="middle" fill="#fff" font-weight="800" font-size="8.5">11</text><text x="576" y="120.5" fill="#78350f" font-weight="700">Interpret</text>
+          <rect x="546" y="138" width="156" height="30" rx="7" fill="#fffbeb" stroke="#fcd34d"/><circle cx="562" cy="153" r="9" fill="#78350f"/><text x="562" y="156.5" text-anchor="middle" fill="#fff" font-weight="800" font-size="8.5">12</text><text x="576" y="156.5" fill="#78350f" font-weight="700">Ethics &amp; bias</text>
+        </g>
+
+        <!-- arrows between phases -->
+        <g fill="#b45309"><polygon points="182,120 172,114 172,126"/><polygon points="358,120 348,114 348,126"/><polygon points="534,120 524,114 524,126"/></g>
+      </svg>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>#</th><th>Step</th><th>What you actually do</th><th>Tools you will use</th></tr></thead>
+        <tbody>
+          <tr><td class="stepn">1</td><td class="nm">Goal &amp; hypotheses</td><td>State the question in plain words, then as H&#8320; and H&#8321;. Pick &#945; up front.</td><td>a sentence, not code</td></tr>
+          <tr><td class="stepn">2</td><td class="nm">Data types</td><td>Label every variable continuous, ordinal, or nominal. This alone rules most tests in or out.</td><td><code>df.dtypes</code>, judgment</td></tr>
+          <tr><td class="stepn">3</td><td class="nm">Describe</td><td>Counts, means, medians, spread, group sizes. Meet the dataset before touching it.</td><td><code>describe()</code>, <code>value_counts()</code></tr>
+          <tr><td class="stepn">4</td><td class="nm">Visualize</td><td>Histograms, boxplots, violins, bars, scatter, Q-Q. See the shape, the groups, the outliers.</td><td>matplotlib, seaborn</td></tr>
+          <tr><td class="stepn">5</td><td class="nm">Clean &amp; prepare</td><td>Handle missing values, duplicates, impossible entries, and outliers. Transform if needed.</td><td>pandas, <code>np.log</code></td></tr>
+          <tr><td class="stepn">6</td><td class="nm">Design</td><td>One sample, independent groups, paired, factorial, or repeated? Name the structure.</td><td>a diagram, a sentence</td></tr>
+          <tr><td class="stepn">7</td><td class="nm">Check assumptions</td><td>Normality (Shapiro-Wilk, K-S, Q-Q) and equal variance (Levene, Bartlett). Report each.</td><td><code>scipy.stats</code>, <code>pingouin</code></td></tr>
+          <tr><td class="stepn">8</td><td class="nm">Decide &amp; fix</td><td>Assumptions hold, use the parametric test. They fail, transform or switch to a rank-based test.</td><td>the fork in Section 3</td></tr>
+          <tr><td class="stepn">9</td><td class="nm">Choose the test</td><td>Data type, groups, and design point to exactly one test (with its nonparametric twin).</td><td>the map in Section 4</td></tr>
+          <tr><td class="stepn">10</td><td class="nm">Run &amp; report</td><td>Compute the statistic, the p-value, the effect size, and the interval. Post-hoc if needed.</td><td><code>scipy</code>, <code>statsmodels</code></td></tr>
+          <tr><td class="stepn">11</td><td class="nm">Interpret</td><td>Answer the original question in plain language. Separate statistical from practical significance.</td><td>plain English</td></tr>
+          <tr><td class="stepn">12</td><td class="nm">Ethics &amp; bias</td><td>Who was sampled, what could bias it, how far does the conclusion generalize, what is the risk of misuse?</td><td>honest reflection</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== Section 2: data types ===== -->
+  <section id="datatypes">
+    <div class="section-eyebrow"><div class="num">2</div><h2>It All Starts With the Data Type</h2></div>
+    <p>Before any test, ask what <em>kind</em> of number you have. This single question, from
+       <a href="levels-of-measurement.html">Levels of Measurement</a>, does most of the work of choosing a test, because
+       each data type admits a different family of methods.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Data type</th><th>What it is</th><th>Examples</th><th>Typical methods</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Continuous</td><td>Numbers you can average; equal intervals, a true or arbitrary zero.</td><td>weight, blood pressure, time, score</td><td>t-tests, ANOVA, Pearson correlation</td></tr>
+          <tr><td class="nm">Ordinal</td><td>Ordered categories without equal spacing; ranks and Likert scales.</td><td>satisfaction 1&#8211;7, pain 0&#8211;10, rankings</td><td>rank-based tests, Spearman, Kendall</td></tr>
+          <tr><td class="nm">Nominal</td><td>Unordered categories; labels and counts.</td><td>region, commute mode, pass/fail</td><td>chi-square, proportion tests</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="goldbox">
+      <span class="gb-tag">The one habit that prevents most mistakes</span>
+      <p style="margin:0.4rem 0 0">Treating an ordinal scale as if it were continuous is the most common error in applied
+         statistics. Averaging a 1-to-5 satisfaction score is tempting, but the gap from "poor" to "fair" need not equal the
+         gap from "good" to "excellent." When a variable is ordinal or clearly non-normal, the rank-based tests (Capstones
+         13&#8211;15) are the honest choice, and this framework tells you exactly when to reach for them.</p>
+    </div>
+  </section>
+
+  <!-- ===== Section 3: assumptions ===== -->
+  <section id="assumptions">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Assumptions Come First, Then the Test</h2></div>
+    <p>The parametric tests, t-tests, ANOVA, and Pearson correlation, earn their power by assuming things about the data:
+       roughly <strong>normal</strong> distributions and, when comparing groups, roughly <strong>equal variances</strong>.
+       The discipline of every capstone is to <span class="hl">check those assumptions before choosing the test, not after</span>.
+       If they hold, use the parametric test. If they fail, transform the data or switch to the rank-based twin, which makes
+       no such assumption.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Assumption</th><th>How to check it</th><th>What the test says</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Normality</td><td><strong>Shapiro-Wilk</strong> (best for small n), <strong>Kolmogorov-Smirnov</strong>, and a <strong>Q-Q plot</strong> by eye</td><td>a small p-value means "not normal"; trust the plot as much as the p</td></tr>
+          <tr><td class="nm">Equal variance</td><td><strong>Levene's test</strong> (robust, preferred) or <strong>Bartlett's test</strong> (assumes normality)</td><td>a small p-value means the groups' spreads differ</td></tr>
+          <tr><td class="nm">Independence</td><td>from the study design, not a test: were observations gathered separately?</td><td>if paired or repeated, use the matched-design test</td></tr>
+          <tr><td class="nm">Enough data</td><td>expected counts &#8805; ~5 (chi-square); ~10 successes and failures (proportions)</td><td>if too sparse, use an exact test</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.1rem">
+      <svg viewBox="0 0 700 214" width="100%" font-family="Inter, sans-serif" aria-label="The assumptions fork. The assumption tests, Shapiro-Wilk, Kolmogorov-Smirnov, Levene, and Bartlett, feed into one decision: check assumptions. If they hold, use the parametric test such as t-test, ANOVA, or Pearson correlation. If they are violated, first try a transformation, and otherwise switch to the rank-based test such as Mann-Whitney, Kruskal-Wallis, Wilcoxon, or Spearman.">
+        <text x="350" y="18" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">Check first, then choose: the assumptions fork</text>
+
+        <rect x="20" y="42" width="150" height="120" rx="9" fill="#fffbeb" stroke="#fcd34d"/>
+        <text x="95" y="60" text-anchor="middle" font-size="9" fill="#92400e" font-weight="800">THE CHECKS</text>
+        <g font-size="9" fill="#78350f" text-anchor="middle">
+          <text x="95" y="80">Shapiro-Wilk</text>
+          <text x="95" y="98">Kolmogorov-Smirnov</text>
+          <text x="95" y="116">Levene's test</text>
+          <text x="95" y="134">Bartlett's test</text>
+          <text x="95" y="152" font-style="italic" fill="#a16207">+ a Q-Q plot</text>
+        </g>
+
+        <line x1="170" y1="102" x2="214" y2="102" stroke="#b45309" stroke-width="1.6"/>
+        <polygon points="214,102 205,97 205,107" fill="#b45309"/>
+
+        <rect x="216" y="84" width="150" height="36" rx="9" fill="#78350f"/>
+        <text x="291" y="100" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">Do they hold?</text>
+        <text x="291" y="113" text-anchor="middle" font-size="8" fill="#fde68a">step 7 &#8594; step 8</text>
+
+        <!-- yes branch -->
+        <line x1="366" y1="94" x2="470" y2="70" stroke="#16a34a" stroke-width="1.6"/>
+        <text x="405" y="70" font-size="8.5" fill="#15803d" font-weight="800">HOLD</text>
+        <rect x="470" y="48" width="212" height="44" rx="9" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="576" y="66" text-anchor="middle" font-size="9.5" fill="#15803d" font-weight="800">Parametric test</text>
+        <text x="576" y="82" text-anchor="middle" font-size="8.5" fill="#166534">t-test &#183; ANOVA &#183; Pearson r</text>
+
+        <!-- no branch -->
+        <line x1="366" y1="110" x2="470" y2="140" stroke="#d97706" stroke-width="1.6"/>
+        <text x="403" y="139" font-size="8.5" fill="#b45309" font-weight="800">VIOLATED</text>
+        <rect x="470" y="120" width="212" height="60" rx="9" fill="#fffbeb" stroke="#fcd34d"/>
+        <text x="576" y="138" text-anchor="middle" font-size="9.5" fill="#b45309" font-weight="800">Transform, or go rank-based</text>
+        <text x="576" y="154" text-anchor="middle" font-size="8.5" fill="#92400e">Mann-Whitney &#183; Kruskal-Wallis</text>
+        <text x="576" y="168" text-anchor="middle" font-size="8.5" fill="#92400e">Wilcoxon &#183; Spearman</text>
+      </svg>
+    </figure>
+
+    <p>Notice the order. The assumption tests do not choose the test <em>for</em> you; they tell you which
+       <em>version</em> of the test is trustworthy. A skewed outcome with heavy outliers is not a reason to abandon the
+       analysis, it is a signal to reach for the rank-based twin, which answers the same question without the normality
+       assumption.</p>
+  </section>
+
+  <!-- ===== Section 4: choosing the test ===== -->
+  <section id="choose">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Choosing the Test</h2></div>
+    <p>With the data type known and the assumptions checked, the test almost picks itself. Answer three questions, is the
+       outcome numeric or categorical, how many groups, and are they independent or matched, and the map below lands you on
+       a single method, with its rank-based fallback in parentheses for when the assumptions do not hold.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.1rem">
+      <svg viewBox="0 0 700 232" width="100%" font-family="Inter, sans-serif" aria-label="Decision tree for choosing a test. Start from the outcome type. If numeric: one group versus a value gives a one-sample t-test; two paired groups give a paired t-test; two independent groups give a two-sample t-test; three or more groups give ANOVA; and two numeric variables give correlation. If categorical or a rate: a proportion gives a z-test for proportions, and two categorical variables give a chi-square test. Each numeric test has a rank-based fallback shown in the table.">
+        <rect x="282" y="10" width="136" height="28" rx="8" fill="#78350f"/>
+        <text x="350" y="28" text-anchor="middle" font-size="10" fill="#fff" font-weight="800">Outcome type?</text>
+        <line x1="350" y1="38" x2="180" y2="60" stroke="#cbd5e1" stroke-width="1.4"/>
+        <line x1="350" y1="38" x2="520" y2="60" stroke="#cbd5e1" stroke-width="1.4"/>
+        <rect x="110" y="60" width="140" height="26" rx="7" fill="#fffbeb" stroke="#b45309"/>
+        <text x="180" y="77" text-anchor="middle" font-size="9.5" fill="#b45309" font-weight="800">numeric</text>
+        <rect x="450" y="60" width="140" height="26" rx="7" fill="#fef3c7" stroke="#92400e"/>
+        <text x="520" y="77" text-anchor="middle" font-size="9.5" fill="#92400e" font-weight="800">categorical / rate</text>
+
+        <g font-size="8.3" text-anchor="middle">
+          <!-- numeric children -->
+          <line x1="180" y1="86" x2="55" y2="120" stroke="#e2d3b8"/><line x1="180" y1="86" x2="150" y2="120" stroke="#e2d3b8"/><line x1="180" y1="86" x2="245" y2="120" stroke="#e2d3b8"/><line x1="180" y1="86" x2="340" y2="120" stroke="#e2d3b8"/>
+          <rect x="12" y="120" width="86" height="50" rx="6" fill="#fffdf7" stroke="#fcd34d"/><text x="55" y="138" fill="#b45309" font-weight="800">1 vs value</text><text x="55" y="153" fill="#78350f">one-sample t</text><text x="55" y="164" fill="#a16207">(Wilcoxon)</text>
+          <rect x="106" y="120" width="88" height="50" rx="6" fill="#fffdf7" stroke="#fcd34d"/><text x="150" y="138" fill="#b45309" font-weight="800">2 paired</text><text x="150" y="153" fill="#78350f">paired t</text><text x="150" y="164" fill="#a16207">(Wilcoxon SR)</text>
+          <rect x="202" y="120" width="88" height="50" rx="6" fill="#fffdf7" stroke="#fcd34d"/><text x="246" y="138" fill="#b45309" font-weight="800">2 indep.</text><text x="246" y="153" fill="#78350f">two-sample t</text><text x="246" y="164" fill="#a16207">(Mann-Whitney)</text>
+          <rect x="298" y="120" width="88" height="50" rx="6" fill="#fffdf7" stroke="#fcd34d"/><text x="342" y="138" fill="#b45309" font-weight="800">3+ groups</text><text x="342" y="153" fill="#78350f">ANOVA</text><text x="342" y="164" fill="#a16207">(Kruskal-Wallis)</text>
+
+          <!-- numeric: relationship -->
+          <line x1="180" y1="86" x2="430" y2="120" stroke="#e2d3b8"/>
+          <rect x="392" y="120" width="92" height="50" rx="6" fill="#fffdf7" stroke="#fcd34d"/><text x="438" y="138" fill="#b45309" font-weight="800">2 variables</text><text x="438" y="153" fill="#78350f">Pearson r</text><text x="438" y="164" fill="#a16207">(Spearman/tau)</text>
+
+          <!-- categorical children -->
+          <line x1="520" y1="86" x2="540" y2="120" stroke="#e7dcc4"/><line x1="520" y1="86" x2="640" y2="120" stroke="#e7dcc4"/>
+          <rect x="496" y="120" width="90" height="50" rx="6" fill="#fef9ec" stroke="#fcd34d"/><text x="541" y="138" fill="#92400e" font-weight="800">a rate</text><text x="541" y="153" fill="#78350f">z for proportions</text><text x="541" y="164" fill="#a16207">(exact binomial)</text>
+          <rect x="594" y="120" width="94" height="50" rx="6" fill="#fef9ec" stroke="#fcd34d"/><text x="641" y="138" fill="#92400e" font-weight="800">2 variables</text><text x="641" y="153" fill="#78350f">chi-square</text><text x="641" y="164" fill="#a16207">(Fisher exact)</text>
+        </g>
+        <text x="350" y="196" text-anchor="middle" font-size="8.5" fill="#64748b" font-style="italic">Goodness-of-fit compares one categorical variable to an expected distribution (Capstone 8).</text>
+        <text x="350" y="214" text-anchor="middle" font-size="8.5" fill="#64748b" font-style="italic">Parentheses show the rank-based or exact fallback when assumptions fail.</text>
+      </svg>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Question</th><th>Design</th><th>Parametric test</th><th>If assumptions fail</th><th>Effect size</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Mean vs a target</td><td>one sample</td><td>one-sample t-test</td><td>Wilcoxon signed-rank</td><td>Cohen's d</td></tr>
+          <tr><td class="nm">Two groups differ?</td><td>independent</td><td>two-sample (Welch) t-test</td><td>Mann-Whitney U</td><td>Cohen's d, rank-biserial</td></tr>
+          <tr><td class="nm">Change within subjects</td><td>paired</td><td>paired t-test</td><td>Wilcoxon signed-rank</td><td>Cohen's d<sub>z</sub></td></tr>
+          <tr><td class="nm">3+ groups differ?</td><td>independent</td><td>one-way ANOVA + Tukey</td><td>Kruskal-Wallis + Dunn</td><td>&#951;&#178;, &#949;&#178;</td></tr>
+          <tr><td class="nm">3+ conditions, same subjects</td><td>repeated</td><td>repeated-measures ANOVA</td><td>Friedman</td><td>partial &#951;&#178;</td></tr>
+          <tr><td class="nm">Two factors + interaction</td><td>factorial</td><td>two-way ANOVA</td><td>(align-and-rank / robust)</td><td>partial &#951;&#178;</td></tr>
+          <tr><td class="nm">Two categories associated?</td><td>&#8212;</td><td>chi-square of independence</td><td>Fisher's exact</td><td>Cramer's V</td></tr>
+          <tr><td class="nm">Fits an expected split?</td><td>&#8212;</td><td>chi-square goodness-of-fit</td><td>exact multinomial</td><td>Cramer's V, w</td></tr>
+          <tr><td class="nm">A rate vs a target / another</td><td>&#8212;</td><td>one- / two-proportion z-test</td><td>exact binomial</td><td>risk difference, h</td></tr>
+          <tr><td class="nm">Two numeric variables move together?</td><td>&#8212;</td><td>Pearson correlation</td><td>Spearman &#961; / Kendall &#964;</td><td>r itself, r&#178;</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== Section 5: reporting + ethics ===== -->
+  <section id="report">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Report Honestly, and Fairly</h2></div>
+    <p>A test that stops at "p &lt; 0.05" is only a third of an answer. With a big enough sample almost anything is
+       "significant," and with too small a sample a real effect hides. Every capstone closes the same way: three numbers
+       together, then a plain-language verdict, then a look at what could make it wrong.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Always report</th><th>The question it answers</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">p-value</td><td>Could chance alone produce a result this extreme? (yes/no at &#945;)</td></tr>
+          <tr><td class="nm">Effect size</td><td>How big is the effect? (Cohen's d, &#951;&#178;, Cramer's V, r) &#8212; the part that actually matters</td></tr>
+          <tr><td class="nm">Confidence interval</td><td>How precisely do we know it? A range, not a single point</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Then the twelfth step: <strong>ethics and bias</strong>. Every dataset was collected by someone, from someone, for
+       some purpose, and those choices shape what the numbers can honestly say. A convenience sample does not represent a
+       population. A survey question can lead its respondent. A significant result on a biased sample is a confident wrong
+       answer. Two of the capstones ahead are built on real survey data precisely so we can walk through the questionnaire
+       and the sampling method and ask, out loud, who this conclusion is really about.</p>
+
+    <div class="goldbox">
+      <span class="gb-tag">Automate the evidence, author the argument</span>
+      <p style="margin:0.4rem 0 0">Each capstone ships two artifacts, and the split is deliberate. A <strong>notebook</strong>
+         does the reproducible work: it loads the data, runs the twelve steps, and produces every figure and number. A
+         <strong>written report</strong>, authored by a statistician for a non-statistician, tells the story: what we found,
+         what we did about the messy parts, why we chose the test we did, and what it means for the decision at hand. The
+         computer makes the evidence; a person makes the case.</p>
+    </div>
+  </section>
+
+  <!-- ===== Section 6: roadmap ===== -->
+  <section id="roadmap">
+    <div class="section-eyebrow"><div class="num">6</div><h2>The Fifteen Capstones Ahead</h2></div>
+    <p>Fifteen projects, grouped by the question they answer, each one a complete pass through the framework on its own
+       downloadable dataset, with a full notebook and a statistician's written report. They become clickable here as each
+       one is published; the <a href="../toc.html">Contents</a> always shows what is live.</p>
+
+    <div class="cap-group">The t-Tests &#183; comparing means</div>
+    <div class="cap-card"><div class="cap-n">1</div><div class="cap-body"><div class="cap-tag">One-Sample t-Test</div><div class="cap-t">Coffee Fill Weight</div><div class="cap-q">Are the bags really filled to the 340 g on the label, or is quality control drifting?</div></div></div>
+    <div class="cap-card"><div class="cap-n">2</div><div class="cap-body"><div class="cap-tag">Two-Sample t-Test</div><div class="cap-t">A New Onboarding Program</div><div class="cap-q">Does the new program get hires productive faster than the standard one?</div></div></div>
+    <div class="cap-card"><div class="cap-n">3</div><div class="cap-body"><div class="cap-tag">Paired t-Test</div><div class="cap-t">Blood Pressure Before &amp; After</div><div class="cap-q">Did an eight-week program lower blood pressure in the same patients?</div></div></div>
+
+    <div class="cap-group">Analysis of Variance &#183; three or more groups</div>
+    <div class="cap-card"><div class="cap-n">4</div><div class="cap-body"><div class="cap-tag">One-Way ANOVA</div><div class="cap-t">Three Teaching Methods</div><div class="cap-q">Do three ways of teaching produce different exam scores, and which pairs differ?</div></div></div>
+    <div class="cap-card"><div class="cap-n">5</div><div class="cap-body"><div class="cap-tag">Repeated-Measures ANOVA</div><div class="cap-t">Cognitive Training Over Time</div><div class="cap-q">Do the same people improve across four sessions, beyond ordinary fluctuation?</div></div></div>
+    <div class="cap-card"><div class="cap-n">6</div><div class="cap-body"><div class="cap-tag">Two-Way ANOVA</div><div class="cap-t">Fertilizer and Sunlight</div><div class="cap-q">Do two factors each matter for plant growth, and do they interact?</div></div></div>
+
+    <div class="cap-group">Categorical Data &amp; Proportions &#183; counts and rates</div>
+    <div class="cap-card"><div class="cap-n">7</div><div class="cap-body"><div class="cap-tag">Chi-Square Independence</div><div class="cap-t">Commute Mode by Region</div><div class="cap-q">Is how people commute related to where they live? A survey, from questionnaire to test.</div></div></div>
+    <div class="cap-card"><div class="cap-n">8</div><div class="cap-body"><div class="cap-tag">Chi-Square Goodness-of-Fit</div><div class="cap-t">Weekday Traffic</div><div class="cap-q">Are website visits spread evenly across the week, or is the "even" assumption wrong?</div></div></div>
+    <div class="cap-card"><div class="cap-n">9</div><div class="cap-body"><div class="cap-tag">Proportion Tests</div><div class="cap-t">Email Signup Rates</div><div class="cap-q">Does the signup rate beat its target, and does one campaign beat another?</div></div></div>
+
+    <div class="cap-group">Correlation &amp; Association &#183; how two variables move together</div>
+    <div class="cap-card"><div class="cap-n">10</div><div class="cap-body"><div class="cap-tag">Pearson Correlation</div><div class="cap-t">Study Hours and Scores</div><div class="cap-q">How strongly do hours studied track exam performance, and how sure are we?</div></div></div>
+    <div class="cap-card"><div class="cap-n">11</div><div class="cap-body"><div class="cap-tag">Spearman Correlation</div><div class="cap-t">Satisfaction and Loyalty</div><div class="cap-q">Do two Likert survey scales rise together when the relationship is not a straight line?</div></div></div>
+    <div class="cap-card"><div class="cap-n">12</div><div class="cap-body"><div class="cap-tag">Kendall's Tau</div><div class="cap-t">Two Judges' Rankings</div><div class="cap-q">How much do two judges agree when ranking twelve products, ties and all?</div></div></div>
+
+    <div class="cap-group">When Assumptions Fail &#183; the rank-based tests</div>
+    <div class="cap-card"><div class="cap-n">13</div><div class="cap-body"><div class="cap-tag">Mann-Whitney U</div><div class="cap-t">Two Pain Treatments</div><div class="cap-q">With skewed, ordinal pain scores, which treatment relieves more, without assuming normality?</div></div></div>
+    <div class="cap-card"><div class="cap-n">14</div><div class="cap-body"><div class="cap-tag">Wilcoxon Signed-Rank</div><div class="cap-t">Service Ratings Before &amp; After</div><div class="cap-q">Did paired, ordinal service ratings improve when their differences are not normal?</div></div></div>
+    <div class="cap-card"><div class="cap-n">15</div><div class="cap-body"><div class="cap-tag">Kruskal-Wallis</div><div class="cap-t">Ratings Across Four Stores</div><div class="cap-q">Do four locations differ on skewed rating scales, and which ones stand apart?</div></div></div>
+  </section>
+
+  <!-- ===== Takeaways ===== -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>One framework, twelve steps</strong>: frame the question, explore and prepare the data, validate and choose, then test and conclude. Every capstone follows it.</span></li>
+        <li><span class="ck">✓</span><span><strong>Data type first</strong>: continuous, ordinal, or nominal decides the family of tests before anything else.</span></li>
+        <li><span class="ck">✓</span><span><strong>Check assumptions, then choose</strong>: Shapiro-Wilk and K-S for normality, Levene and Bartlett for equal variance, and switch to a rank-based test when they fail.</span></li>
+        <li><span class="ck">✓</span><span><strong>Three questions pick the test</strong>: outcome type, number of groups, and independent vs matched, each with a nonparametric twin.</span></li>
+        <li><span class="ck">✓</span><span><strong>Finish honestly</strong>: a p-value, an effect size, and an interval together, plus a candid look at sampling, bias, and generalizability.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== Quiz ===== -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight quick questions on the framework the whole part is built on. Answer them, hit <strong>Check Answers</strong>, and
+       keep refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <div class="callout key" style="margin-top:2rem">
+    <div class="cico">🏆</div>
+    <div><div class="ctitle">Up next, Chapter 160 &#183; your first capstone</div>
+      <p><strong>One-Sample t-Test: Coffee Fill Weight</strong> puts the framework to work end to end. We will meet a batch of
+         quality-control measurements, describe and visualize them, clean the impossible entries, check whether they are
+         normal enough for a t-test, run the test against the 340 g target, and write up the verdict for a plant manager who
+         has never heard of a p-value. Watch the <a href="../toc.html">Contents</a> for it to go live.</p></div>
+  </div>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="data-ethics-bias-and-fairness.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 158 · Previous</span><br><span class="cn-title">Data Ethics, Bias &amp; Fairness</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 159 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch159";
+  window.QUIZ_DATA = [
+    {
+      q: "A “capstone” analysis in this part is…",
+      options: ["A single statistical test run in isolation", "A complete, end-to-end study that follows the same twelve-step framework", "A chapter with no data", "A proof of a theorem"],
+      answer: 1,
+      explain: "Each capstone takes one real dataset from question to answer using the shared framework."
+    },
+    {
+      q: "In the framework, when do you check assumptions?",
+      options: ["After choosing and running the test", "Before choosing the test, so the choice is valid", "Only if the p-value is large", "Never, for large samples"],
+      answer: 1,
+      explain: "Assumptions are checked first; they tell you which version of the test is trustworthy."
+    },
+    {
+      q: "The single question that most narrows the choice of test is…",
+      options: ["The sample size", "Whether the data are continuous, ordinal, or nominal", "The software you use", "The p-value threshold"],
+      answer: 1,
+      explain: "Data type rules whole families of tests in or out before anything else."
+    },
+    {
+      q: "Which tests are used to check normality?",
+      options: ["Levene's and Bartlett's", "Shapiro-Wilk and Kolmogorov-Smirnov (with a Q-Q plot)", "Tukey HSD", "The chi-square test"],
+      answer: 1,
+      explain: "Shapiro-Wilk and K-S assess normality; Levene and Bartlett assess equal variance."
+    },
+    {
+      q: "Levene's and Bartlett's tests check…",
+      options: ["Normality", "Homogeneity of variance (equal spread across groups)", "Independence", "Effect size"],
+      answer: 1,
+      explain: "They test whether the groups' variances are equal, an assumption of the t-test and ANOVA."
+    },
+    {
+      q: "Two independent groups, but the outcome is badly skewed with outliers. You should…",
+      options: ["Use a two-sample t-test anyway", "Switch to the Mann-Whitney U test", "Use a chi-square test", "Report only the mean"],
+      answer: 1,
+      explain: "When normality fails, the rank-based twin (Mann-Whitney U) answers the same question safely."
+    },
+    {
+      q: "Besides the p-value, every capstone also reports…",
+      options: ["Only the sample size", "An effect size and a confidence interval", "The software version", "Nothing else is needed"],
+      answer: 1,
+      explain: "The p says whether, the effect size says how big, the interval says how precisely."
+    },
+    {
+      q: "Why does the framework include an ethics-and-bias step?",
+      options: ["To fill space", "Because sampling and measurement choices decide who a conclusion is really about, and how far it generalizes", "Because it changes the p-value", "It only applies to machine learning"],
+      answer: 1,
+      explain: "A significant result on a biased sample is a confident wrong answer; the step guards against that."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
