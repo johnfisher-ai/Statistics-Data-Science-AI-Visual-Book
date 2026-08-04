@@ -624,6 +624,8 @@ MAP = {
         ("../../data-ethics-bias-and-fairness.html#challenges", "Back to the book", "Chapter 158 · Challenge solutions"),
     "capstone-coffee-fill-weight.html":
         ("../../capstone-coffee-fill-weight.html#notebook", "Back to the book", "Chapter 160 · One-Sample t-Test: Coffee Fill Weight"),
+    "capstone-onboarding-productivity.html":
+        ("../../capstone-onboarding-productivity.html#notebook", "Back to the book", "Chapter 161 · Two-Sample t-Test: A New Onboarding Program"),
 }
 
 def card(href, kicker, title):
