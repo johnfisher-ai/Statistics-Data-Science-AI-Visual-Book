@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 162 · Paired t-Test: Blood Pressure Before &amp; After — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .goldbox { background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #b45309; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .goldbox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .rw-card { background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #b45309; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file.doc { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #b45309; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/capstone-blood-pressure-before-after.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXVII &#183; Capstone Projects: Statistical Testing</span><span class="sep">/</span>
+      <span>Chapter 162</span>
+    </div>
+    <h1>Did the Program Lower <span class="accent">Blood Pressure?</span></h1>
+    <p class="dek">Capstone 3. The same patients, measured before and after an eight-week program. Because each person is measured
+       twice, we compare each patient to themselves and study the change. A paired-design pass through the framework, ending
+       with the one question a before-and-after test cannot answer on its own.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~16 min</b>&nbsp;read</div>
+      <div class="m">🧪 <b>Paired t-test</b></div>
+      <div class="m">📊 <b>Chapter 162</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Capstones 1 and 2 compared separate things: a mean to a target, then two independent groups. This one
+       compares a group <span class="hl">to itself</span>. When the same patients are measured before and after a treatment,
+       the two columns are not independent, they are linked person by person, and using that link is the whole point of the
+       paired t-test.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#8651;</div>
+      <div class="def-body">
+        The <span class="def-kw">paired t-test</span> is a one-sample t-test on the <span class="def-kw">differences</span>.
+        For each subject you compute after minus before, then test whether the mean of those differences is
+        <span class="def-kw">zero</span>. Its assumption is that the <span class="def-kw">differences</span> are roughly
+        normal, and its rank-based twin is the <span class="def-kw">Wilcoxon signed-rank</span> test.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🩺</div>
+      <div><div class="ctitle">The finding, up front</div>
+        <p>Across 55 patients, systolic blood pressure fell about <strong>7 mmHg</strong> (146.7 to 139.5). The paired test
+           leaves no doubt, <strong>t(54) = 7.37, p &lt; 0.001</strong>, with a 95% interval for the drop of
+           <strong>[5.3, 9.3] mmHg</strong>. The catch, and the real lesson, is that a single before-and-after group
+           <strong>cannot prove the program caused it</strong>.</p></div>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section id="question">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Question, the Hypotheses, the Design</h2></div>
+    <p>A clinic enrolled hypertensive patients in an eight-week lifestyle-and-medication program and measured each person's
+       systolic blood pressure at the start and at the end. The question is whether blood pressure changed.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Framework step</th><th>This project</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Goal</td><td>Decide whether mean systolic BP changed from before to after the program.</td></tr>
+          <tr><td class="nm">Hypotheses</td><td>H&#8320;: mean change = 0&nbsp;&nbsp;vs&nbsp;&nbsp;H&#8321;: mean change &#8800; 0, two-sided, &#945; = 0.05.</td></tr>
+          <tr><td class="nm">Data type</td><td>Two continuous readings per patient (<code>sbp_before</code>, <code>sbp_after</code>), in mmHg.</td></tr>
+          <tr><td class="nm">Design</td><td><strong>Paired</strong> (within-subject): the same people measured twice. Not two independent groups.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section id="clean">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Meet the Data, Then Clean It</h2></div>
+    <p>The export has 64 rows for 62 patients, and a paired analysis has a strict requirement: a patient is only usable if
+       they have <strong>both</strong> readings. So the cleaning is: drop <strong>duplicate rows</strong>, drop patients
+       missing a follow-up (the <strong>dropouts</strong>), and drop <strong>impossible values</strong> (a real systolic BP
+       lies between 70 and 250 mmHg, so a 0, a 29, and a 300 all go). That leaves <strong>55</strong> complete pairs.</p>
+
+    <p>The right first picture for paired data is a line per patient, from their before value to their after value.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-bp-paired.png" alt="Two panels. On the left, a paired plot: one thin grey line per patient connecting their before reading to their after reading, with most lines sloping downward, and a thick gold line showing the group mean falling from about 147 to about 139 mmHg. On the right, a histogram of each patient's change (after minus before): most of the mass is to the left of a dashed red 'no change' line at zero, meaning most patients dropped.">
+      <figcaption><strong>Left:</strong> each patient's before-to-after line (grey), with the mean in gold. Most slope down. <strong>Right:</strong> the distribution of the change per patient sits mostly left of zero (dashed red), which is exactly what the test measures.</figcaption>
+    </figure>
+
+    <p>Before averaged <strong>146.7 mmHg</strong>, after averaged <strong>139.5</strong>, so the mean change is about
+       <strong>7 mmHg down</strong>. Whether that drop is real is the question, but first it is worth seeing why the paired
+       design is the strong way to ask it.</p>
+  </section>
+
+  <!-- 3 -->
+  <section id="pairing">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Why a Paired Test, and What It Assumes</h2></div>
+    <p>Patients differ hugely from one another in baseline blood pressure. If we treated the before and after columns as two
+       independent groups, all that person-to-person variation would swamp the eight-week change we care about. Pairing
+       removes it: by taking <strong>each patient's own change</strong>, the differences between people cancel out, and only
+       the change is left. The paired t-test is then just a one-sample test asking whether those changes average to zero.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.1rem">
+      <svg viewBox="0 0 700 176" width="100%" font-family="Inter, sans-serif" aria-label="How a paired test works, in three steps. Step one: the same patient is measured twice, before and after, shown as pairs of points joined by lines. Step two: for each patient we compute one number, their after value minus their before value, the change. Step three: we test whether the mean of those changes is zero, using a one-sample t-test on the differences.">
+        <text x="350" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">A paired test collapses two columns into one: the change</text>
+
+        <!-- step 1 -->
+        <rect x="18" y="40" width="196" height="118" rx="11" fill="#fffbeb" stroke="#fde68a"/>
+        <text x="116" y="58" text-anchor="middle" font-size="9" fill="#92400e" font-weight="800">1 &#183; SAME PATIENT, TWICE</text>
+        <g font-size="8" fill="#64748b" text-anchor="middle">
+          <text x="70" y="72">before</text><text x="162" y="72">after</text>
+        </g>
+        <g stroke="#b45309" stroke-width="1.4"><line x1="70" y1="88" x2="162" y2="104"/><line x1="70" y1="104" x2="162" y2="118"/><line x1="70" y1="120" x2="162" y2="132"/></g>
+        <g fill="#78350f"><circle cx="70" cy="88" r="4"/><circle cx="162" cy="104" r="4"/><circle cx="70" cy="104" r="4"/><circle cx="162" cy="118" r="4"/><circle cx="70" cy="120" r="4"/><circle cx="162" cy="132" r="4"/></g>
+        <text x="116" y="150" text-anchor="middle" font-size="8" fill="#a16207" font-style="italic">people differ; the link matters</text>
+
+        <line x1="220" y1="99" x2="248" y2="99" stroke="#b45309" stroke-width="1.6"/><polygon points="248,99 239,94 239,104" fill="#b45309"/>
+
+        <!-- step 2 -->
+        <rect x="252" y="40" width="196" height="118" rx="11" fill="#fffbeb" stroke="#fde68a"/>
+        <text x="350" y="58" text-anchor="middle" font-size="9" fill="#92400e" font-weight="800">2 &#183; ONE NUMBER EACH</text>
+        <text x="350" y="92" text-anchor="middle" font-size="13" fill="#78350f" font-weight="800">after &#8722; before</text>
+        <text x="350" y="114" text-anchor="middle" font-size="9" fill="#64748b">the change for that patient</text>
+        <text x="350" y="140" text-anchor="middle" font-size="8" fill="#a16207" font-style="italic">person-to-person spread cancels</text>
+
+        <line x1="454" y1="99" x2="482" y2="99" stroke="#b45309" stroke-width="1.6"/><polygon points="482,99 473,94 473,104" fill="#b45309"/>
+
+        <!-- step 3 -->
+        <rect x="486" y="40" width="196" height="118" rx="11" fill="#78350f"/>
+        <text x="584" y="58" text-anchor="middle" font-size="9" fill="#fde68a" font-weight="800">3 &#183; TEST vs ZERO</text>
+        <text x="584" y="90" text-anchor="middle" font-size="11" fill="#fff" font-weight="800">is the mean change 0?</text>
+        <text x="584" y="112" text-anchor="middle" font-size="9" fill="#fde68a">one-sample t on the differences</text>
+        <text x="584" y="140" text-anchor="middle" font-size="8" fill="#fcd34d" font-style="italic">(Wilcoxon if not normal)</text>
+      </svg>
+    </figure>
+
+    <div class="goldbox">
+      <span class="gb-tag">What pairing buys you here</span>
+      <p style="margin:0.4rem 0 0">Before and after correlate at <strong>0.85</strong> (same people), and using that link
+         shrinks the standard error from <strong>2.44 mmHg</strong> (if we wrongly treated the columns as independent) to
+         <strong>0.99 mmHg</strong>, about two and a half times more precise. The same data gives a paired t of 7.4 but an
+         independent-samples t of only 3.0. Same numbers, far more power, purely from respecting the design.</p>
+    </div>
+
+    <p>Because the paired test works on the differences, its assumption is about the <strong>differences</strong>, not the
+       raw readings: the changes should be roughly normal. Shapiro-Wilk gives <strong>p = 0.89</strong>, and the Q-Q plot
+       agrees, so the assumption holds and no transformation is needed.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-bp-normality.png" alt="Two panels checking the normality of the differences. On the left, a histogram of the per-patient changes with a fitted normal curve overlaid; the bars follow the bell shape and are centered below zero. On the right, a normal quantile-quantile plot of the differences where the points fall close to the straight diagonal line. The left panel title reports a Shapiro-Wilk p-value of 0.89.">
+      <figcaption>The assumption check is on the <strong>changes</strong>, not the raw readings. They track a normal curve and hug the Q-Q line (Shapiro-Wilk p = 0.89), so the paired t-test is valid; we run Wilcoxon as a backup anyway.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 4 -->
+  <section id="test">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Run the Test, Report the Whole Result</h2></div>
+    <p>The paired t-test asks how far the mean change (about 7 mmHg down) sits from zero, in standard-error units. With the
+       tiny paired standard error, that is more than seven standard errors away, which chance does not produce.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Paired t</div><div class="rv">7.37</div><div class="rd">on 54 degrees of freedom</div></div>
+      <div class="rchip"><div class="rk">p-value</div><div class="rv">&lt; 0.001</div><div class="rd">about 1 &#215; 10<sup>&#8722;9</sup></div></div>
+      <div class="rchip"><div class="rk">95% CI for the change</div><div class="rv">&#8722;9.3 to &#8722;5.3</div><div class="rd">mmHg, excludes 0</div></div>
+      <div class="rchip"><div class="rk">Cohen's d<sub>z</sub></div><div class="rv">0.99</div><div class="rd">a large effect</div></div>
+    </div>
+
+    <p>In plain terms: we are 95% confident the true average drop is between <strong>5.3 and 9.3 mmHg</strong>, and because
+       that whole range is below zero, blood pressure genuinely fell. The <strong>Wilcoxon signed-rank test agrees</strong>
+       (p well below 0.001), so the result does not depend on the differences being exactly normal.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-bp-result.png" alt="A histogram of the per-patient changes in systolic blood pressure. A dashed red line marks zero (no change). A solid dark line marks the mean change at about minus 7 mmHg, and a shaded gold band spanning minus 9.3 to minus 5.3 mmHg marks the 95% confidence interval. The entire band lies to the left of zero.">
+      <figcaption>The result in one picture: the mean change and its <strong>95% interval</strong> (gold band) sit entirely to the left of <strong>zero</strong> (dashed red). An interval for the change that misses zero is a significant change.</figcaption>
+    </figure>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.1rem">
+      <svg viewBox="0 0 700 150" width="100%" font-family="Inter, sans-serif" aria-label="A number line of the change in systolic blood pressure, from minus 12 to plus 2 mmHg. Zero, meaning no change, is marked with a red dashed line near the right. The estimated mean change of minus 7.3 mmHg is a gold dot, and its 95 percent confidence interval from minus 9.3 to minus 5.3 mmHg is a gold bar. The whole bar lies to the left of zero, so the null hypothesis of no change is rejected.">
+        <text x="350" y="22" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">A confidence interval for the change that misses 0 rejects H&#8320;</text>
+        <line x1="60" y1="92" x2="640" y2="92" stroke="#94a3b8" stroke-width="1.3"/>
+        <g font-size="9" fill="#475569" text-anchor="middle">
+          <line x1="60" y1="88" x2="60" y2="96" stroke="#94a3b8"/><text x="60" y="112">&#8722;12</text>
+          <line x1="226" y1="88" x2="226" y2="96" stroke="#94a3b8"/><text x="226" y="112">&#8722;8</text>
+          <line x1="391" y1="88" x2="391" y2="96" stroke="#94a3b8"/><text x="391" y="112">&#8722;4</text>
+          <line x1="557" y1="88" x2="557" y2="96" stroke="#94a3b8"/><text x="557" y="112">0</text>
+        </g>
+        <text x="350" y="132" text-anchor="middle" font-size="8.5" fill="#64748b">change in systolic BP, after &#8722; before (mmHg) &#183; the interval clears 0, so reject H&#8320;</text>
+        <line x1="557" y1="54" x2="557" y2="104" stroke="#dc2626" stroke-width="2" stroke-dasharray="4 3"/>
+        <text x="557" y="46" text-anchor="middle" font-size="9.5" fill="#dc2626" font-weight="800">0 = no change (H&#8320;)</text>
+        <rect x="226" y="86" width="165" height="12" rx="6" fill="#b45309" opacity="0.30"/>
+        <line x1="226" y1="80" x2="226" y2="104" stroke="#b45309" stroke-width="1.6"/>
+        <line x1="391" y1="80" x2="391" y2="104" stroke="#b45309" stroke-width="1.6"/>
+        <circle cx="308" cy="92" r="6" fill="#78350f"/>
+        <text x="308" y="60" text-anchor="middle" font-size="8.5" fill="#92400e">95% CI [&#8722;9.3, &#8722;5.3]</text>
+        <text x="308" y="74" text-anchor="middle" font-size="9.5" fill="#78350f" font-weight="800">7.3 mmHg drop</text>
+      </svg>
+    </figure>
+  </section>
+
+  <!-- 5 -->
+  <section id="verdict">
+    <div class="section-eyebrow"><div class="num">5</div><h2>The Verdict, and the Missing Control Group</h2></div>
+    <p>Statistically the answer is settled: blood pressure fell by about 7 mmHg, a large and, clinically, meaningful drop, a
+       sustained 5-to-10 mmHg reduction measurably lowers cardiovascular risk. But the framework's last step is where this
+       project earns its keep, because the honest verdict has a sharp limit.</p>
+
+    <div class="goldbox">
+      <span class="gb-tag">The test proves change, not cause</span>
+      <p style="margin:0.4rem 0 0">There was <strong>no control group</strong>. The paired t-test proves blood pressure
+         changed; it cannot prove the program caused the change, because other explanations fit the same data just as well.</p>
+    </div>
+
+    <ul>
+      <li><strong>Regression to the mean.</strong> Patients were enrolled <em>because</em> their BP was high. Unusually high
+          readings tend to drift back toward average on their own, with no treatment at all, so some of the drop would have
+          happened anyway.</li>
+      <li><strong>Natural change and measurement.</strong> Diet, season, a tense first visit (white-coat effect) and a calmer
+          second one can all move blood pressure between two dates.</li>
+      <li><strong>Placebo and attention.</strong> Being enrolled in a program changes behavior on its own, apart from the
+          program's active ingredients.</li>
+      <li><strong>What would fix it.</strong> A <strong>control group</strong> measured the same way but not given the
+          program, ideally randomized, lets you subtract off all of the above and attribute what remains to the program. The
+          paired t-test is the right tool for <em>did it change</em>; it is the wrong tool for <em>did the program cause it</em>.</li>
+    </ul>
+  </section>
+
+  <!-- 6 -->
+  <section id="in-ds-ai">
+    <div class="section-eyebrow"><div class="num">6</div><h2>The Paired t-Test in Data Science &amp; AI</h2></div>
+    <p>Any time the same units are measured under two conditions, pairing applies, and it appears often in data and ML work.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Where it appears</th><th>The two measurements</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Model A vs B, same items</td><td>Two models scored on the <em>same</em> test examples: compare their per-item errors as pairs.</td></tr>
+          <tr><td class="nm">Before / after a change</td><td>Latency or accuracy on the same requests, measured before and after a code change.</td></tr>
+          <tr><td class="nm">Within-user experiments</td><td>Each user tried both variants (a crossover design), so the two readings are paired.</td></tr>
+          <tr><td class="nm">Repeated benchmarks</td><td>The same benchmark suite run on two configurations of one machine.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="research">
+      <span class="rtag">Practice note</span>
+      <p style="margin:0.4rem 0 0">Pairing is the cheapest power boost in statistics: when a comparison <em>can</em> be run
+         on the same units, a paired test often needs a fraction of the sample a between-group test would. The same warning
+         from this chapter applies, though: a before-and-after measurement shows a change but not its cause, so for causal
+         claims you still need a control or a proper experiment.</p>
+    </div>
+  </section>
+
+  <!-- notebook + downloads -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook runs all twelve framework steps: it loads the raw file, draws the paired plot, drops the
+             duplicates, dropouts, and impossible readings with a printed audit trail, checks the normality of the
+             <em>differences</em> (Shapiro-Wilk, Q-Q), runs the paired t-test with <code>scipy</code> and confirms the effect
+             size, interval, and power with <code>pingouin</code>, cross-checks with Wilcoxon signed-rank, and shows the
+             (wrong) independent-samples test to make the value of pairing concrete. Every number here comes from its output.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-blood-pressure-before-after.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-blood-pressure-before-after.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-blood-pressure-before-after.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Download the project files</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong> (<code>capstone-blood-pressure-before-after.xlsx</code>)
+         holds the before and after readings on the <em>bp</em> sheet, with a codebook and notes, and it keeps the dropouts,
+         duplicates, and impossible values so you can practice the paired cleaning. <strong>The report</strong> is the memo a
+         statistician wrote for the clinical lead, leading with the result and, crucially, the caution about causation.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-3-blood-pressure-before-after.docx">📄 Download report <small>Word .docx</small></a>
+        <a class="ex-file xls" href="../data/capstone-blood-pressure-before-after.xlsx">📊 Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>The paired t-test</strong> is a one-sample test on each subject's change; here systolic BP fell about 7 mmHg over eight weeks.</span></li>
+        <li><span class="ck">✓</span><span><strong>Pairing needs both readings</strong>: dropouts missing a follow-up cannot be used, so 64 rows became 55 complete pairs.</span></li>
+        <li><span class="ck">✓</span><span><strong>Pairing buys power</strong>: the before-after correlation (0.85) shrank the standard error 2.5x versus treating the columns as independent.</span></li>
+        <li><span class="ck">✓</span><span><strong>Check the differences</strong>, not the raw values: Shapiro p = 0.89, so the paired t was valid; t(54) = 7.37, p &lt; 0.001, 95% CI [5.3, 9.3] mmHg, d<sub>z</sub> = 0.99.</span></li>
+        <li><span class="ck">✓</span><span><strong>Change is not cause</strong>: with no control group, regression to the mean and other effects could explain part of the drop.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on this capstone, from the paired design to the missing control group. Answer them, hit
+       <strong>Check Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-onboarding-productivity.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 161 · Previous</span><br><span class="cn-title">Two-Sample t-Test: A New Onboarding Program</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 162 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch162";
+  window.QUIZ_DATA = [
+    {
+      q: "Why is a paired t-test the right choice here?",
+      options: ["Two independent groups are compared", "The same patients are measured twice (before and after), so the readings are linked", "One mean is compared to a target", "The outcome is categorical"],
+      answer: 1,
+      explain: "Each patient contributes a before and an after, so the two columns are paired, not independent."
+    },
+    {
+      q: "The paired t-test actually tests…",
+      options: ["Whether the before values are normal", "Whether the mean of the per-patient differences (after - before) is zero", "Whether the two variances are equal", "Whether the groups are the same size"],
+      answer: 1,
+      explain: "A paired t-test is a one-sample t-test on the differences, against a mean of zero."
+    },
+    {
+      q: "A patient who dropped out and has no 'after' reading is…",
+      options: ["Kept, using only the before value", "Removed, because a paired analysis needs both readings", "Counted as unchanged", "Given the average after value"],
+      answer: 1,
+      explain: "Pairing requires both measurements, so incomplete pairs cannot be used; 64 rows became 55 pairs."
+    },
+    {
+      q: "The normality assumption of the paired t-test is about…",
+      options: ["The before readings", "The after readings", "The differences (each patient's change)", "The patient ages"],
+      answer: 2,
+      explain: "It is the differences that must be roughly normal; here Shapiro-Wilk gave p = 0.89."
+    },
+    {
+      q: "Before and after correlated at 0.85. Using that pairing…",
+      options: ["Made the test weaker", "Shrank the standard error (about 2.5x here), giving far more power", "Had no effect", "Violated an assumption"],
+      answer: 1,
+      explain: "Pairing removes between-patient variability, so the paired test is much more precise than an independent one."
+    },
+    {
+      q: "The 95% CI for the change was [-9.3, -5.3] mmHg. Because it excludes 0…",
+      options: ["The change is not significant", "We are confident blood pressure genuinely fell", "The patients are identical", "A different test is needed"],
+      answer: 1,
+      explain: "An interval for the change that misses zero corresponds to a statistically significant change."
+    },
+    {
+      q: "The biggest limitation of this study is that…",
+      options: ["The sample was too large", "There was no control group, so the drop cannot be attributed to the program", "The test was the wrong one", "Blood pressure is categorical"],
+      answer: 1,
+      explain: "Without a control group, regression to the mean and other effects could explain part or all of the drop."
+    },
+    {
+      q: "'Regression to the mean' matters here because…",
+      options: ["The data were regressed", "Patients were enrolled for high BP, and extreme values drift back toward average on their own", "The mean was miscalculated", "It only affects large samples"],
+      answer: 1,
+      explain: "Selecting patients on an extreme reading guarantees some apparent improvement even with no treatment."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
