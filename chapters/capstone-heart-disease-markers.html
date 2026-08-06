@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 163 · Multiple Comparisons: Screening Heart-Disease Markers — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.7rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .pass { color:#15803d; font-weight:700; }
+    .disp-table .fail { color:#b45309; font-weight:700; }
+    .disp-table .no { color:#94a3b8; }
+    .disp-table tr.hi td { background:#fffbeb; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .goldbox { background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #b45309; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .goldbox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .rw-card { background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #b45309; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file.doc { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/capstone-heart-disease-markers.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXVII &#183; Capstone Projects: Statistical Testing</span><span class="sep">/</span>
+      <span>Chapter 163</span>
+    </div>
+    <h1>Which Markers Flag <span class="accent">Heart Disease?</span></h1>
+    <p class="dek">Capstone 4. Seven clinical markers, one disease label, and a trap that catches careful people: test enough
+       things and something looks significant by luck alone. We build the full clinical dashboard, compare every marker
+       between healthy and diseased patients, and then correct for testing seven at once, which changes the answer.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~17 min</b>&nbsp;read</div>
+      <div class="m">🧪 <b>Multiple comparisons</b></div>
+      <div class="m">📊 <b>Chapter 163</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">The last three capstones ran one test each. Real screening studies run <span class="hl">many at once</span>:
+       a panel of markers, all compared between the same two groups. That is efficient, and it is dangerous, because every
+       extra test is another chance for pure noise to cross the significance line. This project does the screen properly,
+       builds the dashboard, tests all seven markers, and then applies the correction that keeps the whole thing honest.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#8721;</div>
+      <div class="def-body">
+        The <span class="def-kw">multiple-comparisons problem</span>: with a 5% false-positive rate per test, running many
+        tests makes a <span class="def-kw">family-wise</span> false alarm almost inevitable. Corrections like
+        <span class="def-kw">Bonferroni</span> (use &#945;/k) and <span class="def-kw">Holm</span> raise the bar so the whole
+        set of tests still has about a 5% chance of any false positive.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🫀</div>
+      <div><div class="ctitle">The finding, up front</div>
+        <p>Two markers truly separate the groups: <strong>Age</strong> and <strong>Cholesterol</strong>, both large and
+           unmistakable. <strong>Blood pressure</strong> looked significant too (p = 0.02), which is tempting to believe, but
+           it is a <strong>false alarm</strong> from testing seven markers, and it vanishes under correction. Age and
+           cholesterol are the only two left standing.</p></div>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section id="question">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Question and the Design</h2></div>
+    <p>A cardiac clinic recorded seven routine markers for 575 patients, along with whether each was diagnosed with heart
+       disease. The screening question is: <em>which markers actually differ between healthy and diseased patients?</em> For
+       each marker on its own this is the two-group comparison from Capstone 2. The new element is that we ask it seven times,
+       which is where the trouble starts.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Framework step</th><th>This project</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Goal</td><td>Identify which of seven markers separate the healthy and disease groups.</td></tr>
+          <tr><td class="nm">Hypotheses</td><td>For each marker, H&#8320;: the healthy and disease means are equal. Seven tests, one family.</td></tr>
+          <tr><td class="nm">Data type</td><td>Seven <strong>continuous</strong> markers, one <strong>binary</strong> outcome (<code>Disease</code>).</td></tr>
+          <tr><td class="nm">Design</td><td>Observational cohort. Two independent groups per marker, tested and then corrected together.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section id="dashboard">
+    <div class="section-eyebrow"><div class="num">2</div><h2>The Clinical Dashboard</h2></div>
+    <p>Before any test, four views answer most of the "what is going on here" questions: the age split by disease, a scatter
+       of two markers colored by disease, the spread of every marker by group, and a correlation matrix that includes the
+       disease label itself.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-heart-dashboard.png" alt="A four-panel clinical dashboard. Top-left: histograms of age by disease status, with the disease group clearly shifted to older ages. Top-right: a scatter of BMI versus systolic blood pressure colored by disease, forming one overlapping cloud with no separation. Bottom-left: standardized boxplots of all seven markers by group, where only Age and Cholesterol show a visible gap between the healthy and disease boxes. Bottom-right: a correlation matrix; in the Disease row, Age is 0.55 and Cholesterol is 0.42, while every other marker is near zero.">
+      <figcaption>The four panels tell one story. <strong>Age</strong> (top-left) separates the groups clearly; the BMI-vs-blood-pressure cloud (top-right) does not. The standardized boxplots (bottom-left) show a visible gap only for Age and Cholesterol, and the correlation matrix (bottom-right) makes it numeric: in the <code>Disease</code> row, Age sits at <strong>0.55</strong> and Cholesterol at <strong>0.42</strong>, while every other marker hovers near zero. Two signals, five quiet markers, which the formal screen now has to confirm without being fooled.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 3 -->
+  <section id="problem">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The Multiple-Comparisons Problem</h2></div>
+    <p>Here is the trap. If a marker has no real association, a single test still calls it "significant" about 5% of the time
+       by chance. Run that test seven times and the chance that <strong>at least one</strong> harmless marker lights up climbs
+       fast, to about <strong>30%</strong>.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.1rem">
+      <svg viewBox="0 0 700 210" width="100%" font-family="Inter, sans-serif" aria-label="A bar chart of the chance of at least one false positive against the number of tests run, each at the 5% level. One test: 5%. Three tests: 14%. Five tests: 23%. Seven tests (this screen): 30%. Ten tests: 40%. The bar for seven tests is highlighted. A note explains the Bonferroni fix: require p below 0.05 divided by the number of tests, here 0.007.">
+        <text x="350" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">Test more things, and a false alarm becomes likely</text>
+        <line x1="70" y1="172" x2="612" y2="172" stroke="#94a3b8" stroke-width="1.2"/>
+        <text x="46" y="60" font-size="8.5" fill="#64748b">50%</text><line x1="60" y1="57" x2="612" y2="57" stroke="#eef2f7"/>
+        <text x="46" y="115" font-size="8.5" fill="#64748b">25%</text><line x1="60" y1="112" x2="612" y2="112" stroke="#eef2f7"/>
+        <g text-anchor="middle">
+          <rect x="92" y="157" width="62" height="15" fill="#cbd5e1"/><text x="123" y="150" font-size="9" fill="#475569" font-weight="700">5%</text><text x="123" y="188" font-size="9" fill="#475569">1 test</text>
+          <rect x="192" y="130" width="62" height="42" fill="#cbd5e1"/><text x="223" y="123" font-size="9" fill="#475569" font-weight="700">14%</text><text x="223" y="188" font-size="9" fill="#475569">3 tests</text>
+          <rect x="292" y="104" width="62" height="68" fill="#cbd5e1"/><text x="323" y="97" font-size="9" fill="#475569" font-weight="700">23%</text><text x="323" y="188" font-size="9" fill="#475569">5 tests</text>
+          <rect x="392" y="82" width="62" height="90" fill="#b45309"/><text x="423" y="75" font-size="9.5" fill="#b45309" font-weight="800">30%</text><text x="423" y="188" font-size="9" fill="#b45309" font-weight="700">7 tests (ours)</text>
+          <rect x="492" y="52" width="62" height="120" fill="#cbd5e1"/><text x="523" y="45" font-size="9" fill="#475569" font-weight="700">40%</text><text x="523" y="188" font-size="9" fill="#475569">10 tests</text>
+        </g>
+        <text x="350" y="205" text-anchor="middle" font-size="8.5" fill="#15803d" font-weight="700">Bonferroni fix: raise the bar to p &lt; &#945;/k = 0.05/7 = 0.007 per test</text>
+      </svg>
+    </figure>
+
+    <p>The cure is to raise the bar. <strong>Bonferroni</strong> divides the threshold by the number of tests, so here a
+       marker must clear <strong>p &lt; 0.05 / 7 = 0.007</strong>, not 0.05, to count. <strong>Holm</strong> gives the same
+       protection while rejecting slightly more true effects. We apply both to the seven p-values at once and see what
+       survives.</p>
+  </section>
+
+  <!-- 4 -->
+  <section id="screen">
+    <div class="section-eyebrow"><div class="num">4</div><h2>The Corrected Screen</h2></div>
+    <p>Each marker gets a Welch two-sample t-test (healthy vs disease), with its effect size, and then the whole set of
+       p-values is corrected together. Ranked by effect size, the result is stark.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Marker</th><th>Healthy</th><th>Disease</th><th>p (raw)</th><th>Cohen's d</th><th>After correction</th></tr></thead>
+        <tbody>
+          <tr class="hi"><td class="nm">Age</td><td>47.5</td><td>61.7</td><td>&lt; 0.001</td><td>1.34</td><td class="pass">survives &#10003;</td></tr>
+          <tr class="hi"><td class="nm">Cholesterol</td><td>197.8</td><td>234.6</td><td>&lt; 0.001</td><td>0.95</td><td class="pass">survives &#10003;</td></tr>
+          <tr><td class="nm">Systolic BP</td><td>129.7</td><td>126.7</td><td>0.021</td><td>0.20</td><td class="fail">false alarm &#10007;</td></tr>
+          <tr><td class="nm">Diastolic BP</td><td>82.0</td><td>83.2</td><td>0.174</td><td>0.11</td><td class="no">not significant</td></tr>
+          <tr><td class="nm">Heart Rate</td><td>74.9</td><td>73.8</td><td>0.208</td><td>0.11</td><td class="no">not significant</td></tr>
+          <tr><td class="nm">Glucose</td><td>97.4</td><td>98.8</td><td>0.443</td><td>0.06</td><td class="no">not significant</td></tr>
+          <tr><td class="nm">BMI</td><td>27.6</td><td>27.6</td><td>0.919</td><td>0.01</td><td class="no">not significant</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Read it top to bottom. <strong>Age</strong> (Cohen's d about 1.3) and <strong>Cholesterol</strong> (d about 0.95) are
+       in a different league, and both clear even the strict Bonferroni bar. Now look at <strong>Systolic BP</strong>: its raw
+       p-value is below 0.05, so a naive reading calls it "significant", yet its effect size is tiny and it does <strong>not</strong>
+       survive correction. It is the false alarm the previous section predicted, and blood pressure is exactly the marker a
+       reader expects to matter for heart disease, which is what makes it such a convincing trap.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-heart-screen.png" alt="A horizontal bar chart of effect size (Cohen's d) per marker, sorted. Age (about 1.34) and Cholesterol (about 0.95) are drawn in green and labeled 'survives correction'. Systolic BP (about 0.20) is gold and labeled 'raw-significant only (false alarm)'. Diastolic BP, Heart Rate, Glucose, and BMI are short grey bars labeled 'not significant'.">
+      <figcaption>Effect size per marker. <strong>Green</strong> markers survive correction for seven tests; the <strong>gold</strong> bar (Systolic BP) is significant only until you account for multiple comparisons; the <strong>grey</strong> bars never reached significance. Effect size and correction together separate two real signals from five quiet markers.</figcaption>
+    </figure>
+
+    <div class="goldbox">
+      <span class="gb-tag">Two habits, one honest screen</span>
+      <p style="margin:0.4rem 0 0">First, <strong>correct for the number of tests</strong>, so a lone chance crossing does
+         not get reported as a discovery. Second, <strong>read the effect size, not just the p-value</strong>: Systolic BP's
+         d of 0.2 was never worth much even before correction. Reporting the one marker that crossed 0.05 out of seven, and
+         staying quiet about the other six, is exactly how false findings reach print.</p>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section id="verdict">
+    <div class="section-eyebrow"><div class="num">5</div><h2>The Verdict, and Why Association Is Not Cause</h2></div>
+    <p>Two markers genuinely distinguish diseased from healthy patients here: age and cholesterol. But this is observational
+       data, a snapshot of who has the disease, with no intervention, so a real association is still a long way from a cause.
+       The clearest reason is <strong>confounding</strong>, and age is the obvious culprit.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.1rem">
+      <svg viewBox="0 0 700 196" width="100%" font-family="Inter, sans-serif" aria-label="A confounding triangle. Age sits at the top. An arrow runs from Age down to Cholesterol (a marker) on the lower left, and another arrow runs from Age down to Heart disease on the lower right. A dashed line connects Cholesterol and Heart disease along the bottom, labeled as an observed association that is partly driven by age. The caption notes that separating a marker's own effect from age needs a model that adjusts for age, not seven separate tests.">
+        <text x="350" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">Age is a confounder: it lifts both the marker and the disease</text>
+        <rect x="300" y="34" width="100" height="30" rx="8" fill="#78350f"/>
+        <text x="350" y="53" text-anchor="middle" font-size="11" fill="#fff" font-weight="800">Age</text>
+        <rect x="90" y="126" width="150" height="30" rx="8" fill="#fffbeb" stroke="#b45309"/>
+        <text x="165" y="145" text-anchor="middle" font-size="10" fill="#92400e" font-weight="700">a marker (cholesterol)</text>
+        <rect x="460" y="126" width="150" height="30" rx="8" fill="#fffbeb" stroke="#b45309"/>
+        <text x="535" y="145" text-anchor="middle" font-size="10" fill="#92400e" font-weight="700">heart disease</text>
+        <line x1="322" y1="64" x2="185" y2="126" stroke="#b45309" stroke-width="1.8"/><polygon points="185,126 190,115 197,123" fill="#b45309"/>
+        <line x1="378" y1="64" x2="515" y2="126" stroke="#b45309" stroke-width="1.8"/><polygon points="515,126 503,123 510,115" fill="#b45309"/>
+        <line x1="240" y1="141" x2="460" y2="141" stroke="#94a3b8" stroke-width="1.6" stroke-dasharray="5 4"/>
+        <text x="350" y="134" text-anchor="middle" font-size="8.5" fill="#64748b" font-weight="700">observed association</text>
+        <text x="350" y="176" text-anchor="middle" font-size="8.5" fill="#64748b" font-style="italic">part of the marker's link to disease is just age riding along; to separate them, adjust for age (regression), not seven separate tests</text>
+      </svg>
+    </figure>
+
+    <ul>
+      <li><strong>Association, not causation.</strong> Age and cholesterol are associated with disease in this cohort; that
+          alone does not prove either causes it.</li>
+      <li><strong>Confounding.</strong> Older patients tend to have higher cholesterol and more disease, so part of
+          cholesterol's signal may be age riding along. Separating them needs a model that adjusts for age, which is
+          regression, not seven separate tests.</li>
+      <li><strong>A screen is a starting point.</strong> Finding that a marker differs between groups does not make it a good
+          predictor for an individual patient, and it is not a diagnosis.</li>
+      <li><strong>Multiple testing is an integrity issue.</strong> The correction is not red tape; it is what stops a
+          seven-marker fishing trip from producing a headline about blood pressure.</li>
+    </ul>
+  </section>
+
+  <!-- 6 -->
+  <section id="in-ds-ai">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Multiple Comparisons in Data Science &amp; AI</h2></div>
+    <p>The moment you test many things at once, this problem appears, and modern data work tests a great many things.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Where it appears</th><th>The many tests</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Feature screening</td><td>Checking hundreds of features for association with a target; some will look predictive by chance.</td></tr>
+          <tr><td class="nm">A/B testing</td><td>Watching many metrics or many segments on one experiment inflates the odds of a spurious "win".</td></tr>
+          <tr><td class="nm">Model comparison</td><td>Benchmarking many models on one test set; the apparent best can be luck without correction.</td></tr>
+          <tr><td class="nm">Genomics and beyond</td><td>Thousands of tests at once, where corrections (and the false discovery rate) are standard practice.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="research">
+      <span class="rtag">Practice note</span>
+      <p style="margin:0.4rem 0 0">When the number of tests is huge, controlling the family-wise error with Bonferroni gets
+         too conservative, and teams switch to controlling the <strong>false discovery rate</strong> (the Benjamini-Hochberg
+         procedure), which limits the share of "discoveries" that are false rather than the chance of any false positive. The
+         instinct is the same one this capstone teaches: the more you test, the higher your bar has to be.</p>
+    </div>
+  </section>
+
+  <!-- notebook + downloads -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook builds the four-panel dashboard, cleans the cohort with a printed audit trail, runs the
+             seven Welch t-tests, applies the Bonferroni and Holm corrections to the whole set with <code>statsmodels</code>,
+             and draws the effect-size screen. It also shows the family-wise-error arithmetic and the point-biserial
+             correlations that tell the same story from the correlation angle. Every number in this chapter comes from its
+             output, with a plain-language note after each result.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-heart-disease-markers.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-heart-disease-markers.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-heart-disease-markers.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Download the project files</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong> (<code>capstone-heart-disease-markers.xlsx</code>) holds the
+         cohort on the <em>patients</em> sheet, with a codebook and notes, and keeps the missing values, impossible entries,
+         and duplicate rows so you can practice the cleaning. <strong>The report</strong> is the one-page brief a statistician
+         wrote for a clinical audience: which markers are worth pursuing, why blood pressure did not make the cut, and the
+         caution that this is association, not cause.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-4-heart-disease-markers.docx">📄 Download report <small>Word .docx</small></a>
+        <a class="ex-file xls" href="../data/capstone-heart-disease-markers.xlsx">📊 Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Testing many markers inflates false positives</strong>: seven tests at 5% give about a 30% chance of at least one false alarm.</span></li>
+        <li><span class="ck">✓</span><span><strong>Correct the whole set</strong>: Bonferroni (p &lt; &#945;/k) and Holm keep the family-wise error near 5%.</span></li>
+        <li><span class="ck">✓</span><span><strong>Only Age and Cholesterol survived</strong> (d = 1.34 and 0.95); Systolic BP was significant raw (p = 0.02) but a false alarm that correction rejected.</span></li>
+        <li><span class="ck">✓</span><span><strong>Read the effect size</strong>, not just the p-value: the false alarm had a tiny effect from the start.</span></li>
+        <li><span class="ck">✓</span><span><strong>Association is not cause</strong>: this is observational data, and age confounds the markers, so a regression that adjusts for age is the honest next step.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on this capstone, from the dashboard to the false alarm. Answer them, hit <strong>Check Answers</strong>,
+       and keep refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-blood-pressure-before-after.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 162 · Previous</span><br><span class="cn-title">Paired t-Test: Blood Pressure Before &amp; After</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 163 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch163";
+  window.QUIZ_DATA = [
+    {
+      q: "Why does testing seven markers at once create a problem?",
+      options: ["It is slower to compute", "Each test has a 5% false-positive chance, so testing many makes a false alarm likely", "The markers become correlated", "It requires a bigger sample"],
+      answer: 1,
+      explain: "With a 5% rate per test, seven tests give about a 30% chance that a harmless marker crosses 0.05 by luck."
+    },
+    {
+      q: "The chance of at least one false positive when running 7 independent tests at α = 0.05 is about…",
+      options: ["5%", "30%", "0.7%", "70%"],
+      answer: 1,
+      explain: "1 - (1 - 0.05)^7 is about 0.30, or 30%."
+    },
+    {
+      q: "The Bonferroni correction for 7 tests requires each p-value to be below…",
+      options: ["0.05", "0.05 / 7 = 0.007", "0.05 × 7 = 0.35", "0.01"],
+      answer: 1,
+      explain: "Bonferroni divides the threshold by the number of tests: 0.05 / 7 ≈ 0.007."
+    },
+    {
+      q: "Which markers survived the multiple-comparison correction?",
+      options: ["All seven", "Age and Cholesterol only", "Systolic BP only", "None"],
+      answer: 1,
+      explain: "Age (d = 1.34) and Cholesterol (d = 0.95) were far beyond the corrected threshold; the rest were not."
+    },
+    {
+      q: "Systolic BP had a raw p-value of 0.02 but did not survive correction. It is best described as…",
+      options: ["A confirmed risk factor", "A false alarm from testing seven markers", "The strongest marker", "A data-entry error"],
+      answer: 1,
+      explain: "Its tiny effect (d = 0.2) crossed 0.05 by chance among seven tests; correction correctly rejected it."
+    },
+    {
+      q: "Besides correcting for multiple tests, what else flagged Systolic BP as unconvincing?",
+      options: ["Its large effect size", "Its very small effect size (d ≈ 0.2)", "Its missing values", "Its correlation with age"],
+      answer: 1,
+      explain: "Effect size and significance are different questions; a d of 0.2 was never impressive, corrected or not."
+    },
+    {
+      q: "Because this is observational data, a real association between cholesterol and disease…",
+      options: ["Proves cholesterol causes disease", "Does not prove causation; age may confound it", "Means the test was wrong", "Can be ignored"],
+      answer: 1,
+      explain: "Older patients have both higher cholesterol and more disease, so age can drive part of the association."
+    },
+    {
+      q: "To separate a marker's own effect from age, the right next step is…",
+      options: ["More separate t-tests", "A regression model that adjusts for age", "A larger significance threshold", "Dropping the age column"],
+      answer: 1,
+      explain: "Adjusting for a confounder requires a model that includes it, not another round of one-at-a-time tests."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
