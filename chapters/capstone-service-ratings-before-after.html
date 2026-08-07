@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 174 · Wilcoxon Signed-Rank: Service Ratings Before &amp; After — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .yes { color:#15803d; font-weight:700; }
+    .disp-table .no { color:#dc2626; font-weight:700; }
+    .disp-table tr.hi td { background:#fffbeb; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .nb-fig.half img { max-width:480px; margin:0 auto; }
+    .goldbox { background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #b45309; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .goldbox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .rw-card { background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #b45309; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file.doc { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #b45309; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+    .svg-wrap { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.9rem 0.6rem 0.3rem; background:var(--panel); }
+    .svg-wrap svg { width:100%; height:auto; display:block; }
+    .svg-wrap .cap { font-size:0.82rem; color:var(--ink-soft); padding:0.55rem 0.6rem 0.4rem; line-height:1.55; }
+    .svg-wrap .cap strong { color:var(--ink); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/capstone-service-ratings-before-after.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXVII &#183; Capstone Projects: Statistical Testing</span><span class="sep">/</span>
+      <span>Chapter 174</span>
+    </div>
+    <h1>Did the Service Change <span class="accent">Land?</span></h1>
+    <p class="dek">Capstone 15. Seventy customers rated the service twice, before and after a change to the booking process.
+       Forty-four percent gave the identical rating both times, and what you do with those people turns out to be the whole
+       methodological question.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~16 min</b>&nbsp;read</div>
+      <div class="m">🧪 <b>Wilcoxon signed-rank</b></div>
+      <div class="m">📊 <b>Chapter 174</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Capstone 3 ran a paired t-test on blood pressure, where the differences were continuous and comfortably
+       normal. This is the same design on <span class="hl">a 5-point rating scale</span>, and almost nothing survives the
+       change: the differences take four values, nearly half of them zero, and the exact test is off the table before we
+       start.</p>
+
+    <div class="def-card">
+      <div class="sigma">W</div>
+      <div class="def-body">
+        The <span class="def-kw">Wilcoxon signed-rank test</span> is the paired counterpart of Mann-Whitney. It ranks the
+        <span class="def-kw">differences by size</span>, ignoring direction, then compares the total rank belonging to
+        <span class="def-kw">increases</span> against the total belonging to <span class="def-kw">decreases</span>. It
+        assumes nothing about the shape of the differences.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">⭐</div>
+      <div><div class="ctitle">The finding, up front</div>
+        <p>Ratings improved, decisively (W = 343, p = 0.000048, n = 70), with a large effect (rank-biserial 0.68). The
+           practical picture is more modest: <strong>46 percent of customers rated higher, 44 percent did not move at all,
+           and 10 percent rated lower</strong>. The median went from 3 to 4, which is one step on a five-step scale.</p></div>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section id="design">
+    <div class="section-eyebrow"><div class="num">1</div><h2>A Paired Design on an Ordinal Scale</h2></div>
+    <p>The same customers rated the service before the booking change and again afterwards. Because each row is one person
+       measured twice, the two columns are not independent samples and the analysis works on the <strong>differences</strong>.
+       That much matches Capstone 3. What does not match is the measurement.</p>
+
+    <p>Ratings are ordinal on five points, so a difference can in principle be anything from &#8722;4 to +4. In this data it
+       takes four values: &#8722;1, 0, +1, and +2. That coarseness is not a flaw in the sample. It is what a 5-point scale
+       produces, and it drives every methodological choice that follows.</p>
+
+    <p>Cleaning removed two duplicate submissions, three customers who never answered the follow-up, and one impossible
+       rating of 0, leaving <strong>70</strong> paired customers.</p>
+
+    <div class="goldbox">
+      <span class="gb-tag">The three who vanished</span>
+      <p style="margin:0.4rem 0 0">Three customers rated the service before the change and never answered the second survey.
+         A paired test needs both halves, so they are dropped. But they are not a random three: someone who has given up on
+         a service is exactly the person who stops replying to its surveys. If all three would have rated lower, the estimate
+         here is flattering. That is a limitation to state, not to fix.</p>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section id="explore">
+    <div class="section-eyebrow"><div class="num">2</div><h2>What Moved, and What Did Not</h2></div>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-ratings-change.png" alt="Left: grouped bars of ratings 1 to 5 before and after. The counts at 3 and 4 fall while the count at 5 rises from 4 customers to 21. Right: a bar chart of the change in rating showing 7 customers at minus 1, 31 at zero in grey, 28 at plus 1, and 4 at plus 2.">
+      <figcaption><strong>Left:</strong> ratings shifted upward, and mostly at the top, with the number of customers giving the maximum rating going from 4 to 21. <strong>Right:</strong> the change per customer. The grey bar is the story of this chapter: <strong>31 of 70 customers gave exactly the same rating twice</strong>.</figcaption>
+    </figure>
+
+    <p>Twenty-eight customers went up by one, four went up by two, and seven went down by one. Nobody moved more than two
+       points, which is the ceiling the instrument imposes.</p>
+  </section>
+
+  <!-- 3 -->
+  <section id="assumption">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Why Not a Paired t-test</h2></div>
+    <p>A paired t-test assumes the <em>differences</em> are approximately normal. Shapiro-Wilk on these differences gives
+       W = 0.848, p = 0.0000006, but the p-value understates the problem. The differences take four distinct values, 44
+       percent of them identical at zero.</p>
+
+    <div class="goldbox">
+      <span class="gb-tag">This one is not fixable by transformation</span>
+      <p style="margin:0.4rem 0 0">Earlier capstones met skewed data that a log or a square root could tidy up. Nothing does
+         that here, because the problem is not the <em>shape</em> of a continuous distribution. It is the
+         <strong>granularity of the measurement</strong>. Four possible outcomes will still be four possible outcomes after
+         any transformation you apply to them.</p>
+    </div>
+
+    <p>Wilcoxon's signed-rank test ranks the differences by size and compares the rank total for increases against the rank
+       total for decreases. Nothing about equal spacing is assumed, which suits a rating scale exactly.</p>
+  </section>
+
+  <!-- 4 -->
+  <section id="zeros">
+    <div class="section-eyebrow"><div class="num">4</div><h2>The Zeros, and the Decision Nobody Mentions</h2></div>
+    <p>Thirty-one customers changed nothing. A signed-rank test has no natural slot for them: a difference of zero is neither
+       an increase nor a decrease, and it has no size to rank. Every implementation has to decide something, and most do it
+       silently through a default argument.</p>
+
+    <figure class="nb-fig half">
+      <img src="../assets/img/capstone-ratings-matrix.png" alt="A five by five grid of before rating against after rating, with counts in each cell and a dashed diagonal line. Cells on the diagonal, meaning no change, hold 31 customers in total. Most of the off-diagonal mass sits just above the diagonal.">
+      <figcaption>Where each customer moved. Everyone on the dashed line gave the identical rating twice, and there are <strong>31 of them</strong>, more than any other single feature of this dataset. The three conventions below disagree about exactly one thing: what to do with that line.</figcaption>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Convention</th><th>What it does with the zeros</th><th>n used</th><th>W</th><th>p</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Wilcoxon (1945)</td><td>discards them entirely</td><td>39</td><td>126.0</td><td>0.000050</td></tr>
+          <tr class="hi"><td class="nm">Pratt (1959)</td><td>ranks them, then drops their ranks</td><td>70</td><td>343.0</td><td>0.000048</td></tr>
+          <tr><td class="nm">Split ranks</td><td>divides the zero ranks between both sums</td><td>70</td><td>591.0</td><td>0.000090</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>They agree here, and that is worth saying plainly.</strong> All three land within a factor of two of each other
+       and all three reject the null decisively. This dataset does not force the choice, and it would be dishonest to imply
+       otherwise.</p>
+
+    <div class="goldbox">
+      <span class="gb-tag">Understand it anyway, because it changes the question</span>
+      <p style="margin:0.4rem 0 0">Wilcoxon's original procedure discards the 31 non-movers and tests the 39 who moved, so it
+         answers: <em>among customers whose opinion changed, did it more often improve?</em> Pratt's method keeps them, so it
+         answers: <em>across all customers, did ratings improve?</em> Those are different claims about different populations.
+         With 44 percent of the sample sitting on zero, the second is the one a service manager is asking, which is why it is
+         the one reported here. Whichever you use, <strong>state it and state the n it consumed</strong>. A reader who sees
+         "n = 39" and a reader who sees "n = 70" are being told about different groups of people.</p>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section id="result">
+    <div class="section-eyebrow"><div class="num">5</div><h2>The Result</h2></div>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Wilcoxon W (Pratt)</div><div class="rv">343.0</div><div class="rd">n = 70</div></div>
+      <div class="rchip"><div class="rk">p-value</div><div class="rv">&lt; 0.001</div><div class="rd">4.8 &#215; 10<sup>&#8722;5</sup></div></div>
+      <div class="rchip"><div class="rk">Rank-biserial r</div><div class="rv">0.677</div><div class="rd">large effect</div></div>
+      <div class="rchip"><div class="rk">Sign test</div><div class="rv">p = 0.00007</div><div class="rd">direction only, agrees</div></div>
+    </div>
+
+    <p>Among the 39 customers who moved, the rank total for the 32 improvements is <strong>654</strong> against
+       <strong>126</strong> for the 7 declines. The rank-biserial correlation of <strong>0.68</strong> is that imbalance
+       expressed on a scale from &#8722;1 to +1.</p>
+
+    <p>The sign test is a useful cross-check. It throws away even the sizes of the changes and looks only at direction, so it
+       assumes less than Wilcoxon does and has less power in exchange. It still rejects at p = 0.00007. <strong>When the
+       weakest test available agrees, the conclusion is not resting on an assumption.</strong></p>
+
+    <div class="svg-wrap">
+      <svg viewBox="0 0 760 210" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="A ladder of three tests from strongest to weakest assumptions: paired t-test, Wilcoxon signed-rank, and the sign test, showing what each uses from the data and whether it is available here.">
+        <text x="24" y="26" font-family="Inter,Segoe UI,sans-serif" font-size="12.5" font-weight="800" fill="#78350f">THREE TESTS OF THE SAME PAIRED DATA, ASSUMING LESS AT EACH STEP</text>
+
+        <rect x="24" y="46" width="228" height="132" rx="12" fill="#fef2f2" stroke="#fecaca"/>
+        <text x="138" y="70" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="12" font-weight="800" fill="#dc2626">Paired t-test</text>
+        <text x="138" y="94" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" fill="#3f3f46">uses the exact size of</text>
+        <text x="138" y="110" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" fill="#3f3f46">every difference</text>
+        <text x="138" y="140" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" font-weight="700" fill="#dc2626">needs normal differences</text>
+        <text x="138" y="160" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" font-weight="800" fill="#dc2626">not available here</text>
+
+        <rect x="266" y="46" width="228" height="132" rx="12" fill="#fffbeb" stroke="#fde68a"/>
+        <text x="380" y="70" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="12" font-weight="800" fill="#b45309">Wilcoxon signed-rank</text>
+        <text x="380" y="94" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" fill="#3f3f46">uses the ORDER of the</text>
+        <text x="380" y="110" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" fill="#3f3f46">difference sizes</text>
+        <text x="380" y="140" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" font-weight="700" fill="#b45309">needs only symmetry</text>
+        <text x="380" y="160" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" font-weight="800" fill="#b45309">p = 0.000048  &#8592; reported</text>
+
+        <rect x="508" y="46" width="228" height="132" rx="12" fill="#f0fdf4" stroke="#bbf7d0"/>
+        <text x="622" y="70" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="12" font-weight="800" fill="#15803d">Sign test</text>
+        <text x="622" y="94" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" fill="#3f3f46">uses only the DIRECTION:</text>
+        <text x="622" y="110" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" fill="#3f3f46">up, down, or neither</text>
+        <text x="622" y="140" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" font-weight="700" fill="#15803d">needs almost nothing</text>
+        <text x="622" y="160" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" font-weight="800" fill="#15803d">p = 0.00007  agrees</text>
+
+        <path d="M252 112 L266 112" stroke="#78350f" stroke-width="2"/>
+        <path d="M260 107 L266 112 L260 117" fill="none" stroke="#78350f" stroke-width="2"/>
+        <path d="M494 112 L508 112" stroke="#78350f" stroke-width="2"/>
+        <path d="M502 107 L508 112 L502 117" fill="none" stroke="#78350f" stroke-width="2"/>
+        <text x="380" y="200" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" font-style="italic" fill="#92400e">each step discards information in exchange for a weaker assumption</text>
+      </svg>
+      <div class="cap"><strong>The ladder of assumptions.</strong> Moving right, each test uses less of the data and demands
+        less of it. The usual worry is that the weaker tests will miss a real effect. Here they do not, which is the most
+        reassuring thing a set of results can do.</div>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section id="ties">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Why There Is No Exact p-value</h2></div>
+    <p>Textbook examples of Wilcoxon usually quote an exact p-value computed by enumerating every possible arrangement of
+       signs. This one cannot, and the reason is structural rather than a matter of software settings.</p>
+
+    <p>On a 5-point scale, a change is one point or two points. Across the 39 customers who moved, there are exactly
+       <strong>two distinct magnitudes</strong>: 35 changes of size 1 and 4 of size 2. The signed-rank procedure ranks by
+       magnitude, so those 35 changes all receive the same average rank, as do the 4.</p>
+
+    <div class="goldbox">
+      <span class="gb-tag">What the software does, and why it is right</span>
+      <p style="margin:0.4rem 0 0">The exact permutation distribution assumes there are no ties, so it does not apply.
+         <code>scipy</code> detects the ties, assigns average ranks within each tied block, and switches to the normal
+         approximation with a tie correction. That is the correct behaviour. It is worth recognizing that it happened, rather
+         than assuming an exact test was simply not requested, because on coarse scales the tie correction is doing real
+         work.</p>
+    </div>
+  </section>
+
+  <!-- 7 -->
+  <section id="practical">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Statistically Decisive, Practically Modest</h2></div>
+    <p>The p-value establishes that ratings moved up. It says nothing about whether the movement justifies what the change
+       cost, and those two questions get confused constantly.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Summary</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Median rating</td><td>3 before, <strong>4</strong> after: one step on a five-step scale</td></tr>
+          <tr class="hi"><td class="nm">Rated the service higher</td><td class="yes">32 of 70 customers (46%)</td></tr>
+          <tr class="hi"><td class="nm">Did not change their answer</td><td>31 of 70 customers (44%)</td></tr>
+          <tr class="hi"><td class="nm">Rated the service lower</td><td class="no">7 of 70 customers (10%)</td></tr>
+          <tr><td class="nm">Gave a top-two rating (4 or 5)</td><td>29 before (41%) &#8594; <strong>39 after (56%)</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The top-two-box figure, 41 percent rising to 56 percent, is probably the number to put in front of a business, because
+       it corresponds to something an operations team recognizes and it does not require anyone to average an ordinal scale.
+       But the sentence that goes with it should mention the 44 percent who did not move and the 10 percent who moved the
+       wrong way. A statistically decisive result and a modest practical one are perfectly compatible, and this is what that
+       looks like.</p>
+  </section>
+
+  <!-- 8 -->
+  <section id="ethics">
+    <div class="section-eyebrow"><div class="num">8</div><h2>What to Watch</h2></div>
+    <ul>
+      <li><strong>No control group, so no causal claim.</strong> The same objection as
+          <a href="capstone-blood-pressure-before-after.html">Capstone 3</a>, and it has not weakened. Ratings could have
+          risen because of the booking change, because of the season, because of a staffing change nobody logged, or because
+          being surveyed twice made customers more forgiving. Without a comparison group that did not receive the change,
+          this shows movement rather than cause.</li>
+      <li><strong>Non-response is not random.</strong> Three customers never answered the follow-up and were dropped. The
+          people most likely to stop replying are the people who have stopped caring, so the surviving sample probably tilts
+          positive.</li>
+      <li><strong>Asking twice changes people.</strong> Some customers will answer the second survey partly to be consistent
+          with the first. That pushes differences toward zero, which for once biases against finding an effect rather than
+          toward it.</li>
+      <li><strong>Do not report an average rating.</strong> Same reasoning as
+          <a href="capstone-satisfaction-and-loyalty.html">Capstone 12</a>: a mean of an ordinal scale assumes spacing the
+          scale does not provide. Report the distribution or the top-two-box share.</li>
+      <li><strong>State the zero convention and the n.</strong> Both defensible choices are defensible. Only silence is not.</li>
+    </ul>
+  </section>
+
+  <!-- 9 -->
+  <section id="in-ds-ai">
+    <div class="section-eyebrow"><div class="num">9</div><h2>Paired Rank Tests in Data Science &amp; AI</h2></div>
+    <p>The before-and-after comparison on the same units is one of the most common shapes in applied work, and the zeros
+       problem travels with it everywhere.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Where it appears</th><th>The paired measurement</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Model A versus model B on a shared benchmark</td><td>The same test items scored under two systems, which is the classic paired setup.</td></tr>
+          <tr><td class="nm">Human evaluation of two outputs</td><td>The same rater scoring both, on an ordered scale, with plenty of ties.</td></tr>
+          <tr><td class="nm">Before and after a deploy</td><td>The same users, sessions, or queries measured across a release.</td></tr>
+          <tr><td class="nm">Feature-flag rollouts to the same cohort</td><td>Each unit acts as its own control, which removes between-user variation.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="research">
+      <span class="rtag">Practice note</span>
+      <p style="margin:0.4rem 0 0">Benchmark comparisons between two models are almost always paired, since both are
+         evaluated on the same items, and paired analysis is far more sensitive than treating the two score sets as
+         independent samples. It is also where the zeros problem is most acute: on many benchmarks the two models agree on
+         the majority of items, so the reported n can be a small fraction of the benchmark size. A comparison quoting "p
+         &lt; 0.01" over 800 items, when 760 of them were ties, is describing 40 items. That should be stated, not buried in
+         a default argument.</p>
+    </div>
+  </section>
+
+  <!-- notebook + downloads -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook cleans the paired records with a printed audit trail, plots the before-and-after ratings
+             and the distribution of changes, checks the assumption a paired t-test would need and explains why no
+             transformation rescues it, draws the transition matrix that makes the zeros unmissable, then runs all three zero
+             conventions side by side. It computes the effect size, cross-checks with the sign test, shows why the exact test
+             is unavailable, and closes with the practical summary.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-service-ratings-before-after.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-service-ratings-before-after.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-service-ratings-before-after.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Read the reports &amp; get the data</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong>
+         (<code>capstone-service-ratings-before-after.xlsx</code>) holds the paired ratings with duplicates, follow-up
+         non-responses, and an impossible rating left in so you can practice the cleaning. Two written reports accompany it:
+         a <strong>plain-language brief</strong> for an operations lead, and a <strong>technical report</strong> covering the
+         zero conventions, the tie structure, and the effect size.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-15-service-ratings-before-after.html" target="_blank" rel="noopener">📄 Plain-language brief <small>read online</small></a>
+        <a class="ex-file doc" href="../reports/capstone-15-service-ratings-before-after-technical.html" target="_blank" rel="noopener">📄 Technical report <small>journal-style</small></a>
+        <a class="ex-file xls" href="../data/capstone-service-ratings-before-after.xlsx">📊 Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Wilcoxon is the paired rank test</strong>: it ranks differences by size and compares the rank total for increases against the total for decreases.</span></li>
+        <li><span class="ck">✓</span><span><strong>Zeros are a decision, not a detail.</strong> Dropping them tests the 39 who moved; keeping them tests all 70. Different questions, different populations, so state which and state the n.</span></li>
+        <li><span class="ck">✓</span><span><strong>Coarse scales kill the exact test.</strong> With only two distinct change magnitudes, the ranks are heavily tied and the normal approximation with a tie correction is the correct fallback.</span></li>
+        <li><span class="ck">✓</span><span><strong>The sign test is the honest cross-check.</strong> It assumes almost nothing and still rejected (p = 0.00007), so the conclusion does not depend on the extra assumption Wilcoxon makes.</span></li>
+        <li><span class="ck">✓</span><span><strong>Decisive is not the same as large.</strong> p = 0.000048, and yet 44% of customers did not move at all and 10% moved the wrong way.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">10</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on this capstone, from the zeros problem to what a decisive p-value does not tell you. Answer them,
+       hit <strong>Check Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-pain-relief-two-treatments.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 173 · Previous</span><br><span class="cn-title">Mann-Whitney U: Two Pain Treatments</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 174 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch174";
+  window.QUIZ_DATA = [
+    {
+      q: "What does the Wilcoxon signed-rank test use from the paired data?",
+      options: ["The exact size of every difference", "The ranks of the difference sizes, plus their direction", "Only whether each difference is positive or negative", "The means of the two measurements"],
+      answer: 1,
+      explain: "It ranks differences by magnitude and compares the rank total for increases against decreases, so it needs ordering rather than spacing."
+    },
+    {
+      q: "Thirty-one of seventy customers gave the same rating twice. Why is that a problem for a signed-rank test?",
+      options: ["It reduces statistical power", "A difference of zero is neither positive nor negative and has no magnitude to rank", "It violates the independence assumption", "It makes the data non-normal"],
+      answer: 1,
+      explain: "The procedure is built on signed magnitudes, and zero has neither a sign nor a size, so every implementation must decide something."
+    },
+    {
+      q: "How does dropping the zeros change what is being tested?",
+      options: ["It does not change anything, only the p-value", "It shifts the question from 'did ratings improve across all customers' to 'among those who changed, did it more often improve'", "It converts the test into a sign test", "It makes the test one-sided"],
+      answer: 1,
+      explain: "Wilcoxon's original method tested 39 customers; Pratt's tested all 70. Those are claims about different populations."
+    },
+    {
+      q: "Why can no transformation fix the non-normality of these differences?",
+      options: ["The sample is too small", "The problem is the granularity of a 5-point scale, not the shape of a continuous distribution", "The differences contain negative values", "Transformations only work on independent samples"],
+      answer: 1,
+      explain: "Four possible outcomes remain four possible outcomes after any transformation you apply."
+    },
+    {
+      q: "Why was no exact p-value available?",
+      options: ["The sample was too large to enumerate", "With only two distinct change magnitudes the ranks are heavily tied, and the exact permutation distribution assumes no ties", "scipy does not implement it", "The design was paired rather than independent"],
+      answer: 1,
+      explain: "The software correctly falls back to the normal approximation with a tie correction, which is doing real work on a coarse scale."
+    },
+    {
+      q: "The sign test gave p = 0.00007, agreeing with Wilcoxon. Why is that reassuring?",
+      options: ["It confirms the data are normal", "The sign test assumes less and uses only direction, so agreement means the conclusion is not resting on Wilcoxon's extra assumption", "It proves the effect is large", "It rules out a control-group problem"],
+      answer: 1,
+      explain: "When the weakest test available still rejects, the result does not depend on the stronger assumption."
+    },
+    {
+      q: "The result was p = 0.000048 with a rank-biserial of 0.68. What is the practical picture?",
+      options: ["Nearly every customer improved", "46% rated higher, 44% did not move at all, and 10% rated lower; the median went up one step", "The effect is too small to matter", "The improvement cannot be quantified"],
+      answer: 1,
+      explain: "A statistically decisive result and a modest practical one are perfectly compatible."
+    },
+    {
+      q: "Why can this study not claim the booking change caused the improvement?",
+      options: ["The sample is too small", "There is no control group, so seasonality, staffing, and being surveyed twice are all unexcluded explanations", "The ratings are ordinal", "The zeros were retained"],
+      answer: 1,
+      explain: "A before-and-after design without a comparison group demonstrates movement, not cause. The same limitation appeared in Capstone 3."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
