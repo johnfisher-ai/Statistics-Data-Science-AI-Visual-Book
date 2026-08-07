@@ -8536,13 +8536,130 @@ Kruskal-Wallis (robustness): H = 18.781, p = 8.35e-05  -&gt; same conclusion
 </div>
 </div>
 </div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=82750788">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Step-11-%C2%B7-Estimate,-do-not-just-test">Step 11 · Estimate, do not just test<a class="anchor-link" href="#Step-11-%C2%B7-Estimate,-do-not-just-test">¶</a></h2><p>The ANOVA said the methods differ and Tukey said which. Neither said <strong>by how much</strong>, and the intervals Tukey already computed deserve to be read out loud rather than left as a reject-or-not column.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=1e1af0ae">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># A percentile bootstrap: resample the data with replacement, recompute, repeat.</span>
+<span class="c1"># Chapter 73 introduced this; it is how we get an interval when no formula exists.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">boot_ci</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">stat</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="mi">95</span><span class="p">):</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">stat</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">B</span><span class="p">)])</span>
+    <span class="n">half</span> <span class="o">=</span> <span class="p">(</span><span class="mi">100</span> <span class="o">-</span> <span class="n">ci</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="n">half</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="mi">100</span> <span class="o">-</span> <span class="n">half</span><span class="p">),</span> <span class="n">reps</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">boot_ci_pairs</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">stat</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="mi">95</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Bootstrap for two paired/related arrays: resample ROW indices together."""</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">stat</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span>
+                     <span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">idx</span><span class="p">),</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">B</span><span class="p">))])</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="n">reps</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">reps</span><span class="p">)]</span>
+    <span class="n">half</span> <span class="o">=</span> <span class="p">(</span><span class="mi">100</span> <span class="o">-</span> <span class="n">ci</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="n">half</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="mi">100</span> <span class="o">-</span> <span class="n">half</span><span class="p">),</span> <span class="n">reps</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">boot_ci_groups</span><span class="p">(</span><span class="n">groups</span><span class="p">,</span> <span class="n">stat</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="mi">95</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Bootstrap for k independent groups: resample within each group."""</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">groups</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">]</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">B</span><span class="p">):</span>
+        <span class="n">rs</span> <span class="o">=</span> <span class="p">[</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="p">),</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">]</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">stat</span><span class="p">(</span><span class="n">rs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+            <span class="n">reps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">reps</span><span class="p">)</span>
+    <span class="n">half</span> <span class="o">=</span> <span class="p">(</span><span class="mi">100</span> <span class="o">-</span> <span class="n">ci</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="n">half</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="mi">100</span> <span class="o">-</span> <span class="n">half</span><span class="p">),</span> <span class="n">reps</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'comparison'</span><span class="si">:</span><span class="s2">22s</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">'difference'</span><span class="si">:</span><span class="s2">&gt;11s</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="s1">'95% CI'</span><span class="si">:</span><span class="s2">&gt;18s</span><span class="si">}</span><span class="s2">   verdict"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"-"</span><span class="o">*</span><span class="mi">70</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">lab</span><span class="p">,</span> <span class="n">dfc</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">rej</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">diffs</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">,</span> <span class="n">tuk</span><span class="o">.</span><span class="n">reject</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">lab</span><span class="si">:</span><span class="s2">22s</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">dfc</span><span class="si">:</span><span class="s2">+11.2f</span><span class="si">}</span><span class="s2">  [</span><span class="si">{</span><span class="n">l</span><span class="si">:</span><span class="s2">+6.2f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">h</span><span class="si">:</span><span class="s2">+6.2f</span><span class="si">}</span><span class="s2">]   </span><span class="si">{</span><span class="s1">'differs'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">rej</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'cannot separate'</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="c1"># An interval for eta-squared, which is otherwise reported as a bare number.</span>
+<span class="n">e_lo</span><span class="p">,</span> <span class="n">e_hi</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">boot_ci_groups</span><span class="p">(</span><span class="n">groups</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">g</span><span class="p">:</span> <span class="p">(</span>
+    <span class="k">lambda</span> <span class="n">gm</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">-</span><span class="n">gm</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">g</span><span class="p">)</span> <span class="o">/</span>
+               <span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">-</span><span class="n">gm</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">g</span><span class="p">)</span> <span class="o">+</span> <span class="nb">sum</span><span class="p">(((</span><span class="n">x</span><span class="o">-</span><span class="n">x</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">g</span><span class="p">))</span>
+<span class="p">)(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">g</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">eta-squared            </span><span class="si">{</span><span class="n">eta2</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">        95% CI [</span><span class="si">{</span><span class="n">e_lo</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">e_hi</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">]"</span><span class="p">)</span>
+
+<span class="c1"># Per-group mean with its own interval, which is what a department head reads.</span>
+<span class="nb">print</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">m_</span><span class="p">,</span> <span class="n">g</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">ORDER</span><span class="p">,</span> <span class="n">groups</span><span class="p">):</span>
+    <span class="n">moe</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="mf">0.975</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">g</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">m_</span><span class="si">:</span><span class="s2">9s</span><span class="si">}</span><span class="s2"> mean </span><span class="si">{</span><span class="n">g</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">5.2f</span><span class="si">}</span><span class="s2">   95% CI [</span><span class="si">{</span><span class="n">g</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">-</span><span class="n">moe</span><span class="si">:</span><span class="s2">5.2f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">g</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">+</span><span class="n">moe</span><span class="si">:</span><span class="s2">5.2f</span><span class="si">}</span><span class="s2">]   n = </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>comparison              difference              95% CI   verdict
+----------------------------------------------------------------------
+Blended vs Flipped           +7.56  [ +3.04, +12.08]   differs
+Blended vs Lecture           -0.38  [ -4.83,  +4.07]   cannot separate
+Flipped vs Lecture           -7.94  [-12.41,  -3.47]   differs
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>
+eta-squared            0.149        95% CI [0.063, 0.279]
+
+Lecture   mean 73.16   95% CI [70.50, 75.81]   n = 45
+Blended   mean 73.53   95% CI [70.75, 76.32]   n = 43
+Flipped   mean 81.10   95% CI [78.46, 83.73]   n = 42
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=3a82940f">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p><strong>The intervals turn a verdict into a size.</strong> Flipped beats Lecture by 7.9 points, but the range consistent with the data runs from about 3.5 to 12.4. A department deciding whether to retrain its staff should be told that range, because a 3-point gain and a 12-point gain justify very different amounts of effort.</p>
+<p><strong>And look at the comparison that failed.</strong> Blended against Lecture is not simply "no difference". Its interval runs from roughly −4.8 to +4.1, meaning the data are compatible with Blended being nearly 5 points better <em>or</em> 4 points worse. That is a genuinely inconclusive result, and it is a different statement from "the two methods are equivalent". An interval says so; a p-value of 0.978 does not.</p>
+<p>Eta-squared gets an interval too, and it is wide: teaching method plausibly accounts for anywhere from about 6 to 28 percent of the variation in scores. Reporting 0.15 alone implies a precision 130 students cannot deliver.</p>
+</div>
+</div>
+</div>
+</div>
 <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=2edb34b7">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Step-11-%C2%B7-Interpret-in-plain-language">Step 11 · Interpret in plain language<a class="anchor-link" href="#Step-11-%C2%B7-Interpret-in-plain-language">¶</a></h2><p>Teaching method matters, but not in the way a naive reading of "significant" would suggest. Students taught with the <strong>Flipped</strong> method scored about <strong>8 points higher</strong> on average than either of the other two, a substantial gap in exam terms. <strong>Lecture and Blended performed the same</strong>, within half a point of each other. So the honest headline is not "the three methods differ" but "one method outperforms, and the other two are equivalent". Method explains about <strong>15%</strong> of the variation in scores, which leaves the large majority to student-level factors the design does not capture.</p>
+<h2 id="Step-12-%C2%B7-Interpret-in-plain-language">Step 12 · Interpret in plain language<a class="anchor-link" href="#Step-12-%C2%B7-Interpret-in-plain-language">¶</a></h2><p>Teaching method matters, but not in the way a naive reading of "significant" would suggest. Students taught with the <strong>Flipped</strong> method scored about <strong>8 points higher</strong> on average than either of the other two, a substantial gap in exam terms. <strong>Lecture and Blended performed the same</strong>, within half a point of each other. So the honest headline is not "the three methods differ" but "one method outperforms, and the other two are equivalent". Method explains about <strong>15%</strong> of the variation in scores, which leaves the large majority to student-level factors the design does not capture.</p>
 </div>
 </div>
 </div>
@@ -8553,7 +8670,7 @@ Kruskal-Wallis (robustness): H = 18.781, p = 8.35e-05  -&gt; same conclusion
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Step-12-%C2%B7-Ethics,-bias,-and-limits">Step 12 · Ethics, bias, and limits<a class="anchor-link" href="#Step-12-%C2%B7-Ethics,-bias,-and-limits">¶</a></h2><ul>
+<h2 id="Step-13-%C2%B7-Ethics,-bias,-and-limits">Step 13 · Ethics, bias, and limits<a class="anchor-link" href="#Step-13-%C2%B7-Ethics,-bias,-and-limits">¶</a></h2><ul>
 <li><strong>How were students assigned?</strong> If students chose their section, the comparison is confounded by who chooses what. Motivated students may self-select into a Flipped section, and we would be measuring the students, not the method. Random assignment, or at minimum a check that prior attainment is balanced across methods, is what licenses a causal reading.</li>
 <li><strong>Who taught which section?</strong> Instructor skill and enthusiasm ride along with method. If one energetic instructor taught all the Flipped sections, method and instructor are inseparable in this design.</li>
 <li><strong>One outcome is a narrow view.</strong> A final exam measures a particular kind of learning. A method that lifts exam scores may not equally lift retention, transfer, or student wellbeing, and a decision to adopt it should weigh more than one number.</li>

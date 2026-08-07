@@ -8466,13 +8466,212 @@ the fertilizer effect is not one number; it is three, and only one of them matte
 </div>
 </div>
 </div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=a757b26b">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Step-11-%C2%B7-Estimate,-do-not-just-test">Step 11 · Estimate, do not just test<a class="anchor-link" href="#Step-11-%C2%B7-Estimate,-do-not-just-test">¶</a></h2><p>The interaction told us the fertilizer effect depends on light. The simple effects told us the direction at each level. Intervals tell us the size, and they change what can be promised to a grower.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=b841873b">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># A percentile bootstrap: resample the data with replacement, recompute, repeat.</span>
+<span class="c1"># Chapter 73 introduced this; it is how we get an interval when no formula exists.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">boot_ci</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">stat</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="mi">95</span><span class="p">):</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">stat</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">B</span><span class="p">)])</span>
+    <span class="n">half</span> <span class="o">=</span> <span class="p">(</span><span class="mi">100</span> <span class="o">-</span> <span class="n">ci</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="n">half</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="mi">100</span> <span class="o">-</span> <span class="n">half</span><span class="p">),</span> <span class="n">reps</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">boot_ci_pairs</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">stat</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="mi">95</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Bootstrap for two paired/related arrays: resample ROW indices together."""</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">stat</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span>
+                     <span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">idx</span><span class="p">),</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">B</span><span class="p">))])</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="n">reps</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">reps</span><span class="p">)]</span>
+    <span class="n">half</span> <span class="o">=</span> <span class="p">(</span><span class="mi">100</span> <span class="o">-</span> <span class="n">ci</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="n">half</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="mi">100</span> <span class="o">-</span> <span class="n">half</span><span class="p">),</span> <span class="n">reps</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">boot_ci_groups</span><span class="p">(</span><span class="n">groups</span><span class="p">,</span> <span class="n">stat</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="mi">95</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Bootstrap for k independent groups: resample within each group."""</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">groups</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">]</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">B</span><span class="p">):</span>
+        <span class="n">rs</span> <span class="o">=</span> <span class="p">[</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="p">),</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">]</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">stat</span><span class="p">(</span><span class="n">rs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+            <span class="n">reps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">reps</span><span class="p">)</span>
+    <span class="n">half</span> <span class="o">=</span> <span class="p">(</span><span class="mi">100</span> <span class="o">-</span> <span class="n">ci</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="n">half</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="mi">100</span> <span class="o">-</span> <span class="n">half</span><span class="p">),</span> <span class="n">reps</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'light level'</span><span class="si">:</span><span class="s2">12s</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">'Premium minus Standard'</span><span class="si">:</span><span class="s2">&gt;24s</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="s1">'95% CI'</span><span class="si">:</span><span class="s2">&gt;18s</span><span class="si">}</span><span class="s2">   verdict"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"-"</span><span class="o">*</span><span class="mi">78</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">L</span> <span class="ow">in</span> <span class="n">LIGHT</span><span class="p">:</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">df</span><span class="p">[(</span><span class="n">df</span><span class="o">.</span><span class="n">light</span><span class="o">==</span><span class="n">L</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">fertilizer</span><span class="o">==</span><span class="s2">"Premium"</span><span class="p">)]</span><span class="o">.</span><span class="n">growth_cm</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">df</span><span class="p">[(</span><span class="n">df</span><span class="o">.</span><span class="n">light</span><span class="o">==</span><span class="n">L</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">fertilizer</span><span class="o">==</span><span class="s2">"Standard"</span><span class="p">)]</span><span class="o">.</span><span class="n">growth_cm</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">diff_</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">-</span> <span class="n">b</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="n">se</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">+</span> <span class="n">b</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">))</span>
+    <span class="n">dof</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">+</span> <span class="n">b</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span>
+          <span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">crit</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="mf">0.975</span><span class="p">,</span> <span class="n">dof</span><span class="p">)</span>
+    <span class="n">l_</span><span class="p">,</span> <span class="n">h_</span> <span class="o">=</span> <span class="n">diff_</span> <span class="o">-</span> <span class="n">crit</span><span class="o">*</span><span class="n">se</span><span class="p">,</span> <span class="n">diff_</span> <span class="o">+</span> <span class="n">crit</span><span class="o">*</span><span class="n">se</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">L</span><span class="si">:</span><span class="s2">12s</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">diff_</span><span class="si">:</span><span class="s2">+24.2f</span><span class="si">}</span><span class="s2">  [</span><span class="si">{</span><span class="n">l_</span><span class="si">:</span><span class="s2">+6.2f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">h_</span><span class="si">:</span><span class="s2">+6.2f</span><span class="si">}</span><span class="s2">]   "</span>
+          <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'premium pays'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">l_</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'cannot separate'</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="c1"># An interval for the interaction effect size.</span>
+<span class="n">ss_int</span> <span class="o">=</span> <span class="n">aov</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">"C(fertilizer):C(light)"</span><span class="p">,</span><span class="s2">"sum_sq"</span><span class="p">]</span>
+<span class="n">pe_int</span> <span class="o">=</span> <span class="n">ss_int</span><span class="o">/</span><span class="p">(</span><span class="n">ss_int</span> <span class="o">+</span> <span class="n">resid_ss</span><span class="p">)</span>
+<span class="n">cellgroups</span> <span class="o">=</span> <span class="p">[</span><span class="n">df</span><span class="p">[(</span><span class="n">df</span><span class="o">.</span><span class="n">light</span><span class="o">==</span><span class="n">L</span><span class="p">)</span><span class="o">&amp;</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">fertilizer</span><span class="o">==</span><span class="s2">"F"</span><span class="p">)]</span><span class="o">.</span><span class="n">growth_cm</span><span class="o">.</span><span class="n">values</span> <span class="k">for</span> <span class="n">L</span> <span class="ow">in</span> <span class="n">LIGHT</span> <span class="k">for</span> <span class="n">F</span> <span class="ow">in</span> <span class="n">FERT</span><span class="p">]</span>
+<span class="n">cellgroups</span> <span class="o">=</span> <span class="p">[</span><span class="n">df</span><span class="p">[(</span><span class="n">df</span><span class="o">.</span><span class="n">light</span><span class="o">==</span><span class="n">L</span><span class="p">)</span><span class="o">&amp;</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">fertilizer</span><span class="o">==</span><span class="n">F</span><span class="p">)]</span><span class="o">.</span><span class="n">growth_cm</span><span class="o">.</span><span class="n">values</span> <span class="k">for</span> <span class="n">L</span> <span class="ow">in</span> <span class="n">LIGHT</span> <span class="k">for</span> <span class="n">F</span> <span class="ow">in</span> <span class="n">FERT</span><span class="p">]</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_pe</span><span class="p">(</span><span class="n">g</span><span class="p">):</span>
+    <span class="n">lab</span> <span class="o">=</span> <span class="p">[(</span><span class="n">L</span><span class="p">,</span><span class="n">F</span><span class="p">)</span> <span class="k">for</span> <span class="n">L</span> <span class="ow">in</span> <span class="n">LIGHT</span> <span class="k">for</span> <span class="n">F</span> <span class="ow">in</span> <span class="n">FERT</span><span class="p">]</span>
+    <span class="n">d2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">"growth_cm"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">g</span><span class="p">),</span>
+                       <span class="s2">"light"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">([</span><span class="n">l</span> <span class="k">for</span> <span class="n">l</span><span class="p">,</span><span class="n">_</span> <span class="ow">in</span> <span class="n">lab</span><span class="p">],</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">g</span><span class="p">]),</span>
+                       <span class="s2">"fertilizer"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">([</span><span class="n">f</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span><span class="n">f</span> <span class="ow">in</span> <span class="n">lab</span><span class="p">],</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">g</span><span class="p">])})</span>
+    <span class="n">a2</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">anova_lm</span><span class="p">(</span><span class="n">ols</span><span class="p">(</span><span class="s2">"growth_cm ~ C(fertilizer)*C(light)"</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">d2</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(),</span> <span class="n">typ</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">a2</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">"C(fertilizer):C(light)"</span><span class="p">,</span><span class="s2">"sum_sq"</span><span class="p">]</span><span class="o">/</span><span class="p">(</span><span class="n">a2</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">"C(fertilizer):C(light)"</span><span class="p">,</span><span class="s2">"sum_sq"</span><span class="p">]</span><span class="o">+</span><span class="n">a2</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s2">"Residual"</span><span class="p">,</span><span class="s2">"sum_sq"</span><span class="p">])</span>
+<span class="n">pi_lo</span><span class="p">,</span> <span class="n">pi_hi</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">boot_ci_groups</span><span class="p">(</span><span class="n">cellgroups</span><span class="p">,</span> <span class="n">_pe</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">partial eta-squared, interaction  </span><span class="si">{</span><span class="n">pe_int</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">   95% CI [</span><span class="si">{</span><span class="n">pi_lo</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">pi_hi</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">]"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>light level    Premium minus Standard              95% CI   verdict
+------------------------------------------------------------------------------
+Low                             -1.05  [ -4.52,  +2.41]   cannot separate
+Medium                          +2.31  [ -0.30,  +4.92]   cannot separate
+High                            +7.68  [ +4.89, +10.47]   premium pays
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>
+partial eta-squared, interaction  0.239   95% CI [0.106, 0.437]
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=c7cacf75">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p><strong>What a grower can actually be told.</strong> Under high light, premium fertilizer adds between about 4.9 and 10.5 cm, so it pays and the only question is how much. Under low light the interval runs from roughly −4.5 to +2.4 cm: the data are compatible with premium being slightly worse. Under medium light the interval straddles zero but leans positive.</p>
+<p>That is the interaction expressed as three decisions rather than one significance test. <strong>Buy premium for the bright benches; do not buy it for the dim ones.</strong> No single averaged number could have carried that message, which is exactly why reading the main effect first would have been the wrong move.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=de5af568">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Step-12-%C2%B7-The-one-capstone-where-%22caused%22-is-the-right-word">Step 12 · The one capstone where "caused" is the right word<a class="anchor-link" href="#Step-12-%C2%B7-The-one-capstone-where-%22caused%22-is-the-right-word">¶</a></h2><p>Almost every chapter in this part ends by warning against causal language. This one does not, and it is worth being explicit about why the difference is in the <strong>design</strong>, not in the statistics.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=01101a49">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">"What this study did that the observational capstones did not:</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"  1. The experimenter SET the levels of light and fertilizer."</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"     They were assigned, not observed as they happened to occur."</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"  2. Plants were ALLOCATED to the six combinations rather than self-selecting."</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"     Any pre-existing difference between plants is spread across cells by chance."</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"  3. Everything else was held constant: same greenhouse, same water, same period.</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">"light"</span><span class="p">,</span><span class="s2">"fertilizer"</span><span class="p">])</span><span class="o">.</span><span class="n">growth_cm</span><span class="o">.</span><span class="n">count</span><span class="p">()</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"plants per cell"</span><span class="p">)</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Because treatment was assigned, the ONLY systematic difference between cells"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"is the treatment itself. That is what licenses the word 'caused'."</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>What this study did that the observational capstones did not:
+
+  1. The experimenter SET the levels of light and fertilizer.
+     They were assigned, not observed as they happened to occur.
+  2. Plants were ALLOCATED to the six combinations rather than self-selecting.
+     Any pre-existing difference between plants is spread across cells by chance.
+  3. Everything else was held constant: same greenhouse, same water, same period.
+
+light   fertilizer
+High    Premium       11
+        Standard      12
+Low     Premium       12
+        Standard       9
+Medium  Premium       12
+        Standard      12
+
+Because treatment was assigned, the ONLY systematic difference between cells
+is the treatment itself. That is what licenses the word 'caused'.
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=73b973e4">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p><strong>Manipulation is what buys causal language.</strong> In <a href="../chapters/capstone-study-hours-and-scores.html">Capstone 11</a> we measured study hours as students happened to report them, so a correlation could reflect hours causing scores, ease causing hours, or prior ability causing both. Here the experimenter <strong>assigned</strong> the light level and the fertilizer. Plants did not choose the bright bench, and a plant's own vigour cannot have influenced which treatment it received.</p>
+<p>That single design feature closes off the alternatives. Reverse causation is impossible, since growth cannot reach back and change the fertilizer applied last month. Confounding is controlled by allocation, since any pre-existing difference between plants is scattered across the six cells rather than lining up with treatment. Everything else was held constant by the greenhouse.</p>
+<p>So this chapter may say <strong>caused</strong>, and it should. The lesson is not that experiments are better analyses. The statistics here are no more sophisticated than in the observational capstones, and in places they are simpler. The lesson is that <strong>causal claims are earned in the design, before any data are collected</strong>, and no amount of careful analysis afterwards can substitute.</p>
+</div>
+</div>
+</div>
+</div>
 <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=84feb77d">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Step-11-%C2%B7-Interpret-in-plain-language">Step 11 · Interpret in plain language<a class="anchor-link" href="#Step-11-%C2%B7-Interpret-in-plain-language">¶</a></h2><p>Light is by far the dominant driver of growth, and it matters under either fertilizer. Fertilizer is a different story: <strong>Premium is worth paying for only at high light</strong>. At low light it does nothing measurable, and at medium light the advantage is small and not statistically distinguishable from zero. Averaged across all conditions the Premium fertilizer looks significantly better, and that average is exactly the misleading number a one-way analysis would have produced. The interaction is the finding.</p>
+<h2 id="Step-13-%C2%B7-Interpret-in-plain-language">Step 13 · Interpret in plain language<a class="anchor-link" href="#Step-13-%C2%B7-Interpret-in-plain-language">¶</a></h2><p>Light is by far the dominant driver of growth, and it matters under either fertilizer. Fertilizer is a different story: <strong>Premium is worth paying for only at high light</strong>. At low light it does nothing measurable, and at medium light the advantage is small and not statistically distinguishable from zero. Averaged across all conditions the Premium fertilizer looks significantly better, and that average is exactly the misleading number a one-way analysis would have produced. The interaction is the finding.</p>
 </div>
 </div>
 </div>
@@ -8483,7 +8682,7 @@ the fertilizer effect is not one number; it is three, and only one of them matte
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Step-12-%C2%B7-Ethics,-bias,-and-limits">Step 12 · Ethics, bias, and limits<a class="anchor-link" href="#Step-12-%C2%B7-Ethics,-bias,-and-limits">¶</a></h2><ul>
+<h2 id="Step-14-%C2%B7-Ethics,-bias,-and-limits">Step 14 · Ethics, bias, and limits<a class="anchor-link" href="#Step-14-%C2%B7-Ethics,-bias,-and-limits">¶</a></h2><ul>
 <li><strong>Do not generalize the interaction past the levels tested.</strong> "High" light here is one specific intensity. The pattern suggests the fertilizer needs light to be useful, but it does not tell us what happens at intensities beyond the range studied, and extrapolating a fanning pattern is exactly how greenhouse findings become bad field advice.</li>
 <li><strong>A greenhouse is not a field.</strong> Temperature, soil, water, and pests were controlled or uniform here. Effects that depend on light will very likely depend on those too, so a controlled trial establishes a mechanism, not a recommendation for every grower.</li>
 <li><strong>Report the cost, not just the growth.</strong> Premium fertilizer presumably costs more. A finding that it helps only in high light is a commercial recommendation as much as a botanical one, and reporting the growth benefit without the conditions attached would encourage growers in low-light settings to buy something that will not help them.</li>

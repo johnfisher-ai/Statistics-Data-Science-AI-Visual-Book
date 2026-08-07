@@ -8376,13 +8376,195 @@ pairing removes between-patient variability, so the paired test is far more prec
 </div>
 </div>
 </div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=45427c3f">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Step-11-%C2%B7-Estimate,-do-not-just-test">Step 11 · Estimate, do not just test<a class="anchor-link" href="#Step-11-%C2%B7-Estimate,-do-not-just-test">¶</a></h2><p>Blood pressure fell. The clinically useful question is by how much, and whether the plausible range clears the threshold anyone cares about.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=b67b823a">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># A percentile bootstrap: resample the data with replacement, recompute, repeat.</span>
+<span class="c1"># Chapter 73 introduced this; it is how we get an interval when no formula exists.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">boot_ci</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">stat</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="mi">95</span><span class="p">):</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">stat</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">B</span><span class="p">)])</span>
+    <span class="n">half</span> <span class="o">=</span> <span class="p">(</span><span class="mi">100</span> <span class="o">-</span> <span class="n">ci</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="n">half</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="mi">100</span> <span class="o">-</span> <span class="n">half</span><span class="p">),</span> <span class="n">reps</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">boot_ci_pairs</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">stat</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="mi">95</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Bootstrap for two paired/related arrays: resample ROW indices together."""</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">stat</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span>
+                     <span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">idx</span><span class="p">),</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">B</span><span class="p">))])</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="n">reps</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">reps</span><span class="p">)]</span>
+    <span class="n">half</span> <span class="o">=</span> <span class="p">(</span><span class="mi">100</span> <span class="o">-</span> <span class="n">ci</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="n">half</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="mi">100</span> <span class="o">-</span> <span class="n">half</span><span class="p">),</span> <span class="n">reps</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">boot_ci_groups</span><span class="p">(</span><span class="n">groups</span><span class="p">,</span> <span class="n">stat</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="mi">95</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Bootstrap for k independent groups: resample within each group."""</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">groups</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">]</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">B</span><span class="p">):</span>
+        <span class="n">rs</span> <span class="o">=</span> <span class="p">[</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="p">),</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">]</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">stat</span><span class="p">(</span><span class="n">rs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+            <span class="n">reps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">reps</span><span class="p">)</span>
+    <span class="n">half</span> <span class="o">=</span> <span class="p">(</span><span class="mi">100</span> <span class="o">-</span> <span class="n">ci</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="n">half</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="mi">100</span> <span class="o">-</span> <span class="n">half</span><span class="p">),</span> <span class="n">reps</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"mean change            </span><span class="si">{</span><span class="n">change</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">+.2f</span><span class="si">}</span><span class="s2"> mmHg   95% CI [</span><span class="si">{</span><span class="n">lo</span><span class="si">:</span><span class="s2">+.2f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">hi</span><span class="si">:</span><span class="s2">+.2f</span><span class="si">}</span><span class="s2">] mmHg"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"margin of error        +/- </span><span class="si">{</span><span class="p">(</span><span class="n">hi</span><span class="o">-</span><span class="n">lo</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> mmHg</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="n">dz_lo</span><span class="p">,</span> <span class="n">dz_hi</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">boot_ci</span><span class="p">(</span><span class="n">change</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="nb">abs</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span> <span class="o">/</span> <span class="n">s</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Cohen's d_z            </span><span class="si">{</span><span class="n">dz</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">          95% CI [</span><span class="si">{</span><span class="n">dz_lo</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">dz_hi</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">]"</span><span class="p">)</span>
+
+<span class="c1"># The pairing gain rests on the before/after correlation, so give that an interval too.</span>
+<span class="n">r_pair</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="n">before</span><span class="p">,</span> <span class="n">after</span><span class="p">)[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+<span class="n">rp_lo</span><span class="p">,</span> <span class="n">rp_hi</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">boot_ci_pairs</span><span class="p">(</span><span class="n">before</span><span class="p">,</span> <span class="n">after</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"before/after correlation </span><span class="si">{</span><span class="n">r_pair</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">        95% CI [</span><span class="si">{</span><span class="n">rp_lo</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">rp_hi</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">]"</span><span class="p">)</span>
+
+<span class="c1"># A clinically anchored question the p-value cannot answer.</span>
+<span class="n">THRESH</span> <span class="o">=</span> <span class="o">-</span><span class="mf">5.0</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">is the drop at least </span><span class="si">{</span><span class="nb">abs</span><span class="p">(</span><span class="n">THRESH</span><span class="p">)</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> mmHg? the interval runs to </span><span class="si">{</span><span class="n">hi</span><span class="si">:</span><span class="s2">+.2f</span><span class="si">}</span><span class="s2">,"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"so a drop smaller than 5 mmHg is not ruled out by these data."</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>mean change            -7.27 mmHg   95% CI [-9.25, -5.29] mmHg
+margin of error        +/- 1.98 mmHg
+
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Cohen's d_z            0.99          95% CI [0.71, 1.39]
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>before/after correlation 0.85        95% CI [0.78, 0.90]
+
+is the drop at least 5 mmHg? the interval runs to -5.29,
+so a drop smaller than 5 mmHg is not ruled out by these data.
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=067fafab">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p><strong>What the interval changes.</strong> The programme is associated with a fall of about 7.3 mmHg, but the range consistent with the data runs from roughly 5.3 to 9.3. A cardiologist asked whether the drop clears a 5 mmHg clinical threshold gets a straight answer: probably, but the lower end sits right on it. That is a materially different conversation from "p is less than 0.001".</p>
+<p>The before-and-after correlation of 0.85 also carries an interval, and it stays high throughout. That is what justifies the pairing: the design is buying real precision, not getting lucky in this sample.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=58e87b2d">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Step-12-%C2%B7-A-third-variable-that-was-sitting-in-the-file">Step 12 · A third variable that was sitting in the file<a class="anchor-link" href="#Step-12-%C2%B7-A-third-variable-that-was-sitting-in-the-file">¶</a></h2><p>The dataset records each participant's <code>age</code>, which the analysis has ignored. Age is the classic confounder in cardiovascular work, so it is worth asking what it does here.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=68a4251c">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">age</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">age</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+<span class="n">r_ac</span><span class="p">,</span> <span class="n">p_ac</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">pearsonr</span><span class="p">(</span><span class="n">age</span><span class="p">,</span> <span class="n">change</span><span class="p">)</span>
+<span class="n">r_ab</span><span class="p">,</span> <span class="n">p_ab</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">pearsonr</span><span class="p">(</span><span class="n">age</span><span class="p">,</span> <span class="n">before</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"age vs baseline BP      r = </span><span class="si">{</span><span class="n">r_ab</span><span class="si">:</span><span class="s2">+.3f</span><span class="si">}</span><span class="s2">  p = </span><span class="si">{</span><span class="n">p_ab</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"age vs change in BP     r = </span><span class="si">{</span><span class="n">r_ac</span><span class="si">:</span><span class="s2">+.3f</span><span class="si">}</span><span class="s2">  p = </span><span class="si">{</span><span class="n">p_ac</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">older</span> <span class="o">=</span> <span class="n">change</span><span class="p">[</span><span class="n">age</span> <span class="o">&gt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">age</span><span class="p">)];</span> <span class="n">younger</span> <span class="o">=</span> <span class="n">change</span><span class="p">[</span><span class="n">age</span> <span class="o">&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">age</span><span class="p">)]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"older half  (age &gt;= </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">age</span><span class="p">)</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">)  n = </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">older</span><span class="p">)</span><span class="si">:</span><span class="s2">2d</span><span class="si">}</span><span class="s2">   mean change </span><span class="si">{</span><span class="n">older</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">+.2f</span><span class="si">}</span><span class="s2"> mmHg"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"younger half (age &lt;  </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">age</span><span class="p">)</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">)  n = </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">younger</span><span class="p">)</span><span class="si">:</span><span class="s2">2d</span><span class="si">}</span><span class="s2">   mean change </span><span class="si">{</span><span class="n">younger</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">+.2f</span><span class="si">}</span><span class="s2"> mmHg"</span><span class="p">)</span>
+<span class="n">tt_age</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">ttest_ind</span><span class="p">(</span><span class="n">older</span><span class="p">,</span> <span class="n">younger</span><span class="p">,</span> <span class="n">equal_var</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"difference between the two halves: </span><span class="si">{</span><span class="n">older</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">-</span><span class="n">younger</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">+.2f</span><span class="si">}</span><span class="s2"> mmHg, p = </span><span class="si">{</span><span class="n">tt_age</span><span class="o">.</span><span class="n">pvalue</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>age vs baseline BP      r = -0.078  p = 0.572
+age vs change in BP     r = +0.266  p = 0.050
+
+older half  (age &gt;= 59)  n = 29   mean change -4.62 mmHg
+younger half (age &lt;  59)  n = 26   mean change -10.23 mmHg
+difference between the two halves: +5.61 mmHg, p = 0.004
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=6b6920d1">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p><strong>This one did not come back quiet.</strong> Age barely relates to baseline blood pressure here, but it does relate to how much blood pressure moved (r = +0.27, p = 0.05). The sign is easy to misread: change is negative, so a <strong>positive</strong> correlation means older participants dropped <strong>less</strong>. Splitting at the median age makes it plain. The younger half fell by 10.2 mmHg on average and the older half by 4.6, a gap of 5.6 mmHg (p = 0.004), which is comparable in size to the whole programme effect.</p>
+<p><strong>That is effect modification, not confounding, and the distinction matters.</strong> A confounder would mean age produced the apparent drop and the programme did nothing. What we have instead is a programme that appears to work considerably better in younger participants. Nothing here is explained away; the headline is refined.</p>
+<p>Two cautions come with it. First, this subgroup split was chosen after seeing the data, which is the trap Capstone 4 is built around. A median split found by looking is a hypothesis for the next study, not a finding from this one. Second, and more fundamentally, <strong>no covariate you can measure fixes a missing control group.</strong> The explanations that genuinely threaten this design, regression to the mean, placebo, and eight weeks of natural variation, are not columns in the file, and they would produce an age pattern too if older participants started closer to their natural baseline. That is the difference between adjusting for a confounder and having a comparison arm, and it is why the next step leads with the limitation rather than the result.</p>
+</div>
+</div>
+</div>
+</div>
 <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=33445b3a">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Step-11-%C2%B7-Interpret-in-plain-language">Step 11 · Interpret in plain language<a class="anchor-link" href="#Step-11-%C2%B7-Interpret-in-plain-language">¶</a></h2><p>Systolic blood pressure fell by about <strong>7 mmHg</strong> on average over the eight weeks. The paired test says a drop that size is far too large to be chance (p is about one in a billion), and the 95% confidence interval, roughly <strong>5 to 9 mmHg lower</strong>, stays entirely below zero. The effect is large (Cohen's d_z near 1.0). A sustained 5-to-10 mmHg drop in systolic BP is clinically meaningful, it measurably lowers cardiovascular risk, so this is not just a statistical result but a relevant one.</p>
+<h2 id="Step-13-%C2%B7-Interpret-in-plain-language">Step 13 · Interpret in plain language<a class="anchor-link" href="#Step-13-%C2%B7-Interpret-in-plain-language">¶</a></h2><p>Systolic blood pressure fell by about <strong>7 mmHg</strong> on average over the eight weeks. The paired test says a drop that size is far too large to be chance (p is about one in a billion), and the 95% confidence interval, roughly <strong>5 to 9 mmHg lower</strong>, stays entirely below zero. The effect is large (Cohen's d_z near 1.0). A sustained 5-to-10 mmHg drop in systolic BP is clinically meaningful, it measurably lowers cardiovascular risk, so this is not just a statistical result but a relevant one.</p>
 </div>
 </div>
 </div>
@@ -8393,7 +8575,7 @@ pairing removes between-patient variability, so the paired test is far more prec
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Step-12-%C2%B7-The-limit-that-matters-most">Step 12 · The limit that matters most<a class="anchor-link" href="#Step-12-%C2%B7-The-limit-that-matters-most">¶</a></h2><p>Here is the honest catch, and it is the whole reason single-arm before-after studies are treated with caution: <strong>there is no control group.</strong> The test proves blood pressure changed; it cannot prove the program caused the change. Several other explanations fit the same data.</p>
+<h2 id="Step-14-%C2%B7-The-limit-that-matters-most">Step 14 · The limit that matters most<a class="anchor-link" href="#Step-14-%C2%B7-The-limit-that-matters-most">¶</a></h2><p>Here is the honest catch, and it is the whole reason single-arm before-after studies are treated with caution: <strong>there is no control group.</strong> The test proves blood pressure changed; it cannot prove the program caused the change. Several other explanations fit the same data.</p>
 <ul>
 <li><strong>Regression to the mean.</strong> Patients were enrolled because their BP was high. Extreme readings tend to drift back toward average on their own, even with no treatment.</li>
 <li><strong>Natural change, season, and measurement.</strong> Diet, weather, white-coat effect at the first visit, and a more relaxed second visit can all move BP.</li>

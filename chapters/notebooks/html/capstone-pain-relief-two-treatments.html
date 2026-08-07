@@ -8423,13 +8423,196 @@ New         6 of 45 patients (13%) reported almost no relief (0 or 1)
 </div>
 </div>
 </div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=fdd599e1">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Step-11-%C2%B7-Estimate,-do-not-just-test">Step 11 · Estimate, do not just test<a class="anchor-link" href="#Step-11-%C2%B7-Estimate,-do-not-just-test">¶</a></h2><p>The headline effect size, a probability of superiority of 0.75, is a point estimate from 91 patients. It deserves an interval as much as any mean does, and the bootstrap supplies one without needing a formula.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=84c05c3f">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># A percentile bootstrap: resample the data with replacement, recompute, repeat.</span>
+<span class="c1"># Chapter 73 introduced this; it is how we get an interval when no formula exists.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">boot_ci</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">stat</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="mi">95</span><span class="p">):</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">stat</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">B</span><span class="p">)])</span>
+    <span class="n">half</span> <span class="o">=</span> <span class="p">(</span><span class="mi">100</span> <span class="o">-</span> <span class="n">ci</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="n">half</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="mi">100</span> <span class="o">-</span> <span class="n">half</span><span class="p">),</span> <span class="n">reps</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">boot_ci_pairs</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">stat</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="mi">95</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Bootstrap for two paired/related arrays: resample ROW indices together."""</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">stat</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span>
+                     <span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">idx</span><span class="p">),</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">B</span><span class="p">))])</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="n">reps</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">reps</span><span class="p">)]</span>
+    <span class="n">half</span> <span class="o">=</span> <span class="p">(</span><span class="mi">100</span> <span class="o">-</span> <span class="n">ci</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="n">half</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="mi">100</span> <span class="o">-</span> <span class="n">half</span><span class="p">),</span> <span class="n">reps</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">boot_ci_groups</span><span class="p">(</span><span class="n">groups</span><span class="p">,</span> <span class="n">stat</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="mi">95</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Bootstrap for k independent groups: resample within each group."""</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">groups</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">]</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">B</span><span class="p">):</span>
+        <span class="n">rs</span> <span class="o">=</span> <span class="p">[</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="p">),</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">]</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">stat</span><span class="p">(</span><span class="n">rs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+            <span class="n">reps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">reps</span><span class="p">)</span>
+    <span class="n">half</span> <span class="o">=</span> <span class="p">(</span><span class="mi">100</span> <span class="o">-</span> <span class="n">ci</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="n">half</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="mi">100</span> <span class="o">-</span> <span class="n">half</span><span class="p">),</span> <span class="n">reps</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">ps_of</span><span class="p">(</span><span class="n">g</span><span class="p">):</span>
+    <span class="n">nn</span><span class="p">,</span> <span class="n">ss</span> <span class="o">=</span> <span class="n">g</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">g</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">((</span><span class="n">u</span> <span class="o">&gt;</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">nn</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">ss</span><span class="p">);</span> <span class="n">t_</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">((</span><span class="n">u</span> <span class="o">==</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">nn</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">ss</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">w</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">t_</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nn</span><span class="p">)</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">ss</span><span class="p">))</span>
+
+<span class="n">ps_lo</span><span class="p">,</span> <span class="n">ps_hi</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">boot_ci_groups</span><span class="p">([</span><span class="n">N</span><span class="p">,</span> <span class="n">S</span><span class="p">],</span> <span class="n">ps_of</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"probability of superiority </span><span class="si">{</span><span class="n">PS</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">   95% CI [</span><span class="si">{</span><span class="n">ps_lo</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">ps_hi</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">]"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"rank-biserial correlation  </span><span class="si">{</span><span class="n">rrb</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">   95% CI [</span><span class="si">{</span><span class="mi">2</span><span class="o">*</span><span class="n">ps_lo</span><span class="o">-</span><span class="mi">1</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="mi">2</span><span class="o">*</span><span class="n">ps_hi</span><span class="o">-</span><span class="mi">1</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">]"</span><span class="p">)</span>
+
+<span class="n">hl_lo</span><span class="p">,</span> <span class="n">hl_hi</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">boot_ci_groups</span><span class="p">([</span><span class="n">N</span><span class="p">,</span> <span class="n">S</span><span class="p">],</span> <span class="k">lambda</span> <span class="n">g</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">([</span><span class="n">u</span> <span class="o">-</span> <span class="n">v</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">g</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">g</span><span class="p">[</span><span class="mi">1</span><span class="p">]]),</span>
+                                 <span class="n">B</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Hodges-Lehmann shift       </span><span class="si">{</span><span class="n">hl</span><span class="si">:</span><span class="s2">+.1f</span><span class="si">}</span><span class="s2"> pts  95% CI [</span><span class="si">{</span><span class="n">hl_lo</span><span class="si">:</span><span class="s2">+.1f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">hl_hi</span><span class="si">:</span><span class="s2">+.1f</span><span class="si">}</span><span class="s2">]</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">statsmodels.stats.proportion</span><span class="w"> </span><span class="kn">import</span> <span class="n">proportion_confint</span>
+<span class="k">for</span> <span class="n">lab</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="p">[(</span><span class="s2">"Standard"</span><span class="p">,</span> <span class="n">S</span><span class="p">),</span> <span class="p">(</span><span class="s2">"New"</span><span class="p">,</span> <span class="n">N</span><span class="p">)]:</span>
+    <span class="n">k_</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">v</span> <span class="o">&gt;=</span> <span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">());</span> <span class="n">l_</span><span class="p">,</span> <span class="n">h_</span> <span class="o">=</span> <span class="n">proportion_confint</span><span class="p">(</span><span class="n">k_</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">method</span><span class="o">=</span><span class="s2">"wilson"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">lab</span><span class="si">:</span><span class="s2">9s</span><span class="si">}</span><span class="s2"> reaching 4+ points of relief: </span><span class="si">{</span><span class="n">k_</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">k_</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">%  "</span>
+          <span class="sa">f</span><span class="s2">"95% CI [</span><span class="si">{</span><span class="n">l_</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">%, </span><span class="si">{</span><span class="n">h_</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">%]"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>probability of superiority 0.752   95% CI [0.648, 0.845]
+rank-biserial correlation  0.505   95% CI [0.296, 0.690]
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Hodges-Lehmann shift       +2.0 pts  95% CI [+1.0, +4.0]
+
+Standard  reaching 4+ points of relief: 9/46 = 20%  95% CI [11%, 33%]
+New       reaching 4+ points of relief: 28/45 = 62%  95% CI [48%, 75%]
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=f5d75b10">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p><strong>A range for the claim that will be quoted.</strong> The probability of superiority is 0.75 with an interval of roughly 0.65 to 0.84. Even the pessimistic end of that range is a substantial advantage, which is what makes the finding solid, and the honest phrasing for a clinician is "around three times in four, and certainly better than two in three".</p>
+<p>The responder proportions get intervals too, and they are what a formulary committee will actually use. The share of new-treatment patients reaching four or more points of relief is 62 percent, plus or minus roughly 14 points. That width is worth stating: it is a 45-patient arm, and it cannot pin a response rate down to the nearest percent.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=89a9ab12">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Step-12-%C2%B7-Were-the-two-arms-comparable-before-treatment?">Step 12 · Were the two arms comparable before treatment?<a class="anchor-link" href="#Step-12-%C2%B7-Were-the-two-arms-comparable-before-treatment?">¶</a></h2><p>The file records <code>baseline_pain</code> for every patient, which the analysis has not used. In a randomized trial this is the first table of the paper, and for good reason: if one arm started in more pain, the comparison of relief is not clean.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=ccdcb5ea">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">bS</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">treatment</span> <span class="o">==</span> <span class="s2">"Standard"</span><span class="p">]</span><span class="o">.</span><span class="n">baseline_pain</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+<span class="n">bN</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">treatment</span> <span class="o">==</span> <span class="s2">"New"</span><span class="p">]</span><span class="o">.</span><span class="n">baseline_pain</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Standard  baseline pain  mean </span><span class="si">{</span><span class="n">bS</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">   SD </span><span class="si">{</span><span class="n">bS</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">   n = </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">bS</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"New       baseline pain  mean </span><span class="si">{</span><span class="n">bN</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">   SD </span><span class="si">{</span><span class="n">bN</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">   n = </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">bN</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">bal</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">mannwhitneyu</span><span class="p">(</span><span class="n">bN</span><span class="p">,</span> <span class="n">bS</span><span class="p">,</span> <span class="n">alternative</span><span class="o">=</span><span class="s2">"two-sided"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">balance check: Mann-Whitney U = </span><span class="si">{</span><span class="n">bal</span><span class="o">.</span><span class="n">statistic</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">, p = </span><span class="si">{</span><span class="n">bal</span><span class="o">.</span><span class="n">pvalue</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"(a LARGE p is the reassuring result here: no detectable baseline imbalance)</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="n">r_br</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">spearmanr</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">baseline_pain</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">),</span> <span class="n">df</span><span class="o">.</span><span class="n">pain_reduction</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"baseline pain vs relief reported: rho = </span><span class="si">{</span><span class="n">r_br</span><span class="o">.</span><span class="n">statistic</span><span class="si">:</span><span class="s2">+.3f</span><span class="si">}</span><span class="s2">, p = </span><span class="si">{</span><span class="n">r_br</span><span class="o">.</span><span class="n">pvalue</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"if this were strongly positive it would signal regression to the mean:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"patients who start worst have the most room to improve, and drift back regardless of treatment."</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Standard  baseline pain  mean 6.70   SD 1.13   n = 46
+New       baseline pain  mean 7.31   SD 1.00   n = 45
+
+balance check: Mann-Whitney U = 1342.0, p = 0.011
+(a LARGE p is the reassuring result here: no detectable baseline imbalance)
+
+baseline pain vs relief reported: rho = +0.084, p = 0.431
+if this were strongly positive it would signal regression to the mean:
+patients who start worst have the most room to improve, and drift back regardless of treatment.
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=a6b96f07">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p><strong>This check did not pass, and that is worth sitting with.</strong> The new-treatment arm started in more pain than the standard arm, 7.31 against 6.70, and the difference is larger than chance comfortably explains (p = 0.011). Randomization balances groups <strong>in expectation</strong>, not in every particular trial, and with 91 patients a visible imbalance on any given variable is far from rare. This is one.</p>
+<p>The direction is the unhelpful one. Patients who start in more pain have more room to improve, so an arm that begins worse can look better on a change score for reasons that have nothing to do with the drug. That is <strong>regression to the mean</strong>, the same mechanism that haunted the single-arm design in <a href="../chapters/capstone-blood-pressure-before-after.html">Capstone 3</a>, arriving here through the back door of an unlucky allocation.</p>
+<p>Two things stop it from overturning the result. Baseline pain barely relates to reported relief in this trial (rho = 0.08, p = 0.43), so the mechanism that would translate the imbalance into a spurious effect is weak. And the effect itself is large, a probability of superiority of 0.75, which a 0.6-point head start on an 11-point scale is not going to manufacture.</p>
+<p><strong>What it does change is the write-up.</strong> A trial report that quietly omits this table is hiding something a reader would want. The honest version states the imbalance, states why it is unlikely to explain the finding, and pre-specifies a baseline-adjusted analysis for the confirmatory study. Reporting a randomized trial is not the same as reporting that randomization worked.</p>
+</div>
+</div>
+</div>
+</div>
 <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=79dbb811">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Step-11-%C2%B7-Interpret-in-plain-language">Step 11 · Interpret in plain language<a class="anchor-link" href="#Step-11-%C2%B7-Interpret-in-plain-language">¶</a></h2><p>The new analgesic outperforms the standard one. Pairing patients across the two arms at random, the new-treatment patient reports more relief roughly three times in four, and the result is not attributable to chance. The benefit, however, is concentrated: most of it goes to a responder group, while a minority of patients gain little. Any recommendation should carry both halves of that sentence.</p>
+<h2 id="Step-13-%C2%B7-Interpret-in-plain-language">Step 13 · Interpret in plain language<a class="anchor-link" href="#Step-13-%C2%B7-Interpret-in-plain-language">¶</a></h2><p>The new analgesic outperforms the standard one. Pairing patients across the two arms at random, the new-treatment patient reports more relief roughly three times in four, and the result is not attributable to chance. The benefit, however, is concentrated: most of it goes to a responder group, while a minority of patients gain little. Any recommendation should carry both halves of that sentence.</p>
 </div>
 </div>
 </div>
@@ -8440,7 +8623,7 @@ New         6 of 45 patients (13%) reported almost no relief (0 or 1)
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Step-12-%C2%B7-Ethics,-bias,-and-limits">Step 12 · Ethics, bias, and limits<a class="anchor-link" href="#Step-12-%C2%B7-Ethics,-bias,-and-limits">¶</a></h2><ul>
+<h2 id="Step-14-%C2%B7-Ethics,-bias,-and-limits">Step 14 · Ethics, bias, and limits<a class="anchor-link" href="#Step-14-%C2%B7-Ethics,-bias,-and-limits">¶</a></h2><ul>
 <li><strong>The outcome is the patient's word.</strong> Pain relief is self-reported and cannot be otherwise. That is appropriate, since pain is subjective, but it means the measurement carries expectation with it. Without blinding, patients who know they received the new drug may report more relief because they expect more, and this design cannot separate that from a pharmacological effect.</li>
 <li><strong>A responder group is a hypothesis, not a finding.</strong> The two clusters are visible and interesting. Going looking for what distinguishes them, and reporting whatever turns up, is the multiple-comparisons trap from <a href="../chapters/capstone-heart-disease-markers.html">Capstone 4</a> in another costume. Any responder analysis should be pre-specified and confirmed in a fresh trial.</li>
 <li><strong>Relief is not the only outcome that matters.</strong> A drug that helps two thirds of patients substantially may still be the wrong choice if its side-effect profile is worse. This analysis covers one column of a much wider table.</li>

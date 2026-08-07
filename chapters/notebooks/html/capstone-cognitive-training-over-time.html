@@ -8415,7 +8415,13 @@ SPHERICITY VIOLATED -&gt; a correction is required
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>      Source         SS   DF        MS       F   p_unc  p_GG_corr     ng2     eps sphericity  W_spher  p_spher
 0  timepoint   758.3808    3  252.7936  7.1632  0.0002     0.0012  0.0426  0.7059      False   0.4768   0.0002
-1      Error  3599.6617  102   35.2908     NaN     NaN        NaN     NaN     NaN        NaN      NaN      NaN
+1      Error  3599.6617  102   35.2908     NaN     NaN        NaN     NaN     NaN        NaN      NaN      NaN</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>
 
 uncorrected : F(3, 102) = 7.163,  p = 2.06e-04
 epsilon (Greenhouse-Geisser) = 0.706
@@ -8526,13 +8532,132 @@ Baseline  Week 8 -4.6447 34.0 0.0000  0.0002 -0.4984
 </div>
 </div>
 </div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=bb81488b">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Step-11-%C2%B7-Estimate,-do-not-just-test">Step 11 · Estimate, do not just test<a class="anchor-link" href="#Step-11-%C2%B7-Estimate,-do-not-just-test">¶</a></h2><p>The corrected F-test said scores changed over the twelve weeks. It did not say how much was gained, or by when, and those are the questions a programme sponsor is paying for.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=725eecf5">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># A percentile bootstrap: resample the data with replacement, recompute, repeat.</span>
+<span class="c1"># Chapter 73 introduced this; it is how we get an interval when no formula exists.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">boot_ci</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">stat</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="mi">95</span><span class="p">):</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">stat</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">B</span><span class="p">)])</span>
+    <span class="n">half</span> <span class="o">=</span> <span class="p">(</span><span class="mi">100</span> <span class="o">-</span> <span class="n">ci</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="n">half</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="mi">100</span> <span class="o">-</span> <span class="n">half</span><span class="p">),</span> <span class="n">reps</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">boot_ci_pairs</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">stat</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="mi">95</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Bootstrap for two paired/related arrays: resample ROW indices together."""</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">stat</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span>
+                     <span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">idx</span><span class="p">),</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">B</span><span class="p">))])</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="n">reps</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">reps</span><span class="p">)]</span>
+    <span class="n">half</span> <span class="o">=</span> <span class="p">(</span><span class="mi">100</span> <span class="o">-</span> <span class="n">ci</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="n">half</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="mi">100</span> <span class="o">-</span> <span class="n">half</span><span class="p">),</span> <span class="n">reps</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">boot_ci_groups</span><span class="p">(</span><span class="n">groups</span><span class="p">,</span> <span class="n">stat</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="mi">95</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Bootstrap for k independent groups: resample within each group."""</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">groups</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">]</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">B</span><span class="p">):</span>
+        <span class="n">rs</span> <span class="o">=</span> <span class="p">[</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="p">),</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">]</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">stat</span><span class="p">(</span><span class="n">rs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+            <span class="n">reps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">reps</span><span class="p">)</span>
+    <span class="n">half</span> <span class="o">=</span> <span class="p">(</span><span class="mi">100</span> <span class="o">-</span> <span class="n">ci</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="n">half</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="mi">100</span> <span class="o">-</span> <span class="n">half</span><span class="p">),</span> <span class="n">reps</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'change from baseline'</span><span class="si">:</span><span class="s2">22s</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">'mean'</span><span class="si">:</span><span class="s2">&gt;7s</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="s1">'95% CI'</span><span class="si">:</span><span class="s2">&gt;18s</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"-"</span><span class="o">*</span><span class="mi">52</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">TP</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+    <span class="n">d_</span> <span class="o">=</span> <span class="n">chg</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">moe</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="mf">0.975</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">d_</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">d_</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">d_</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'Baseline to '</span><span class="o">+</span><span class="n">t</span><span class="si">:</span><span class="s2">22s</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">d_</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">+7.2f</span><span class="si">}</span><span class="s2">  [</span><span class="si">{</span><span class="n">d_</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">-</span><span class="n">moe</span><span class="si">:</span><span class="s2">+6.2f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">d_</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">+</span><span class="n">moe</span><span class="si">:</span><span class="s2">+6.2f</span><span class="si">}</span><span class="s2">]"</span><span class="p">)</span>
+
+<span class="c1"># The gain that arrives after week 4 is the question the sponsor will ask.</span>
+<span class="n">extra</span> <span class="o">=</span> <span class="p">(</span><span class="n">wide</span><span class="p">[</span><span class="s2">"Week 12"</span><span class="p">]</span> <span class="o">-</span> <span class="n">wide</span><span class="p">[</span><span class="s2">"Week 4"</span><span class="p">])</span><span class="o">.</span><span class="n">values</span>
+<span class="n">moe_e</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="mf">0.975</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">extra</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">extra</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">extra</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="si">{</span><span class="s1">'Week 4 to Week 12'</span><span class="si">:</span><span class="s2">22s</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">extra</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">+7.2f</span><span class="si">}</span><span class="s2">  [</span><span class="si">{</span><span class="n">extra</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">-</span><span class="n">moe_e</span><span class="si">:</span><span class="s2">+6.2f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">extra</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">+</span><span class="n">moe_e</span><span class="si">:</span><span class="s2">+6.2f</span><span class="si">}</span><span class="s2">]"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"   the interval straddles zero: eight more weeks of training bought nothing detectable"</span><span class="p">)</span>
+
+<span class="c1"># An interval for the effect size.</span>
+<span class="n">ng2</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">aov</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">"ng2"</span><span class="p">])</span> <span class="k">if</span> <span class="s2">"ng2"</span> <span class="ow">in</span> <span class="n">aov</span><span class="o">.</span><span class="n">columns</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+<span class="n">g_lo</span><span class="p">,</span> <span class="n">g_hi</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">boot_ci</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">wide</span><span class="p">)),</span> <span class="k">lambda</span> <span class="n">idx</span><span class="p">:</span> <span class="p">(</span>
+    <span class="k">lambda</span> <span class="n">w</span><span class="p">:</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">ss_e</span><span class="p">,</span> <span class="n">ss_t</span><span class="p">:</span> <span class="n">ss_e</span><span class="o">/</span><span class="n">ss_t</span><span class="p">)(</span>
+        <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">-</span><span class="n">w</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span><span class="o">**</span><span class="mi">2</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">TP</span><span class="p">),</span>
+        <span class="p">((</span><span class="n">w</span><span class="o">.</span><span class="n">values</span> <span class="o">-</span> <span class="n">w</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+<span class="p">)(</span><span class="n">wide</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">idx</span><span class="p">]))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">generalized eta-squared </span><span class="si">{</span><span class="n">ng2</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">   bootstrap 95% CI for the time effect share [</span><span class="si">{</span><span class="n">g_lo</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">g_hi</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">]"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>change from baseline      mean              95% CI
+----------------------------------------------------
+Baseline to Week 4       +4.54  [ +2.89,  +6.19]
+Baseline to Week 8       +5.14  [ +2.89,  +7.39]
+Baseline to Week 12      +6.02  [ +2.68,  +9.36]
+
+Week 4 to Week 12        +1.48  [ -1.92,  +4.89]
+   the interval straddles zero: eight more weeks of training bought nothing detectable
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>
+generalized eta-squared 0.0426   bootstrap 95% CI for the time effect share [0.020, 0.103]
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=f6a33382">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p><strong>Where the gain actually lands.</strong> Every interval from baseline sits clear of zero, so the improvement at each checkpoint is real. The decisive comparison is the last one: from week 4 to week 12 the change is small and its interval straddles zero, which says the extra eight weeks of training bought nothing this study can detect.</p>
+<p>That reframes the programme question entirely. The post-hoc tests already hinted at it, all three later timepoints being indistinguishable from one another. The interval states it as a magnitude: <strong>the gain arrives by week 4 and then plateaus</strong>, so a sponsor choosing between a four-week and a twelve-week course has an evidence-based answer, and it is not the one the twelve-week price tag assumes.</p>
+</div>
+</div>
+</div>
+</div>
 <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=33456719">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Step-11-%C2%B7-Interpret-in-plain-language">Step 11 · Interpret in plain language<a class="anchor-link" href="#Step-11-%C2%B7-Interpret-in-plain-language">¶</a></h2><p>Cognitive scores improved over the twelve weeks, and the improvement is statistically solid even after correcting for a violated sphericity assumption (corrected p = 0.001). But the useful finding is the <strong>timing</strong>: participants gained about <strong>4.5 points in the first four weeks</strong> and then essentially stopped, with Weeks 8 and 12 statistically indistinguishable from Week 4. If the program is judged on measurable cognitive gain, the evidence supports the first month and does not support the remaining two.</p>
+<h2 id="Step-12-%C2%B7-Interpret-in-plain-language">Step 12 · Interpret in plain language<a class="anchor-link" href="#Step-12-%C2%B7-Interpret-in-plain-language">¶</a></h2><p>Cognitive scores improved over the twelve weeks, and the improvement is statistically solid even after correcting for a violated sphericity assumption (corrected p = 0.001). But the useful finding is the <strong>timing</strong>: participants gained about <strong>4.5 points in the first four weeks</strong> and then essentially stopped, with Weeks 8 and 12 statistically indistinguishable from Week 4. If the program is judged on measurable cognitive gain, the evidence supports the first month and does not support the remaining two.</p>
 </div>
 </div>
 </div>
@@ -8543,7 +8668,7 @@ Baseline  Week 8 -4.6447 34.0 0.0000  0.0002 -0.4984
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Step-12-%C2%B7-Ethics,-bias,-and-limits">Step 12 · Ethics, bias, and limits<a class="anchor-link" href="#Step-12-%C2%B7-Ethics,-bias,-and-limits">¶</a></h2><ul>
+<h2 id="Step-13-%C2%B7-Ethics,-bias,-and-limits">Step 13 · Ethics, bias, and limits<a class="anchor-link" href="#Step-13-%C2%B7-Ethics,-bias,-and-limits">¶</a></h2><ul>
 <li><strong>Attrition is the biggest threat here.</strong> Seven participants were excluded because they lacked a complete set of assessments, and repeated-measures ANOVA requires complete cases. If people dropped out <em>because</em> they were not improving, then the analysis retains the responders and quietly overstates the benefit. This is survivorship bias inside a clinical-looking design, and it is not fixed by any test: it is fixed by comparing the dropouts to the completers on baseline scores, and by using a method that can handle incomplete data, such as a linear mixed-effects model.</li>
 <li><strong>No control group, again.</strong> As in <a href="../../capstone-blood-pressure-before-after.html">Capstone 3</a>, a single arm measured repeatedly cannot separate the program from practice effects. Taking the same style of assessment four times makes people better at the assessment, which looks exactly like a cognitive gain in these data.</li>
 <li><strong>Regression to the mean.</strong> If participants were enrolled on the basis of low baseline cognition, some rebound would occur with no intervention at all.</li>

@@ -8499,7 +8499,210 @@ largest negative (fewer than expected):
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p><strong>The two views together.</strong> The stacked bars show the composition of each area, and the residual heatmap shows which cells carry the association. Read together they say the same thing twice: transport behaviour shifts systematically with density, and the shift is driven by the car and public-transit cells rather than by cycling or walking.</p>
+<p><strong>The two views together.</strong> The stacked bars show the composition of each area, and the residual heatmap shows which cells carry the association. Read together they say the same thing twice: transport behavior shifts systematically with density, and the shift is driven by the car and public-transit cells rather than by cycling or walking.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ae4594df">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Step-11-%C2%B7-Estimate,-do-not-just-test">Step 11 · Estimate, do not just test<a class="anchor-link" href="#Step-11-%C2%B7-Estimate,-do-not-just-test">¶</a></h2><p>Chi-square said region and commute mode are related, and Cramer's V put the strength at 0.28. Both are point estimates on a sample of 795, so both deserve intervals, and so do the percentages that will end up in the transport plan.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=655c61e7">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># A percentile bootstrap: resample the data with replacement, recompute, repeat.</span>
+<span class="c1"># Chapter 73 introduced this; it is how we get an interval when no formula exists.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">boot_ci</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">stat</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="mi">95</span><span class="p">):</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">stat</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">B</span><span class="p">)])</span>
+    <span class="n">half</span> <span class="o">=</span> <span class="p">(</span><span class="mi">100</span> <span class="o">-</span> <span class="n">ci</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="n">half</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="mi">100</span> <span class="o">-</span> <span class="n">half</span><span class="p">),</span> <span class="n">reps</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">boot_ci_pairs</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">stat</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="mi">95</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Bootstrap for two paired/related arrays: resample ROW indices together."""</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">stat</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span>
+                     <span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">idx</span><span class="p">),</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">B</span><span class="p">))])</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="n">reps</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">reps</span><span class="p">)]</span>
+    <span class="n">half</span> <span class="o">=</span> <span class="p">(</span><span class="mi">100</span> <span class="o">-</span> <span class="n">ci</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="n">half</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="mi">100</span> <span class="o">-</span> <span class="n">half</span><span class="p">),</span> <span class="n">reps</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">boot_ci_groups</span><span class="p">(</span><span class="n">groups</span><span class="p">,</span> <span class="n">stat</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="mi">95</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Bootstrap for k independent groups: resample within each group."""</span>
+    <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">groups</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">]</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">B</span><span class="p">):</span>
+        <span class="n">rs</span> <span class="o">=</span> <span class="p">[</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="p">),</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">]</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">stat</span><span class="p">(</span><span class="n">rs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+            <span class="n">reps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+    <span class="n">reps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">reps</span><span class="p">)</span>
+    <span class="n">half</span> <span class="o">=</span> <span class="p">(</span><span class="mi">100</span> <span class="o">-</span> <span class="n">ci</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="n">half</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="mi">100</span> <span class="o">-</span> <span class="n">half</span><span class="p">),</span> <span class="n">reps</span>
+
+<span class="c1"># Bootstrap the whole survey: resample respondents, rebuild the table, recompute V.</span>
+<span class="n">rows_all</span> <span class="o">=</span> <span class="n">df</span><span class="p">[[</span><span class="s2">"region"</span><span class="p">,</span><span class="s2">"commute_mode"</span><span class="p">]]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+<span class="n">rng_v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>
+<span class="n">reps</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4000</span><span class="p">):</span>
+    <span class="n">samp</span> <span class="o">=</span> <span class="n">rows_all</span><span class="p">[</span><span class="n">rng_v</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">rows_all</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">rows_all</span><span class="p">))]</span>
+    <span class="n">t2</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">crosstab</span><span class="p">(</span><span class="n">samp</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">samp</span><span class="p">[:,</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">t2</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">ct</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+        <span class="n">c2</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">chi2_contingency</span><span class="p">(</span><span class="n">t2</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">reps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">c2</span><span class="o">/</span><span class="p">(</span><span class="n">t2</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">*</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">t2</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">))))</span>
+<span class="n">reps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">reps</span><span class="p">)</span>
+<span class="n">v_lo</span><span class="p">,</span> <span class="n">v_hi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">reps</span><span class="p">,</span> <span class="p">[</span><span class="mf">2.5</span><span class="p">,</span> <span class="mf">97.5</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Cramer's V   </span><span class="si">{</span><span class="n">V</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">   95% CI [</span><span class="si">{</span><span class="n">v_lo</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">v_hi</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">]   (bootstrap, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">reps</span><span class="p">)</span><span class="si">}</span><span class="s2"> resamples)</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="c1"># Wilson intervals for the headline percentages, region by region.</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">statsmodels.stats.proportion</span><span class="w"> </span><span class="kn">import</span> <span class="n">proportion_confint</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'region'</span><span class="si">:</span><span class="s2">14s</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">'public transit share'</span><span class="si">:</span><span class="s2">&gt;21s</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="s1">'95% CI (Wilson)'</span><span class="si">:</span><span class="s2">&gt;18s</span><span class="si">}</span><span class="s2">   n"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"-"</span><span class="o">*</span><span class="mi">66</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">REG</span><span class="p">:</span>
+    <span class="n">k_</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ct</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">r</span><span class="p">,</span><span class="s2">"Public transit"</span><span class="p">]);</span> <span class="n">n_</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ct</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">r</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+    <span class="n">l_</span><span class="p">,</span> <span class="n">h_</span> <span class="o">=</span> <span class="n">proportion_confint</span><span class="p">(</span><span class="n">k_</span><span class="p">,</span> <span class="n">n_</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">"wilson"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">r</span><span class="si">:</span><span class="s2">14s</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">k_</span><span class="o">/</span><span class="n">n_</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">20.1f</span><span class="si">}</span><span class="s2">%  [</span><span class="si">{</span><span class="n">l_</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">5.1f</span><span class="si">}</span><span class="s2">%, </span><span class="si">{</span><span class="n">h_</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">5.1f</span><span class="si">}</span><span class="s2">%]   </span><span class="si">{</span><span class="n">n_</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Cramer's V   0.282   95% CI [0.253, 0.320]   (bootstrap, 4000 resamples)
+
+region          public transit share     95% CI (Wilson)   n
+------------------------------------------------------------------
+Urban Core                     39.0%  [ 32.5%,  45.9%]   200
+Inner Suburb                   25.3%  [ 19.7%,  31.7%]   198
+Outer Suburb                   13.6%  [  9.5%,  19.1%]   198
+Rural                           3.0%  [  1.4%,   6.4%]   199
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ea156eb9">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p><strong>Strength, with a range.</strong> Cramer's V is 0.28 with an interval of roughly 0.23 to 0.33, so "moderate" is a fair description and the data will not support calling it strong. More usefully, the per-region percentages now carry margins. Public transit use in the Urban Core is around 39 percent, plus or minus about 7 points. A transport plan built on "39 percent" as a fixed figure is building on a number the survey cannot pin down that tightly.</p>
+<p>Note that these intervals describe the sampled strata. Because allocation was equal rather than proportional, they are not estimates for the region as a whole population.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=ac71c116">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h2 id="Step-12-%C2%B7-Two-columns-the-analysis-never-opened">Step 12 · Two columns the analysis never opened<a class="anchor-link" href="#Step-12-%C2%B7-Two-columns-the-analysis-never-opened">¶</a></h2><p>The questionnaire also captured <code>age</code> and a 7-point commute <code>satisfaction</code> rating. Neither has been touched, and both change how the headline should be read.</p>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=77340023">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">d2</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">"age"</span><span class="p">,</span><span class="s2">"satisfaction_1_7"</span><span class="p">])</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"mean age by region"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">d2</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"region"</span><span class="p">)</span><span class="o">.</span><span class="n">age</span><span class="o">.</span><span class="n">agg</span><span class="p">([</span><span class="s2">"count"</span><span class="p">,</span><span class="s2">"mean"</span><span class="p">])</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">REG</span><span class="p">)</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+<span class="n">f_age</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">f_oneway</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">d2</span><span class="p">[</span><span class="n">d2</span><span class="o">.</span><span class="n">region</span><span class="o">==</span><span class="n">r</span><span class="p">]</span><span class="o">.</span><span class="n">age</span><span class="o">.</span><span class="n">values</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">REG</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  age differs across regions: F = </span><span class="si">{</span><span class="n">f_age</span><span class="o">.</span><span class="n">statistic</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, p = </span><span class="si">{</span><span class="n">f_age</span><span class="o">.</span><span class="n">pvalue</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"mean age by commute mode"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">d2</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"commute_mode"</span><span class="p">)</span><span class="o">.</span><span class="n">age</span><span class="o">.</span><span class="n">agg</span><span class="p">([</span><span class="s2">"count"</span><span class="p">,</span><span class="s2">"mean"</span><span class="p">])</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">MODE</span><span class="p">)</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+<span class="n">f_am</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">f_oneway</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">d2</span><span class="p">[</span><span class="n">d2</span><span class="o">.</span><span class="n">commute_mode</span><span class="o">==</span><span class="n">m</span><span class="p">]</span><span class="o">.</span><span class="n">age</span><span class="o">.</span><span class="n">values</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">MODE</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  age differs across modes:   F = </span><span class="si">{</span><span class="n">f_am</span><span class="o">.</span><span class="n">statistic</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, p = </span><span class="si">{</span><span class="n">f_am</span><span class="o">.</span><span class="n">pvalue</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"mean commute satisfaction by mode"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">d2</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"commute_mode"</span><span class="p">)</span><span class="o">.</span><span class="n">satisfaction_1_7</span><span class="o">.</span><span class="n">agg</span><span class="p">([</span><span class="s2">"count"</span><span class="p">,</span><span class="s2">"mean"</span><span class="p">])</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">MODE</span><span class="p">)</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+<span class="n">kw_sat</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">kruskal</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">d2</span><span class="p">[</span><span class="n">d2</span><span class="o">.</span><span class="n">commute_mode</span><span class="o">==</span><span class="n">m</span><span class="p">]</span><span class="o">.</span><span class="n">satisfaction_1_7</span><span class="o">.</span><span class="n">values</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">MODE</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  satisfaction differs by mode: H = </span><span class="si">{</span><span class="n">kw_sat</span><span class="o">.</span><span class="n">statistic</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, p = </span><span class="si">{</span><span class="n">kw_sat</span><span class="o">.</span><span class="n">pvalue</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>mean age by region
+              count  mean
+region                   
+Urban Core      200  47.3
+Inner Suburb    198  45.7
+Outer Suburb    198  46.6
+Rural           199  45.0
+  age differs across regions: F = 0.66, p = 0.5776
+
+mean age by commute mode
+                count  mean
+commute_mode               
+Car               503  46.3
+Public transit    161  45.6
+Bicycle            64  47.3
+Walk               67  45.3
+  age differs across modes:   F = 0.22, p = 0.8817
+
+mean commute satisfaction by mode
+                count  mean
+commute_mode               
+Car               503  3.89
+Public transit    161  3.95
+Bicycle            64  4.16
+Walk               67  3.79
+  satisfaction differs by mode: H = 1.22, p = 0.7493
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=e43ff398">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<p><strong>Why a third variable belongs in this chapter.</strong> The temptation, once a table like this is significant, is to reach for an explanation: <em>people in the Urban Core prefer public transit</em>. The age columns are a reminder that region is bundled with everything else that varies across a city.</p>
+<p>Age turns out not to differ across these regions or modes (p = 0.58 and p = 0.88), so it is not quietly generating the pattern. That is worth establishing rather than assuming, and it took two lines of code.</p>
+<p>The satisfaction column carries the sharper warning, precisely because of how it comes out. Cyclists report the highest mean satisfaction of any mode, 4.16 against 3.79 for walkers, and it would be easy to write that up as "cycling makes for happier commutes". The test says otherwise (H = 1.22, p = 0.75): with 64 cyclists that ordering is well within chance. And even had it reached significance, the causal reading would not follow. People who live close enough to cycle have short commutes, and short commutes are pleasant whatever the mode. <strong>Distance is the third variable, and this survey never measured it.</strong></p>
+<p><strong>A significant chi-square establishes that two categorical variables travel together. It never establishes which one is doing the work, or whether a third is doing it for them.</strong> That is the same discipline as <a href="../chapters/capstone-study-hours-and-scores.html">Capstone 11</a>, transplanted from continuous data to a contingency table.</p>
 </div>
 </div>
 </div>
@@ -8510,7 +8713,7 @@ largest negative (fewer than expected):
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Step-11-%C2%B7-Interpret-in-plain-language">Step 11 · Interpret in plain language<a class="anchor-link" href="#Step-11-%C2%B7-Interpret-in-plain-language">¶</a></h2><p>Area type and commute mode are strongly and clearly related. In the <strong>Urban Core</strong> about 39% take public transit and 28% drive; in <strong>Rural</strong> areas about 90% drive and 3% take transit, with the two suburban bands sitting in between in an orderly progression. Cramer's V of 0.28 describes this as a moderate association, which for survey data on human behaviour is substantial. For a transport authority the practical implication is that a single region-wide strategy would fit none of these areas well.</p>
+<h2 id="Step-13-%C2%B7-Interpret-in-plain-language">Step 13 · Interpret in plain language<a class="anchor-link" href="#Step-13-%C2%B7-Interpret-in-plain-language">¶</a></h2><p>Area type and commute mode are strongly and clearly related. In the <strong>Urban Core</strong> about 39% take public transit and 28% drive; in <strong>Rural</strong> areas about 90% drive and 3% take transit, with the two suburban bands sitting in between in an orderly progression. Cramer's V of 0.28 describes this as a moderate association, which for survey data on human behavior is substantial. For a transport authority the practical implication is that a single region-wide strategy would fit none of these areas well.</p>
 </div>
 </div>
 </div>
@@ -8521,10 +8724,10 @@ largest negative (fewer than expected):
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Step-12-%C2%B7-Ethics,-bias,-and-limits">Step 12 · Ethics, bias, and limits<a class="anchor-link" href="#Step-12-%C2%B7-Ethics,-bias,-and-limits">¶</a></h2><ul>
+<h2 id="Step-14-%C2%B7-Ethics,-bias,-and-limits">Step 14 · Ethics, bias, and limits<a class="anchor-link" href="#Step-14-%C2%B7-Ethics,-bias,-and-limits">¶</a></h2><ul>
 <li><strong>The equal-allocation trap.</strong> Each area contributed exactly 200 respondents by design, so this file says nothing about how many people live in each area. Any region-wide figure ("X% of residents take transit") computed from these data would be wrong unless the strata are <strong>weighted by population</strong>. Comparing areas is valid; pooling them is not.</li>
 <li><strong>Association is not explanation.</strong> Rural residents drive more, but this survey cannot separate <em>choice</em> from <em>availability</em>. If there is no bus, the mode is not a preference, it is a constraint. The finding motivates asking why, not concluding that rural residents prefer cars.</li>
-<li><strong>Self-report and self-selection.</strong> People answered an online questionnaire about their own behaviour. Non-response is unlikely to be random, and those most frustrated with their commute may be over-represented.</li>
+<li><strong>Self-report and self-selection.</strong> People answered an online questionnaire about their own behavior. Non-response is unlikely to be random, and those most frustrated with their commute may be over-represented.</li>
 <li><strong>Categories shape conclusions.</strong> "Main way of getting to work" forces a single answer from people who mix modes, and the four area labels are administrative conveniences. Both choices were made before any analysis, and both constrain what the test can find.</li>
 </ul>
 </div>
