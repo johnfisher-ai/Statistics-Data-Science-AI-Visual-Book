@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Net-Weight Conformance (Technical Report) &#183; Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/report.css">
+  <style>
+    body.report { --rpt-accent:#b45309; --rpt-accent-dark:#78350f; --rpt-accent-bg:#fffbeb; --rpt-accent-line:#fde68a; }
+  </style>
+</head>
+<body class="report">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="../chapters/capstone-coffee-fill-weight.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">&#8592; Chapter 160</a>
+  </div>
+</nav>
+
+<div class="rpt-sticky" id="rptSticky">
+  <div class="inner">
+    <div class="st-title">Assessing Conformance of Packaged Coffee Net Weight to a Labeled Target</div>
+    <a class="st-back" href="../chapters/capstone-coffee-fill-weight.html">&#8592; Chapter 160</a>
+  </div>
+</div>
+
+<div class="rpt-wrap">
+  <article class="rpt-paper tech">
+    <header class="rpt-head">
+      <div class="rpt-topline">
+        <div class="rpt-kicker">Capstone 1 &#183; Technical Report</div>
+        <span class="rpt-badge tech">Technical Report</span>
+      </div>
+      <h1>Assessing Conformance of Packaged Coffee Net Weight to a Labeled Target</h1>
+      <p class="rpt-sub">A one-sample analysis with distribution-free sensitivity checking.</p>
+      <div class="rpt-meta"><div><b>Author</b> &nbsp;John Fisher</div><div><b>Series</b> &nbsp;Statistics, Data Science and AI: A Visual Handbook</div><div><b>Design</b> &nbsp;One-sample, two-sided, &#945; = 0.05</div></div>
+    </header>
+
+    <div class="rpt-prov">
+      <span class="pv-tag">Where this comes from</span>
+      <div class="pv-row"><div><span>Chapter</span> <a href="../chapters/capstone-coffee-fill-weight.html">Chapter 160 &#183; One-Sample t-Test: Coffee Fill Weight</a></div><div><span>Part</span> Part XXVII &#183; Capstone Projects: Statistical Testing</div><div><span>Dataset</span> <a href="../data/capstone-coffee-fill-weight.xlsx">capstone-coffee-fill-weight.xlsx</a></div><div><span>Notebook</span> <a href="../chapters/notebooks/html/capstone-coffee-fill-weight.html" target="_blank" rel="noopener">View the analysis</a></div></div>
+    </div>
+
+    <div class="rpt-body">
+      <div class="rpt-abstract"><b class="lbl">Abstract.</b> <b>Objective.</b> To determine whether the mean net fill weight of packaged whole-bean coffee conforms to its labeled target of 340 g. <b>Methods.</b> A quality-control sample of bags was drawn from one production day; after removing duplicate records, missing readings, and physically impossible values, n = 70 bags remained. Normality was assessed by the Shapiro-Wilk and Kolmogorov-Smirnov tests and a normal quantile-quantile plot; conformance was tested with a two-sided one-sample t-test against 340 g, with the Wilcoxon signed-rank test as a distribution-free sensitivity check. Effect size (Cohen's d) and a 95% confidence interval for the mean were reported. <b>Results.</b> The mean fill weight was 341.23 g (SD 2.10); the data were consistent with normality (Shapiro-Wilk W = 0.973, p = 0.142). The mean exceeded the target by 1.23 g, t(69) = 4.88, p &lt; 0.001, 95% CI [340.73, 341.73] g, Cohen's d = 0.58; the Wilcoxon test concurred (p &lt; 0.001). <b>Conclusions.</b> The line exhibits a small but statistically unambiguous positive bias of approximately 1.2 g per unit. Every unit remains above the declared weight, so no under-declaration occurs, but the systematic give-away is economically non-trivial at scale. A downward recalibration of the target to roughly 340.5 g is recommended.</div>
+      <p class="rpt-keywords"><b>Keywords:</b> one-sample t-test; net-content conformance; effect size; process bias; quality control.</p>
+      <h2>1. Introduction</h2>
+      <p>Pre-packaged commodities are sold against a declared net quantity, and producers must balance two competing risks: under-filling, which shorts the customer and violates net-content regulation, and over-filling, which gives away product and margin. For a nominal 340 g (12 oz) coffee bag, the operational question is whether the filling process is centered on its target. This report analyzes a single-day quality-control sample to test that conformance and to quantify the direction and magnitude of any departure.</p>
+      <p>The formal hypotheses for the mean net weight &#956; are H&#8320;: &#956; = 340 g versus H&#8321;: &#956; &#8800; 340 g, evaluated two-sided at &#945; = 0.05. A two-sided formulation is deliberate: a process running light and a process running heavy carry different but both material consequences, and the analysis should be able to detect either.</p>
+      <h2>2. Data</h2>
+      <p>The dataset comprises 78 quality-control records for individual bags pulled across one production day, each with a measured net weight and contextual fields (line, shift). The export was deliberately raw and required cleaning prior to analysis. Table 1 documents the variables; Table 2 records the cleaning provenance.</p>
+      <div class="rpt-cap"><span class="n">Table 1.</span> Variable definitions.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Variable</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><span class='nm'>bag_id</span></td><td>identifier</td><td>One QC-sampled bag.</td></tr><tr><td><span class='nm'>line</span></td><td>nominal</td><td>Filling line of origin.</td></tr><tr><td><span class='nm'>shift</span></td><td>nominal</td><td>Production shift sampled.</td></tr><tr><td><span class='nm'>fill_g</span></td><td>continuous</td><td>Measured net weight (g); declared target 340 g.</td></tr></tbody></table></div>
+      <div class="rpt-cap"><span class="n">Table 2.</span> Data-cleaning provenance. Removed out-of-range values were {0, 34.1, 3410} g, each physically implausible for a 340 g unit.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Step</th><th>Rule</th><th>Removed</th><th>Remaining</th></tr></thead><tbody><tr><td><span class='nm'>Raw export</span></td><td>&#8212;</td><td>&#8212;</td><td>78</td></tr><tr><td><span class='nm'>De-duplication</span></td><td>drop exact duplicate rows</td><td>2</td><td>76</td></tr><tr><td><span class='nm'>Missing readings</span></td><td>drop blank fill_g</td><td>3</td><td>73</td></tr><tr><td><span class='nm'>Range filter</span></td><td>retain 300 &lt; fill_g &lt; 380 g</td><td>3</td><td>70</td></tr></tbody></table></div>
+      <h2>3. Methods</h2>
+      <p>The design is a single sample of independent measurements compared against a fixed reference value, for which the one-sample t-test is the standard parametric procedure. Its validity rests on approximate normality of the sampled values (or, asymptotically, on the Central Limit Theorem). Normality was assessed jointly by the Shapiro-Wilk test, the one-sample Kolmogorov-Smirnov test against a fitted normal, and a normal quantile-quantile plot, with the graphical diagnostic weighted at least as heavily as the formal tests. As a distribution-free sensitivity analysis, the Wilcoxon signed-rank test was applied to the deviations from target.</p>
+      <p>Effect size was quantified by Cohen's d = (x&#772; &#8722; 340)/s, and precision by a 95% confidence interval for the mean. Achieved power at the observed effect size was computed for context. Analyses were conducted in Python 3 using SciPy (t-test, Shapiro-Wilk, Kolmogorov-Smirnov, Wilcoxon) and statsmodels (power); figures were produced in Matplotlib. The dataset and a fully executable notebook accompany this report.</p>
+      <h2>4. Results</h2>
+      <p>After cleaning, n = 70 bags were analyzed. Descriptive statistics appear in Table 3. The sample mean of 341.23 g lies 1.23 g above the 340 g target, with a standard deviation of 2.10 g.</p>
+      <div class="rpt-cap"><span class="n">Table 3.</span> Descriptive statistics for cleaned net-weight measurements.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Statistic</th><th>Value</th></tr></thead><tbody><tr><td><span class='nm'>n</span></td><td>70</td></tr><tr><td><span class='nm'>Mean (g)</span></td><td>341.229</td></tr><tr><td><span class='nm'>SD (g)</span></td><td>2.105</td></tr><tr><td><span class='nm'>SE of mean (g)</span></td><td>0.252</td></tr><tr><td><span class='nm'>Minimum (g)</span></td><td>334.3</td></tr><tr><td><span class='nm'>Median (g)</span></td><td>341.4</td></tr><tr><td><span class='nm'>Maximum (g)</span></td><td>346.6</td></tr><tr><td><span class='nm'>Skewness</span></td><td>-0.58</td></tr><tr><td><span class='nm'>Excess kurtosis</span></td><td>1.01</td></tr></tbody></table></div>
+      <p>Distributional diagnostics (Table 4, Figure 1) are consistent with normality: neither formal test rejects, and the quantile-quantile points adhere closely to the reference line. The one-sample t-test is therefore appropriate.</p>
+      <div class="rpt-cap"><span class="n">Table 4.</span> Normality diagnostics.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Diagnostic</th><th>Statistic</th><th>p-value</th><th>Interpretation</th></tr></thead><tbody><tr><td><span class='nm'>Shapiro-Wilk</span></td><td>W = 0.973</td><td>0.142</td><td>fail to reject normality</td></tr><tr><td><span class='nm'>Kolmogorov-Smirnov</span></td><td>D = 0.080</td><td>0.735</td><td>fail to reject normality</td></tr><tr><td><span class='nm'>Skewness / kurtosis</span></td><td>-0.58 / 1.01</td><td>&#8212;</td><td>mild, unremarkable</td></tr></tbody></table></div>
+      <figure class="rpt-fig"><img src="../assets/img/capstone-coffee-normality.png" alt="A histogram of cleaned net weights with a fitted normal curve and the 340 gram target line, beside a normal quantile-quantile plot whose points follow the diagonal reference line."><figcaption><span class="n">Figure 1.</span> Left: cleaned net weights with a fitted normal density and the 340 g target. Right: normal Q-Q plot; the points track the reference line, supporting approximate normality.</figcaption></figure>
+      <p>The primary test (Table 5, Figure 2) rejects the null decisively: t(69) = 4.884, p = 6.47e-06. The 95% confidence interval for the mean, [340.73, 341.73] g, excludes the target, and Cohen's d = 0.58 indicates a medium standardized effect. The Wilcoxon signed-rank test agrees (W = 404.5, p = 7.50e-06), confirming the result does not depend on the normality assumption. Achieved power at the observed effect exceeds 1.00.</p>
+      <div class="rpt-cap"><span class="n">Table 5.</span> Primary and sensitivity test results for H&#8320;: &#956; = 340 g.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Test</th><th>Statistic</th><th>df</th><th>p-value</th><th>Effect / interval</th></tr></thead><tbody><tr><td><span class='nm'>One-sample t (two-sided)</span></td><td>t = 4.884</td><td>69</td><td>6.47e-06</td><td>d = 0.58; 95% CI [340.73, 341.73] g</td></tr><tr><td><span class='nm'>Wilcoxon signed-rank</span></td><td>W = 404.5</td><td>&#8212;</td><td>7.50e-06</td><td>distribution-free confirmation</td></tr></tbody></table></div>
+      <figure class="rpt-fig"><img src="../assets/img/capstone-coffee-result.png" alt="Histogram of cleaned fill weights with a dashed red target line at 340 grams, a solid mean line at 341.2 grams, and a shaded gold confidence interval band entirely to the right of the target."><figcaption><span class="n">Figure 2.</span> Cleaned net weights with the sample mean and its 95% confidence interval (shaded) relative to the 340 g target (dashed). The interval lies entirely above target.</figcaption></figure>
+      <p><strong>Practical magnitude.</strong> The estimated positive bias of 1.23 g per bag is about 0.4% of the declared weight. Although negligible per unit, over a production run of one million bags it corresponds to approximately 1,229 kg of coffee dispensed beyond the declared quantity.</p>
+      <h2>5. Discussion</h2>
+      <p>The filling process is centered above its target by a small, statistically unambiguous margin. The distinction between statistical and practical significance is instructive here: the effect is both significant (p &lt; 0.001) and, aggregated across volume, economically meaningful, yet it is immaterial for any single unit and never results in under-declaration. Reporting the confidence interval alongside the p-value is essential, since it localizes the bias to roughly 0.7 to 1.7 g above target rather than merely asserting non-conformance.</p>
+      <p>Several limitations qualify the inference. First, the sample derives from a single production day and two lines; if QC sampling is preferentially timed (for example, shortly after calibration), the estimate may understate the operating bias, and a claim about the process as a whole requires sampling that spans machine states and days. Second, the analysis is only as reliable as the weighing instrument; a scale with a positive offset would manufacture an apparent bias, so metrological traceability to a certified mass is a precondition for action. Third, the result characterizes central tendency and says nothing about the tails, which govern the probability of individual under-fills under a shifted target.</p>
+      <p><strong>Recommendation.</strong> Given the asymmetric costs, a conservative adjustment of the fill target toward approximately 340.5 g would recover most of the systematic give-away while retaining a comfortable margin above the declared weight. Targeting 340 g exactly is inadvisable, as it would place roughly half of future units below the label, contravening net-content requirements.</p>
+      <h2>6. Conclusion</h2>
+      <p>Mean net fill weight significantly exceeds the 340 g target by about 1.2 g (t(69) = 4.88, p &lt; 0.001, 95% CI [340.73, 341.73] g, d = 0.58), a finding robust to a distribution-free check. The bias is one-directional and consumer-safe but economically material at scale, motivating a modest downward recalibration.</p>
+      <h2>References</h2>
+      <ul class="rpt-refs"><li>Student (1908). The probable error of a mean. <em>Biometrika</em>, 6(1), 1&#8211;25.</li><li>Shapiro, S. S., &amp; Wilk, M. B. (1965). An analysis of variance test for normality (complete samples). <em>Biometrika</em>, 52(3&#8211;4), 591&#8211;611.</li><li>Wilcoxon, F. (1945). Individual comparisons by ranking methods. <em>Biometrics Bulletin</em>, 1(6), 80&#8211;83.</li><li>Cohen, J. (1988). <em>Statistical Power Analysis for the Behavioral Sciences</em> (2nd ed.). Lawrence Erlbaum.</li><li>NIST (2023). <em>Handbook 133: Checking the Net Contents of Packaged Goods</em>. National Institute of Standards and Technology.</li></ul>
+      <h2>Reproducibility</h2>
+      <p>The dataset (<code>capstone-coffee-fill-weight.xlsx</code>) and a fully executable notebook that regenerates every statistic, table, and figure in this report are distributed with the chapter. All analyses use open-source Python libraries (NumPy, pandas, SciPy, statsmodels, Matplotlib).</p>
+    </div>
+
+    <div class="rpt-foot"><a class="primary" href="../chapters/capstone-coffee-fill-weight.html">&#8592; Back to Chapter 160</a><a href="../chapters/notebooks/html/capstone-coffee-fill-weight.html" target="_blank" rel="noopener">&#128211; Companion notebook</a><a class="xls" href="../data/capstone-coffee-fill-weight.xlsx">&#128202; Download dataset</a></div>
+    <div class="rpt-colophon">
+      From <strong>Statistics, Data Science and AI: A Visual Handbook</strong> by John Fisher.
+      Every statistic, table, and figure in this report is reproduced by the companion notebook.
+    </div>
+  </article>
+</div>
+
+<script>
+(function(){
+  var bar=document.getElementById('rptSticky');
+  window.addEventListener('scroll',function(){
+    if(window.scrollY>320) bar.classList.add('on'); else bar.classList.remove('on');
+  });
+})();
+</script>
+</body>
+</html>
