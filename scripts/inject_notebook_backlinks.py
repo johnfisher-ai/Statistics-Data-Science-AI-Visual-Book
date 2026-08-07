@@ -630,6 +630,8 @@ MAP = {
         ("../../capstone-blood-pressure-before-after.html#notebook", "Back to the book", "Chapter 162 · Paired t-Test: Blood Pressure Before &amp; After"),
     "capstone-heart-disease-markers.html":
         ("../../capstone-heart-disease-markers.html#notebook", "Back to the book", "Chapter 163 · Multiple Comparisons: Screening Heart-Disease Markers"),
+    "capstone-teaching-methods-exam-scores.html":
+        ("../../capstone-teaching-methods-exam-scores.html#notebook", "Back to the book", "Chapter 164 · One-Way ANOVA: Three Teaching Methods"),
 }
 
 def card(href, kicker, title):

@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 164 · One-Way ANOVA: Three Teaching Methods — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .pass { color:#15803d; font-weight:700; }
+    .disp-table .no { color:#94a3b8; }
+    .disp-table tr.hi td { background:#fffbeb; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .goldbox { background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #b45309; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .goldbox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .rw-card { background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #b45309; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file.doc { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #b45309; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/capstone-teaching-methods-exam-scores.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXVII &#183; Capstone Projects: Statistical Testing</span><span class="sep">/</span>
+      <span>Chapter 164</span>
+    </div>
+    <h1>Do Three Teaching <span class="accent">Methods Differ?</span></h1>
+    <p class="dek">Capstone 5. A department taught one course three ways and compared final exam scores. With three groups the
+       answer comes in two parts: ANOVA says whether any method differs at all, and a post-hoc test says which. Along the way,
+       the reason we do not simply run three t-tests.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~17 min</b>&nbsp;read</div>
+      <div class="m">🧪 <b>One-way ANOVA</b></div>
+      <div class="m">📊 <b>Chapter 164</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Every capstone so far compared at most two things. Real questions often involve <span class="hl">three or
+       more</span>: three treatments, four store locations, five suppliers. You cannot answer those by running every pair
+       through a t-test, because the false alarms pile up. Analysis of variance answers the whole question in one controlled
+       test, and then hands off to a post-hoc procedure for the detail.</p>
+
+    <div class="def-card">
+      <div class="sigma">F</div>
+      <div class="def-body">
+        <span class="def-kw">One-way ANOVA</span> tests whether three or more <span class="def-kw">independent groups</span>
+        share a common mean. It compares the variation <span class="def-kw">between</span> group means against the variation
+        <span class="def-kw">within</span> groups; their ratio is the <span class="def-kw">F statistic</span>. A significant
+        F says "at least one group differs", so it is followed by a <span class="def-kw">post-hoc</span> test such as
+        <span class="def-kw">Tukey's HSD</span>.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🎓</div>
+      <div><div class="ctitle">The finding, up front</div>
+        <p>Method matters, but not evenly. <strong>F(2, 127) = 11.07, p &lt; 0.001</strong>, so the three methods are not all
+           the same. Tukey then locates the difference: <strong>Flipped</strong> outscores both others by about
+           <strong>8 points</strong>, while <strong>Lecture and Blended are indistinguishable</strong> (0.4 points apart,
+           p = 0.98). Method explains about <strong>15%</strong> of the variation in scores.</p></div>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section id="question">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Question, the Hypotheses, the Design</h2></div>
+    <p>The same course was taught three ways across different sections: a traditional <strong>Lecture</strong> format, a
+       <strong>Blended</strong> format mixing lecture with online work, and a <strong>Flipped</strong> format where students
+       prepare before class and use class time for problems. Each student's final exam score was recorded.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Framework step</th><th>This project</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Goal</td><td>Decide whether mean exam score differs across the three teaching methods, and if so, which differ.</td></tr>
+          <tr><td class="nm">Hypotheses</td><td>H&#8320;: all three means are equal&nbsp;&nbsp;vs&nbsp;&nbsp;H&#8321;: at least one differs. &#945; = 0.05.</td></tr>
+          <tr><td class="nm">Data type</td><td>Continuous outcome (<code>exam_score</code>) across a three-level nominal factor (<code>method</code>).</td></tr>
+          <tr><td class="nm">Design</td><td>Three <strong>independent</strong> groups of students. One factor, so a <strong>one-way</strong> design.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Read H&#8321; carefully, because it is weaker than it looks: it claims only that <em>at least one</em> method differs.
+       It does not say which, and it does not say all three do. That gap between what ANOVA proves and what we actually want
+       to know is what the post-hoc test fills.</p>
+  </section>
+
+  <!-- 2 -->
+  <section id="clean">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Meet the Data, Then Clean It</h2></div>
+    <p>The export holds 137 rows for 135 students, and the method label arrived typed six different ways
+       (<code>Flipped</code>, <code>flipped</code>, <code>Flipped&nbsp;</code> and so on), which a computer would read as six
+       separate groups. So the first fix is to <strong>standardize the label</strong>, then drop <strong>duplicate rows</strong>,
+       <strong>missing scores</strong>, and <strong>impossible scores</strong> (an exam score has to fall between 0 and 100,
+       which rules out a 127 and a &#8722;5). That leaves <strong>130</strong> clean scores across three groups.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-teach-explore.png" alt="A boxplot of final exam score for each of the three teaching methods, with individual student scores plotted as dots beside each box. The Lecture and Blended boxes sit at nearly the same height, while the Flipped box is clearly higher.">
+      <figcaption>The picture before any test. <strong>Lecture and Blended sit at almost the same height</strong>; the <strong>Flipped</strong> box is clearly lifted above both. This already hints that a significant ANOVA will not mean all three methods differ.</figcaption>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Method</th><th>n</th><th>Mean score</th><th>SD</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Lecture</td><td>45</td><td>73.16</td><td>8.85</td></tr>
+          <tr><td class="nm">Blended</td><td>43</td><td>73.53</td><td>9.06</td></tr>
+          <tr class="hi"><td class="nm">Flipped</td><td>42</td><td>81.10</td><td>8.45</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section id="whyanova">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Why Not Just Run Three t-Tests?</h2></div>
+    <p>With three groups the tempting shortcut is three two-sample t-tests: Lecture vs Blended, Lecture vs Flipped, Blended vs
+       Flipped. The reason we do not is the problem from <a href="capstone-heart-disease-markers.html">Capstone 4</a>. Each
+       test carries its own 5% false-positive risk, so running three pushes the chance of at least one false alarm to about
+       <strong>14%</strong>. ANOVA asks the question <strong>once</strong>, at a controlled 5%.</p>
+
+    <p>What ANOVA actually compares is two kinds of variation. If the methods are all the same, the group means should scatter
+       no more than you would expect from the ordinary spread of students within each group. The <strong>F statistic</strong>
+       is precisely that ratio, and a large F means the groups are further apart than within-group noise can explain.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.1rem">
+      <svg viewBox="0 0 700 210" width="100%" font-family="Inter, sans-serif" aria-label="A diagram of how the F statistic partitions variation. On the left, between-group variation: the three group means spread away from the overall grand mean. On the right, within-group variation: individual students scatter around their own group mean. The F statistic is the ratio of between-group variation to within-group variation, and a large ratio means the groups are further apart than ordinary within-group noise can explain.">
+        <text x="350" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">F compares two kinds of variation</text>
+
+        <!-- between -->
+        <rect x="18" y="36" width="300" height="126" rx="11" fill="#fffbeb" stroke="#fde68a"/>
+        <text x="168" y="54" text-anchor="middle" font-size="9.5" fill="#92400e" font-weight="800">BETWEEN GROUPS</text>
+        <line x1="46" y1="118" x2="292" y2="118" stroke="#cbd5e1" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <text x="300" y="115" font-size="7.5" fill="#94a3b8" text-anchor="end">grand mean</text>
+        <circle cx="96" cy="128" r="7" fill="#94a3b8"/><text x="96" y="150" text-anchor="middle" font-size="8" fill="#475569">Lecture</text>
+        <circle cx="168" cy="126" r="7" fill="#2563eb"/><text x="168" y="150" text-anchor="middle" font-size="8" fill="#475569">Blended</text>
+        <circle cx="248" cy="86" r="7" fill="#b45309"/><text x="248" y="150" text-anchor="middle" font-size="8" fill="#475569">Flipped</text>
+        <line x1="248" y1="93" x2="248" y2="115" stroke="#b45309" stroke-width="1.6"/>
+        <text x="168" y="76" text-anchor="middle" font-size="8" fill="#92400e" font-style="italic">how far the group means sit from the grand mean</text>
+
+        <!-- within -->
+        <rect x="336" y="36" width="300" height="126" rx="11" fill="#fffdf7" stroke="#fde68a"/>
+        <text x="486" y="54" text-anchor="middle" font-size="9.5" fill="#92400e" font-weight="800">WITHIN GROUPS</text>
+        <line x1="380" y1="112" x2="592" y2="112" stroke="#cbd5e1" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <g fill="#94a3b8" opacity="0.85">
+          <circle cx="392" cy="96" r="3"/><circle cx="408" cy="120" r="3"/><circle cx="404" cy="106" r="3"/><circle cx="420" cy="130" r="3"/><circle cx="396" cy="118" r="3"/>
+        </g>
+        <g fill="#2563eb" opacity="0.85">
+          <circle cx="470" cy="92" r="3"/><circle cx="484" cy="124" r="3"/><circle cx="478" cy="108" r="3"/><circle cx="492" cy="100" r="3"/><circle cx="464" cy="128" r="3"/>
+        </g>
+        <g fill="#b45309" opacity="0.85">
+          <circle cx="552" cy="90" r="3"/><circle cx="566" cy="122" r="3"/><circle cx="558" cy="104" r="3"/><circle cx="572" cy="112" r="3"/><circle cx="546" cy="126" r="3"/>
+        </g>
+        <text x="486" y="76" text-anchor="middle" font-size="8" fill="#92400e" font-style="italic">how far individual students sit from their own group mean</text>
+
+        <text x="350" y="184" text-anchor="middle" font-size="11.5" fill="#78350f" font-weight="800">F = between-group variation &#247; within-group variation</text>
+        <text x="350" y="200" text-anchor="middle" font-size="8.5" fill="#64748b" font-style="italic">a big F means the group means are further apart than ordinary student-to-student noise explains</text>
+      </svg>
+    </figure>
+  </section>
+
+  <!-- 4 -->
+  <section id="assumptions">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Check the Assumptions</h2></div>
+    <p>ANOVA asks for the same two conditions as the two-sample t-test: each group roughly <strong>normal</strong>, and the
+       groups sharing a common <strong>variance</strong>. Unlike <a href="capstone-onboarding-productivity.html">Capstone 2</a>,
+       where the variance check forced a switch, everything here passes.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-teach-normality.png" alt="Three normal quantile-quantile plots side by side, one for each teaching method. In all three the points fall close to the straight diagonal reference line, with Shapiro-Wilk p-values of 0.66, 0.95, and 0.86.">
+      <figcaption>All three groups pass the normality check, with Q-Q points tracking their reference lines and Shapiro-Wilk p-values of 0.66, 0.95, and 0.86.</figcaption>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Assumption</th><th>Check</th><th>Result</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Normality (Lecture)</td><td>Shapiro-Wilk</td><td class="pass">W = 0.981, p = 0.66</td></tr>
+          <tr><td class="nm">Normality (Blended)</td><td>Shapiro-Wilk</td><td class="pass">W = 0.989, p = 0.95</td></tr>
+          <tr><td class="nm">Normality (Flipped)</td><td>Shapiro-Wilk</td><td class="pass">W = 0.985, p = 0.86</td></tr>
+          <tr><td class="nm">Equal variance</td><td>Levene's test</td><td class="pass">W = 0.200, p = 0.82</td></tr>
+          <tr><td class="nm">Equal variance</td><td>Bartlett's test</td><td class="pass">&#967;&#178; = 0.204, p = 0.90</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The three standard deviations land within half a point of one another (8.85, 9.06, 8.45), and both variance tests
+       agree. The classic one-way ANOVA is valid, so no Welch correction or rank-based substitute is needed.</p>
+  </section>
+
+  <!-- 5 -->
+  <section id="test">
+    <div class="section-eyebrow"><div class="num">5</div><h2>ANOVA First, Then the Post-Hoc</h2></div>
+    <p>The F test is decisive: between-group variation is about eleven times what within-group noise would produce.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">F statistic</div><div class="rv">11.07</div><div class="rd">on 2 and 127 df</div></div>
+      <div class="rchip"><div class="rk">p-value</div><div class="rv">&lt; 0.001</div><div class="rd">3.7 &#215; 10<sup>&#8722;5</sup></div></div>
+      <div class="rchip"><div class="rk">Eta-squared</div><div class="rv">0.15</div><div class="rd">15% of score variation</div></div>
+      <div class="rchip"><div class="rk">Kruskal-Wallis</div><div class="rv">p &lt; 0.001</div><div class="rd">rank-based, agrees</div></div>
+    </div>
+
+    <p>So the methods are not all equal. But that is only half an answer, and reporting it alone would be a mistake: it does
+       not say <em>which</em> method differs. That is what Tukey's HSD provides, comparing all three pairs while holding the
+       family-wise error at 5%.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.1rem">
+      <svg viewBox="0 0 700 186" width="100%" font-family="Inter, sans-serif" aria-label="A two-stage decision diagram. Stage one: the ANOVA F-test asks whether any group differs. If the result is not significant, stop and report no detected difference. If it is significant, proceed to stage two: a post-hoc test such as Tukey HSD compares every pair while controlling the family-wise error, identifying which specific groups differ. In this project the path leads through a significant F to Tukey, which shows Flipped differs from both other methods.">
+        <text x="350" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">ANOVA answers "any?"; the post-hoc answers "which?"</text>
+
+        <rect x="34" y="44" width="176" height="52" rx="10" fill="#78350f"/>
+        <text x="122" y="66" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">STAGE 1 &#183; ANOVA</text>
+        <text x="122" y="82" text-anchor="middle" font-size="9" fill="#fde68a">is any group different?</text>
+
+        <line x1="210" y1="70" x2="252" y2="70" stroke="#b45309" stroke-width="1.8"/><polygon points="252,70 242,64 242,76" fill="#b45309"/>
+        <rect x="256" y="44" width="150" height="52" rx="10" fill="#fffbeb" stroke="#b45309"/>
+        <text x="331" y="68" text-anchor="middle" font-size="10" fill="#b45309" font-weight="800">F significant?</text>
+        <text x="331" y="84" text-anchor="middle" font-size="8.5" fill="#92400e">here: F = 11.07, p &lt; 0.001</text>
+
+        <!-- no -->
+        <line x1="331" y1="96" x2="331" y2="128" stroke="#cbd5e1" stroke-width="1.4"/>
+        <text x="300" y="112" font-size="8.5" fill="#64748b" font-weight="700">no</text>
+        <rect x="246" y="128" width="170" height="34" rx="9" fill="#fafbfe" stroke="#cbd5e1"/>
+        <text x="331" y="149" text-anchor="middle" font-size="9" fill="#64748b">stop: no difference detected</text>
+
+        <!-- yes -->
+        <line x1="406" y1="70" x2="450" y2="70" stroke="#16a34a" stroke-width="1.8"/><polygon points="450,70 440,64 440,76" fill="#16a34a"/>
+        <text x="428" y="62" text-anchor="middle" font-size="8.5" fill="#15803d" font-weight="800">yes</text>
+        <rect x="454" y="40" width="212" height="60" rx="10" fill="#78350f"/>
+        <text x="560" y="62" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">STAGE 2 &#183; TUKEY HSD</text>
+        <text x="560" y="78" text-anchor="middle" font-size="9" fill="#fde68a">which pairs differ?</text>
+        <text x="560" y="92" text-anchor="middle" font-size="8" fill="#fcd34d">family-wise error still 5%</text>
+        <text x="560" y="126" text-anchor="middle" font-size="9" fill="#78350f" font-weight="700">Flipped &gt; Lecture, Flipped &gt; Blended</text>
+        <text x="560" y="142" text-anchor="middle" font-size="9" fill="#64748b">Lecture = Blended</text>
+        <text x="350" y="176" text-anchor="middle" font-size="8.5" fill="#64748b" font-style="italic">Reporting only the significant F would hide that two of the three methods are equivalent.</text>
+      </svg>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Comparison</th><th>Difference</th><th>95% CI</th><th>Adjusted p</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr class="hi"><td class="nm">Flipped vs Blended</td><td>+7.56</td><td>[3.04, 12.08]</td><td>0.0004</td><td class="pass">real difference</td></tr>
+          <tr class="hi"><td class="nm">Flipped vs Lecture</td><td>+7.94</td><td>[3.47, 12.41]</td><td>0.0001</td><td class="pass">real difference</td></tr>
+          <tr><td class="nm">Blended vs Lecture</td><td>+0.38</td><td>[&#8722;4.07, 4.83]</td><td>0.978</td><td class="no">indistinguishable</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-teach-result.png" alt="Two panels. On the left, the three group means with 95% confidence intervals: Lecture and Blended overlap almost entirely near 73, while Flipped sits clearly higher near 81 with a non-overlapping interval. On the right, the three Tukey pairwise differences with confidence intervals; the two comparisons involving Flipped sit entirely away from the dashed zero line and are marked green, while the Blended versus Lecture interval straddles zero and is marked grey.">
+      <figcaption><strong>Left:</strong> Flipped's interval is clear of the other two, which overlap almost completely. <strong>Right:</strong> the two Flipped comparisons (green) have intervals entirely off the zero line; Blended versus Lecture (grey) straddles zero. The same conclusion, drawn two ways.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 6 -->
+  <section id="verdict">
+    <div class="section-eyebrow"><div class="num">6</div><h2>The Verdict, and the Confound Behind It</h2></div>
+    <p>Students taught with the Flipped method scored about <strong>8 points higher</strong> than students in either other
+       format, and Lecture and Blended performed the same as each other. So the honest headline is not "the three methods
+       differ" but <span class="hl">one method outperforms and the other two are equivalent</span>, which is a materially
+       different recommendation. Method explains roughly 15% of score variation, leaving most of it to student-level factors
+       this design never measured.</p>
+
+    <div class="goldbox">
+      <span class="gb-tag">The honest read</span>
+      <p style="margin:0.4rem 0 0">A significant <strong>F</strong> (the methods are not all alike), a medium-to-large
+         <strong>effect size</strong> (&#951;&#178; &#8776; 0.15), and <strong>post-hoc intervals</strong> that locate the
+         difference in one specific method. Report all three, and be as explicit about the pair that did <em>not</em> differ
+         as about the pair that did.</p>
+    </div>
+
+    <p>And the step that decides whether any of this supports changing how the course is taught:</p>
+    <ul>
+      <li><strong>How were students assigned?</strong> If students picked their own section, we may be measuring who chooses
+          a Flipped class rather than what a Flipped class does. Motivated students self-selecting into the format would
+          produce exactly this result with no teaching effect at all. Random assignment, or at least a check that prior
+          attainment is balanced across methods, is what licenses a causal reading.</li>
+      <li><strong>Who taught which section?</strong> Instructor skill rides along with method. If one energetic instructor
+          taught all the Flipped sections, method and instructor cannot be separated in this design.</li>
+      <li><strong>One exam is a narrow outcome.</strong> A format that lifts exam scores may not equally lift retention,
+          transfer, or student workload, and an adoption decision should weigh more than a single number.</li>
+      <li><strong>Do not over-read the tie.</strong> "Lecture and Blended are indistinguishable" means this study did not
+          detect a difference, not that none exists. A small real gap could hide at this sample size.</li>
+    </ul>
+  </section>
+
+  <!-- 7 -->
+  <section id="in-ds-ai">
+    <div class="section-eyebrow"><div class="num">7</div><h2>ANOVA in Data Science &amp; AI</h2></div>
+    <p>Comparing three or more conditions on a numeric outcome is routine in modern experimentation and modeling.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Where it appears</th><th>The groups</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Multi-arm A/B/n testing</td><td>Three or more page or pricing variants compared on a continuous metric.</td></tr>
+          <tr><td class="nm">Model or prompt comparison</td><td>Several models or prompt templates scored on the same benchmark.</td></tr>
+          <tr><td class="nm">Hyperparameter settings</td><td>Validation scores across several configurations, before declaring a winner.</td></tr>
+          <tr><td class="nm">Feature screening</td><td>A numeric feature compared across the levels of a categorical variable.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="research">
+      <span class="rtag">Practice note</span>
+      <p style="margin:0.4rem 0 0">The multi-arm case is where teams most often go wrong: they run the experiment with four
+         variants, compare each against control, and ship the one with p &lt; 0.05, having never controlled the family-wise
+         error. The disciplined pattern is the one in this capstone, an omnibus test first, then corrected pairwise
+         comparisons, with effect sizes reported throughout. When variances differ across arms, Welch's ANOVA and the
+         Games-Howell post-hoc are the unequal-variance counterparts.</p>
+    </div>
+  </section>
+
+  <!-- notebook + downloads -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook runs all twelve framework steps: it standardizes the messy group labels and cleans the
+             file with a printed audit trail, checks normality per group (Shapiro-Wilk, Q-Q) and equal variance (Levene,
+             Bartlett), quantifies the family-wise error that three t-tests would incur, fits the ANOVA with
+             <code>statsmodels</code>, computes eta-squared, runs Tukey HSD, and cross-checks with Kruskal-Wallis. Every
+             number here comes from its output, with a plain-language note after each result.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-teaching-methods-exam-scores.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-teaching-methods-exam-scores.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-teaching-methods-exam-scores.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Read the reports &amp; get the data</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong> (<code>capstone-teaching-methods-exam-scores.xlsx</code>)
+         holds the scores on the <em>scores</em> sheet, with a codebook and notes, and it keeps the inconsistent labels,
+         blanks, duplicates, and impossible values so you can practice the cleaning. Two written reports accompany it: a
+         <strong>plain-language brief</strong> for a department chair, and a <strong>technical report</strong>, a journal-style
+         write-up with the full ANOVA table, post-hoc comparisons, diagnostics, and references.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-5-teaching-methods-exam-scores.html" target="_blank" rel="noopener">📄 Plain-language brief <small>read online</small></a>
+        <a class="ex-file doc" href="../reports/capstone-5-teaching-methods-exam-scores-technical.html" target="_blank" rel="noopener">📄 Technical report <small>journal-style</small></a>
+        <a class="ex-file xls" href="../data/capstone-teaching-methods-exam-scores.xlsx">📊 Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>ANOVA compares three or more groups in one test</strong>, avoiding the ~14% family-wise error that three separate t-tests would incur.</span></li>
+        <li><span class="ck">✓</span><span><strong>F is a ratio</strong>: between-group variation over within-group variation. Here F(2, 127) = 11.07, p &lt; 0.001.</span></li>
+        <li><span class="ck">✓</span><span><strong>Same two assumptions as the t-test</strong>: normality per group (Shapiro p = 0.66, 0.95, 0.86) and equal variance (Levene p = 0.82).</span></li>
+        <li><span class="ck">✓</span><span><strong>A significant F is only half the answer</strong>: Tukey HSD showed Flipped beats both others by about 8 points while Lecture and Blended are indistinguishable (p = 0.98).</span></li>
+        <li><span class="ck">✓</span><span><strong>Report the effect size and the confound</strong>: &#951;&#178; &#8776; 0.15, and self-selection into sections could explain the gap without any teaching effect.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">8</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on this capstone, from the F ratio to the post-hoc. Answer them, hit <strong>Check Answers</strong>,
+       and keep refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-heart-disease-markers.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 163 · Previous</span><br><span class="cn-title">Multiple Comparisons: Screening Heart-Disease Markers</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 164 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch164";
+  window.QUIZ_DATA = [
+    {
+      q: "Why use ANOVA instead of three separate t-tests for three groups?",
+      options: ["ANOVA is faster to compute", "Three t-tests inflate the family-wise error to about 14%; ANOVA asks once at 5%", "t-tests cannot handle exam scores", "ANOVA needs no assumptions"],
+      answer: 1,
+      explain: "Each test carries its own 5% risk; ANOVA controls the error rate by asking a single question."
+    },
+    {
+      q: "The F statistic is the ratio of…",
+      options: ["Mean to standard deviation", "Between-group variation to within-group variation", "Sample size to variance", "Largest group mean to smallest"],
+      answer: 1,
+      explain: "A large F means the group means are further apart than within-group noise explains."
+    },
+    {
+      q: "A significant ANOVA result (F(2,127) = 11.07, p < 0.001) tells you…",
+      options: ["All three methods differ from each other", "At least one method differs, but not which one", "Flipped is best", "Nothing useful"],
+      answer: 1,
+      explain: "The alternative hypothesis is only that at least one group differs; a post-hoc test locates it."
+    },
+    {
+      q: "Levene's test returned p = 0.82. This means…",
+      options: ["The groups are not normal", "The equal-variance assumption holds, so classic ANOVA is valid", "The means are equal", "We must use Welch's ANOVA"],
+      answer: 1,
+      explain: "A large p from Levene gives no evidence that the group variances differ."
+    },
+    {
+      q: "What did the Tukey HSD post-hoc test reveal?",
+      options: ["All three pairs differ", "Flipped differs from both others; Lecture and Blended are indistinguishable", "No pairs differ", "Only Lecture and Blended differ"],
+      answer: 1,
+      explain: "Flipped beat both by about 8 points (p ≤ 0.0004); Lecture vs Blended differed by 0.4 points (p = 0.98)."
+    },
+    {
+      q: "Tukey HSD is preferred over running the pairwise t-tests yourself because…",
+      options: ["It is easier to type", "It compares every pair while holding the family-wise error at 5%", "It ignores the assumptions", "It gives larger differences"],
+      answer: 1,
+      explain: "Tukey builds the multiplicity correction into the pairwise comparisons."
+    },
+    {
+      q: "Eta-squared was about 0.15. This says…",
+      options: ["The result is not significant", "Teaching method explains roughly 15% of the variation in exam scores", "15% of students improved", "The p-value is 0.15"],
+      answer: 1,
+      explain: "Eta-squared is the share of total outcome variation attributable to the grouping factor."
+    },
+    {
+      q: "The biggest threat to reading this as 'Flipped teaching causes higher scores' is…",
+      options: ["The sample was too large", "Students may have self-selected into sections, confounding method with student type", "Exam scores are categorical", "ANOVA was the wrong test"],
+      answer: 1,
+      explain: "Without random assignment, motivated students choosing Flipped sections would produce the same result."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
