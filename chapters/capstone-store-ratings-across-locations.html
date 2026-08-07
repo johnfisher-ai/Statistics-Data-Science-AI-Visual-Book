@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 175 · Kruskal-Wallis: Ratings Across Four Stores — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .yes { color:#15803d; font-weight:700; }
+    .disp-table .no { color:#dc2626; font-weight:700; }
+    .disp-table tr.hi td { background:#fffbeb; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .goldbox { background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #b45309; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .goldbox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .rw-card { background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #b45309; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file.doc { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #b45309; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+    .svg-wrap { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.9rem 0.6rem 0.3rem; background:var(--panel); }
+    .svg-wrap svg { width:100%; height:auto; display:block; }
+    .svg-wrap .cap { font-size:0.82rem; color:var(--ink-soft); padding:0.55rem 0.6rem 0.4rem; line-height:1.55; }
+    .svg-wrap .cap strong { color:var(--ink); }
+    .partclose { background:linear-gradient(135deg,#fffbeb 0%,#fef3c7 100%); border:1px solid #fcd34d;
+                 border-radius:16px; padding:1.4rem 1.6rem; margin:2rem 0 1rem; }
+    .partclose h3 { margin:0 0 0.3rem; font-size:1.05rem; color:#78350f; }
+    .partclose .pc-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .partclose p { color:var(--ink-soft); font-size:0.9rem; line-height:1.65; }
+    .pc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(215px,1fr)); gap:0.45rem 1.1rem; margin:0.9rem 0 0.2rem; }
+    .pc-grid a { font-size:0.82rem; color:#92400e; text-decoration:none; display:block; padding:0.15rem 0; }
+    .pc-grid a:hover { text-decoration:underline; }
+    .pc-grid a b { color:#78350f; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/capstone-store-ratings-across-locations.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXVII &#183; Capstone Projects: Statistical Testing</span><span class="sep">/</span>
+      <span>Chapter 175</span>
+    </div>
+    <h1>Which Store Is <span class="accent">Letting Us Down?</span></h1>
+    <p class="dek">Capstone 16. Four locations, 194 customer ratings, and skewed ordinal scores that break every ANOVA
+       assumption. The omnibus test answers whether the stores differ. Only the follow-up answers which, and the answer
+       refuses to line up in a neat order.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~18 min</b>&nbsp;read</div>
+      <div class="m">🧪 <b>Kruskal-Wallis + Dunn</b></div>
+      <div class="m">📊 <b>Chapter 175</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Capstone 5 ran a one-way ANOVA on exam scores where every assumption held. This is the same shape of
+       question with <span class="hl">none of them holding</span>, and it closes the loop the last two chapters opened:
+       Mann-Whitney for two groups, Wilcoxon for two paired measurements, and now the rank-based answer for three or more.</p>
+
+    <div class="def-card">
+      <div class="sigma">H</div>
+      <div class="def-body">
+        The <span class="def-kw">Kruskal-Wallis test</span> is the rank-based counterpart of
+        <span class="def-kw">one-way ANOVA</span>. It pools every observation, replaces the values with their
+        <span class="def-kw">ranks</span> across the whole sample, and asks whether the average rank differs between groups
+        by more than chance allows. Unequal group sizes need no adjustment.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">⭐</div>
+      <div><div class="ctitle">The finding, up front</div>
+        <p>The four locations are not interchangeable (H = 32.75, p = 0.00000036, &#949;&#178; = 0.157, N = 194). Harbour
+           Point is the clear laggard. But <strong>only three of the six pairs can actually be separated</strong>, and Old
+           Town sits between two stores that differ from each other while differing from neither.</p></div>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section id="question">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Question an Omnibus Test Can Answer</h2></div>
+    <p>Four stores collected customer experience ratings on a 1-to-10 scale over one quarter. The regional manager wants to
+       know which locations need attention. That is not one question but two, and they need separate machinery.</p>
+
+    <p>The null hypothesis is that all four locations' rating distributions are the same. The alternative is that
+       <strong>at least one</strong> differs, which is the most an omnibus test can deliver. Identifying <em>which</em> is a
+       second step, with six pairwise comparisons and its own error-rate problem, exactly as in
+       <a href="capstone-teaching-methods-exam-scores.html">Capstone 5</a>.</p>
+
+    <p>Cleaning removed three duplicate records, three blanks, and one impossible rating of 11, and normalized the location
+       labels, leaving <strong>194</strong> ratings. Group sizes range from 43 to 57, because each store collected what it
+       could. That is untidy and perfectly acceptable for these methods.</p>
+  </section>
+
+  <!-- 2 -->
+  <section id="explore">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Four Stores, Four Different Pictures</h2></div>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-stores-dist.png" alt="Left: boxplots with jittered points for four stores ordered by median. Riverside is highest at 8, Old Town and Northgate both at 7, Harbour Point at 6 with a much wider box. Right: stacked composition bars showing the percentage of customers giving each rating from 1 to 10 at each store.">
+      <figcaption><strong>Left:</strong> ratings by location, best median first. <strong>Right:</strong> the same data as composition, which is the honest display for an ordinal scale. Note two things: Harbour Point is not merely lower but far more <em>scattered</em>, and <strong>Old Town and Northgate share a median of 7</strong>.</figcaption>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Location</th><th>n</th><th>Median</th><th>IQR</th><th>Mean</th><th>SD</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Riverside</td><td>46</td><td>8</td><td>7 to 9</td><td>7.96</td><td>1.33</td></tr>
+          <tr><td class="nm">Old Town</td><td>48</td><td>7</td><td>7 to 8</td><td>7.42</td><td>1.37</td></tr>
+          <tr><td class="nm">Northgate</td><td>57</td><td>7</td><td>6 to 8</td><td>6.79</td><td>1.74</td></tr>
+          <tr class="hi"><td class="nm">Harbour Point</td><td>43</td><td>6</td><td>4 to 7</td><td>5.63</td><td>2.24</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Harbour Point's spread is a finding in its own right. A store whose ratings run from the bottom of the scale to the
+       top is delivering an <em>inconsistent</em> experience rather than a uniformly poor one, and those two problems have
+       different causes and different fixes.</p>
+  </section>
+
+  <!-- 3 -->
+  <section id="assumptions">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Why Not ANOVA</h2></div>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Location</th><th>Shapiro-Wilk W</th><th>p</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Riverside</td><td>0.931</td><td>0.009</td><td class="no">normality rejected</td></tr>
+          <tr><td class="nm">Old Town</td><td>0.932</td><td>0.008</td><td class="no">normality rejected</td></tr>
+          <tr><td class="nm">Northgate</td><td>0.956</td><td>0.037</td><td class="no">normality rejected</td></tr>
+          <tr><td class="nm">Harbour Point</td><td>0.971</td><td>0.330</td><td class="yes">not rejected</td></tr>
+          <tr class="hi"><td class="nm">Levene (equal spread)</td><td colspan="2">p = 0.0012</td><td class="no">rejected, SD ratio 1.68&#215;</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Normality falls in three of the four stores. No single location looks wildly non-normal, but with ratings bunched in
+       the upper half of a bounded scale the departures are systematic rather than accidental. Equal spread falls too, and
+       decisively.</p>
+
+    <div class="goldbox">
+      <span class="gb-tag">And the assumption nobody tested</span>
+      <p style="margin:0.4rem 0 0">Even if both diagnostics had passed, the outcome is an <strong>ordinal rating</strong>.
+         ANOVA compares means, and the mean of a 1-to-10 satisfaction score assumes the step from 5 to 6 is worth the same
+         as the step from 9 to 10. The scale never established that, which is the argument from
+         <a href="capstone-satisfaction-and-loyalty.html">Capstone 12</a> and it does not go away when the sample gets
+         larger.</p>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section id="omnibus">
+    <div class="section-eyebrow"><div class="num">4</div><h2>The Omnibus Result</h2></div>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Kruskal-Wallis H</div><div class="rv">32.751</div><div class="rd">df = 3</div></div>
+      <div class="rchip"><div class="rk">p-value</div><div class="rv">&lt; 0.001</div><div class="rd">3.6 &#215; 10<sup>&#8722;7</sup></div></div>
+      <div class="rchip"><div class="rk">Epsilon-squared</div><div class="rv">0.157</div><div class="rd">moderate effect</div></div>
+      <div class="rchip"><div class="rk">N</div><div class="rv">194</div><div class="rd">across 4 locations</div></div>
+    </div>
+
+    <p>The four locations are not interchangeable. Epsilon-squared says location accounts for around <strong>16 percent</strong>
+       of the variation in ranks, which is a moderate effect for a factor as blunt as which building a customer walked into.</p>
+
+    <p>What the test does <em>not</em> say is which stores differ. It is tempting to look at the mean-rank ordering and read
+       the gaps between adjacent stores as established. They are not, and the next section is where that becomes concrete.</p>
+  </section>
+
+  <!-- 5 -->
+  <section id="dunn">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Which Stores Actually Differ?</h2></div>
+    <p>Four groups make six pairwise comparisons. Running six tests at 0.05 apiece would push the chance of at least one
+       false alarm to roughly 26 percent, the same arithmetic that drove
+       <a href="capstone-heart-disease-markers.html">Capstone 4</a>. <strong>Dunn's test</strong> is the standard follow-up
+       to Kruskal-Wallis: it compares mean ranks pairwise using the ranking from the full sample, and the p-values are then
+       adjusted, here by Holm's method.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-stores-dunn.png" alt="Left: a lollipop chart of mean ranks, Riverside 126.8, Old Town 110.0, Northgate 88.8, Harbour Point 63.8. Right: a four by four heatmap of Holm-adjusted Dunn p-values, with three cells below 0.05 in dark shading and three above 0.05 in light shading.">
+      <figcaption><strong>Left:</strong> mean rank by store. The ordering is unambiguous. <strong>Right:</strong> the six adjusted p-values. Only three pairs clear the bar, and they are not the three you would guess from evenly spaced ranks.</figcaption>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Comparison</th><th>Mean-rank gap</th><th>Holm-adjusted p</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr class="hi"><td class="nm">Riverside vs Harbour Point</td><td>+63.0</td><td>&lt; 0.0001</td><td class="yes">different</td></tr>
+          <tr class="hi"><td class="nm">Old Town vs Harbour Point</td><td>+46.2</td><td>0.0004</td><td class="yes">different</td></tr>
+          <tr class="hi"><td class="nm">Riverside vs Northgate</td><td>+38.1</td><td>0.0021</td><td class="yes">different</td></tr>
+          <tr><td class="nm">Northgate vs Harbour Point</td><td>+25.0</td><td>0.0762</td><td class="no">not distinguishable</td></tr>
+          <tr><td class="nm">Old Town vs Northgate</td><td>+21.2</td><td>0.1007</td><td class="no">not distinguishable</td></tr>
+          <tr><td class="nm">Riverside vs Old Town</td><td>+16.8</td><td>0.1401</td><td class="no">not distinguishable</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The ordering is real. The gaps between neighbours mostly are not resolvable at this sample size.</p>
+  </section>
+
+  <!-- 6 -->
+  <section id="lessons">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Two Things This Result Quietly Teaches</h2></div>
+
+    <h3 style="margin-top:1.4rem">It is not a test of medians</h3>
+    <p>Northgate and Old Town both have a median of <strong>7</strong>. Dunn's test still puts <strong>21 points</strong> of
+       mean rank between them, because Old Town has far more customers up at 8 and above: 48 percent against Northgate's 33
+       percent. Kruskal-Wallis, like Mann-Whitney in
+       <a href="capstone-pain-relief-two-treatments.html">Capstone 14</a>, asks whether one group's values
+       <em>tend to be larger</em>. It is not comparing any single summary statistic, and two groups can share a median while
+       being clearly distinguishable.</p>
+
+    <h3 style="margin-top:1.6rem">Significance does not chain together</h3>
+    <p>Riverside differs from Northgate (p = 0.002). Old Town sits between them and differs from
+       <strong>neither</strong> (p = 0.14 and p = 0.10). Read as logic that looks like a contradiction. It is not.</p>
+
+    <div class="svg-wrap">
+      <svg viewBox="0 0 760 250" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="A mean-rank axis with the four stores marked, and horizontal bars beneath showing which groups cannot be separated. Old Town overlaps both Riverside and Northgate, while Riverside and Northgate do not overlap each other.">
+        <text x="24" y="26" font-family="Inter,Segoe UI,sans-serif" font-size="12.5" font-weight="800" fill="#78350f">MEAN RANK, AND WHICH STORES CANNOT BE TOLD APART</text>
+        <line x1="60" y1="70" x2="720" y2="70" stroke="#78350f" stroke-width="2"/>
+        <circle cx="124" cy="70" r="8" fill="#b45309"/>
+        <circle cx="264" cy="70" r="8" fill="#b45309"/>
+        <circle cx="382" cy="70" r="8" fill="#b45309"/>
+        <circle cx="476" cy="70" r="8" fill="#b45309"/>
+        <text x="124" y="52" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="10.5" font-weight="700" fill="#78350f">63.8</text>
+        <text x="264" y="52" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="10.5" font-weight="700" fill="#78350f">88.8</text>
+        <text x="382" y="52" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="10.5" font-weight="700" fill="#78350f">110.0</text>
+        <text x="476" y="52" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="10.5" font-weight="700" fill="#78350f">126.8</text>
+        <text x="124" y="92" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="10.5" fill="#3f3f46">Harbour Pt</text>
+        <text x="264" y="92" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="10.5" fill="#3f3f46">Northgate</text>
+        <text x="382" y="92" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="10.5" fill="#3f3f46">Old Town</text>
+        <text x="476" y="92" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="10.5" fill="#3f3f46">Riverside</text>
+
+        <rect x="106" y="118" width="176" height="18" rx="9" fill="#fcd34d" opacity="0.75"/>
+        <text x="300" y="132" font-family="Inter,Segoe UI,sans-serif" font-size="11" fill="#92400e">Harbour Point and Northgate: p = 0.076, cannot separate</text>
+        <rect x="246" y="148" width="154" height="18" rx="9" fill="#fcd34d" opacity="0.75"/>
+        <text x="418" y="162" font-family="Inter,Segoe UI,sans-serif" font-size="11" fill="#92400e">Northgate and Old Town: p = 0.101, cannot separate</text>
+        <rect x="364" y="178" width="130" height="18" rx="9" fill="#fcd34d" opacity="0.75"/>
+        <text x="512" y="192" font-family="Inter,Segoe UI,sans-serif" font-size="11" fill="#92400e">Old Town and Riverside: p = 0.140</text>
+
+        <path d="M264 212 L476 212" stroke="#15803d" stroke-width="2.4"/>
+        <path d="M264 207 L264 217" stroke="#15803d" stroke-width="2.4"/>
+        <path d="M476 207 L476 217" stroke="#15803d" stroke-width="2.4"/>
+        <text x="500" y="216" font-family="Inter,Segoe UI,sans-serif" font-size="11" font-weight="700" fill="#15803d">Northgate and Riverside: p = 0.002, DIFFERENT</text>
+        <text x="60" y="240" font-family="Inter,Segoe UI,sans-serif" font-size="11" font-style="italic" fill="#92400e">Old Town overlaps both of the two stores that do not overlap each other.</text>
+      </svg>
+      <div class="cap"><strong>Overlapping bands, not tiers.</strong> Each amber bar joins a pair the data cannot separate.
+        Old Town's bar overlaps Riverside above it and Northgate below it, while Riverside and Northgate are separated from
+        each other. Failing to reject is not the same as establishing equality, so a middle group can easily overlap both
+        neighbours without those neighbours overlapping. <strong>Any summary that sorts these stores into tidy tiers is
+        inventing a precision the data do not have.</strong></div>
+    </div>
+  </section>
+
+  <!-- 7 -->
+  <section id="verdict">
+    <div class="section-eyebrow"><div class="num">7</div><h2>The Verdict, and What Not to Do With It</h2></div>
+    <p>Customer experience genuinely varies across the four locations, and about a sixth of the variation in ratings tracks
+       with where the customer shopped. <strong>Harbour Point is the clear problem</strong>: lowest ratings, widest spread,
+       and reliably below the two best stores. <strong>Riverside is the strongest.</strong> Old Town and Northgate sit in the
+       middle and cannot be told apart from each other.</p>
+
+    <p>The operational reading is to put the attention on Harbour Point, keep an eye on Northgate, and build no league table
+       out of the middle two. The wide spread at Harbour Point is its own signal, pointing at an inconsistent experience,
+       which usually means staffing or scheduling rather than the site itself.</p>
+
+    <ul>
+      <li><strong>Customers who leave feedback are not customers.</strong> Every rating here is volunteered, and people with
+          strong feelings volunteer more readily. If Harbour Point's unhappy customers are also its most vocal, part of its
+          gap is a response-rate artifact rather than a service difference.</li>
+      <li><strong>The stores are not otherwise identical.</strong> They serve different neighbourhoods, sizes, and footfall
+          patterns. This compares locations, not management. Attributing the gap to the staff at Harbour Point needs evidence
+          this design does not contain.</li>
+      <li><strong>Ranking people on this would be a mistake.</strong> A result where the middle two stores are
+          indistinguishable cannot support individual performance judgments. It supports a question worth asking at one
+          location.</li>
+      <li><strong>Do not average the ratings for a dashboard.</strong> The composition chart in section 2 is the honest
+          display for an ordinal scale.</li>
+      <li><strong>Group sizes reflect collection effort, not the customer base.</strong> Northgate contributed the most
+          responses because it collected the most, which is fine for these tests but means the pooled figures are not a
+          picture of the population.</li>
+    </ul>
+  </section>
+
+  <!-- 8 -->
+  <section id="family">
+    <div class="section-eyebrow"><div class="num">8</div><h2>Where This Test Sits in the Family</h2></div>
+    <p>Kruskal-Wallis completes a set the last two chapters started, and the symmetry is worth committing to memory. Every
+       parametric comparison has a rank-based counterpart that asks the same structural question with weaker assumptions.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Design</th><th>Parametric</th><th>Rank-based</th><th>Where in this part</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Two independent groups</td><td>Independent t-test</td><td>Mann-Whitney U</td><td><a href="capstone-onboarding-productivity.html">Capstone 2</a> and <a href="capstone-pain-relief-two-treatments.html">14</a></td></tr>
+          <tr><td class="nm">Two paired measurements</td><td>Paired t-test</td><td>Wilcoxon signed-rank</td><td><a href="capstone-blood-pressure-before-after.html">Capstone 3</a> and <a href="capstone-service-ratings-before-after.html">15</a></td></tr>
+          <tr class="hi"><td class="nm">Three or more independent groups</td><td>One-way ANOVA</td><td>Kruskal-Wallis</td><td><a href="capstone-teaching-methods-exam-scores.html">Capstone 5</a> and this one</td></tr>
+          <tr><td class="nm">Three or more paired measurements</td><td>Repeated-measures ANOVA</td><td>Friedman</td><td><a href="capstone-cognitive-training-over-time.html">Capstone 6</a> took the parametric route</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Friedman is the one this part did not run. It is Kruskal-Wallis for repeated measures, and it would have been the
+       fallback in Capstone 6 had the sphericity correction not been available.</p>
+
+    <div class="research">
+      <span class="rtag">Practice note</span>
+      <p style="margin:0.4rem 0 0">Comparing several model variants, several prompt templates, or several vendors on a
+         bounded quality score is the same design as four stores. The omnibus-then-post-hoc discipline matters more there
+         than almost anywhere, because the natural move is to look at the ranking, pick the top variant, and ship it. With
+         six or ten variants the ordering will always look decisive, and a correction for multiplicity will usually show
+         that the top three cannot be separated. The right conclusion is often "any of these three", which is a more useful
+         answer than a false winner.</p>
+    </div>
+  </section>
+
+  <!-- notebook + downloads -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook cleans the feedback records with a printed audit trail, draws the distribution and
+             composition pictures before any test, runs the ANOVA assumption checks and records what they said, computes the
+             Kruskal-Wallis omnibus with its effect size, then runs Dunn's pairwise follow-up with Holm adjustment. It closes
+             by demonstrating both quiet lessons directly: two stores with identical medians that the test separates, and
+             three pairwise verdicts that refuse to chain.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-store-ratings-across-locations.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-store-ratings-across-locations.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-store-ratings-across-locations.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Read the reports &amp; get the data</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong>
+         (<code>capstone-store-ratings-across-locations.xlsx</code>) holds the feedback records with duplicates, blanks, an
+         out-of-range rating, and inconsistent location labels left in so you can practice the cleaning. Two written reports
+         accompany it: a <strong>plain-language brief</strong> for a regional manager, and a <strong>technical
+         report</strong> covering the assumption failures, the effect size, and the multiplicity correction.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-16-store-ratings-across-locations.html" target="_blank" rel="noopener">📄 Plain-language brief <small>read online</small></a>
+        <a class="ex-file doc" href="../reports/capstone-16-store-ratings-across-locations-technical.html" target="_blank" rel="noopener">📄 Technical report <small>journal-style</small></a>
+        <a class="ex-file xls" href="../data/capstone-store-ratings-across-locations.xlsx">📊 Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Kruskal-Wallis is one-way ANOVA on ranks</strong>: no distributional assumption, no adjustment needed for unequal group sizes, and appropriate for ordinal outcomes.</span></li>
+        <li><span class="ck">✓</span><span><strong>The omnibus test only says "at least one differs".</strong> Dunn's test with a Holm adjustment is what answers "which", and it separated only three of the six pairs here.</span></li>
+        <li><span class="ck">✓</span><span><strong>It does not compare medians.</strong> Northgate and Old Town share a median of 7 and sit 21 mean-rank points apart, because their upper tails differ.</span></li>
+        <li><span class="ck">✓</span><span><strong>Significance is not transitive.</strong> Riverside differs from Northgate, but Old Town, sitting between them, differs from neither. Failing to reject is not establishing equality.</span></li>
+        <li><span class="ck">✓</span><span><strong>Spread is a finding.</strong> Harbour Point's ratings are not just lower but far more scattered, which points at an inconsistent experience rather than a uniformly poor one.</span></li>
+      </ul>
+    </div>
+
+    <div class="partclose">
+      <span class="pc-tag">Part XXVII complete</span>
+      <h3>Sixteen projects, one framework</h3>
+      <p>Every capstone in this part ran the same twelve steps from
+         <a href="the-analysis-framework.html">The Analysis Framework</a>: classify the data, describe it, picture it, clean
+         it with an audit trail, name the design, check the assumptions and report what they said, choose a test and justify
+         the choice, report an effect size next to the p-value, separate the statistical verdict from the practical one, and
+         close on what the study cannot claim. The tests changed. The discipline did not.</p>
+      <div class="pc-grid">
+        <a href="capstone-coffee-fill-weight.html"><b>1</b> One-Sample t</a>
+        <a href="capstone-onboarding-productivity.html"><b>2</b> Two-Sample t</a>
+        <a href="capstone-blood-pressure-before-after.html"><b>3</b> Paired t</a>
+        <a href="capstone-heart-disease-markers.html"><b>4</b> Multiple Comparisons</a>
+        <a href="capstone-teaching-methods-exam-scores.html"><b>5</b> One-Way ANOVA</a>
+        <a href="capstone-cognitive-training-over-time.html"><b>6</b> Repeated Measures</a>
+        <a href="capstone-plant-growth-two-factors.html"><b>7</b> Two-Way ANOVA</a>
+        <a href="capstone-commute-mode-by-region.html"><b>8</b> Chi-Square Independence</a>
+        <a href="capstone-website-visits-by-weekday.html"><b>9</b> Goodness of Fit</a>
+        <a href="capstone-email-signup-rates.html"><b>10</b> Proportions</a>
+        <a href="capstone-study-hours-and-scores.html"><b>11</b> Pearson</a>
+        <a href="capstone-satisfaction-and-loyalty.html"><b>12</b> Spearman</a>
+        <a href="capstone-judges-product-rankings.html"><b>13</b> Kendall's Tau</a>
+        <a href="capstone-pain-relief-two-treatments.html"><b>14</b> Mann-Whitney U</a>
+        <a href="capstone-service-ratings-before-after.html"><b>15</b> Wilcoxon</a>
+        <a href="capstone-store-ratings-across-locations.html"><b>16</b> Kruskal-Wallis</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">9</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on this capstone, from the omnibus-then-post-hoc discipline to why significance refuses to chain.
+       Answer them, hit <strong>Check Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-service-ratings-before-after.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 174 · Previous</span><br><span class="cn-title">Wilcoxon Signed-Rank: Service Ratings Before &amp; After</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 175 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch175";
+  window.QUIZ_DATA = [
+    {
+      q: "What does the Kruskal-Wallis test do with the data?",
+      options: ["Compares the four group means", "Replaces every value with its rank across the whole sample, then compares average ranks between groups", "Compares the four group medians directly", "Tests whether each group is normally distributed"],
+      answer: 1,
+      explain: "It is one-way ANOVA performed on ranks, which is why it needs no distributional assumption."
+    },
+    {
+      q: "The omnibus test gave p = 0.00000036. What has been established?",
+      options: ["That every store differs from every other", "That at least one location differs from the others", "That Harbour Point is the worst store", "That the ratings are not normally distributed"],
+      answer: 1,
+      explain: "An omnibus test delivers 'at least one differs' and nothing more specific. Dunn's test answers which."
+    },
+    {
+      q: "Why was Dunn's test used with a Holm adjustment rather than six plain comparisons?",
+      options: ["Dunn's test is more powerful", "Six tests at 0.05 apiece would push the chance of at least one false alarm to about 26%", "Plain comparisons cannot handle unequal group sizes", "Holm is required whenever the data are ordinal"],
+      answer: 1,
+      explain: "It is the same family-wise error problem that drove the multiple-comparisons capstone."
+    },
+    {
+      q: "Northgate and Old Town both have a median of 7, yet Dunn's test puts 21 mean-rank points between them. Why?",
+      options: ["One of the results must be wrong", "Kruskal-Wallis compares whether one group's values tend to be larger, not any single summary statistic; Old Town has more customers at 8 and above", "The medians were computed incorrectly", "The group sizes differ"],
+      answer: 1,
+      explain: "48% of Old Town's customers rated 8 or higher against 33% at Northgate. Identical medians, different distributions."
+    },
+    {
+      q: "Riverside differs from Northgate, but Old Town, which sits between them, differs from neither. What does this show?",
+      options: ["A contradiction in the results", "That significance is not transitive: failing to reject is not the same as establishing equality", "That Dunn's test is unreliable for four groups", "That Old Town's sample was too small"],
+      answer: 1,
+      explain: "A middle group can overlap both neighbours enough that neither gap clears the bar, while those neighbours are separated from each other."
+    },
+    {
+      q: "Only three of the six pairs were distinguishable. What is the right way to report the four stores?",
+      options: ["As a ranked league table from best to worst", "As an ordering with the honest note that most adjacent gaps cannot be resolved at this sample size", "As two tiers, good and bad", "As all equivalent, since the omnibus test is not specific"],
+      answer: 1,
+      explain: "Sorting into tidy tiers invents a precision the data do not have."
+    },
+    {
+      q: "Harbour Point's standard deviation is 2.24 against Riverside's 1.33. Why does that matter operationally?",
+      options: ["It makes the test invalid", "A wide spread suggests an inconsistent experience rather than a uniformly poor one, which has a different cause and a different fix", "It means the sample is too small", "It indicates data-entry errors"],
+      answer: 1,
+      explain: "Spread is a finding, not just a nuisance parameter. Inconsistency usually points at staffing or scheduling."
+    },
+    {
+      q: "Which rank-based test is the counterpart of repeated-measures ANOVA?",
+      options: ["Mann-Whitney U", "Wilcoxon signed-rank", "Friedman", "Kruskal-Wallis"],
+      answer: 2,
+      explain: "Friedman is Kruskal-Wallis for repeated measures, the fallback the cognitive-training capstone did not need."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

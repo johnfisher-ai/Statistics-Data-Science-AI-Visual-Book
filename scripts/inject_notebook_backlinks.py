@@ -652,6 +652,8 @@ MAP = {
         ("../../capstone-pain-relief-two-treatments.html#notebook", "Back to the book", "Chapter 173 · Mann-Whitney U: Two Pain Treatments"),
     "capstone-service-ratings-before-after.html":
         ("../../capstone-service-ratings-before-after.html#notebook", "Back to the book", "Chapter 174 · Wilcoxon Signed-Rank: Service Ratings Before &amp; After"),
+    "capstone-store-ratings-across-locations.html":
+        ("../../capstone-store-ratings-across-locations.html#notebook", "Back to the book", "Chapter 175 · Kruskal-Wallis: Ratings Across Four Stores"),
 }
 
 def card(href, kicker, title):
