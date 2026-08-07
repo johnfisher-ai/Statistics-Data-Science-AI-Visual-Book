@@ -638,6 +638,8 @@ MAP = {
         ("../../capstone-plant-growth-two-factors.html#notebook", "Back to the book", "Chapter 166 · Two-Way ANOVA: Fertilizer and Sunlight"),
     "capstone-commute-mode-by-region.html":
         ("../../capstone-commute-mode-by-region.html#notebook", "Back to the book", "Chapter 167 · Chi-Square Test of Independence: Commute Mode by Region"),
+    "capstone-website-visits-by-weekday.html":
+        ("../../capstone-website-visits-by-weekday.html#notebook", "Back to the book", "Chapter 168 · Chi-Square Goodness-of-Fit: Weekday Traffic"),
 }
 
 def card(href, kicker, title):

@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 168 · Chi-Square Goodness-of-Fit: Weekday Traffic — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .hot { color:#b45309; font-weight:700; }
+    .disp-table .cold { color:#2563eb; font-weight:700; }
+    .disp-table tr.hi td { background:#fffbeb; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .goldbox { background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #b45309; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .goldbox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .rw-card { background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #b45309; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file.doc { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #b45309; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/capstone-website-visits-by-weekday.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXVII &#183; Capstone Projects: Statistical Testing</span><span class="sep">/</span>
+      <span>Chapter 168</span>
+    </div>
+    <h1>Is Web Traffic Really <span class="accent">Spread Evenly?</span></h1>
+    <p class="dek">Capstone 9. One categorical variable against an expected distribution. The arithmetic is the easiest in the
+       part; the judgment is the hardest, because the expected distribution is not handed to you by the data. It is a claim
+       you supply, and the test can only answer the question you actually asked.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~16 min</b>&nbsp;read</div>
+      <div class="m">🧪 <b>Chi-square goodness-of-fit</b></div>
+      <div class="m">📊 <b>Chapter 168</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">The previous capstone had two categorical variables and asked whether they were related. This one has
+       <span class="hl">only one</span>, and asks whether it matches a distribution somebody claimed. That sounds simpler,
+       and mechanically it is. But it hides a trap that the two-variable test does not have: <strong>you choose the thing you
+       are testing against</strong>, and that choice can manufacture a finding out of nothing.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#8721;</div>
+      <div class="def-body">
+        The <span class="def-kw">chi-square goodness-of-fit test</span> compares the observed counts of
+        <span class="def-kw">one categorical variable</span> against an <span class="def-kw">expected distribution</span>
+        that you specify. Degrees of freedom are <span class="def-kw">k &#8722; 1</span>, every expected count should be about
+        <span class="def-kw">5 or more</span>, and the effect size is <span class="def-kw">Cohen's w</span>.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">📈</div>
+      <div><div class="ctitle">The finding, up front</div>
+        <p>Traffic is emphatically <strong>not uniform</strong> across the week
+           (<strong>&#967;&#178;(6) = 78.3, p &#8776; 8 &#215; 10<sup>&#8722;15</sup></strong>), with weekends far below a flat
+           line. But tested against <strong>last year's day-of-week pattern</strong> the very same numbers give
+           <strong>p = 0.999</strong>. Same data, opposite verdicts. The expected distribution <em>is</em> the hypothesis.</p></div>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section id="question">
+    <div class="section-eyebrow"><div class="num">1</div><h2>One Variable, One Claim</h2></div>
+    <p>A company has a quarter of website traffic totalled by day of week, and someone in marketing has asserted that traffic
+       is spread evenly across the week. The data are seven counts, and the assertion is a distribution.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.1rem">
+      <svg viewBox="0 0 700 168" width="100%" font-family="Inter, sans-serif" aria-label="A comparison of the two chi-square tests. On the left, the goodness-of-fit test: one categorical variable's observed counts are compared against an expected distribution that the analyst supplies. On the right, the test of independence from the previous capstone: two categorical variables are cross-tabulated and the expected counts are computed from the table's own margins.">
+        <text x="350" y="18" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">Two chi-square tests, two different questions</text>
+        <rect x="20" y="34" width="316" height="118" rx="11" fill="#fffbeb" stroke="#b45309"/>
+        <text x="178" y="54" text-anchor="middle" font-size="9.5" fill="#92400e" font-weight="800">GOODNESS-OF-FIT (this chapter)</text>
+        <text x="178" y="74" text-anchor="middle" font-size="9" fill="#78350f" font-weight="700">ONE variable, k categories</text>
+        <g><rect x="60" y="86" width="22" height="30" fill="#b45309"/><rect x="88" y="94" width="22" height="22" fill="#b45309"/>
+           <rect x="116" y="82" width="22" height="34" fill="#b45309"/><rect x="144" y="100" width="22" height="16" fill="#b45309"/></g>
+        <line x1="176" y1="100" x2="200" y2="100" stroke="#78350f" stroke-width="1.6"/><polygon points="200,100 191,95 191,105" fill="#78350f"/>
+        <rect x="204" y="84" width="118" height="32" rx="7" fill="#fff" stroke="#fcd34d"/>
+        <text x="263" y="98" text-anchor="middle" font-size="8.5" fill="#92400e" font-weight="700">an expected shape</text>
+        <text x="263" y="110" text-anchor="middle" font-size="8" fill="#b45309" font-style="italic">YOU supply this</text>
+        <text x="178" y="140" text-anchor="middle" font-size="8" fill="#64748b">df = k &#8722; 1</text>
+
+        <rect x="352" y="34" width="328" height="118" rx="11" fill="#f8fafc" stroke="#cbd5e1"/>
+        <text x="516" y="54" text-anchor="middle" font-size="9.5" fill="#475569" font-weight="800">INDEPENDENCE (Capstone 8)</text>
+        <text x="516" y="74" text-anchor="middle" font-size="9" fill="#334155" font-weight="700">TWO variables, cross-tabulated</text>
+        <g stroke="#94a3b8" fill="none">
+          <rect x="446" y="84" width="140" height="34"/><line x1="446" y1="101" x2="586" y2="101"/>
+          <line x1="493" y1="84" x2="493" y2="118"/><line x1="540" y1="84" x2="540" y2="118"/></g>
+        <text x="516" y="140" text-anchor="middle" font-size="8" fill="#64748b">expected computed FROM the table's own margins &#183; df = (r&#8722;1)(c&#8722;1)</text>
+      </svg>
+    </figure>
+
+    <p>That difference is the whole point. In a test of independence the expected counts come from the table itself. In a
+       goodness-of-fit test <strong>you bring the expected distribution with you</strong>, which means you are testing your
+       own assumption as much as the data.</p>
+  </section>
+
+  <!-- 2 -->
+  <section id="first">
+    <div class="section-eyebrow"><div class="num">2</div><h2>The Obvious Test, and Its Obvious Answer</h2></div>
+    <p>With 3,514 visits over seven days, a uniform claim expects about <strong>502</strong> per day. Every expected count is
+       far above the minimum of 5, so the approximation is safe.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-weekday-traffic.png" alt="A bar chart of website visits for each day of the week, with a dashed red line at the uniform expectation of about 502 visits. Monday through Friday bars sit above the line, with Wednesday highest at 578, while Saturday at 406 and Sunday at 373 fall well below it.">
+      <figcaption>Traffic by day against a flat expectation. Weekdays cluster above the line; both weekend days fall clearly below it. This is a systematic split, not scatter.</figcaption>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Day</th><th>Observed</th><th>Expected (uniform)</th><th>Standardized residual</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Monday</td><td>525</td><td>502</td><td>+1.03</td></tr>
+          <tr><td class="nm">Tuesday</td><td>569</td><td>502</td><td class="hot">+2.99</td></tr>
+          <tr class="hi"><td class="nm">Wednesday</td><td>578</td><td>502</td><td class="hot">+3.39</td></tr>
+          <tr><td class="nm">Thursday</td><td>553</td><td>502</td><td class="hot">+2.28</td></tr>
+          <tr><td class="nm">Friday</td><td>510</td><td>502</td><td>+0.36</td></tr>
+          <tr><td class="nm">Saturday</td><td>406</td><td>502</td><td class="cold">&#8722;4.28</td></tr>
+          <tr class="hi"><td class="nm">Sunday</td><td>373</td><td>502</td><td class="cold">&#8722;5.76</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Chi-square</div><div class="rv">78.3</div><div class="rd">on 6 degrees of freedom</div></div>
+      <div class="rchip"><div class="rk">p-value</div><div class="rv">&#8776; 8 &#215; 10<sup>&#8722;15</sup></div><div class="rd">reject uniform</div></div>
+      <div class="rchip"><div class="rk">Cohen's w</div><div class="rv">0.15</div><div class="rd">a <em>small</em> effect</div></div>
+      <div class="rchip"><div class="rk">Total visits</div><div class="rv">3,514</div><div class="rd">across 7 days</div></div>
+    </div>
+
+    <p>Note the tension already visible in those four numbers. The p-value is astronomically small, and the effect size is
+       <strong>small</strong>. With 3,514 visits the test can detect a modest departure easily, so the p-value is reporting
+       the sample size as much as the size of the pattern.</p>
+  </section>
+
+  <!-- 3 -->
+  <section id="right-claim">
+    <div class="section-eyebrow"><div class="num">3</div><h2>But Was Uniform Ever the Right Claim?</h2></div>
+    <p>Here is the trap. We rejected "traffic is uniform", but <span class="hl">nobody who runs a website expects uniform
+       traffic</span>. Weekends are quieter for most business sites. Rejecting a claim no one believed is a technically valid
+       result that carries no information, and it is one of the easiest ways to manufacture a finding.</p>
+
+    <p>So test a claim someone would actually make: that this quarter matches <strong>last year's day-of-week shares</strong>,
+       which already build in the weekend dip.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-weekday-twonulls.png" alt="Two side-by-side panels using the identical observed traffic bars. On the left, observed against a flat uniform expectation, where the bars diverge visibly and the p-value is 8 times ten to the minus fifteen, rejecting the claim. On the right, observed against last year's day-of-week pattern, where the bars sit almost exactly on the expectation and the p-value is 0.999, not rejecting.">
+      <figcaption><strong>The identical observed bars, tested twice.</strong> Against a uniform claim (left) the data look dramatically irregular. Against last year's pattern (right) they look utterly ordinary. Nothing about the data changed between the panels, only the expected distribution.</figcaption>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Expected model</th><th>&#967;&#178;(6)</th><th>p</th><th>Cohen's w</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Uniform (one seventh per day)</td><td>78.32</td><td>8 &#215; 10<sup>&#8722;15</sup></td><td>0.149</td><td class="hot">reject</td></tr>
+          <tr class="hi"><td class="nm">Last year's day-of-week shares</td><td>0.41</td><td>0.999</td><td>0.011</td><td>do not reject</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="goldbox">
+      <span class="gb-tag">The lesson of this capstone</span>
+      <p style="margin:0.4rem 0 0">A goodness-of-fit test does not tell you whether data are "normal" or "fine". It tells you
+         whether they match <strong>the specific distribution you handed it</strong>. A rejection means the data disagree with
+         <em>that model</em>, and the value of the result depends entirely on whether the model was worth testing. State and
+         justify the expected distribution <strong>before</strong> running the test, or the test becomes a formality wrapped
+         around a foregone conclusion.</p>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section id="verdict">
+    <div class="section-eyebrow"><div class="num">4</div><h2>The Verdict</h2></div>
+    <p>Both statements below are true, and only one is worth putting in a report:</p>
+    <ul>
+      <li><strong>"Traffic is not evenly spread across the week."</strong> Correct, highly significant, and of no use to
+          anyone. It rejects an expectation nobody held.</li>
+      <li><strong>"Traffic this quarter is indistinguishable from last year's pattern."</strong> Also correct, and actually
+          informative: there is no anomaly to investigate and no change to explain.</li>
+    </ul>
+    <p>The honest one-line summary is that traffic is uneven across the week <em>in exactly the way it always has been</em>.
+       Weekdays run about a fifth above the weekend, Sunday is the quietest day, and nothing this quarter departs from
+       precedent.</p>
+  </section>
+
+  <!-- 5 -->
+  <section id="limits">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Ethics, Bias, and Limits</h2></div>
+    <ul>
+      <li><strong>Choosing the null is an ethical act.</strong> Picking an expected distribution nobody believes, then
+          rejecting it, produces a headline with no content. Because the analyst controls that choice, it must be declared
+          and defended in advance rather than selected after seeing which one "works".</li>
+      <li><strong>Large samples make small departures significant.</strong> Cohen's w of 0.15 is small; the tiny p-value
+          comes largely from 3,514 visits. Decide beforehand what size of departure would actually change a decision.</li>
+      <li><strong>Aggregated data cannot be audited.</strong> Seven totals cannot reveal a bot surge on one afternoon, a
+          tracking outage, or a misattributed redirect. Pre-aggregation removes exactly the detail that cleaning would catch,
+          so provenance matters more here, not less.</li>
+      <li><strong>The comparison model carries its own uncertainty.</strong> Last year's shares are themselves estimates, but
+          the test treats them as exact. And a quarter is a season: holidays, campaigns, and school terms shift the pattern,
+          so this quarter's shape may not transfer to the next.</li>
+    </ul>
+  </section>
+
+  <!-- 6 -->
+  <section id="in-ds-ai">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Goodness-of-Fit in Data Science &amp; AI</h2></div>
+    <p>Comparing an observed distribution against an expected one is a routine production task, usually under a different
+       name.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Where it appears</th><th>The expected distribution</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Data-drift monitoring</td><td>This week's category mix against the training-set mix.</td></tr>
+          <tr><td class="nm">A/B assignment checks</td><td>Observed split across arms against the intended 50/50 or 33/33/33.</td></tr>
+          <tr><td class="nm">Survey weighting</td><td>Sample demographics against known census shares, before raking.</td></tr>
+          <tr><td class="nm">Fraud and anomaly screens</td><td>Observed leading digits against Benford's law.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="research">
+      <span class="rtag">Practice note</span>
+      <p style="margin:0.4rem 0 0">Drift monitors are where this test most often goes wrong in production. At scale every
+         distribution differs from its reference, so a chi-square alarm fires constantly and gets ignored, which is worse than
+         no alarm. The fix is the discipline from this chapter: choose a reference distribution that reflects genuine
+         expectation, alert on an <strong>effect size</strong> threshold rather than a p-value, and pre-commit to how large a
+         shift has to be before anyone should care.</p>
+    </div>
+  </section>
+
+  <!-- notebook + downloads -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook runs the framework end to end on aggregated data: it validates the seven categories,
+             checks the expected counts, runs the goodness-of-fit test against the uniform claim with <code>scipy</code>,
+             computes Cohen's w and the standardized residuals, then re-runs the identical test against last year's shares
+             and plots the two comparisons side by side. Every number here comes from its output, with a plain-language note
+             after each result.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-website-visits-by-weekday.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-website-visits-by-weekday.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-website-visits-by-weekday.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Read the reports &amp; get the data</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong> (<code>capstone-website-visits-by-weekday.xlsx</code>) holds
+         the seven daily totals on the <em>visits</em> sheet and last year's shares on the <em>PriorYear</em> sheet, so you
+         can run both tests yourself. Two written reports accompany it: a <strong>plain-language brief</strong> for a
+         marketing lead, and a <strong>technical report</strong> with both models, residuals, effect sizes, and references.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-9-website-visits-by-weekday.html" target="_blank" rel="noopener">📄 Plain-language brief <small>read online</small></a>
+        <a class="ex-file doc" href="../reports/capstone-9-website-visits-by-weekday-technical.html" target="_blank" rel="noopener">📄 Technical report <small>journal-style</small></a>
+        <a class="ex-file xls" href="../data/capstone-website-visits-by-weekday.xlsx">📊 Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Goodness-of-fit tests one variable against an expected distribution</strong>, with df = k &#8722; 1. Independence tests two variables and derives its expectation from the table.</span></li>
+        <li><span class="ck">✓</span><span><strong>You supply the expected distribution</strong>, so it is a hypothesis, not a fact. Declare and justify it before testing.</span></li>
+        <li><span class="ck">✓</span><span><strong>Same data, opposite verdicts</strong>: uniform gave &#967;&#178;(6) = 78.3, p &#8776; 8 &#215; 10<sup>&#8722;15</sup>; last year's shares gave &#967;&#178;(6) = 0.41, p = 0.999.</span></li>
+        <li><span class="ck">✓</span><span><strong>Report the effect size</strong>: Cohen's w of 0.15 is small, and the vanishing p-value mostly reflects 3,514 visits.</span></li>
+        <li><span class="ck">✓</span><span><strong>Rejecting a claim nobody held is not a finding</strong>. "Traffic is uneven" was true and useless; "traffic matches last year" was the informative answer.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on this capstone, from degrees of freedom to choosing the null. Answer them, hit
+       <strong>Check Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-commute-mode-by-region.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 167 · Previous</span><br><span class="cn-title">Chi-Square Test of Independence: Commute Mode by Region</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 168 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch168";
+  window.QUIZ_DATA = [
+    {
+      q: "How does a goodness-of-fit test differ from a test of independence?",
+      options: ["It uses a different distribution", "It compares ONE categorical variable against an expected distribution you supply, rather than two variables against each other", "It requires larger samples", "It cannot use residuals"],
+      answer: 1,
+      explain: "Independence derives its expected counts from the table's margins; goodness-of-fit takes them from you."
+    },
+    {
+      q: "For 7 categories, the degrees of freedom are…",
+      options: ["7", "6, because once six counts are known the seventh is fixed by the total", "5", "It depends on the sample size"],
+      answer: 1,
+      explain: "df = k − 1 for a fully specified expected distribution."
+    },
+    {
+      q: "Against a uniform expectation the test gave χ²(6) = 78.3, p ≈ 8 × 10⁻¹⁵. This means…",
+      options: ["The finding is important", "The data are very unlikely under a uniform claim", "Weekends caused an error", "The sample is too small"],
+      answer: 1,
+      explain: "It rejects uniformity, but says nothing about whether uniformity was a sensible expectation."
+    },
+    {
+      q: "Cohen's w was 0.15 while p was about 8 × 10⁻¹⁵. What explains that combination?",
+      options: ["A calculation error", "A small departure detected with high power because n = 3,514", "A very large effect", "Too few categories"],
+      answer: 1,
+      explain: "Large samples make small departures highly significant; the effect size keeps this in perspective."
+    },
+    {
+      q: "Tested against last year's day-of-week shares, the same data gave p = 0.999. This shows…",
+      options: ["The first test was computed wrongly", "The conclusion depends entirely on which expected distribution you choose", "Last year's data were wrong", "Chi-square is unreliable"],
+      answer: 1,
+      explain: "The expected distribution is the hypothesis; changing it changes the question being asked."
+    },
+    {
+      q: "Why is 'traffic is not uniform across the week' a weak finding here?",
+      options: ["It is statistically incorrect", "It rejects an expectation nobody actually held, so it carries no information", "The residuals were too small", "Uniform tests are invalid"],
+      answer: 1,
+      explain: "A valid rejection of an implausible null produces a headline with no practical content."
+    },
+    {
+      q: "The best practice this capstone recommends is to…",
+      options: ["Always use a uniform null", "State and justify the expected distribution before running the test", "Try several nulls and report the significant one", "Ignore the effect size"],
+      answer: 1,
+      explain: "Choosing the null after seeing results turns the test into a formality around a foregone conclusion."
+    },
+    {
+      q: "In production drift monitoring, the analogous mistake is…",
+      options: ["Using too small a reference set", "Alerting on a p-value, so at scale the alarm fires constantly and gets ignored", "Using categorical features", "Computing residuals"],
+      answer: 1,
+      explain: "At scale every distribution differs; alert on an effect-size threshold with a pre-committed tolerance."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
