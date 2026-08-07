@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 167 · Chi-Square Test of Independence: Commute Mode by Region — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .pass { color:#15803d; font-weight:700; }
+    .disp-table .hot { color:#b45309; font-weight:700; }
+    .disp-table .cold { color:#2563eb; font-weight:700; }
+    .disp-table tr.hi td { background:#fffbeb; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .goldbox { background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #b45309; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .goldbox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .rw-card { background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #b45309; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file.doc { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #b45309; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+    /* questionnaire */
+    .qn { border:1px solid var(--line); border-radius:14px; overflow:hidden; margin:1.3rem 0; background:var(--panel); }
+    .qn-head { background:#78350f; color:#fff; padding:0.7rem 1.1rem; font-size:0.78rem; font-weight:800;
+               letter-spacing:0.05em; text-transform:uppercase; }
+    .qn-item { padding:0.85rem 1.1rem; border-bottom:1px solid var(--line); display:flex; gap:0.9rem; align-items:flex-start; }
+    .qn-item:last-child { border-bottom:none; }
+    .qn-n { flex:0 0 auto; width:24px; height:24px; border-radius:6px; background:#fffbeb; border:1px solid #fde68a;
+            color:#92400e; font-weight:800; font-size:0.74rem; display:flex; align-items:center; justify-content:center; }
+    .qn-q { font-weight:700; color:var(--ink); font-size:0.9rem; }
+    .qn-o { color:var(--ink-soft); font-size:0.82rem; margin-top:2px; }
+    .qn-t { display:inline-block; font-size:0.62rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em;
+            padding:0.14rem 0.45rem; border-radius:999px; margin-top:5px; }
+    .qn-t.nom { background:#eff6ff; color:#1d4ed8; }
+    .qn-t.ord { background:#fffbeb; color:#92400e; }
+    .qn-t.con { background:#ecfdf5; color:#047857; }
+    .qn-t.opn { background:#f5f3ff; color:#6d28d9; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/capstone-commute-mode-by-region.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXVII &#183; Capstone Projects: Statistical Testing</span><span class="sep">/</span>
+      <span>Chapter 167</span>
+    </div>
+    <h1>Does Where You Live Decide <span class="accent">How You Travel?</span></h1>
+    <p class="dek">Capstone 8. The first project with nothing to average. Two categorical variables from a stratified survey,
+       a table of counts, and a test built for exactly that. We also examine the questionnaire and the sampling plan, because
+       both decide what the counts are allowed to mean.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~18 min</b>&nbsp;read</div>
+      <div class="m">🧪 <b>Chi-square independence</b></div>
+      <div class="m">📊 <b>Chapter 167</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Every capstone so far had a number to average. This one has only <span class="hl">labels</span>: which area
+       someone lives in, and how they get to work. You cannot take the mean of "bicycle". When both variables are categories,
+       the data become a table of counts, and the question becomes whether the two classifications are <strong>related</strong>.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#967;&#178;</div>
+      <div class="def-body">
+        The <span class="def-kw">chi-square test of independence</span> asks whether two
+        <span class="def-kw">categorical</span> variables are associated. It compares the
+        <span class="def-kw">observed counts</span> in a contingency table against the
+        <span class="def-kw">expected counts</span> under independence. It needs every expected count to be about
+        <span class="def-kw">5 or more</span>, and its effect size is <span class="def-kw">Cramer's V</span>.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🚲</div>
+      <div><div class="ctitle">The finding, up front</div>
+        <p>Area type and commute mode are strongly related: <strong>&#967;&#178;(9) = 189.7, p &lt; 0.001</strong>, with
+           <strong>Cramer's V = 0.28</strong> (a moderate association). Public transit falls from <strong>39% in the Urban
+           Core to 3% in Rural areas</strong> while car use climbs from 28% to 89%. But the sampling design carries a
+           warning that changes how the numbers may be quoted.</p></div>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section id="survey">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Where the Data Came From</h2></div>
+    <p>A regional transport authority surveyed residents about how they travel to work or study. Before touching a single
+       count, read the instrument, because the questions determine what kinds of analysis are even possible.</p>
+
+    <div class="qn">
+      <div class="qn-head">Commuting survey &#183; the questionnaire as fielded</div>
+      <div class="qn-item"><div class="qn-n">1</div><div>
+        <div class="qn-q">Which area best describes where you live?</div>
+        <div class="qn-o">Urban Core &#183; Inner Suburb &#183; Outer Suburb &#183; Rural</div>
+        <span class="qn-t nom">Nominal &#183; single choice</span></div></div>
+      <div class="qn-item"><div class="qn-n">2</div><div>
+        <div class="qn-q">What is your MAIN way of getting to work or study?</div>
+        <div class="qn-o">Car &#183; Public transit &#183; Bicycle &#183; Walk</div>
+        <span class="qn-t nom">Nominal &#183; single choice</span></div></div>
+      <div class="qn-item"><div class="qn-n">3</div><div>
+        <div class="qn-q">How old are you?</div>
+        <div class="qn-o">Age in whole years</div>
+        <span class="qn-t con">Continuous &#183; numeric entry</span></div></div>
+      <div class="qn-item"><div class="qn-n">4</div><div>
+        <div class="qn-q">How satisfied are you with your daily commute?</div>
+        <div class="qn-o">1 = Very dissatisfied &#8230; 7 = Very satisfied</div>
+        <span class="qn-t ord">Ordinal &#183; 7-point Likert</span></div></div>
+      <div class="qn-item"><div class="qn-n">5</div><div>
+        <div class="qn-q">What would most improve your commute? (optional)</div>
+        <div class="qn-o">Free response</div>
+        <span class="qn-t opn">Open text</span></div></div>
+    </div>
+
+    <p>Four different measurement types appear here on purpose, and each would demand a different analysis. Only the two
+       <strong>nominal</strong> items feed this chapter's test. The Likert item would call for the rank methods of
+       <a href="capstone-satisfaction-and-loyalty.html">Capstone 12</a>; age would call for the methods of the earlier
+       capstones; and the open text is not a statistical variable at all until someone codes it.</p>
+
+    <p>The sampling plan matters just as much. This was a <strong>stratified random sample</strong>: the population was split
+       into four strata by area type, and <strong>200 residents were drawn at random from each</strong>.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.1rem">
+      <svg viewBox="0 0 700 190" width="100%" font-family="Inter, sans-serif" aria-label="A diagram of the stratified sampling design. The population is split into four strata by area type: Urban Core, Inner Suburb, Outer Suburb and Rural, which differ greatly in population size. From each stratum exactly 200 residents are drawn at random, giving equal allocation. A warning note explains that because allocation is equal rather than proportional, the sample does not reflect population shares, so comparisons between areas are valid but any region-wide total would need weighting.">
+        <text x="350" y="18" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">Stratified sampling with equal allocation</text>
+        <text x="120" y="42" text-anchor="middle" font-size="9" fill="#92400e" font-weight="800">POPULATION (unequal sizes)</text>
+        <g>
+          <rect x="34" y="52" width="172" height="30" rx="5" fill="#fde68a"/><text x="120" y="72" text-anchor="middle" font-size="9" fill="#78350f" font-weight="700">Outer Suburb</text>
+          <rect x="52" y="86" width="136" height="26" rx="5" fill="#fcd34d"/><text x="120" y="103" text-anchor="middle" font-size="9" fill="#78350f" font-weight="700">Inner Suburb</text>
+          <rect x="66" y="116" width="108" height="24" rx="5" fill="#fbbf24"/><text x="120" y="132" text-anchor="middle" font-size="9" fill="#78350f" font-weight="700">Urban Core</text>
+          <rect x="78" y="144" width="84" height="22" rx="5" fill="#f59e0b"/><text x="120" y="159" text-anchor="middle" font-size="9" fill="#78350f" font-weight="700">Rural</text>
+        </g>
+        <g stroke="#b45309" stroke-width="1.6" fill="none">
+          <line x1="212" y1="67" x2="300" y2="62"/><line x1="194" y1="99" x2="300" y2="86"/>
+          <line x1="180" y1="128" x2="300" y2="110"/><line x1="168" y1="155" x2="300" y2="134"/>
+        </g>
+        <text x="256" y="46" text-anchor="middle" font-size="8.5" fill="#b45309" font-weight="700">random draw</text>
+        <g>
+          <rect x="304" y="50" width="120" height="24" rx="6" fill="#78350f"/><text x="364" y="66" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">200 sampled</text>
+          <rect x="304" y="74" width="120" height="24" rx="6" fill="#78350f"/><text x="364" y="90" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">200 sampled</text>
+          <rect x="304" y="98" width="120" height="24" rx="6" fill="#78350f"/><text x="364" y="114" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">200 sampled</text>
+          <rect x="304" y="122" width="120" height="24" rx="6" fill="#78350f"/><text x="364" y="138" text-anchor="middle" font-size="9" fill="#fff" font-weight="700">200 sampled</text>
+        </g>
+        <rect x="444" y="52" width="238" height="96" rx="10" fill="#fef2f2" stroke="#fecaca"/>
+        <text x="563" y="72" text-anchor="middle" font-size="9" fill="#b91c1c" font-weight="800">WHAT THIS BUYS, AND COSTS</text>
+        <text x="563" y="92" text-anchor="middle" font-size="8.5" fill="#7f1d1d">every area estimated with equal precision</text>
+        <text x="563" y="110" text-anchor="middle" font-size="8.5" fill="#7f1d1d">but the sample does NOT mirror</text>
+        <text x="563" y="124" text-anchor="middle" font-size="8.5" fill="#7f1d1d">population shares</text>
+        <text x="563" y="141" text-anchor="middle" font-size="8" fill="#b91c1c" font-style="italic">compare areas: fine &#183; pool them: needs weights</text>
+      </svg>
+    </figure>
+  </section>
+
+  <!-- 2 -->
+  <section id="table">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Clean It, Then Build the Table</h2></div>
+    <p>The area labels arrived inconsistently cased, so they were standardized first; then duplicate rows and responses
+       missing either of the two test variables were removed, taking 802 rows to <strong>795</strong>. A respondent who did
+       not answer both questions cannot appear in a cross-tabulation.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Area type</th><th>Car</th><th>Public transit</th><th>Bicycle</th><th>Walk</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Urban Core</td><td>57 (28.5%)</td><td>78 (39.0%)</td><td>33 (16.5%)</td><td>32 (16.0%)</td></tr>
+          <tr><td class="nm">Inner Suburb</td><td>113 (57.1%)</td><td>50 (25.3%)</td><td>14 (7.1%)</td><td>21 (10.6%)</td></tr>
+          <tr><td class="nm">Outer Suburb</td><td>155 (78.3%)</td><td>27 (13.6%)</td><td>9 (4.5%)</td><td>7 (3.5%)</td></tr>
+          <tr><td class="nm">Rural</td><td>178 (89.4%)</td><td>6 (3.0%)</td><td>8 (4.0%)</td><td>7 (3.5%)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Read the percentages down each column. If mode and area were independent, these four rows would look alike. Instead
+       public transit falls steadily from <strong>39% to 3%</strong> while car use climbs from <strong>28% to 89%</strong>,
+       an orderly gradient tracking density.</p>
+  </section>
+
+  <!-- 3 -->
+  <section id="expected">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Expected Counts, and the Assumption</h2></div>
+    <p>The test works by comparing what we observed against what the table <em>would</em> look like if the two variables were
+       independent. Those <strong>expected counts</strong> come from the row and column totals alone: if every area split
+       across modes in the same overall proportions, this is the table you would see.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-commute-expected.png" alt="A grouped bar chart comparing observed counts against expected counts under independence for all sixteen cells of the table. The Rural-Car and Urban-Transit bars show observed far above expected, while Rural-Transit and Urban-Car show observed far below expected.">
+      <figcaption>Observed counts against what independence would predict, cell by cell. Where the gold bar towers over the grey one, far more people fall in that combination than independence allows. <strong>The test is a formal summary of exactly these gaps.</strong></figcaption>
+    </figure>
+
+    <div class="goldbox">
+      <span class="gb-tag">The assumption to check first</span>
+      <p style="margin:0.4rem 0 0">The chi-square approximation needs every <strong>expected</strong> count to be about
+         <strong>5 or more</strong>. Here the smallest is <strong>15.94</strong>, comfortably clear, so the test is
+         trustworthy. Had a cell fallen below that, the fix would be <strong>Fisher's exact test</strong> or collapsing
+         sparse categories. Note the condition is on the <em>expected</em> counts, not the observed ones: the Rural-transit
+         cell has only 6 observed, which is fine.</p>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section id="test">
+    <div class="section-eyebrow"><div class="num">4</div><h2>The Test, the Effect Size, and Where It Lives</h2></div>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Chi-square</div><div class="rv">189.7</div><div class="rd">on 9 degrees of freedom</div></div>
+      <div class="rchip"><div class="rk">p-value</div><div class="rv">&lt; 0.001</div><div class="rd">4.7 &#215; 10<sup>&#8722;36</sup></div></div>
+      <div class="rchip"><div class="rk">Cramer's V</div><div class="rv">0.28</div><div class="rd">moderate association</div></div>
+      <div class="rchip"><div class="rk">Sample</div><div class="rv">795</div><div class="rd">respondents, 4 &#215; 4 table</div></div>
+    </div>
+
+    <p>The p-value settles that the variables are not independent, but with 795 respondents almost any pattern would have
+       been significant. <strong>Cramer's V</strong> is the number that says whether the association is worth acting on: it
+       rescales chi-square onto a 0-to-1 range, and 0.28 is a moderate association, substantial for survey data on human
+       behaviour.</p>
+
+    <p>A significant chi-square says only that the table departs from independence <em>somewhere</em>. To find out where,
+       we use <strong>standardized residuals</strong>, the chi-square equivalent of a post-hoc test. Each is roughly a
+       z-score for one cell, and anything beyond about &#177;2 is notable.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Cell</th><th>Observed</th><th>Expected</th><th>Standardized residual</th><th>Reading</th></tr></thead>
+        <tbody>
+          <tr class="hi"><td class="nm">Rural &#215; Car</td><td>178</td><td>125.9</td><td class="hot">+4.6</td><td>far more than independence predicts</td></tr>
+          <tr class="hi"><td class="nm">Urban Core &#215; Public transit</td><td>78</td><td>40.5</td><td class="hot">+5.9</td><td>far more than expected</td></tr>
+          <tr><td class="nm">Urban Core &#215; Car</td><td>57</td><td>126.5</td><td class="cold">&#8722;6.2</td><td>far fewer than expected</td></tr>
+          <tr><td class="nm">Rural &#215; Public transit</td><td>6</td><td>40.3</td><td class="cold">&#8722;5.4</td><td>far fewer than expected</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-commute-result.png" alt="Two panels. On the left, stacked bars showing the percentage split of commute modes within each area type, with public transit shrinking and car use growing from Urban Core through to Rural. On the right, a heatmap of standardized residuals for the sixteen cells, with strong red for Rural-Car and Urban-Transit and strong blue for Urban-Car and Rural-Transit.">
+      <figcaption><strong>Left:</strong> how each area splits across modes. <strong>Right:</strong> the standardized residuals. The association is not spread evenly across the table; it is carried almost entirely by the <strong>car and public-transit</strong> cells at the two extremes of density. Cycling and walking contribute little.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 5 -->
+  <section id="verdict">
+    <div class="section-eyebrow"><div class="num">5</div><h2>The Verdict, and the Sampling Trap</h2></div>
+    <p>Area type and commute mode are clearly and moderately associated, in an orderly gradient from car-dependent rural
+       areas to transit-using urban ones. For a transport authority the practical implication is direct: a single region-wide
+       strategy would fit none of these areas well.</p>
+
+    <div class="goldbox">
+      <span class="gb-tag">The number you must not quote</span>
+      <p style="margin:0.4rem 0 0">Each area contributed exactly <strong>200 respondents by design</strong>, so this dataset
+         says nothing about how many people live in each area. Computing a region-wide figure from it, "X% of residents take
+         public transit", would be <strong>wrong</strong> unless the strata are first <strong>weighted by population</strong>.
+         Comparing areas is exactly what the design supports; pooling them is exactly what it does not.</p>
+    </div>
+
+    <ul>
+      <li><strong>Association is not explanation.</strong> Rural residents drive more, but this survey cannot separate
+          <em>choice</em> from <em>availability</em>. If there is no bus, the mode is not a preference, it is a constraint.
+          The result motivates asking why, not concluding that rural residents like cars.</li>
+      <li><strong>Self-report and non-response.</strong> People described their own behaviour on a voluntary online
+          questionnaire. Non-response is rarely random, and those most frustrated with their commute may be over-represented.</li>
+      <li><strong>The categories shape the finding.</strong> "Main way of getting to work" forces one answer from people who
+          mix modes, and the four area labels are administrative conveniences. Both choices were made before any analysis,
+          and both bound what the test can discover.</li>
+    </ul>
+  </section>
+
+  <!-- 6 -->
+  <section id="in-ds-ai">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Chi-Square in Data Science &amp; AI</h2></div>
+    <p>Tables of counts are everywhere in applied work, and this test is the standard tool for them.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Where it appears</th><th>The two categorical variables</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">A/B tests on categorical outcomes</td><td>Variant assigned &#215; outcome category (converted, bounced, browsed).</td></tr>
+          <tr><td class="nm">Feature screening</td><td>A categorical feature &#215; a categorical target, before modeling.</td></tr>
+          <tr><td class="nm">Randomization checks</td><td>Treatment arm &#215; a baseline category, to confirm allocation looks random.</td></tr>
+          <tr><td class="nm">Fairness auditing</td><td>Group membership &#215; model decision, the same table used in Chapter 158.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="research">
+      <span class="rtag">Practice note</span>
+      <p style="margin:0.4rem 0 0">At data-science scale the chi-square p-value stops being informative: with a million rows
+         every table is significant. The disciplined habit is to report <strong>Cramer's V</strong> (or a lift or odds ratio)
+         alongside it, and to inspect the <strong>residuals</strong> rather than the single omnibus number. Watch the expected
+         counts too, since rare categories break the approximation long before the sample looks small.</p>
+    </div>
+  </section>
+
+  <!-- notebook + downloads -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook runs all twelve framework steps: it prints the questionnaire and sampling plan from the
+             workbook, standardizes the messy area labels and cleans the file with a printed audit trail, builds the
+             contingency table and its row percentages, computes the expected counts and checks the minimum, runs the
+             chi-square test with <code>scipy</code>, computes Cramer's V, and maps the standardized residuals to locate the
+             association. Every number here comes from its output, with a plain-language note after each result.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-commute-mode-by-region.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-commute-mode-by-region.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-commute-mode-by-region.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Read the reports &amp; get the data</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong> (<code>capstone-commute-mode-by-region.xlsx</code>) holds the
+         responses on the <em>responses</em> sheet plus the full <em>Questionnaire</em> and <em>Sampling</em> sheets, and it
+         keeps the inconsistent labels, blanks, and duplicates so you can practice the cleaning. Two written reports
+         accompany it: a <strong>plain-language brief</strong> for a transport planner, and a <strong>technical report</strong>
+         with the contingency analysis, residuals, and references.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-8-commute-mode-by-region.html" target="_blank" rel="noopener">📄 Plain-language brief <small>read online</small></a>
+        <a class="ex-file doc" href="../reports/capstone-8-commute-mode-by-region-technical.html" target="_blank" rel="noopener">📄 Technical report <small>journal-style</small></a>
+        <a class="ex-file xls" href="../data/capstone-commute-mode-by-region.xlsx">📊 Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Two categorical variables</strong> become a contingency table, and the chi-square test of independence asks whether they are related.</span></li>
+        <li><span class="ck">✓</span><span><strong>Check the expected counts</strong>, not the observed ones: all must be about 5 or more (smallest here was 15.9), or switch to Fisher's exact test.</span></li>
+        <li><span class="ck">✓</span><span><strong>Report an effect size</strong>: &#967;&#178;(9) = 189.7 with p &lt; 0.001 only says "not independent"; Cramer's V = 0.28 says the association is moderate.</span></li>
+        <li><span class="ck">✓</span><span><strong>Standardized residuals locate the effect</strong>: it lives in the car and transit cells at the density extremes, not in cycling or walking.</span></li>
+        <li><span class="ck">✓</span><span><strong>The sampling design bounds the claim</strong>: equal allocation across strata makes area comparisons fair but makes any pooled region-wide percentage invalid without weighting.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on this capstone, from expected counts to the sampling trap. Answer them, hit
+       <strong>Check Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-plant-growth-two-factors.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 166 · Previous</span><br><span class="cn-title">Two-Way ANOVA: Fertilizer and Sunlight</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 167 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch167";
+  window.QUIZ_DATA = [
+    {
+      q: "Why is a chi-square test of independence the right choice here?",
+      options: ["The outcome is a continuous measurement", "Both variables are categorical, so the data form a table of counts", "There are two groups to compare on a mean", "The same people were measured twice"],
+      answer: 1,
+      explain: "With two nominal variables there is nothing to average; the analysis is a contingency table."
+    },
+    {
+      q: "The 'expected counts' in a chi-square test are…",
+      options: ["The counts the researcher hoped to see", "What the table would look like if the two variables were independent", "The observed counts rounded", "Always equal in every cell"],
+      answer: 1,
+      explain: "They are computed from the row and column totals under the independence hypothesis."
+    },
+    {
+      q: "The assumption to check before trusting a chi-square test is that…",
+      options: ["Every observed count is at least 5", "Every expected count is about 5 or more", "The sample is normally distributed", "The groups have equal variance"],
+      answer: 1,
+      explain: "The condition is on the expected counts; here the smallest was 15.9, comfortably fine."
+    },
+    {
+      q: "If an expected count had fallen well below 5, the appropriate response would be…",
+      options: ["Ignore it", "Use Fisher's exact test or combine sparse categories", "Increase alpha", "Use a t-test"],
+      answer: 1,
+      explain: "The chi-square approximation breaks down with sparse cells; an exact test does not rely on it."
+    },
+    {
+      q: "χ²(9) = 189.7 with p < 0.001 tells you…",
+      options: ["Exactly which cells differ", "That area and commute mode are not independent, but not where the association lies", "That the association is strong", "That the sample is too small"],
+      answer: 1,
+      explain: "The omnibus test says only that the table departs from independence somewhere."
+    },
+    {
+      q: "Cramér's V of 0.28 was reported because…",
+      options: ["It replaces the p-value", "With 795 respondents almost any pattern is significant, so an effect size says whether it matters", "It tests normality", "It corrects for multiple comparisons"],
+      answer: 1,
+      explain: "V rescales chi-square to a 0-to-1 measure of association strength, here moderate."
+    },
+    {
+      q: "Standardized residuals were used to…",
+      options: ["Check normality", "Locate which cells drive the association, like a post-hoc test", "Compute the p-value", "Weight the strata"],
+      answer: 1,
+      explain: "Values beyond about ±2 flag cells far from what independence predicts."
+    },
+    {
+      q: "Because the survey sampled 200 residents from each of the four areas, you must NOT…",
+      options: ["Compare commute patterns between areas", "Quote a single region-wide percentage without weighting the strata by population", "Run a chi-square test", "Report Cramér's V"],
+      answer: 1,
+      explain: "Equal allocation makes between-area comparisons fair but makes the pooled marginal unrepresentative."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
