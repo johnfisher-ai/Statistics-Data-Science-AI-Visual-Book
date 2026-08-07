@@ -640,6 +640,8 @@ MAP = {
         ("../../capstone-commute-mode-by-region.html#notebook", "Back to the book", "Chapter 167 · Chi-Square Test of Independence: Commute Mode by Region"),
     "capstone-website-visits-by-weekday.html":
         ("../../capstone-website-visits-by-weekday.html#notebook", "Back to the book", "Chapter 168 · Chi-Square Goodness-of-Fit: Weekday Traffic"),
+    "capstone-email-signup-rates.html":
+        ("../../capstone-email-signup-rates.html#notebook", "Back to the book", "Chapter 169 · Proportion Tests: Email Signup Rates"),
 }
 
 def card(href, kicker, title):

@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 169 · Proportion Tests: Email Signup Rates — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .pass { color:#15803d; font-weight:700; }
+    .disp-table .no { color:#94a3b8; font-weight:700; }
+    .disp-table tr.hi td { background:#fffbeb; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .goldbox { background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #b45309; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .goldbox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .rw-card { background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #b45309; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file.doc { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #b45309; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/capstone-email-signup-rates.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXVII &#183; Capstone Projects: Statistical Testing</span><span class="sep">/</span>
+      <span>Chapter 169</span>
+    </div>
+    <h1>Did the Campaign <span class="accent">Beat Its Target?</span></h1>
+    <p class="dek">Capstone 10. Two questions about rates, from one dataset. Did campaign A clear its 7% target, and does
+       campaign B convert better than A? One question gets a clear answer and the other does not, and understanding why is
+       the whole lesson.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~16 min</b>&nbsp;read</div>
+      <div class="m">🧪 <b>Proportion z-tests</b></div>
+      <div class="m">📊 <b>Chapter 169</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Rates are everywhere in business: conversion rates, click rates, defect rates, churn. They look like
+       averages, and in a sense they are, but the outcome behind them is <span class="hl">binary</span>, one or zero for each
+       person. That changes the arithmetic of the standard error and gives this family its own tests.</p>
+
+    <div class="def-card">
+      <div class="sigma">p&#770;</div>
+      <div class="def-body">
+        A <span class="def-kw">proportion z-test</span> compares a rate either against a <span class="def-kw">fixed
+        target</span> (one-sample) or against <span class="def-kw">another rate</span> (two-sample). It relies on a normal
+        approximation that needs roughly <span class="def-kw">10 successes and 10 failures</span> per group; below that, the
+        <span class="def-kw">exact binomial test</span> takes over.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">✉️</div>
+      <div><div class="ctitle">The finding, up front</div>
+        <p>Two questions, two different verdicts. Campaign A came in at <strong>7.54% against a 7% target</strong>, but that
+           gap is <strong>not distinguishable from noise</strong> (p = 0.41, 95% CI 6.3% to 9.0%, which contains 7%).
+           Campaign B at <strong>11.41% clearly beats A</strong> (p = 0.0003, +3.87 percentage points, CI +1.8 to +6.0). The
+           same dataset answers one question decisively and the other not at all.</p></div>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section id="two-questions">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Two Questions, Two Tests</h2></div>
+    <p>Two email campaigns ran at the same time and every visitor saw exactly one. Marketing asked two things, and they are
+       genuinely different questions requiring different tests.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.1rem">
+      <svg viewBox="0 0 700 178" width="100%" font-family="Inter, sans-serif" aria-label="A diagram of the two proportion tests. On the left, the one-sample test compares a single observed rate of 7.54 percent against a fixed target of 7 percent, and the target is a number decided by the business. On the right, the two-sample test compares campaign A's rate of 7.54 percent against campaign B's rate of 11.41 percent, where both rates are estimated from data and both carry uncertainty.">
+        <text x="350" y="18" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">Comparing a rate to a target, or to another rate</text>
+
+        <rect x="18" y="34" width="316" height="122" rx="11" fill="#fffbeb" stroke="#b45309"/>
+        <text x="176" y="54" text-anchor="middle" font-size="9.5" fill="#92400e" font-weight="800">ONE-SAMPLE &#183; rate vs a target</text>
+        <circle cx="110" cy="94" r="26" fill="#b45309"/><text x="110" y="98" text-anchor="middle" font-size="11" fill="#fff" font-weight="800">7.54%</text>
+        <text x="110" y="132" text-anchor="middle" font-size="8" fill="#92400e">campaign A (estimated)</text>
+        <text x="176" y="90" text-anchor="middle" font-size="13" fill="#78350f" font-weight="800">vs</text>
+        <line x1="222" y1="66" x2="222" y2="122" stroke="#dc2626" stroke-width="2.4" stroke-dasharray="4 3"/>
+        <text x="266" y="92" text-anchor="middle" font-size="11" fill="#dc2626" font-weight="800">7%</text>
+        <text x="266" y="132" text-anchor="middle" font-size="8" fill="#b91c1c">target (a fixed number)</text>
+        <text x="176" y="150" text-anchor="middle" font-size="7.5" fill="#a16207" font-style="italic">only one quantity carries uncertainty</text>
+
+        <rect x="350" y="34" width="332" height="122" rx="11" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="516" y="54" text-anchor="middle" font-size="9.5" fill="#15803d" font-weight="800">TWO-SAMPLE &#183; rate vs rate</text>
+        <circle cx="438" cy="94" r="26" fill="#94a3b8"/><text x="438" y="98" text-anchor="middle" font-size="11" fill="#fff" font-weight="800">7.54%</text>
+        <text x="438" y="132" text-anchor="middle" font-size="8" fill="#475569">campaign A</text>
+        <text x="516" y="90" text-anchor="middle" font-size="13" fill="#166534" font-weight="800">vs</text>
+        <circle cx="594" cy="94" r="26" fill="#16a34a"/><text x="594" y="98" text-anchor="middle" font-size="11" fill="#fff" font-weight="800">11.4%</text>
+        <text x="594" y="132" text-anchor="middle" font-size="8" fill="#166534">campaign B</text>
+        <text x="516" y="150" text-anchor="middle" font-size="7.5" fill="#15803d" font-style="italic">both quantities carry uncertainty</text>
+      </svg>
+    </figure>
+
+    <p>The distinction is not cosmetic. In the one-sample test the target is a fixed number chosen by the business, so only
+       the observed rate wobbles. In the two-sample test <em>both</em> rates are estimates, so the comparison must carry both
+       sources of uncertainty.</p>
+  </section>
+
+  <!-- 2 -->
+  <section id="clean">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Clean, Then Check the Assumption</h2></div>
+    <p>Only two fixes are needed here: drop <strong>duplicate rows</strong>, and drop visitors whose outcome was never
+       recorded. A missing outcome must not be quietly counted as a non-signup, because we do not know that it was one.</p>
+
+    <p>Both proportion tests rest on a normal approximation to the binomial, which needs enough events <strong>and</strong>
+       enough non-events, conventionally at least <strong>10 of each</strong>. With well over a thousand visitors per
+       campaign and 113 and 171 signups, that condition is met with enormous margin.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Campaign</th><th>Signups</th><th>Visitors</th><th>Rate</th><th>Successes / failures</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">A</td><td>113</td><td>1,499</td><td>7.54%</td><td class="pass">113 / 1,386 &#10003;</td></tr>
+          <tr><td class="nm">B</td><td>171</td><td>1,499</td><td>11.41%</td><td class="pass">171 / 1,328 &#10003;</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section id="q1">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Question 1: Did A Beat the 7% Target?</h2></div>
+    <p>Campaign A converted at <strong>7.54%</strong>, which is numerically above the 7% target. It is tempting to stop
+       there and report a win.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Observed rate</div><div class="rv">7.54%</div><div class="rd">113 of 1,499</div></div>
+      <div class="rchip"><div class="rk">z statistic</div><div class="rv">0.82</div><div class="rd">against a 7% target</div></div>
+      <div class="rchip"><div class="rk">p-value</div><div class="rv">0.41</div><div class="rd">not significant</div></div>
+      <div class="rchip"><div class="rk">95% CI</div><div class="rv">6.3% &#8211; 9.0%</div><div class="rd">contains 7%</div></div>
+    </div>
+
+    <p>The test cannot distinguish 7.54% from 7%. The confidence interval runs from <strong>6.3% to 9.0%</strong> and
+       <strong>comfortably contains the target</strong>, so the data are equally consistent with A running slightly below
+       target as slightly above it. The exact binomial test agrees (p = 0.42), confirming this is not an artifact of the
+       normal approximation.</p>
+
+    <div class="goldbox">
+      <span class="gb-tag">What to say, and what not to say</span>
+      <p style="margin:0.4rem 0 0">The honest statement is <strong>not</strong> "A beat its target" and <strong>not</strong>
+         "A missed its target". It is <strong>"A is running at about its target, and this sample cannot tell us which side
+         of it"</strong>. Reporting a win from a 7.54% observation would be reading noise as signal, and "not significant"
+         here means <em>inconclusive</em>, not <em>no difference</em>.</p>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section id="q2">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Question 2: Does B Beat A?</h2></div>
+    <p>The second question uses the same dataset and gets a completely different quality of answer.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">z statistic</div><div class="rv">3.62</div><div class="rd">B versus A</div></div>
+      <div class="rchip"><div class="rk">p-value</div><div class="rv">0.0003</div><div class="rd">clearly significant</div></div>
+      <div class="rchip"><div class="rk">Difference</div><div class="rv">+3.87 pp</div><div class="rd">11.41% vs 7.54%</div></div>
+      <div class="rchip"><div class="rk">95% CI</div><div class="rv">+1.8 to +6.0 pp</div><div class="rd">excludes zero</div></div>
+    </div>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-signup-result.png" alt="Two panels. On the left, the signup rates of campaigns A and B with 95% confidence intervals against a dashed red 7 percent target line; campaign A's interval straddles the target line while campaign B's sits well above it. On the right, the difference between B and A plotted as a point at about 3.9 percentage points with a confidence interval from 1.8 to 6.0, entirely to the right of a dashed zero line.">
+      <figcaption><strong>Left:</strong> campaign A's interval <strong>straddles the target</strong>, which is why question 1 was inconclusive; campaign B's sits clearly above it. <strong>Right:</strong> the gap between the campaigns is well separated from zero, which is why question 2 was easy.</figcaption>
+    </figure>
+
+    <p>Why did the same data answer one question and not the other? Because of the size of the gap being asked about. Question
+       1 was about a <strong>0.54 point</strong> difference; question 2 was about a <strong>3.87 point</strong> difference,
+       seven times larger, from the same number of visitors.</p>
+  </section>
+
+  <!-- 5 -->
+  <section id="framing">
+    <div class="section-eyebrow"><div class="num">5</div><h2>The Same Win, Two Very Different Headlines</h2></div>
+    <p>The gap between the campaigns can be reported as <strong>3.87 percentage points</strong> or as a <strong>51%
+       relative lift</strong>. Both are arithmetically correct, and they leave completely different impressions.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.1rem">
+      <svg viewBox="0 0 700 176" width="100%" font-family="Inter, sans-serif" aria-label="A diagram contrasting two framings of the same result. On the left, the relative framing reads a 51 percent lift, which sounds transformative. On the right, the absolute framing reads plus 3.9 percentage points, or about 387 extra signups per ten thousand visitors, which sounds modest. Both describe the identical finding, and the recommendation is to report the absolute difference with its interval and then translate it into a concrete quantity.">
+        <text x="350" y="18" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">One result, two honest headlines</text>
+        <rect x="24" y="36" width="308" height="98" rx="11" fill="#fef2f2" stroke="#fecaca"/>
+        <text x="178" y="56" text-anchor="middle" font-size="9" fill="#b91c1c" font-weight="800">RELATIVE FRAMING</text>
+        <text x="178" y="88" text-anchor="middle" font-size="22" fill="#dc2626" font-weight="800">+51%</text>
+        <text x="178" y="108" text-anchor="middle" font-size="9" fill="#7f1d1d">"a 51 percent lift"</text>
+        <text x="178" y="124" text-anchor="middle" font-size="8" fill="#b91c1c" font-style="italic">sounds transformative</text>
+        <rect x="352" y="36" width="324" height="98" rx="11" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="514" y="56" text-anchor="middle" font-size="9" fill="#15803d" font-weight="800">ABSOLUTE FRAMING</text>
+        <text x="514" y="88" text-anchor="middle" font-size="22" fill="#16a34a" font-weight="800">+3.9 pp</text>
+        <text x="514" y="108" text-anchor="middle" font-size="9" fill="#166534">"about 387 more signups per 10,000 visitors"</text>
+        <text x="514" y="124" text-anchor="middle" font-size="8" fill="#15803d" font-style="italic">sounds modest, and is checkable</text>
+        <text x="350" y="156" text-anchor="middle" font-size="8.5" fill="#64748b" font-style="italic">Relative figures exaggerate when the base rate is small. Report the absolute difference with its interval, then translate it.</text>
+      </svg>
+    </figure>
+
+    <p>Relative figures inflate when the base rate is small, and a 7.5% base rate is small. The reporting discipline from
+       <a href="communicating-insights-and-storytelling-with-data.html">Chapter 157</a> applies directly: give the
+       <strong>absolute difference with its interval</strong>, then translate it into something concrete, here about
+       <strong>387 extra signups per 10,000 visitors</strong>. Quote the relative lift alongside if you like, never instead.</p>
+  </section>
+
+  <!-- 6 -->
+  <section id="verdict">
+    <div class="section-eyebrow"><div class="num">6</div><h2>The Verdict and Its Limits</h2></div>
+    <p>If the decision is which campaign to run, the evidence supports <strong>B</strong>. If the question is whether A meets
+       its 7% target, the answer is that we cannot yet tell, and a larger sample would be needed to resolve it.</p>
+
+    <ul>
+      <li><strong>How were visitors assigned?</strong> The comparison is causal only if visitors were <strong>randomized</strong>
+          between campaigns. If A and B ran on different pages, days, or audiences, the difference confounds the campaign
+          with those factors, the same failure mode as in
+          <a href="capstone-onboarding-productivity.html">Capstone 2</a>.</li>
+      <li><strong>Signups are not the goal.</strong> A campaign can lift signups by promising more than the product delivers,
+          moving the cost downstream into churn and support. Optimizing one funnel metric without watching what follows is
+          how a short-term win becomes a long-term loss.</li>
+      <li><strong>Peeking inflates false positives.</strong> Checking an experiment repeatedly and stopping the moment p drops
+          below 0.05 badly breaks the error rate. Fix the sample size in advance, or use a sequential method that accounts
+          for the looking.</li>
+      <li><strong>Inconclusive is not negative.</strong> Campaign A's result does not show that A is at target; it shows the
+          study could not resolve the question at this sample size.</li>
+    </ul>
+  </section>
+
+  <!-- 7 -->
+  <section id="in-ds-ai">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Proportion Tests in Data Science &amp; AI</h2></div>
+    <p>Binary outcomes are the most common outcome type in product analytics, so this is probably the most-run test in the
+       industry.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Where it appears</th><th>The proportion</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Conversion A/B tests</td><td>Share of users who complete a target action, variant against control.</td></tr>
+          <tr><td class="nm">Model accuracy comparison</td><td>Share correct for two classifiers on the same held-out set.</td></tr>
+          <tr><td class="nm">Quality and defect rates</td><td>Share of units failing inspection, against a contractual threshold.</td></tr>
+          <tr><td class="nm">Fairness metrics</td><td>Selection rates compared across groups, as in Chapter 158.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="research">
+      <span class="rtag">Practice note</span>
+      <p style="margin:0.4rem 0 0">Two habits separate reliable experimentation teams from unreliable ones. First, a
+         <strong>power calculation before launch</strong>: deciding the minimum lift worth detecting and sizing the test for
+         it, which would have revealed in advance that this sample could never resolve a 0.5-point question. Second,
+         <strong>no peeking</strong>: fixing the horizon or adopting a sequential design. Both failures produce confident
+         conclusions from tests that never had the resolution to support them.</p>
+    </div>
+  </section>
+
+  <!-- notebook + downloads -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook works both questions end to end: it cleans the visitor log with a printed audit trail,
+             checks the successes-and-failures condition for each campaign, runs the one-sample z-test against the target
+             with a Wilson confidence interval and confirms it with an exact binomial test, runs the two-sample z-test with a
+             confidence interval for the difference, and computes both the absolute and relative framings of the lift. Every
+             number here comes from its output, with a plain-language note after each result.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-email-signup-rates.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-email-signup-rates.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-email-signup-rates.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Read the reports &amp; get the data</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong> (<code>capstone-email-signup-rates.xlsx</code>) holds one row
+         per visitor on the <em>visitors</em> sheet, with duplicates and missing outcomes left in so you can practice the
+         cleaning. Two written reports accompany it: a <strong>plain-language brief</strong> for a marketing lead, and a
+         <strong>technical report</strong> with both tests, intervals, the exact-binomial check, and references.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-10-email-signup-rates.html" target="_blank" rel="noopener">📄 Plain-language brief <small>read online</small></a>
+        <a class="ex-file doc" href="../reports/capstone-10-email-signup-rates-technical.html" target="_blank" rel="noopener">📄 Technical report <small>journal-style</small></a>
+        <a class="ex-file xls" href="../data/capstone-email-signup-rates.xlsx">📊 Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>A binary outcome averaged over people is a proportion</strong>, and proportions have their own standard error and their own tests.</span></li>
+        <li><span class="ck">✓</span><span><strong>One-sample compares a rate to a fixed target</strong> (only one quantity is uncertain); <strong>two-sample compares two estimated rates</strong> (both are).</span></li>
+        <li><span class="ck">✓</span><span><strong>Check successes and failures</strong>, at least about 10 of each; below that use the exact binomial test, which here confirmed the approximation.</span></li>
+        <li><span class="ck">✓</span><span><strong>Not significant means inconclusive</strong>: A at 7.54% with a CI of 6.3% to 9.0% is neither above nor below its 7% target, and reporting a win would read noise as signal.</span></li>
+        <li><span class="ck">✓</span><span><strong>Report absolute, then translate</strong>: +3.87 pp (CI +1.8 to +6.0), about 387 extra signups per 10,000 visitors. The same result framed as "+51%" overstates it.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">8</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on this capstone, from the assumption check to the framing of the lift. Answer them, hit
+       <strong>Check Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-website-visits-by-weekday.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 168 · Previous</span><br><span class="cn-title">Chi-Square Goodness-of-Fit: Weekday Traffic</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 169 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch169";
+  window.QUIZ_DATA = [
+    {
+      q: "Why do rates get their own tests rather than using a t-test?",
+      options: ["Rates are always small", "The underlying outcome is binary, which gives the proportion its own standard error", "Rates cannot be averaged", "t-tests need three groups"],
+      answer: 1,
+      explain: "A proportion is the mean of 0s and 1s, and its variability follows the binomial, not a free-standing SD."
+    },
+    {
+      q: "The difference between the one-sample and two-sample proportion tests is that…",
+      options: ["One uses a bigger sample", "One compares a rate to a fixed target; the other compares two estimated rates, so both carry uncertainty", "One is exact and one is approximate", "They are the same test"],
+      answer: 1,
+      explain: "A target is a fixed number; another campaign's rate is itself an estimate."
+    },
+    {
+      q: "The assumption to check before a proportion z-test is…",
+      options: ["Normality of the raw data", "At least about 10 successes AND 10 failures in each group", "Equal variances", "A sample of at least 1,000"],
+      answer: 1,
+      explain: "The normal approximation needs enough of both outcomes; otherwise use the exact binomial test."
+    },
+    {
+      q: "Campaign A came in at 7.54% against a 7% target, p = 0.41, 95% CI [6.3%, 9.0%]. The correct reading is…",
+      options: ["A beat its target", "A missed its target", "A is at about its target; this sample cannot say which side", "The test was invalid"],
+      answer: 2,
+      explain: "The interval contains 7%, so the data are consistent with A being just above or just below target."
+    },
+    {
+      q: "Why could the same dataset settle question 2 but not question 1?",
+      options: ["Question 2 used more visitors", "The gap in question 2 (3.87 pp) was about seven times larger than in question 1 (0.54 pp)", "Question 1 used the wrong test", "Question 2 had a one-sided hypothesis"],
+      answer: 1,
+      explain: "With the same sample size, a much larger difference is far easier to detect."
+    },
+    {
+      q: "The B-versus-A result was +3.87 percentage points, or a +51% relative lift. Which should a report lead with?",
+      options: ["The relative lift, because it is larger", "The absolute difference with its interval, then translated into a concrete quantity", "Neither, just the p-value", "Whichever is more persuasive"],
+      answer: 1,
+      explain: "Relative figures exaggerate when the base rate is small; absolute figures are checkable and actionable."
+    },
+    {
+      q: "The exact binomial test was run alongside the one-sample z-test because…",
+      options: ["The z-test was invalid", "It does not rely on the normal approximation, so agreement confirms the approximation was safe", "It gives a larger p-value", "It is required for two-sided tests"],
+      answer: 1,
+      explain: "It agreed (p = 0.42), showing the conclusion was not an artifact of the approximation."
+    },
+    {
+      q: "'Peeking' at an experiment and stopping when p first drops below 0.05…",
+      options: ["Is efficient and recommended", "Badly inflates the false-positive rate unless a sequential method is used", "Has no effect on the error rate", "Only matters for small samples"],
+      answer: 1,
+      explain: "Repeated looks give many chances to cross the threshold by luck; fix the sample size or use a sequential design."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
