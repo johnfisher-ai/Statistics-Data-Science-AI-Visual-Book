@@ -648,6 +648,8 @@ MAP = {
         ("../../capstone-satisfaction-and-loyalty.html#notebook", "Back to the book", "Chapter 171 · Spearman Correlation: Satisfaction and Loyalty"),
     "capstone-judges-product-rankings.html":
         ("../../capstone-judges-product-rankings.html#notebook", "Back to the book", "Chapter 172 · Kendall's Tau: Two Judges' Rankings"),
+    "capstone-pain-relief-two-treatments.html":
+        ("../../capstone-pain-relief-two-treatments.html#notebook", "Back to the book", "Chapter 173 · Mann-Whitney U: Two Pain Treatments"),
 }
 
 def card(href, kicker, title):
