@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 172 · Kendall's Tau: Two Judges' Rankings — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .yes { color:#15803d; font-weight:700; }
+    .disp-table .no { color:#dc2626; font-weight:700; }
+    .disp-table tr.hi td { background:#fffbeb; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .goldbox { background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #b45309; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .goldbox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .rw-card { background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #b45309; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file.doc { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #b45309; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+    .svg-wrap { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.9rem 0.6rem 0.3rem; background:var(--panel); }
+    .svg-wrap svg { width:100%; height:auto; display:block; }
+    .svg-wrap .cap { font-size:0.82rem; color:var(--ink-soft); padding:0.55rem 0.6rem 0.4rem; line-height:1.55; }
+    .svg-wrap .cap strong { color:var(--ink); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/capstone-judges-product-rankings.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXVII &#183; Capstone Projects: Statistical Testing</span><span class="sep">/</span>
+      <span>Chapter 172</span>
+    </div>
+    <h1>Do Two Judges <span class="accent">See the Same Thing?</span></h1>
+    <p class="dek">Capstone 13. A blind panel, a dozen products, three judges and a scoring sheet. The question is not who
+       scored highest but whether two experts put the products in the same order, and whether a dozen items is enough to tell.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~17 min</b>&nbsp;read</div>
+      <div class="m">🧪 <b>Kendall's tau-b</b></div>
+      <div class="m">📊 <b>Chapter 172</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">The previous capstone had 182 respondents. This one has <span class="hl">twelve products</span>, because
+       that is what a tasting panel can get through before the palate stops cooperating. Small samples are not a lesser kind
+       of data; they are a different problem, and this chapter is as much about what twelve items can support as about the
+       coefficient itself.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#964;</div>
+      <div class="def-body">
+        <span class="def-kw">Kendall's tau</span> measures agreement by counting <span class="def-kw">pairs</span>. Take any
+        two products and ask whether both judges put them in the same order. Tau is the excess of
+        <span class="def-kw">concordant</span> over <span class="def-kw">discordant</span> pairs as a proportion of the pairs
+        that can be compared. The <span class="def-kw">-b</span> variant corrects for ties.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">⭐</div>
+      <div><div class="ctitle">The finding, up front</div>
+        <p>Judges A and B agree substantially on the order of the twelve products (&#964;<sub>b</sub> = 0.74, p = 0.002).
+           Judge C does not: &#964;<sub>b</sub> = 0.32 against A, which <strong>sounds moderate and means nothing</strong>,
+           because with twelve products chance alone produces a tau that large about one time in five.</p></div>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section id="panel">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Panel, and the Right Question to Ask of It</h2></div>
+    <p>Three trained judges scored the same products independently on a 1-to-10 quality scale, blind to the brand. Before the
+       panel's verdict goes anywhere near a product decision, someone should ask whether the judges are measuring the same
+       thing at all.</p>
+
+    <p>Note carefully what that question is <em>not</em>. It is not whether the judges gave similar scores. One judge may be
+       systematically harsher than another, marking everything two points lower, and still rank every product identically. For
+       a decision about which products to carry, that is agreement enough. The question is about <strong>order</strong>.</p>
+
+    <div class="goldbox">
+      <span class="gb-tag">Data types, and why they close off the usual options</span>
+      <p style="margin:0.4rem 0 0">Each judge's score is <strong>ordinal</strong>: ordered, but with no guarantee that the
+         step from 7 to 8 means the same as the step from 3 to 4. The unit of analysis is the <strong>product</strong>, and
+         there are twelve. Ordinal measurement rules out the product-moment correlation on the same grounds as
+         <a href="capstone-satisfaction-and-loyalty.html">Capstone 12</a>; a sample of twelve rules out leaning on any
+         large-sample approximation. Both point to a rank method, and specifically to one that behaves well when n is small.</p>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section id="orderings">
+    <div class="section-eyebrow"><div class="num">2</div><h2>What the Judges Saw</h2></div>
+    <p>The raw sheet held 16 rows. One was a duplicate submission, two were products a judge never tasted, and one carried an
+       impossible score of 12 on a 10-point form. Twelve products survive with a complete set of three scores.</p>
+
+    <p>Scores are not the interesting object; <strong>ranks</strong> are. Converting each judge's scores to ranks and joining
+       the same product across judges turns agreement into flat lines and disagreement into crossings.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-judges-bump.png" alt="A bump chart with three columns, one per judge, and twelve lines, one per product. Lines run roughly flat between Judge A and Judge B, indicating agreement. Between Judge B and Judge C several lines cross the full height of the chart. Iced Citrus runs from near the bottom under judges A and B to near the top under Judge C.">
+      <figcaption>Each line is one product tracked across the three judges, with rank 1 at the top. Between <strong>A and B</strong> the lines run mostly flat. Move to <strong>Judge C</strong> and the picture scrambles. Iced Citrus is the clearest case: near the bottom for A and B, near the top for C. That is what disagreement looks like before any coefficient is computed.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 3 -->
+  <section id="pairs">
+    <div class="section-eyebrow"><div class="num">3</div><h2>What Tau Actually Counts</h2></div>
+    <p>Most coefficients have to be explained by analogy. Tau can be explained by doing it. Take any two products and ask a
+       single question of each judge: which one is better? If both judges answer the same way, the pair is
+       <strong>concordant</strong>. If they answer differently, it is <strong>discordant</strong>. If either judge gave the two
+       products the same score, the pair is <strong>tied</strong> and carries no information about agreement.</p>
+
+    <div class="svg-wrap">
+      <svg viewBox="0 0 760 250" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="Three panels showing a concordant pair, a discordant pair, and a tied pair, with each judge's ordering of two products.">
+        <rect x="8" y="8" width="238" height="234" rx="14" fill="#fffbeb" stroke="#fde68a"/>
+        <rect x="261" y="8" width="238" height="234" rx="14" fill="#fffbeb" stroke="#fde68a"/>
+        <rect x="514" y="8" width="238" height="234" rx="14" fill="#fffbeb" stroke="#fde68a"/>
+
+        <text x="127" y="34" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="13" font-weight="800" fill="#15803d">CONCORDANT</text>
+        <text x="380" y="34" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="13" font-weight="800" fill="#dc2626">DISCORDANT</text>
+        <text x="633" y="34" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="13" font-weight="800" fill="#92400e">TIED</text>
+
+        <text x="70" y="62" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" font-weight="700" fill="#78350f">Judge A</text>
+        <text x="184" y="62" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" font-weight="700" fill="#78350f">Judge B</text>
+        <rect x="34" y="76" width="72" height="34" rx="8" fill="#b45309"/>
+        <text x="70" y="98" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="12" font-weight="800" fill="#ffffff">Fig</text>
+        <rect x="34" y="126" width="72" height="34" rx="8" fill="#fcd34d"/>
+        <text x="70" y="148" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="12" font-weight="800" fill="#78350f">Kiln</text>
+        <rect x="148" y="76" width="72" height="34" rx="8" fill="#b45309"/>
+        <text x="184" y="98" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="12" font-weight="800" fill="#ffffff">Fig</text>
+        <rect x="148" y="126" width="72" height="34" rx="8" fill="#fcd34d"/>
+        <text x="184" y="148" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="12" font-weight="800" fill="#78350f">Kiln</text>
+        <path d="M106 93 L148 93" stroke="#15803d" stroke-width="2.4"/>
+        <path d="M106 143 L148 143" stroke="#15803d" stroke-width="2.4"/>
+        <text x="127" y="196" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" fill="#3f3f46">Both rank Fig above Kiln.</text>
+        <text x="127" y="216" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" font-weight="700" fill="#15803d">counts +1</text>
+
+        <text x="323" y="62" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" font-weight="700" fill="#78350f">Judge A</text>
+        <text x="437" y="62" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" font-weight="700" fill="#78350f">Judge B</text>
+        <rect x="287" y="76" width="72" height="34" rx="8" fill="#b45309"/>
+        <text x="323" y="98" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="12" font-weight="800" fill="#ffffff">Iced</text>
+        <rect x="287" y="126" width="72" height="34" rx="8" fill="#fcd34d"/>
+        <text x="323" y="148" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="12" font-weight="800" fill="#78350f">Dark</text>
+        <rect x="401" y="76" width="72" height="34" rx="8" fill="#fcd34d"/>
+        <text x="437" y="98" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="12" font-weight="800" fill="#78350f">Dark</text>
+        <rect x="401" y="126" width="72" height="34" rx="8" fill="#b45309"/>
+        <text x="437" y="148" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="12" font-weight="800" fill="#ffffff">Iced</text>
+        <path d="M359 93 L401 143" stroke="#dc2626" stroke-width="2.4"/>
+        <path d="M359 143 L401 93" stroke="#dc2626" stroke-width="2.4"/>
+        <text x="380" y="196" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" fill="#3f3f46">They swap the order.</text>
+        <text x="380" y="216" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" font-weight="700" fill="#dc2626">counts &#8722;1</text>
+
+        <text x="576" y="62" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" font-weight="700" fill="#78350f">Judge A</text>
+        <text x="690" y="62" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" font-weight="700" fill="#78350f">Judge B</text>
+        <rect x="540" y="98" width="72" height="34" rx="8" fill="#d6d3d1"/>
+        <text x="576" y="120" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="12" font-weight="800" fill="#57534e">Amber</text>
+        <rect x="540" y="138" width="72" height="34" rx="8" fill="#d6d3d1"/>
+        <text x="576" y="160" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="12" font-weight="800" fill="#57534e">Lav.</text>
+        <rect x="654" y="76" width="72" height="34" rx="8" fill="#b45309"/>
+        <text x="690" y="98" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="12" font-weight="800" fill="#ffffff">Amber</text>
+        <rect x="654" y="126" width="72" height="34" rx="8" fill="#fcd34d"/>
+        <text x="690" y="148" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="12" font-weight="800" fill="#78350f">Lav.</text>
+        <text x="576" y="90" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="10.5" font-style="italic" fill="#78350f">same score</text>
+        <text x="633" y="196" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" fill="#3f3f46">Judge A cannot separate them.</text>
+        <text x="633" y="216" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" font-weight="700" fill="#92400e">set aside</text>
+      </svg>
+      <div class="cap"><strong>Tau in one picture.</strong> Every pair of products falls into one of these three boxes. Add up
+        the plus ones and minus ones, divide by the number of pairs that could be compared, and you have Kendall's tau. No
+        other correlation coefficient has a definition this literal.</div>
+    </div>
+
+    <p>Twelve products make 66 pairs. Here is how they fell.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Pairs of products, Judge A against Judge B</th><th>Count</th><th>Contributes</th></tr></thead>
+        <tbody>
+          <tr class="hi"><td class="nm">Concordant &#183; both judges agree which is better</td><td class="yes">46</td><td>+1 each</td></tr>
+          <tr class="hi"><td class="nm">Discordant &#183; the judges disagree</td><td class="no">4</td><td>&#8722;1 each</td></tr>
+          <tr><td class="nm">Tied by Judge A only</td><td>8</td><td>nothing</td></tr>
+          <tr><td class="nm">Tied by Judge B only</td><td>6</td><td>nothing</td></tr>
+          <tr><td class="nm">Tied by both judges</td><td>2</td><td>nothing</td></tr>
+          <tr><td class="nm">Total pairs</td><td>66</td><td>&#8212;</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Divide the excess of agreements over disagreements by all 66 pairs and you get <strong>tau-a = (46 &#8722; 4) / 66 =
+       0.636</strong>. That version penalizes the coefficient for the 16 tied pairs, treating them as though they were partial
+       disagreements, which they are not. <strong>Tau-b</strong> removes tied pairs from the denominator separately for each
+       judge, which raises the value to <strong>0.737</strong>. On a 10-point scale over twelve products, ties are guaranteed,
+       so tau-b is the version to report.</p>
+  </section>
+
+  <!-- 4 -->
+  <section id="result">
+    <div class="section-eyebrow"><div class="num">4</div><h2>The Result</h2></div>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">A vs B &#183; &#964;<sub>b</sub></div><div class="rv">0.737</div><div class="rd">p = 0.002</div></div>
+      <div class="rchip"><div class="rk">A vs C &#183; &#964;<sub>b</sub></div><div class="rv">0.317</div><div class="rd">p = 0.18, not significant</div></div>
+      <div class="rchip"><div class="rk">B vs C &#183; &#964;<sub>b</sub></div><div class="rv">0.181</div><div class="rd">p = 0.44, not significant</div></div>
+      <div class="rchip"><div class="rk">Products</div><div class="rv">12</div><div class="rd">66 comparable pairs</div></div>
+    </div>
+
+    <p>Judges A and B agree well, and the agreement is far too strong to be chance. Judge C agrees with neither at a level this
+       panel can detect. It is worth noting one more number: Spearman's rho for the same A-and-B data is
+       <strong>0.817</strong>, well above tau-b's 0.737.</p>
+
+    <div class="goldbox">
+      <span class="gb-tag">Do not read rho and tau as two estimates of one quantity</span>
+      <p style="margin:0.4rem 0 0">They are built differently and live on different scales. Tau counts pair agreements; rho
+         correlates rank numbers. For the same data tau typically lands well below rho, and neither confirms nor contradicts
+         the other. A report should say which coefficient it is quoting and stay with it, because "the correlation was 0.82"
+         and "the correlation was 0.74" describe the identical panel.</p>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section id="smalln">
+    <div class="section-eyebrow"><div class="num">5</div><h2>A Tau of 0.32 That Means Nothing</h2></div>
+    <p>Judge C's 0.317 against Judge A reads like moderate agreement. In a sample of twelve it is indistinguishable from
+       random ordering, and the cleanest way to show that is to make the null hypothesis literal: shuffle one judge's scores at
+       random, compute tau, and repeat twenty thousand times. That is a picture of what agreement looks like when there is
+       none.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-judges-null.png" alt="A histogram of Kendall's tau values from twenty thousand random shuffles, centered on zero and spreading from about minus 0.7 to plus 0.7. A shaded band marks the middle 95 percent, reaching to about plus or minus 0.47. A red line at 0.32 for A versus C falls inside the band. A green line at 0.74 for A versus B falls far outside it.">
+      <figcaption>Twenty thousand shuffles of the same twelve products. The shaded band holds the middle 95 percent of chance results, reaching to roughly <strong>plus or minus 0.47</strong>. Judge C's 0.32 sits comfortably inside it. Judge B's 0.74 sits far outside.</figcaption>
+    </figure>
+
+    <div class="svg-wrap">
+      <svg viewBox="0 0 760 168" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="A number line for Kendall's tau from minus 1 to plus 1, with a shaded band from minus 0.47 to plus 0.47 marking what chance produces with twelve products, and the three observed taus marked.">
+        <text x="24" y="26" font-family="Inter,Segoe UI,sans-serif" font-size="12.5" font-weight="800" fill="#78350f">Kendall's tau-b, and what twelve products can resolve</text>
+        <rect x="219" y="62" width="322" height="34" rx="6" fill="#fcd34d" opacity="0.42"/>
+        <line x1="40" y1="79" x2="720" y2="79" stroke="#78350f" stroke-width="2"/>
+        <line x1="40" y1="72" x2="40" y2="86" stroke="#78350f" stroke-width="2"/>
+        <line x1="380" y1="68" x2="380" y2="90" stroke="#78350f" stroke-width="2"/>
+        <line x1="720" y1="72" x2="720" y2="86" stroke="#78350f" stroke-width="2"/>
+        <text x="40" y="112" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" fill="#57534e">&#8722;1.0</text>
+        <text x="380" y="112" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" fill="#57534e">0</text>
+        <text x="720" y="112" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" fill="#57534e">+1.0</text>
+        <text x="380" y="134" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" font-style="italic" fill="#92400e">shaded: what chance alone produces 95% of the time</text>
+
+        <circle cx="441" cy="79" r="7" fill="#f59e0b"/>
+        <text x="424" y="52" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" font-weight="800" fill="#b45309">B vs C  0.18</text>
+        <circle cx="488" cy="79" r="7" fill="#dc2626"/>
+        <text x="506" y="52" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" font-weight="800" fill="#dc2626">A vs C  0.32</text>
+        <text x="470" y="152" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" fill="#92400e">both fall inside the band, so both are unreadable</text>
+        <circle cx="631" cy="79" r="8" fill="#15803d"/>
+        <text x="631" y="52" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" font-weight="800" fill="#15803d">A vs B  0.74</text>
+      </svg>
+      <div class="cap"><strong>The same result on a ruler.</strong> With twelve products the band of pure chance stretches most
+        of the way to 0.5. Anything inside it is unreadable, however respectable the number looks quoted on its own. Small
+        samples do not make effects disappear; they make moderate ones impossible to distinguish from noise.</div>
+    </div>
+
+    <p>Put concretely: chance produces a tau of 0.32 or larger in <strong>19 percent</strong> of shuffles, and a tau of 0.74 or
+       larger in <strong>0.1 percent</strong>. That is the difference between the two verdicts, and it has nothing to do with
+       how far apart the two coefficients look.</p>
+  </section>
+
+  <!-- 6 -->
+  <section id="concordance">
+    <div class="section-eyebrow"><div class="num">6</div><h2>The Whole Panel at Once: Kendall's W</h2></div>
+    <p>Tau compares two rankings. With a panel of three or more, the natural summary is <strong>Kendall's coefficient of
+       concordance, W</strong>, which runs from 0 (no shared ordering at all) to 1 (every judge in perfect agreement).</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Kendall's W</div><div class="rv">0.662</div><div class="rd">moderate concordance</div></div>
+      <div class="rchip"><div class="rk">Chi-square</div><div class="rv">21.85</div><div class="rd">df = 11</div></div>
+      <div class="rchip"><div class="rk">p-value</div><div class="rv">0.026</div><div class="rd">reject independent ordering</div></div>
+    </div>
+
+    <p>The panel as a whole shows moderate concordance, enough to reject the idea that all three judges are ordering products
+       independently. But notice what a single panel-level number hides: the pairwise taus showed two judges in close agreement
+       and a third who is not. Report W alone and the panel looks more unified than it is. Report both, and the reader sees the
+       actual structure.</p>
+  </section>
+
+  <!-- 7 -->
+  <section id="verdict">
+    <div class="section-eyebrow"><div class="num">7</div><h2>The Verdict, and the Question Statistics Cannot Answer</h2></div>
+    <p>Judges A and B substantially agree on the order of the twelve products. Judge C does not agree with either at a level
+       this panel can distinguish from random ordering. For the product decision that means the A-and-B consensus is usable,
+       and Judge C's sheet should not simply be averaged in as though it carried equal signal.</p>
+
+    <p>The right next step is not statistical. Before discarding anyone, find out <strong>why</strong> Judge C differs. A judge
+       trained on a different product category, or one who tasted in a different order, or one reading "quality" as commercial
+       appeal rather than craft, produces exactly this pattern for a reason worth knowing. The coefficient tells you there is
+       something to investigate. It does not tell you who is right.</p>
+
+    <ul>
+      <li><strong>A dozen products is a dozen products.</strong> Every estimate here carries wide uncertainty, as the shuffle
+          test made plain. Quoting tau-b to three decimals invites more confidence than twelve items can support.</li>
+      <li><strong>Disagreement is not incompetence.</strong> The test measures whether two judges ordered products alike. If
+          Judge C is the only one attuned to a quality the others miss, this analysis would still flag C as the odd one out.</li>
+      <li><strong>Order effects and palate fatigue.</strong> If every judge tasted in the same sequence, part of the observed
+          agreement is agreement about position on the sheet rather than about the products. Randomizing the order per judge
+          separates the two, and this panel did not record whether that happened, which is a design gap worth closing.</li>
+      <li><strong>Blinding is what makes it about the product.</strong> Judges who can see the brand are partly scoring the
+          brand.</li>
+      <li><strong>Agreement is a panel diagnostic, not a staffing metric.</strong> A coefficient computed on twelve products
+          has no business appearing in anyone's performance review.</li>
+    </ul>
+  </section>
+
+  <!-- 8 -->
+  <section id="in-ds-ai">
+    <div class="section-eyebrow"><div class="num">8</div><h2>Rank Agreement in Data Science &amp; AI</h2></div>
+    <p>The question "do two raters order these the same way?" turns up constantly once you know to look for it, and it is often
+       the question standing between a model and its evaluation.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Where it appears</th><th>The two rankings being compared</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Inter-rater reliability</td><td>Two human annotators labeling the same items on an ordered scale.</td></tr>
+          <tr><td class="nm">Search and recommender evaluation</td><td>The system's ranking against human relevance judgments.</td></tr>
+          <tr><td class="nm">LLM-as-judge validation</td><td>A model's graded scores against a human rater's, on the same responses.</td></tr>
+          <tr><td class="nm">Preference data for RLHF</td><td>Pairwise preferences between model outputs, which is tau's native format.</td></tr>
+          <tr><td class="nm">Feature importance stability</td><td>The ranking of features from one training run against another.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="research">
+      <span class="rtag">Practice note</span>
+      <p style="margin:0.4rem 0 0">Preference learning is built on exactly the comparison tau counts: a rater is shown two
+         outputs and picks one. A dataset of such judgments is a list of concordant and discordant pairs, so tau is the natural
+         measure of how well a reward model reproduces human ordering. The small-sample warning in this chapter transfers
+         directly. An evaluation set of a dozen prompts cannot distinguish a model that mostly agrees with human raters from
+         one that agrees by luck, no matter how confidently the resulting number is reported.</p>
+    </div>
+  </section>
+
+  <!-- notebook + downloads -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook cleans the panel sheet with a printed audit trail, draws the rank picture, then counts all
+             66 pairs by hand before calling a library so that tau's definition is visible rather than asserted. It computes
+             tau-b for each pairing, runs the twenty-thousand-shuffle null distribution that puts a small sample in its place,
+             and closes with Kendall's W across all three judges. Every number in this chapter comes from its output.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-judges-product-rankings.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-judges-product-rankings.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-judges-product-rankings.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Read the reports &amp; get the data</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong> (<code>capstone-judges-product-rankings.xlsx</code>) holds the
+         panel sheet with all three judges' scores, with a duplicate submission, two untasted products, and an out-of-range
+         score left in so you can practice the cleaning. Two written reports accompany it: a <strong>plain-language
+         brief</strong> for a product lead, and a <strong>technical report</strong> covering the tie correction, the
+         permutation test, and the concordance coefficient.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-13-judges-product-rankings.html" target="_blank" rel="noopener">📄 Plain-language brief <small>read online</small></a>
+        <a class="ex-file doc" href="../reports/capstone-13-judges-product-rankings-technical.html" target="_blank" rel="noopener">📄 Technical report <small>journal-style</small></a>
+        <a class="ex-file xls" href="../data/capstone-judges-product-rankings.xlsx">📊 Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Tau counts pairs</strong>: of 66 pairs of products, the judges agreed on 46 and disagreed on 4, and the remaining 16 involved a tie and carry no information.</span></li>
+        <li><span class="ck">✓</span><span><strong>Tau-b is the version to report</strong> when ties are inevitable, because tau-a treats tied pairs as though they were partial disagreements (0.636 against 0.737 here).</span></li>
+        <li><span class="ck">✓</span><span><strong>Rho and tau are not interchangeable</strong>: the same panel gives &#961; = 0.82 and &#964;<sub>b</sub> = 0.74. Say which one you are quoting.</span></li>
+        <li><span class="ck">✓</span><span><strong>Twelve items is a wide net for chance</strong>: the shuffle test puts the middle 95 percent of null results at roughly &#177;0.47, so Judge C's 0.32 is unreadable.</span></li>
+        <li><span class="ck">✓</span><span><strong>Kendall's W summarizes a whole panel</strong> (0.66 here), but report the pairwise taus alongside it or a split panel will look unified.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">9</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on this capstone, from what tau counts to what a sample of twelve can support. Answer them, hit
+       <strong>Check Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-satisfaction-and-loyalty.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 171 · Previous</span><br><span class="cn-title">Spearman Correlation: Satisfaction and Loyalty</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 172 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch172";
+  window.QUIZ_DATA = [
+    {
+      q: "What does Kendall's tau actually count?",
+      options: ["The difference between the two judges' average scores", "Pairs of items: whether both judges agree on which of the two is better", "How many items each judge ranked first", "The variance of the ranks"],
+      answer: 1,
+      explain: "Tau is the excess of concordant over discordant pairs, divided by the comparable pairs."
+    },
+    {
+      q: "A pair of products where Judge A gave both the same score is…",
+      options: ["Concordant", "Discordant", "Tied, and carries no information about agreement", "Excluded from the dataset entirely"],
+      answer: 2,
+      explain: "If a judge cannot separate two products, that pair says nothing about whether the judges agree on order."
+    },
+    {
+      q: "Why report tau-b rather than tau-a here?",
+      options: ["Tau-b is always larger", "Tau-b corrects for ties, which are inevitable with 10 score values across 12 products", "Tau-a only works for continuous data", "Tau-b is the only one scipy computes"],
+      answer: 1,
+      explain: "Tau-a keeps tied pairs in the denominator, effectively penalizing the coefficient for pairs that were never disagreements."
+    },
+    {
+      q: "Spearman's rho was 0.817 and Kendall's tau-b was 0.737 on the same two judges. What does that gap mean?",
+      options: ["One of them was computed incorrectly", "Nothing is wrong: they are built differently and tau typically runs below rho", "The judges disagree more than rho suggests", "The data violate an assumption"],
+      answer: 1,
+      explain: "They are not two estimates of the same quantity, so the magnitudes are not comparable. State which one you are reporting."
+    },
+    {
+      q: "Judge C's tau-b of 0.317 against Judge A was not significant. Why?",
+      options: ["Because 0.317 is a small correlation in absolute terms", "Because with only 12 products, chance alone produces a tau that large about 19% of the time", "Because Judge C had missing data", "Because tau cannot detect agreement below 0.5"],
+      answer: 1,
+      explain: "The shuffle test put the middle 95% of null results at roughly plus or minus 0.47, and 0.317 sits inside that."
+    },
+    {
+      q: "What is the purpose of shuffling one judge's scores 20,000 times?",
+      options: ["To increase the sample size", "To build the distribution of tau when the judges order independently, so the observed value can be compared against it", "To remove ties from the data", "To estimate the judges' reliability over time"],
+      answer: 1,
+      explain: "It makes the null hypothesis literal rather than relying on an approximation that a sample of twelve may not support."
+    },
+    {
+      q: "Kendall's W was 0.662 across all three judges. What does reporting W alone risk hiding?",
+      options: ["The number of products tasted", "That the panel is not uniform: two judges agree closely while a third does not", "Whether the scores were ordinal", "The direction of the association"],
+      answer: 1,
+      explain: "A single panel-level number averages over structure that the pairwise taus reveal, so report both."
+    },
+    {
+      q: "The analysis flagged Judge C as the odd one out. What can it NOT tell you?",
+      options: ["Whether the orderings differ", "Whether the difference is larger than chance", "Which judge is right about product quality", "How many pairs were tied"],
+      answer: 2,
+      explain: "Agreement is not accuracy. If Judge C is the only one detecting a real quality, the test would still single C out."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
