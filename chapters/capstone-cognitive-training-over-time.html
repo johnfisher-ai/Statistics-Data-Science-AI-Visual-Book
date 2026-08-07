@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 165 · Repeated-Measures ANOVA: Cognitive Training Over Time — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .pass { color:#15803d; font-weight:700; }
+    .disp-table .fail { color:#b45309; font-weight:700; }
+    .disp-table .no { color:#94a3b8; }
+    .disp-table tr.hi td { background:#fffbeb; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .goldbox { background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #b45309; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .goldbox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .rw-card { background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #b45309; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file.doc { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #b45309; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/capstone-cognitive-training-over-time.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXVII &#183; Capstone Projects: Statistical Testing</span><span class="sep">/</span>
+      <span>Chapter 165</span>
+    </div>
+    <h1>Does Cognitive Training <span class="accent">Keep Working?</span></h1>
+    <p class="dek">Capstone 6. The same participants, assessed four times over twelve weeks. Repeated measures buy power, but
+       they bring a new assumption called sphericity and a new bias risk in the people who drop out. Both change what we are
+       allowed to conclude.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~18 min</b>&nbsp;read</div>
+      <div class="m">🧪 <b>Repeated-measures ANOVA</b></div>
+      <div class="m">📊 <b>Chapter 165</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Capstone 5 compared three separate groups of students. This one compares <span class="hl">four
+       measurements of the same people</span>. That pairing is powerful, for the reason the paired t-test was powerful in
+       <a href="capstone-blood-pressure-before-after.html">Capstone 3</a>: person-to-person differences cancel out. But with
+       more than two conditions, a new condition has to hold, and here it does not.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#8635;</div>
+      <div class="def-body">
+        <span class="def-kw">Repeated-measures ANOVA</span> tests whether a continuous outcome changes across three or more
+        conditions measured on the <span class="def-kw">same subjects</span>. Beyond normality it assumes
+        <span class="def-kw">sphericity</span>: that the variance of the difference between any two conditions is the same
+        for every pair. <span class="def-kw">Mauchly's test</span> checks it, and the
+        <span class="def-kw">Greenhouse-Geisser</span> correction repairs the test when it fails.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🧠</div>
+      <div><div class="ctitle">The finding, up front</div>
+        <p>Scores did improve, and the result survives correction: <strong>F(2.12, 72) = 7.16, corrected p = 0.001</strong>.
+           But the shape matters more than the fact. Participants gained about <strong>4.5 points in the first four
+           weeks</strong> and then <strong>plateaued</strong>: Weeks 8 and 12 are statistically indistinguishable from Week 4.
+           And <strong>7 of 42 participants</strong> had to be dropped, which is its own warning.</p></div>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section id="question">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Question and the Design</h2></div>
+    <p>A twelve-week cognitive-training program assessed the same participants at Baseline, Week 4, Week 8, and Week 12. The
+       question is whether scores change over the program, and, just as usefully, <em>when</em>.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Framework step</th><th>This project</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Goal</td><td>Decide whether mean cognitive score changes across four timepoints, and locate the change.</td></tr>
+          <tr><td class="nm">Hypotheses</td><td>H&#8320;: all four timepoint means are equal&nbsp;&nbsp;vs&nbsp;&nbsp;H&#8321;: at least one differs. &#945; = 0.05.</td></tr>
+          <tr><td class="nm">Data type</td><td>Continuous outcome across a four-level <strong>within-subject</strong> factor.</td></tr>
+          <tr><td class="nm">Design</td><td>One-way <strong>repeated measures</strong>: every participant contributes all four scores.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section id="clean">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Complete Cases Only, and What That Costs</h2></div>
+    <p>A repeated-measures ANOVA can only use participants with a <strong>full set</strong> of measurements: one missing
+       assessment and the whole person drops out of the analysis. After removing duplicate rows, blank scores, and impossible
+       values, and then filtering to complete cases, <strong>42 enrolled participants became 35</strong>. Those
+       <strong>7 exclusions are not a rounding detail</strong>, and Section 6 returns to why.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-cog-explore.png" alt="Two panels. On the left, one thin grey line per participant showing their cognitive score across the four timepoints, with a bold gold line for the group mean rising from about 52 to about 58; the individual lines visibly fan out over time. On the right, the four group means with 95% confidence intervals, rising steeply from Baseline to Week 4 and then almost flat.">
+      <figcaption><strong>Left:</strong> every participant's own trajectory, with the group mean in gold. Notice the lines <strong>fan out</strong> over time, a visual warning that the spread is growing. <strong>Right:</strong> the group means climb from Baseline to Week 4 and then flatten.</figcaption>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Timepoint</th><th>n</th><th>Mean</th><th>SD</th><th>Change from baseline</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Baseline</td><td>35</td><td>51.84</td><td>8.73</td><td>&#8212;</td></tr>
+          <tr class="hi"><td class="nm">Week 4</td><td>35</td><td>56.38</td><td>10.00</td><td>+4.54</td></tr>
+          <tr><td class="nm">Week 8</td><td>35</td><td>56.99</td><td>11.49</td><td>+5.14</td></tr>
+          <tr><td class="nm">Week 12</td><td>35</td><td>57.87</td><td>13.90</td><td>+6.02</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Read the SD column as carefully as the mean column. The spread grows steadily, from about <strong>8.7</strong> at
+       Baseline to <strong>13.9</strong> at Week 12. That growth is what breaks the assumption we check next.</p>
+  </section>
+
+  <!-- 3 -->
+  <section id="sphericity">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Sphericity: the Assumption That Only Appears Now</h2></div>
+    <p>With two conditions there is exactly one difference to compute, so there is nothing to compare it with. With four
+       conditions there are six pairwise differences, and repeated-measures ANOVA assumes they are all <strong>equally
+       variable</strong>. That is sphericity. When later measurements spread out more than earlier ones, differences
+       involving those later points become more variable than the rest, and the assumption fails.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.1rem">
+      <svg viewBox="0 0 700 208" width="100%" font-family="Inter, sans-serif" aria-label="A diagram of sphericity. On the left, the ideal: the spread of the difference between each pair of timepoints is drawn as three bell curves of identical width, which is what sphericity assumes. On the right, this study: the same three curves drawn at increasing widths, because later timepoints are more variable, so the difference variances are unequal and sphericity is violated.">
+        <text x="350" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">Sphericity: are all the pairwise differences equally variable?</text>
+
+        <!-- ideal -->
+        <rect x="18" y="36" width="316" height="146" rx="11" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="176" y="56" text-anchor="middle" font-size="9.5" fill="#15803d" font-weight="800">WHAT SPHERICITY ASSUMES</text>
+        <g fill="none" stroke="#16a34a" stroke-width="2">
+          <path d="M44 128 q26 -44 52 0"/><path d="M150 128 q26 -44 52 0"/><path d="M256 128 q26 -44 52 0"/>
+        </g>
+        <line x1="34" y1="128" x2="320" y2="128" stroke="#94a3b8" stroke-width="1"/>
+        <g font-size="8" fill="#166534" text-anchor="middle">
+          <text x="70" y="145">pair 1</text><text x="176" y="145">pair 2</text><text x="282" y="145">pair 3</text>
+        </g>
+        <text x="176" y="168" text-anchor="middle" font-size="8.5" fill="#15803d" font-style="italic">same width every time</text>
+
+        <!-- violated -->
+        <rect x="350" y="36" width="332" height="146" rx="11" fill="#fffbeb" stroke="#fde68a"/>
+        <text x="516" y="56" text-anchor="middle" font-size="9.5" fill="#92400e" font-weight="800">WHAT THIS STUDY SHOWS</text>
+        <g fill="none" stroke="#b45309" stroke-width="2">
+          <path d="M378 128 q16 -48 32 0"/><path d="M456 128 q30 -42 60 0"/><path d="M556 128 q48 -34 96 0"/>
+        </g>
+        <line x1="366" y1="128" x2="670" y2="128" stroke="#94a3b8" stroke-width="1"/>
+        <g font-size="8" fill="#92400e" text-anchor="middle">
+          <text x="394" y="145">var 23</text><text x="486" y="145">var 55</text><text x="604" y="145">var 110</text>
+        </g>
+        <text x="516" y="168" text-anchor="middle" font-size="8.5" fill="#b45309" font-style="italic">later timepoints spread out, so the differences do too</text>
+        <text x="350" y="198" text-anchor="middle" font-size="8.5" fill="#64748b" font-style="italic">Mauchly's test: W = 0.477, p = 0.0002, so sphericity is rejected.</text>
+      </svg>
+    </figure>
+
+    <p>The notebook makes this concrete by computing all six difference variances directly. They range from about
+       <strong>23</strong> to <strong>110</strong>, nearly a five-fold spread, and Mauchly's test rejects sphericity
+       decisively.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-cog-sphericity.png" alt="A bar chart of the variance of the difference for all six pairs of timepoints. The bars rise from about 23 for the Baseline to Week 4 difference to about 110 for the Week 8 to Week 12 difference, with a dashed line marking the average. Sphericity would require all six bars to be the same height.">
+      <figcaption>The six pairwise difference variances. Sphericity requires these bars to be the same height; they range from <strong>23 to 110</strong>. This is the assumption failing, in one picture.</figcaption>
+    </figure>
+
+    <div class="goldbox">
+      <span class="gb-tag">Why a violated sphericity assumption matters</span>
+      <p style="margin:0.4rem 0 0">An uncorrected repeated-measures F test with unequal difference variances is
+         <strong>too liberal</strong>: it reports a smaller p-value than the evidence justifies, and so finds effects that
+         are not there. The fix is not a different test but a <strong>correction to the degrees of freedom</strong>, which
+         makes the test appropriately more conservative.</p>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section id="test">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Correct the Test, Then Read the Shape</h2></div>
+    <p>The <strong>Greenhouse-Geisser</strong> correction multiplies the degrees of freedom by <strong>epsilon</strong>, a
+       measure of how far the data depart from sphericity. Epsilon is 1 when sphericity holds perfectly and shrinks as the
+       violation worsens. Here <strong>&#949; = 0.71</strong>, which pulls the degrees of freedom from (3, 102) down to about
+       (2.12, 72) and moves the p-value from 0.0002 to 0.0012.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.1rem">
+      <svg viewBox="0 0 700 176" width="100%" font-family="Inter, sans-serif" aria-label="A before-and-after diagram of the Greenhouse-Geisser correction. Before correction the test has 3 and 102 degrees of freedom and a p-value of 0.0002. Epsilon of 0.71 multiplies the degrees of freedom, giving 2.12 and 72 after correction, and the p-value rises to 0.0012. Both remain below the 0.05 threshold, so the conclusion is unchanged.">
+        <text x="350" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">The Greenhouse-Geisser correction, applied</text>
+
+        <rect x="30" y="40" width="200" height="86" rx="11" fill="#fffdf7" stroke="#fcd34d"/>
+        <text x="130" y="60" text-anchor="middle" font-size="9" fill="#92400e" font-weight="800">UNCORRECTED</text>
+        <text x="130" y="84" text-anchor="middle" font-size="12" fill="#78350f" font-weight="800">F(3, 102) = 7.16</text>
+        <text x="130" y="104" text-anchor="middle" font-size="10" fill="#b45309">p = 0.0002</text>
+        <text x="130" y="118" text-anchor="middle" font-size="7.5" fill="#dc2626" font-style="italic">too liberal here</text>
+
+        <line x1="234" y1="83" x2="292" y2="83" stroke="#b45309" stroke-width="2"/><polygon points="292,83 282,77 282,89" fill="#b45309"/>
+        <text x="263" y="72" text-anchor="middle" font-size="10" fill="#78350f" font-weight="800">&#215; &#949;</text>
+        <text x="263" y="100" text-anchor="middle" font-size="9" fill="#92400e">&#949; = 0.71</text>
+
+        <rect x="296" y="40" width="212" height="86" rx="11" fill="#78350f"/>
+        <text x="402" y="60" text-anchor="middle" font-size="9" fill="#fde68a" font-weight="800">CORRECTED (REPORTED)</text>
+        <text x="402" y="84" text-anchor="middle" font-size="12" fill="#fff" font-weight="800">F(2.12, 72) = 7.16</text>
+        <text x="402" y="104" text-anchor="middle" font-size="10" fill="#fcd34d">p = 0.0012</text>
+        <text x="402" y="118" text-anchor="middle" font-size="7.5" fill="#fde68a" font-style="italic">honest degrees of freedom</text>
+
+        <rect x="524" y="52" width="150" height="62" rx="10" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="599" y="74" text-anchor="middle" font-size="9.5" fill="#15803d" font-weight="800">still p &lt; 0.05</text>
+        <text x="599" y="92" text-anchor="middle" font-size="8.5" fill="#166534">conclusion unchanged</text>
+        <text x="350" y="164" text-anchor="middle" font-size="8.5" fill="#64748b" font-style="italic">The correction changed the number, not the verdict. That is the hoped-for outcome, never the assumed one.</text>
+      </svg>
+    </figure>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Corrected F</div><div class="rv">7.16</div><div class="rd">on 2.12 and 72 df</div></div>
+      <div class="rchip"><div class="rk">Corrected p</div><div class="rv">0.0012</div><div class="rd">Greenhouse-Geisser</div></div>
+      <div class="rchip"><div class="rk">Generalized &#951;&#178;</div><div class="rv">0.043</div><div class="rd">a modest share</div></div>
+      <div class="rchip"><div class="rk">Friedman</div><div class="rv">p &lt; 0.001</div><div class="rd">rank-based, agrees</div></div>
+    </div>
+
+    <p>So something changed. The post-hoc comparisons, Holm-corrected across all six pairs, say <em>what</em>:</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Comparison</th><th>Hedges' g</th><th>Adjusted p</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr class="hi"><td class="nm">Baseline vs Week 4</td><td>&#8722;0.48</td><td>&lt; 0.0001</td><td class="pass">real gain</td></tr>
+          <tr class="hi"><td class="nm">Baseline vs Week 8</td><td>&#8722;0.50</td><td>0.0002</td><td class="pass">real gain</td></tr>
+          <tr class="hi"><td class="nm">Baseline vs Week 12</td><td>&#8722;0.51</td><td>0.0034</td><td class="pass">real gain</td></tr>
+          <tr><td class="nm">Week 4 vs Week 8</td><td>&#8722;0.06</td><td>1.00</td><td class="no">no further gain</td></tr>
+          <tr><td class="nm">Week 4 vs Week 12</td><td>0.12</td><td>1.00</td><td class="no">no further gain</td></tr>
+          <tr><td class="nm">Week 8 vs Week 12</td><td>0.07</td><td>1.00</td><td class="no">no further gain</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The pattern is unambiguous: <span class="hl">every comparison against Baseline is significant, and no comparison among
+       Weeks 4, 8, and 12 comes close</span>. All of the measurable benefit arrives in the first month.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-cog-result.png" alt="A plot of change from baseline at Weeks 4, 8, and 12, each with a 95% confidence interval. The Week 4 point sits at about plus 4.5 points, well above the dashed zero line, and Weeks 8 and 12 sit only slightly higher with overlapping intervals, showing a plateau. An annotation points at Week 4 reading gain lands here.">
+      <figcaption>Change from baseline. The gain arrives by <strong>Week 4</strong> (about +4.5 points) and the curve then flattens: Weeks 8 and 12 add little and their intervals overlap Week 4's almost entirely.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 5 -->
+  <section id="verdict">
+    <div class="section-eyebrow"><div class="num">5</div><h2>The Verdict, and the Attrition Problem</h2></div>
+    <p>Cognitive scores improved, and the improvement holds up after correcting for a genuinely violated assumption. The
+       practical reading is about timing: the program earns its result in the <strong>first four weeks</strong>, and the
+       remaining eight weeks add nothing detectable. Generalized eta-squared of about <strong>0.04</strong> is a modest
+       share of total variation, so this is a real but not transformative effect.</p>
+
+    <div class="goldbox">
+      <span class="gb-tag">The exclusion that deserves a second look</span>
+      <p style="margin:0.4rem 0 0">Seven of forty-two participants were dropped for incomplete data. If people left the
+         program <em>because</em> they were not improving, then the analysis kept the responders and discarded the
+         non-responders, and the reported gain is <strong>too optimistic</strong>. No statistical test detects this; it is a
+         property of who is missing, not of the numbers that remain.</p>
+    </div>
+
+    <ul>
+      <li><strong>Check the dropouts before believing the result.</strong> Compare the excluded participants to the
+          completers on baseline score and early change. If they started lower or were flat by Week 4, the estimate is biased
+          upward. A <strong>linear mixed-effects model</strong> is the standard remedy, because it can use partial records
+          instead of discarding whole people.</li>
+      <li><strong>No control group.</strong> As in <a href="capstone-blood-pressure-before-after.html">Capstone 3</a>, a
+          single arm measured repeatedly cannot separate the program from <strong>practice effects</strong>: taking a similar
+          assessment four times makes people better at the assessment, which is indistinguishable from a cognitive gain here.</li>
+      <li><strong>Regression to the mean.</strong> If participants were recruited for low baseline scores, some rebound would
+          occur with no training at all.</li>
+      <li><strong>Do not over-read the plateau.</strong> "No detectable change after Week 4" is not proof that nothing
+          happens later; a small effect, a ceiling on the assessment, or limited power in 35 people would look the same.</li>
+    </ul>
+  </section>
+
+  <!-- 6 -->
+  <section id="in-ds-ai">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Repeated Measures in Data Science &amp; AI</h2></div>
+    <p>Any time the same units are measured under several conditions, the repeated-measures structure applies, and ignoring
+       it treats dependent observations as independent.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Where it appears</th><th>The repeated conditions</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Model comparison on shared data</td><td>Several models scored on the <em>same</em> test items or the same cross-validation folds.</td></tr>
+          <tr><td class="nm">Longitudinal product metrics</td><td>The same cohort of users measured across several release windows.</td></tr>
+          <tr><td class="nm">Within-subject experiments</td><td>Each participant tries every interface variant (a crossover design).</td></tr>
+          <tr><td class="nm">Benchmark suites</td><td>One machine run under several configurations, repeated across tasks.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="research">
+      <span class="rtag">Practice note</span>
+      <p style="margin:0.4rem 0 0">In modern practice the repeated-measures ANOVA is often replaced by a
+         <strong>linear mixed-effects model</strong>, which handles unbalanced and incomplete data without discarding whole
+         subjects, allows time to be modeled as a continuous trend rather than four separate levels, and sidesteps the
+         sphericity assumption entirely by modeling the covariance structure directly. The ANOVA remains the clearer teaching
+         instrument, and it is what most published work in this area still reports, so it is worth knowing both.</p>
+    </div>
+  </section>
+
+  <!-- notebook + downloads -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook runs all twelve framework steps: it plots every participant's trajectory, cleans the file
+             and filters to complete cases with a printed audit trail of who was excluded, computes all six pairwise
+             difference variances to expose the sphericity problem, runs Mauchly's test, fits the repeated-measures ANOVA
+             with <code>pingouin</code> and reports the Greenhouse-Geisser corrected result, runs Holm-corrected pairwise
+             comparisons, and cross-checks with the Friedman test. Every number here comes from its output, with a
+             plain-language note after each result.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-cognitive-training-over-time.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-cognitive-training-over-time.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-cognitive-training-over-time.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Read the reports &amp; get the data</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong> (<code>capstone-cognitive-training-over-time.xlsx</code>)
+         holds the assessments on the <em>assessments</em> sheet, with a codebook and notes, and it keeps the dropouts,
+         blanks, duplicates, and impossible values so you can practice the complete-case filtering. Two written reports
+         accompany it: a <strong>plain-language brief</strong> for a program director, and a <strong>technical report</strong>
+         with the sphericity diagnostics, the corrected ANOVA, post-hoc contrasts, and references.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-6-cognitive-training-over-time.html" target="_blank" rel="noopener">📄 Plain-language brief <small>read online</small></a>
+        <a class="ex-file doc" href="../reports/capstone-6-cognitive-training-over-time-technical.html" target="_blank" rel="noopener">📄 Technical report <small>journal-style</small></a>
+        <a class="ex-file xls" href="../data/capstone-cognitive-training-over-time.xlsx">📊 Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>Repeated measures need complete cases</strong>: one missing assessment removes the whole participant, taking 42 enrolled down to 35 analyzed.</span></li>
+        <li><span class="ck">✓</span><span><strong>Sphericity is the new assumption</strong>: all pairwise difference variances should be equal. Here they ranged from 23 to 110, and Mauchly rejected it (p = 0.0002).</span></li>
+        <li><span class="ck">✓</span><span><strong>Correct, do not abandon</strong>: Greenhouse-Geisser (&#949; = 0.71) shrank the df from (3, 102) to (2.12, 72) and moved p from 0.0002 to 0.0012, still significant.</span></li>
+        <li><span class="ck">✓</span><span><strong>The post-hoc gave the shape</strong>: every comparison against Baseline was significant; none among Weeks 4, 8, and 12 was. The gain lands in month one and plateaus.</span></li>
+        <li><span class="ck">✓</span><span><strong>Attrition can flatter the result</strong>: if dropouts left because they were not improving, the complete-case estimate is too optimistic. A mixed-effects model uses partial records instead.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on this capstone, from sphericity to attrition. Answer them, hit <strong>Check Answers</strong>, and
+       keep refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-teaching-methods-exam-scores.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 164 · Previous</span><br><span class="cn-title">One-Way ANOVA: Three Teaching Methods</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 165 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch165";
+  window.QUIZ_DATA = [
+    {
+      q: "Why is a repeated-measures ANOVA used here rather than a one-way ANOVA?",
+      options: ["There are four groups instead of three", "The same participants are measured at all four timepoints, so the measurements are linked", "The outcome is categorical", "The sample is small"],
+      answer: 1,
+      explain: "Within-subject measurements are dependent; treating them as independent groups would throw away the pairing."
+    },
+    {
+      q: "Sphericity assumes that…",
+      options: ["All groups are normal", "The variance of the difference between any two conditions is about the same for every pair", "The sample sizes are equal", "The means are equal"],
+      answer: 1,
+      explain: "It is a condition on the pairwise difference variances, which is why it only appears with 3+ conditions."
+    },
+    {
+      q: "Mauchly's test returned p = 0.0002. This means…",
+      options: ["Sphericity holds", "Sphericity is violated, so a correction is required", "The effect is not significant", "The data are not normal"],
+      answer: 1,
+      explain: "A small p from Mauchly rejects sphericity; the uncorrected F test would then be too liberal."
+    },
+    {
+      q: "An uncorrected repeated-measures F test under violated sphericity is…",
+      options: ["Too conservative", "Too liberal: it reports a smaller p-value than the evidence justifies", "Exactly right", "Impossible to compute"],
+      answer: 1,
+      explain: "That inflation is why the Greenhouse-Geisser correction exists."
+    },
+    {
+      q: "The Greenhouse-Geisser correction works by…",
+      options: ["Removing outliers", "Multiplying the degrees of freedom by epsilon, making the test more conservative", "Switching to a t-test", "Adding more participants"],
+      answer: 1,
+      explain: "Here epsilon = 0.71 took the df from (3, 102) to about (2.12, 72), moving p from 0.0002 to 0.0012."
+    },
+    {
+      q: "What did the Holm-corrected post-hoc comparisons show?",
+      options: ["Every timepoint differs from every other", "All three comparisons against Baseline were significant; none among Weeks 4, 8, and 12 were", "Nothing was significant", "Only Week 12 differed from Baseline"],
+      answer: 1,
+      explain: "The gain arrives by Week 4 and then plateaus, which the omnibus test alone could not reveal."
+    },
+    {
+      q: "Seven of 42 participants were excluded because…",
+      options: ["They scored too low", "A repeated-measures ANOVA requires a complete set of measurements per person", "They were duplicates", "They were in a control group"],
+      answer: 1,
+      explain: "One missing assessment removes the whole participant from a complete-case repeated-measures analysis."
+    },
+    {
+      q: "Why does that exclusion threaten the conclusion?",
+      options: ["It reduces the sample size only", "If people dropped out because they were not improving, the remaining estimate is too optimistic", "It breaks sphericity", "It makes the test conservative"],
+      answer: 1,
+      explain: "That is attrition bias; a mixed-effects model can use partial records instead of discarding whole people."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
