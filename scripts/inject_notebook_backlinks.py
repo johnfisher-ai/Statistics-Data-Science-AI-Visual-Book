@@ -636,6 +636,8 @@ MAP = {
         ("../../capstone-cognitive-training-over-time.html#notebook", "Back to the book", "Chapter 165 · Repeated-Measures ANOVA: Cognitive Training Over Time"),
     "capstone-plant-growth-two-factors.html":
         ("../../capstone-plant-growth-two-factors.html#notebook", "Back to the book", "Chapter 166 · Two-Way ANOVA: Fertilizer and Sunlight"),
+    "capstone-commute-mode-by-region.html":
+        ("../../capstone-commute-mode-by-region.html#notebook", "Back to the book", "Chapter 167 · Chi-Square Test of Independence: Commute Mode by Region"),
 }
 
 def card(href, kicker, title):
