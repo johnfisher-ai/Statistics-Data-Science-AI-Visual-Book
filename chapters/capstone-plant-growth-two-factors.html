@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 166 · Two-Way ANOVA: Fertilizer and Sunlight — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .pass { color:#15803d; font-weight:700; }
+    .disp-table .no { color:#94a3b8; }
+    .disp-table tr.hi td { background:#fffbeb; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .goldbox { background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #b45309; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .goldbox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .rw-card { background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #b45309; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file.doc { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #b45309; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#92400e; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/capstone-plant-growth-two-factors.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXVII &#183; Capstone Projects: Statistical Testing</span><span class="sep">/</span>
+      <span>Chapter 166</span>
+    </div>
+    <h1>Does the Fertilizer Work? <span class="accent">It Depends.</span></h1>
+    <p class="dek">Capstone 7. Two factors at once, fertilizer and light, on plant growth. A factorial design asks a question
+       neither factor can answer alone: does the effect of one depend on the level of the other? When the answer is yes, the
+       main effects stop meaning what they appear to mean.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~18 min</b>&nbsp;read</div>
+      <div class="m">🧪 <b>Two-way ANOVA</b></div>
+      <div class="m">📊 <b>Chapter 166</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Every capstone so far studied one factor at a time. But the world rarely varies one thing at a time, and
+       when two factors act together the interesting question is usually not "does A matter" or "does B matter" but
+       <span class="hl">does A matter more when B is high?</span> That question has a name, the <strong>interaction</strong>,
+       and only a factorial design can answer it.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#10005;</div>
+      <div class="def-body">
+        <span class="def-kw">Two-way ANOVA</span> tests two crossed factors at once. It reports two
+        <span class="def-kw">main effects</span> (the average effect of each factor) and their
+        <span class="def-kw">interaction</span> (whether the effect of one changes across levels of the other). When the
+        interaction is significant, the main effects must not be read alone; the honest description is the set of
+        <span class="def-kw">simple effects</span>.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">🌱</div>
+      <div><div class="ctitle">The finding, up front</div>
+        <p>Both factors are significant, but the headline is the <strong>interaction</strong>
+           (F(2, 62) = 9.74, p = 0.0002). Premium fertilizer is <strong>not better at low light</strong> (&#8722;1.05 cm,
+           p = 0.53), only marginally better at medium light (+2.31 cm, p = 0.08), and <strong>clearly better at high
+           light</strong> (+7.68 cm, p &lt; 0.001). "Premium fertilizer increases growth" is true on average and misleading
+           in practice.</p></div>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section id="question">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Three Questions in One Design</h2></div>
+    <p>A greenhouse trial crossed <strong>two fertilizers</strong> (Standard, Premium) with <strong>three light levels</strong>
+       (Low, Medium, High), growing twelve plants in each of the six combinations and measuring growth in centimetres.
+       Crossing the factors lets one experiment answer three questions instead of two.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Null hypothesis</th><th>What it claims</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Fertilizer (main effect)</td><td>The two fertilizers give the same mean growth, averaging over light.</td></tr>
+          <tr><td class="nm">Light (main effect)</td><td>The three light levels give the same mean growth, averaging over fertilizer.</td></tr>
+          <tr class="hi"><td class="nm">Interaction</td><td>The effect of fertilizer is the <strong>same at every light level</strong>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>That third hypothesis is what a factorial design buys. Running two separate one-way ANOVAs would answer the first two
+       questions and never ask the third, which in this dataset turns out to be the only one that matters for a
+       recommendation.</p>
+  </section>
+
+  <!-- 2 -->
+  <section id="cells">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Clean It, Then Read the Cells</h2></div>
+    <p>Both factor labels arrived inconsistently cased, so they were standardized first; then duplicate rows, missing values,
+       and impossible growth measurements (a &#8722;3 cm and a 250 cm) were removed, taking 74 rows to <strong>68</strong>.
+       With a factorial design the thing to read is not the margins but the <strong>six cell means</strong>.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Light</th><th>Standard</th><th>Premium</th><th>Premium advantage</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Low</td><td>18.41 (n=9)</td><td>17.36 (n=12)</td><td class="no">&#8722;1.05 cm</td></tr>
+          <tr><td class="nm">Medium</td><td>24.99 (n=12)</td><td>27.30 (n=12)</td><td>+2.31 cm</td></tr>
+          <tr class="hi"><td class="nm">High</td><td>27.65 (n=12)</td><td>35.33 (n=11)</td><td class="pass">+7.68 cm</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Read down the last column. The Premium advantage is not a constant: it is slightly negative at low light, small at
+       medium, and large at high. <span class="hl">The gap grows with light</span>, and a gap that changes is precisely what
+       an interaction is.</p>
+  </section>
+
+  <!-- 3 -->
+  <section id="interaction">
+    <div class="section-eyebrow"><div class="num">3</div><h2>What an Interaction Looks Like</h2></div>
+    <p>The essential picture for a factorial design is the <strong>interaction plot</strong>: one line per level of one
+       factor, drawn across the levels of the other. The shape of those lines tells you the answer before any test does.</p>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.1rem">
+      <svg viewBox="0 0 700 196" width="100%" font-family="Inter, sans-serif" aria-label="Three small interaction plots showing what different line shapes mean. On the left, two parallel rising lines labelled no interaction: the gap between the two treatments is the same at every level. In the middle, two lines that start together and fan apart, labelled interaction, which is the pattern found in this study. On the right, two lines that cross over, labelled crossover interaction, where which treatment is better reverses across levels.">
+        <text x="350" y="18" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">Read the shape of the lines</text>
+
+        <!-- parallel -->
+        <rect x="16" y="34" width="210" height="126" rx="10" fill="#f0fdf4" stroke="#86efac"/>
+        <text x="121" y="52" text-anchor="middle" font-size="9" fill="#15803d" font-weight="800">NO INTERACTION</text>
+        <line x1="44" y1="140" x2="200" y2="140" stroke="#94a3b8" stroke-width="1"/>
+        <polyline points="52,128 121,106 190,84" fill="none" stroke="#94a3b8" stroke-width="2.4"/>
+        <polyline points="52,112 121,90 190,68" fill="none" stroke="#16a34a" stroke-width="2.4"/>
+        <text x="121" y="156" text-anchor="middle" font-size="8" fill="#166534">same gap everywhere</text>
+
+        <!-- fanning -->
+        <rect x="245" y="34" width="210" height="126" rx="10" fill="#fffbeb" stroke="#fcd34d"/>
+        <text x="350" y="52" text-anchor="middle" font-size="9" fill="#92400e" font-weight="800">INTERACTION (THIS STUDY)</text>
+        <line x1="273" y1="140" x2="429" y2="140" stroke="#94a3b8" stroke-width="1"/>
+        <polyline points="281,124 350,104 419,92" fill="none" stroke="#94a3b8" stroke-width="2.4"/>
+        <polyline points="281,126 350,94 419,62" fill="none" stroke="#b45309" stroke-width="2.4"/>
+        <text x="350" y="156" text-anchor="middle" font-size="8" fill="#92400e">the gap grows</text>
+
+        <!-- crossover -->
+        <rect x="474" y="34" width="210" height="126" rx="10" fill="#fef2f2" stroke="#fecaca"/>
+        <text x="579" y="52" text-anchor="middle" font-size="9" fill="#b91c1c" font-weight="800">CROSSOVER INTERACTION</text>
+        <line x1="502" y1="140" x2="658" y2="140" stroke="#94a3b8" stroke-width="1"/>
+        <polyline points="510,84 579,102 648,120" fill="none" stroke="#94a3b8" stroke-width="2.4"/>
+        <polyline points="510,124 579,102 648,74" fill="none" stroke="#dc2626" stroke-width="2.4"/>
+        <text x="579" y="156" text-anchor="middle" font-size="8" fill="#b91c1c">which is better reverses</text>
+
+        <text x="350" y="184" text-anchor="middle" font-size="8.5" fill="#64748b" font-style="italic">Parallel lines mean one factor's effect is the same everywhere. Anything else means it is not.</text>
+      </svg>
+    </figure>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-plant-interaction.png" alt="Two panels. On the left, every individual plant's growth plotted by light level and fertilizer; at Low light the two fertilizers overlap, at High light the Premium points sit clearly above the Standard ones. On the right, the interaction plot: two lines of mean growth across Low, Medium and High light, which start together near 18 cm and fan apart so that at High light Premium reaches about 35 cm against Standard's 28 cm.">
+      <figcaption><strong>Left:</strong> every plant. <strong>Right:</strong> the interaction plot. The two lines start together at Low light and <strong>fan apart</strong> as light increases. Parallel lines would mean a constant fertilizer benefit; these are not parallel.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 4 -->
+  <section id="assumptions">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Check the Model's Assumptions</h2></div>
+    <p>A factorial ANOVA asks for the familiar two conditions, applied to the fitted model: <strong>residuals</strong> roughly
+       normal, and similar variance <strong>across all six cells</strong>. We fit the model first, then examine what it leaves
+       behind.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-plant-assumptions.png" alt="Two diagnostic panels. On the left, a normal quantile-quantile plot of the model residuals whose points follow the diagonal reference line, with a Shapiro-Wilk p-value of 0.12. On the right, residuals plotted against fitted values, scattered evenly around a dashed zero line with no funnel shape and no curvature.">
+      <figcaption>The residuals track the Q-Q line (Shapiro-Wilk p = 0.12), and the residuals-versus-fitted plot shows <strong>no funnel</strong> (variance is not growing with the mean) and <strong>no curve</strong> (no missing term). The model is sound.</figcaption>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Assumption</th><th>Check</th><th>Result</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Normality of residuals</td><td>Shapiro-Wilk</td><td class="pass">W = 0.972, p = 0.12</td></tr>
+          <tr><td class="nm">Equal variance</td><td>Levene across all 6 cells</td><td class="pass">W = 0.341, p = 0.89</td></tr>
+          <tr><td class="nm">Independence</td><td>design: one plant per cell, no repeats</td><td class="pass">satisfied</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section id="test">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Read the Interaction First</h2></div>
+    <p>This is the rule that makes factorial analysis different: <span class="hl">look at the interaction before the main
+       effects</span>. If it is significant, "the effect of fertilizer" is not a single number, and the main effect that
+       claims to be one becomes a weighted average of several different effects.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Term</th><th>F</th><th>df</th><th>p</th><th>Partial &#951;&#178;</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Light (main effect)</td><td>96.50</td><td>2, 62</td><td>&lt; 0.001</td><td>0.757</td></tr>
+          <tr><td class="nm">Fertilizer (main effect)</td><td>14.96</td><td>1, 62</td><td>0.0003</td><td>0.194</td></tr>
+          <tr class="hi"><td class="nm">Fertilizer &#215; Light</td><td>9.74</td><td>2, 62</td><td>0.0002</td><td>0.239</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.1rem">
+      <svg viewBox="0 0 700 180" width="100%" font-family="Inter, sans-serif" aria-label="A decision diagram for reading a two-way ANOVA. Start by testing the interaction. If the interaction is not significant, the main effects can be interpreted directly as average effects. If the interaction is significant, as it is in this study, do not interpret the main effects alone; instead report simple effects, the effect of one factor computed separately within each level of the other.">
+        <text x="350" y="18" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">How to read a two-way ANOVA</text>
+        <rect x="262" y="36" width="176" height="34" rx="9" fill="#78350f"/>
+        <text x="350" y="52" text-anchor="middle" font-size="10.5" fill="#fff" font-weight="800">Test the interaction FIRST</text>
+        <text x="350" y="64" text-anchor="middle" font-size="8" fill="#fde68a">here: F(2,62) = 9.74, p = 0.0002</text>
+
+        <line x1="300" y1="70" x2="180" y2="102" stroke="#cbd5e1" stroke-width="1.4"/>
+        <text x="222" y="88" font-size="8.5" fill="#64748b" font-weight="700">not significant</text>
+        <rect x="34" y="102" width="238" height="54" rx="10" fill="#fafbfe" stroke="#cbd5e1"/>
+        <text x="153" y="122" text-anchor="middle" font-size="9.5" fill="#475569" font-weight="700">Interpret the main effects</text>
+        <text x="153" y="138" text-anchor="middle" font-size="8.5" fill="#64748b">each factor has one average effect</text>
+
+        <line x1="400" y1="70" x2="520" y2="102" stroke="#b45309" stroke-width="2"/>
+        <text x="470" y="88" font-size="8.5" fill="#b45309" font-weight="800">significant</text>
+        <rect x="428" y="102" width="248" height="54" rx="10" fill="#fffbeb" stroke="#b45309"/>
+        <text x="552" y="120" text-anchor="middle" font-size="9.5" fill="#b45309" font-weight="800">Report SIMPLE effects instead</text>
+        <text x="552" y="136" text-anchor="middle" font-size="8.5" fill="#92400e">fertilizer effect within each light level</text>
+        <text x="552" y="150" text-anchor="middle" font-size="7.5" fill="#a16207" font-style="italic">our path this project</text>
+      </svg>
+    </figure>
+
+    <p>The interaction is significant, so we report <strong>simple effects</strong>: the fertilizer contrast computed
+       separately within each light level. This is the only honest way to describe what the fertilizer does.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Light level</th><th>Premium &#8722; Standard</th><th>95% CI</th><th>p</th><th>Cohen's d</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Low</td><td>&#8722;1.05 cm</td><td>[&#8722;4.52, +2.41]</td><td>0.53</td><td>&#8722;0.28</td><td class="no">no benefit</td></tr>
+          <tr><td class="nm">Medium</td><td>+2.31 cm</td><td>[&#8722;0.30, +4.92]</td><td>0.08</td><td>+0.75</td><td class="no">not significant</td></tr>
+          <tr class="hi"><td class="nm">High</td><td>+7.68 cm</td><td>[+4.89, +10.47]</td><td>&lt; 0.001</td><td>+2.41</td><td class="pass">large benefit</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-plant-simple.png" alt="The Premium minus Standard growth difference at each light level, each with a 95% confidence interval. At Low light the point sits slightly below zero with an interval spanning zero, marked not significant. At Medium light the point is above zero but its interval still touches zero, marked not significant. At High light the point sits at about plus 7.7 centimetres with an interval well clear of zero, marked significant.">
+      <figcaption>The fertilizer effect is <strong>three different numbers</strong>, and only one of them is real. Its interval clears zero only at high light.</figcaption>
+    </figure>
+
+    <div class="goldbox">
+      <span class="gb-tag">Why the main effect misleads here</span>
+      <p style="margin:0.4rem 0 0">The fertilizer main effect is significant (p = 0.0003), and quoted on its own it would tell
+         a grower that Premium fertilizer works. It is a genuine average, but it averages <strong>&#8722;1.05, +2.31, and
+         +7.68</strong>. No plant in this trial experienced that average. Under a significant interaction, the average effect
+         is a statistic without a referent.</p>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section id="verdict">
+    <div class="section-eyebrow"><div class="num">6</div><h2>The Verdict and Its Limits</h2></div>
+    <p>Light dominates growth under either fertilizer, explaining about three quarters of the variation. Fertilizer is
+       conditional: <span class="hl">Premium is worth paying for only when light is plentiful</span>. At low light it does
+       nothing measurable, and at medium light its advantage cannot be distinguished from zero at this sample size. The
+       recommendation is therefore not "use Premium" but "use Premium in high-light conditions", which is a different and
+       more useful sentence.</p>
+
+    <ul>
+      <li><strong>Do not extrapolate the fan.</strong> "High" here is one specific intensity. The pattern suggests the
+          fertilizer needs light to be usable, but it says nothing about intensities beyond the tested range, and
+          extrapolating a fanning pattern is how greenhouse findings turn into bad field advice.</li>
+      <li><strong>A greenhouse is not a field.</strong> Temperature, water, soil, and pests were uniform here. An effect that
+          depends on light will very plausibly depend on those as well, so this establishes a mechanism rather than a
+          universal recommendation.</li>
+      <li><strong>Report the cost alongside the growth.</strong> Premium fertilizer presumably costs more. Publishing the
+          average benefit without the condition attached would encourage growers in low-light settings to buy something that
+          demonstrably will not help them, which is a real harm dressed as a statistic.</li>
+      <li><strong>Nearly balanced, not perfectly.</strong> Cleaning left slightly unequal cell counts, so Type II sums of
+          squares were used. With badly unbalanced designs the sums-of-squares type can change the main-effect tests, and it
+          should be stated rather than left to a software default.</li>
+    </ul>
+  </section>
+
+  <!-- 7 -->
+  <section id="in-ds-ai">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Interactions in Data Science &amp; AI</h2></div>
+    <p>The idea that an effect depends on context is one of the most transferable in all of statistics, and it reappears
+       under many names.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Where it appears</th><th>The interaction</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Heterogeneous treatment effects</td><td>An experiment helps one segment and not another; the average treatment effect hides both.</td></tr>
+          <tr><td class="nm">Full-factorial experiments</td><td>Two product changes tested together, to catch the case where each helps alone but not combined.</td></tr>
+          <tr><td class="nm">Interaction terms in regression</td><td>The same idea in model form: a coefficient on the product of two predictors.</td></tr>
+          <tr><td class="nm">Fairness auditing</td><td>A model that performs well overall but poorly for one subgroup is an interaction between the model and group membership.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="research">
+      <span class="rtag">Practice note</span>
+      <p style="margin:0.4rem 0 0">The single most common misreading of experimental results in industry is quoting an average
+         effect when the effect is conditional. Averages are the right summary only when the effect is roughly constant; when
+         it is not, the average describes no one. The habit this capstone teaches, <strong>test the interaction before you
+         trust the average</strong>, carries directly into segment analysis and heterogeneous-treatment-effect work, where
+         the modern tools differ but the logic does not.</p>
+    </div>
+  </section>
+
+  <!-- notebook + downloads -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">🐍</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook runs all twelve framework steps: it standardizes both factor labels and cleans the file
+             with a printed audit trail, tabulates the six cell means, draws the interaction plot, fits the factorial model
+             with <code>statsmodels</code>, checks residual normality and equal variance across cells, reads the ANOVA table
+             interaction-first with partial eta-squared for every term, and computes the simple effects within each light
+             level. Every number here comes from its output, with a plain-language note after each result.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-plant-growth-two-factors.html">📓 View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-plant-growth-two-factors.ipynb"
+           target="_blank" rel="noopener">▶ Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-plant-growth-two-factors.ipynb"
+           target="_blank" rel="noopener">⬇ View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Read the reports &amp; get the data</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong> (<code>capstone-plant-growth-two-factors.xlsx</code>) holds
+         the trial on the <em>plants</em> sheet, with a codebook and notes, and it keeps the inconsistent labels, blanks,
+         duplicates, and impossible values so you can practice the cleaning. Two written reports accompany it: a
+         <strong>plain-language brief</strong> for a grower, and a <strong>technical report</strong> with the full factorial
+         ANOVA table, simple-effects analysis, diagnostics, and references.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-7-plant-growth-two-factors.html" target="_blank" rel="noopener">📄 Plain-language brief <small>read online</small></a>
+        <a class="ex-file doc" href="../reports/capstone-7-plant-growth-two-factors-technical.html" target="_blank" rel="noopener">📄 Technical report <small>journal-style</small></a>
+        <a class="ex-file xls" href="../data/capstone-plant-growth-two-factors.xlsx">📊 Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>A factorial design asks a third question</strong>: not just whether each factor matters, but whether the effect of one depends on the other.</span></li>
+        <li><span class="ck">✓</span><span><strong>Read the interaction first</strong>. Here it was significant (F(2, 62) = 9.74, p = 0.0002, partial &#951;&#178; = 0.24), which changes how the main effects may be used.</span></li>
+        <li><span class="ck">✓</span><span><strong>Parallel lines mean no interaction</strong>; lines that fan or cross mean the effect is conditional. This interaction plot fans.</span></li>
+        <li><span class="ck">✓</span><span><strong>Report simple effects</strong>: Premium fertilizer gave &#8722;1.05 cm at low light (p = 0.53), +2.31 at medium (p = 0.08), and +7.68 at high (p &lt; 0.001).</span></li>
+        <li><span class="ck">✓</span><span><strong>A significant main effect can describe no one</strong>: the fertilizer average pooled &#8722;1.05, +2.31, and +7.68, a value no plant in the trial experienced.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">8</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on this capstone, from interaction plots to simple effects. Answer them, hit
+       <strong>Check Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-cognitive-training-over-time.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 165 · Previous</span><br><span class="cn-title">Repeated-Measures ANOVA: Cognitive Training Over Time</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 166 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch166";
+  window.QUIZ_DATA = [
+    {
+      q: "What extra question does a two-way (factorial) design answer that two separate one-way ANOVAs cannot?",
+      options: ["Whether the data are normal", "Whether the effect of one factor depends on the level of the other", "Whether the sample is large enough", "Which factor was measured first"],
+      answer: 1,
+      explain: "That is the interaction, and it requires the factors to be crossed in one design."
+    },
+    {
+      q: "On an interaction plot, parallel lines mean…",
+      options: ["A strong interaction", "No interaction: the gap between treatments is the same at every level", "The data are invalid", "Both factors are significant"],
+      answer: 1,
+      explain: "Non-parallel lines (fanning or crossing) are the visual signature of an interaction."
+    },
+    {
+      q: "In a two-way ANOVA, which term should you read first?",
+      options: ["The largest main effect", "The interaction", "The residual term", "Whichever has the smaller p-value"],
+      answer: 1,
+      explain: "A significant interaction changes whether the main effects can be interpreted on their own."
+    },
+    {
+      q: "The interaction here was F(2, 62) = 9.74, p = 0.0002. This means…",
+      options: ["Both fertilizers are equal", "The fertilizer effect differs across light levels", "Light has no effect", "The model is invalid"],
+      answer: 1,
+      explain: "The fertilizer advantage grew from about -1 cm at low light to +7.7 cm at high light."
+    },
+    {
+      q: "Because the interaction was significant, the right way to describe the fertilizer effect is…",
+      options: ["The main effect alone", "Simple effects: the fertilizer contrast computed within each light level", "The grand mean", "The interaction p-value only"],
+      answer: 1,
+      explain: "Simple effects give the three separate answers that the average conceals."
+    },
+    {
+      q: "The fertilizer main effect was significant (p = 0.0003). Why is quoting it alone misleading here?",
+      options: ["It was computed incorrectly", "It averages -1.05, +2.31, and +7.68, a value no plant actually experienced", "It is not really significant", "It applies only to low light"],
+      answer: 1,
+      explain: "Under a significant interaction the average effect describes no particular condition."
+    },
+    {
+      q: "At low light, Premium versus Standard was -1.05 cm with a 95% CI of [-4.52, +2.41]. This says…",
+      options: ["Premium is significantly worse", "No detectable benefit from Premium at low light", "The test failed", "Premium is significantly better"],
+      answer: 1,
+      explain: "The interval comfortably spans zero, so no benefit is detectable at that light level."
+    },
+    {
+      q: "What assumption check is specific to the factorial layout?",
+      options: ["Normality of the raw outcome", "Equal variance across all six treatment cells, and normality of the residuals", "Sphericity", "Independence of the two factors"],
+      answer: 1,
+      explain: "In a fitted factorial model the diagnostics are on the residuals and across every cell."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
