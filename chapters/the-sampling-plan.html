@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 176 · The Sampling Plan — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .yes { color:#047857; font-weight:700; }
+    .disp-table .no { color:#dc2626; font-weight:700; }
+    .disp-table tr.hi td { background:#ecfdf5; }
+    .embox { background:#ecfdf5; border:1px solid #a7f3d0; border-left:4px solid #047857; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .embox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#065f46; }
+    .research { background:#ecfdf5; border:1px solid #a7f3d0; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#065f46; }
+    .svg-wrap { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.9rem 0.6rem 0.3rem; background:var(--panel); }
+    .svg-wrap svg { width:100%; height:auto; display:block; }
+    .svg-wrap .cap { font-size:0.82rem; color:var(--ink-soft); padding:0.55rem 0.6rem 0.4rem; line-height:1.55; }
+    .svg-wrap .cap strong { color:var(--ink); }
+    .cap-group { margin:1.5rem 0 0.5rem; font-size:0.7rem; font-weight:800; text-transform:uppercase;
+                 letter-spacing:0.06em; color:#065f46; border-bottom:2px solid #a7f3d0; padding-bottom:0.3rem; }
+    .cap-card { display:flex; gap:0.85rem; align-items:flex-start; border:1px solid var(--line);
+                border-left:4px solid #047857; border-radius:11px; padding:0.75rem 1.05rem; margin:0.55rem 0; background:#ecfdf544; }
+    .cap-card .cap-n { flex:0 0 auto; width:30px; height:30px; border-radius:50%; background:#047857; color:#fff;
+                       font-weight:800; font-size:0.82rem; display:flex; align-items:center; justify-content:center; margin-top:2px; }
+    .cap-card .cap-body { flex:1; }
+    .cap-card .cap-tag { font-size:0.65rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#047857; }
+    .cap-card .cap-t { font-weight:700; color:var(--ink); font-size:0.95rem; margin:1px 0; }
+    .cap-card .cap-q { color:var(--ink-soft); font-size:0.85rem; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXVIII &#183; Capstone Projects: Sampling &amp; Data Collection</span><span class="sep">/</span>
+      <span>Chapter 176</span>
+    </div>
+    <h1>The <span class="accent">Sampling Plan</span></h1>
+    <p class="dek">Every capstone so far began with a file. These four begin with nothing: a question, a population you
+       cannot reach all of, and a budget. What you decide before collecting anything determines what the analysis at the
+       end is allowed to say.</p>
+    <div class="hero-meta">
+      <div class="m">⏱️ <b>~15 min</b>&nbsp;read</div>
+      <div class="m">🎯 <b>Part opener</b></div>
+      <div class="m">📊 <b>Chapter 176</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">The sixteen capstones in the previous part all started the same way: someone handed you a spreadsheet.
+       That is the normal situation, and it is also the situation in which <span class="hl">the most important decisions
+       have already been made by someone else</span>, usually without a record of why.</p>
+
+    <div class="def-card">
+      <div class="sigma">🎯</div>
+      <div class="def-body">
+        A <span class="def-kw">sampling plan</span> is the written answer to five questions, settled
+        <span class="def-kw">before</span> collection: who counts as the population, what list you will actually draw
+        from, how you will draw, how many you need, and how you will measure them. Everything downstream inherits
+        those five answers.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">⭐</div>
+      <div><div class="ctitle">The claim this part rests on</div>
+        <p><strong>No analysis can repair a bad sample.</strong> A confidence interval describes uncertainty from
+           <em>drawing</em> a sample; it says nothing about the people your frame never contained or the ones who declined
+           to answer. Those errors do not shrink as n grows, and the arithmetic never announces them.</p></div>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section id="chain">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Chain From Population to Estimate</h2></div>
+    <p>Between the group you care about and the number you finally report there are four links, and each one is a place
+       error gets in. Only one of the four is the kind a p-value knows about.</p>
+
+    <div class="svg-wrap">
+      <svg viewBox="0 0 760 260" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="A chain of five boxes from target population to estimate, with four labelled error types between them: coverage error, sampling error, non-response error and measurement error. Only sampling error is covered by a confidence interval.">
+        <text x="24" y="26" font-family="Inter,Segoe UI,sans-serif" font-size="12.5" font-weight="800" fill="#064e3b">FOUR PLACES ERROR ENTERS, AND ONLY ONE OF THEM IS IN YOUR p-VALUE</text>
+
+        <rect x="16" y="52" width="126" height="52" rx="10" fill="#047857"/>
+        <text x="79" y="74" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" font-weight="800" fill="#ffffff">target</text>
+        <text x="79" y="90" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" font-weight="800" fill="#ffffff">population</text>
+
+        <rect x="174" y="52" width="126" height="52" rx="10" fill="#059669"/>
+        <text x="237" y="74" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" font-weight="800" fill="#ffffff">sampling</text>
+        <text x="237" y="90" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" font-weight="800" fill="#ffffff">frame</text>
+
+        <rect x="332" y="52" width="126" height="52" rx="10" fill="#10b981"/>
+        <text x="395" y="82" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" font-weight="800" fill="#ffffff">drawn sample</text>
+
+        <rect x="490" y="52" width="126" height="52" rx="10" fill="#34d399"/>
+        <text x="553" y="82" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" font-weight="800" fill="#064e3b">respondents</text>
+
+        <rect x="648" y="52" width="96" height="52" rx="10" fill="#6ee7b7"/>
+        <text x="696" y="82" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" font-weight="800" fill="#064e3b">estimate</text>
+
+        <g stroke="#064e3b" stroke-width="2" fill="none">
+          <path d="M142 78 L174 78"/><path d="M167 73 L174 78 L167 83"/>
+          <path d="M300 78 L332 78"/><path d="M325 73 L332 78 L325 83"/>
+          <path d="M458 78 L490 78"/><path d="M483 73 L490 78 L483 83"/>
+          <path d="M616 78 L648 78"/><path d="M641 73 L648 78 L641 83"/>
+        </g>
+
+        <g font-family="Inter,Segoe UI,sans-serif" font-size="10.5" font-weight="800">
+          <text x="158" y="132" text-anchor="middle" fill="#dc2626">coverage</text>
+          <text x="158" y="146" text-anchor="middle" fill="#dc2626">error</text>
+          <text x="316" y="132" text-anchor="middle" fill="#047857">sampling</text>
+          <text x="316" y="146" text-anchor="middle" fill="#047857">error</text>
+          <text x="474" y="132" text-anchor="middle" fill="#dc2626">non-response</text>
+          <text x="474" y="146" text-anchor="middle" fill="#dc2626">error</text>
+          <text x="632" y="132" text-anchor="middle" fill="#dc2626">measurement</text>
+          <text x="632" y="146" text-anchor="middle" fill="#dc2626">error</text>
+        </g>
+        <g stroke-width="1.4" stroke-dasharray="4 3">
+          <path d="M158 84 L158 120" stroke="#dc2626"/>
+          <path d="M316 84 L316 120" stroke="#047857"/>
+          <path d="M474 84 L474 120" stroke="#dc2626"/>
+          <path d="M632 84 L632 120" stroke="#dc2626"/>
+        </g>
+
+        <rect x="150" y="168" width="200" height="30" rx="8" fill="#ecfdf5" stroke="#a7f3d0"/>
+        <rect x="162" y="177" width="12" height="12" rx="3" fill="#047857"/>
+        <text x="182" y="188" font-family="Inter,Segoe UI,sans-serif" font-size="11" font-weight="800" fill="#047857">green: shrinks with n</text>
+        <rect x="366" y="168" width="248" height="30" rx="8" fill="#fef2f2" stroke="#fecaca"/>
+        <rect x="378" y="177" width="12" height="12" rx="3" fill="#dc2626"/>
+        <text x="398" y="188" font-family="Inter,Segoe UI,sans-serif" font-size="11" font-weight="800" fill="#dc2626">red: does NOT shrink with n</text>
+
+        <text x="380" y="230" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" fill="#3f3f46">A confidence interval quantifies the green arrow only. The three red ones are design problems,</text>
+        <text x="380" y="248" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" fill="#3f3f46">and a larger sample makes them no smaller, only more precisely wrong.</text>
+      </svg>
+      <div class="cap"><strong>This is the whole argument for the part.</strong> The interval you report at the end covers
+        one of four error sources. The other three are decided before collection begins, and the only defense against them
+        is a plan written down in advance and a limitation section that admits what the plan could not fix.</div>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Error</th><th>Where it enters</th><th>A concrete example</th><th>Does more data help?</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Coverage</td><td>The frame does not match the population</td><td>Surveying customers by email when a fifth of them never gave an address</td><td class="no">No</td></tr>
+          <tr class="hi"><td class="nm">Sampling</td><td>You drew some members and not others</td><td>The 200 people you happened to select differ from the 200 you might have</td><td class="yes">Yes</td></tr>
+          <tr><td class="nm">Non-response</td><td>Selected members do not answer</td><td>The dissatisfied stop replying, so satisfaction looks higher than it is</td><td class="no">No</td></tr>
+          <tr><td class="nm">Measurement</td><td>The instrument distorts the answer</td><td>A leading question, or a scale with no neutral option</td><td class="no">No</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section id="method">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Choosing How to Draw</h2></div>
+    <p>The single most consequential line in the plan is whether every member of the population has a
+       <strong>known, non-zero chance</strong> of selection. If they do, the sample is a probability sample and the
+       machinery of the previous twenty-seven parts applies. If they do not, that machinery does not apply, and pretending
+       otherwise is the most common error in applied research.</p>
+
+    <div class="svg-wrap">
+      <svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="A decision tree for choosing a sampling method, splitting first on whether every member has a known chance of selection, then among probability methods on whether the population has meaningful subgroups or natural groupings.">
+        <text x="24" y="24" font-family="Inter,Segoe UI,sans-serif" font-size="12.5" font-weight="800" fill="#064e3b">WHICH SAMPLING METHOD?</text>
+        <rect x="266" y="40" width="228" height="42" rx="10" fill="#064e3b"/>
+        <text x="380" y="60" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" font-weight="800" fill="#ffffff">Does every member have a known,</text>
+        <text x="380" y="75" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" font-weight="800" fill="#ffffff">non-zero chance of selection?</text>
+
+        <path d="M330 82 L200 108" stroke="#047857" stroke-width="2"/>
+        <path d="M430 82 L560 108" stroke="#dc2626" stroke-width="2"/>
+        <text x="250" y="100" font-family="Inter,Segoe UI,sans-serif" font-size="11" font-weight="800" fill="#047857">YES</text>
+        <text x="492" y="100" font-family="Inter,Segoe UI,sans-serif" font-size="11" font-weight="800" fill="#dc2626">NO</text>
+
+        <rect x="34" y="110" width="332" height="26" rx="7" fill="#ecfdf5" stroke="#a7f3d0"/>
+        <text x="200" y="128" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" font-weight="800" fill="#047857">PROBABILITY &#183; inference is valid</text>
+        <rect x="410" y="110" width="316" height="26" rx="7" fill="#fef2f2" stroke="#fecaca"/>
+        <text x="568" y="128" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" font-weight="800" fill="#dc2626">NON-PROBABILITY &#183; inference needs repair</text>
+
+        <g font-family="Inter,Segoe UI,sans-serif" font-size="11" fill="#3f3f46">
+          <rect x="34" y="150" width="158" height="46" rx="8" fill="#ffffff" stroke="#a7f3d0"/>
+          <text x="113" y="168" text-anchor="middle" font-weight="800" fill="#047857">Simple random</text>
+          <text x="113" y="185" text-anchor="middle" font-size="10">a complete list, no subgroups</text>
+
+          <rect x="208" y="150" width="158" height="46" rx="8" fill="#ffffff" stroke="#a7f3d0"/>
+          <text x="287" y="168" text-anchor="middle" font-weight="800" fill="#047857">Stratified</text>
+          <text x="287" y="185" text-anchor="middle" font-size="10">subgroups you must compare</text>
+
+          <rect x="34" y="206" width="158" height="46" rx="8" fill="#ffffff" stroke="#a7f3d0"/>
+          <text x="113" y="224" text-anchor="middle" font-weight="800" fill="#047857">Cluster / multistage</text>
+          <text x="113" y="241" text-anchor="middle" font-size="10">no list, but natural groups</text>
+
+          <rect x="208" y="206" width="158" height="46" rx="8" fill="#ffffff" stroke="#a7f3d0"/>
+          <text x="287" y="224" text-anchor="middle" font-weight="800" fill="#047857">Systematic</text>
+          <text x="287" y="241" text-anchor="middle" font-size="10">an ordered stream, every kth</text>
+
+          <rect x="410" y="150" width="316" height="46" rx="8" fill="#ffffff" stroke="#fecaca"/>
+          <text x="568" y="168" text-anchor="middle" font-weight="800" fill="#dc2626">Quota, convenience, panel, snowball</text>
+          <text x="568" y="185" text-anchor="middle" font-size="10">cheap and fast, and the selection rule is unknown</text>
+
+          <rect x="410" y="206" width="316" height="46" rx="8" fill="#fffbeb" stroke="#fcd34d"/>
+          <text x="568" y="224" text-anchor="middle" font-weight="800" fill="#92400e">Repair: rake to known population margins</text>
+          <text x="568" y="241" text-anchor="middle" font-size="10">helps for what you weighted on, nothing else</text>
+        </g>
+
+        <text x="380" y="278" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" font-style="italic" fill="#065f46">The left branch buys you a standard error. The right branch buys you speed, and owes you a caveat.</text>
+      </svg>
+      <div class="cap"><strong>Cost drives most real decisions.</strong> A simple random sample of a national population is
+        usually impossible, because no complete list exists and reaching a scattered sample is expensive. That is why
+        stratified and multistage designs dominate serious survey work, and why the second project in this part
+        spends its time on the price clustering charges in precision.</div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section id="size">
+    <div class="section-eyebrow"><div class="num">3</div><h2>How Big, and How Precise</h2></div>
+    <p>Sample size is where intuition fails most reliably. Two facts do most of the work.</p>
+
+    <div class="embox">
+      <span class="gb-tag">The two facts</span>
+      <p style="margin:0.4rem 0 0"><strong>Precision improves with the square root of n.</strong> To halve a margin of
+         error you need four times the sample, not twice. That single relationship sets the budget for most studies.</p>
+      <p style="margin:0.7rem 0 0"><strong>The fraction of the population barely matters.</strong> A sample of 1,000
+         estimates a national population of 60 million about as precisely as it estimates a town of 60,000. What matters
+         is the absolute size of the sample, not the share it represents, which is why national polls of 1,000 people are
+         not the absurdity they look.</p>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Sample size</th><th>Margin of error on a 50% proportion</th><th>Cost relative to n = 400</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">100</td><td>&#177; 9.8 points</td><td>0.25&#215;</td></tr>
+          <tr><td class="nm">400</td><td>&#177; 4.9 points</td><td>1&#215;</td></tr>
+          <tr class="hi"><td class="nm">1,000</td><td>&#177; 3.1 points</td><td>2.5&#215;</td></tr>
+          <tr><td class="nm">1,600</td><td>&#177; 2.5 points</td><td>4&#215;</td></tr>
+          <tr><td class="nm">6,400</td><td>&#177; 1.2 points</td><td>16&#215;</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Read the last two rows together. Quadrupling the sample from 1,600 to 6,400 buys 1.3 percentage points of precision
+       for four times the money. Whether that is worth it depends entirely on what decision the estimate feeds, which is
+       why the plan states the <strong>required</strong> precision first and derives n from it, rather than picking a
+       round number and reporting whatever precision falls out.</p>
+
+    <div class="embox">
+      <span class="gb-tag">Two adjustments the textbook formula leaves out</span>
+      <p style="margin:0.4rem 0 0"><strong>Clustering costs you.</strong> If you sample schools and then students within
+         them, students in a school resemble each other, so each additional student adds less information than a fresh
+         random one would. The <strong>design effect</strong> is the multiplier: a design effect of 2 means your 1,000
+         clustered responses carry the information of 500 independent ones. Plans that ignore it are systematically
+         under-powered.</p>
+      <p style="margin:0.7rem 0 0"><strong>Non-response costs you twice.</strong> Once in sample size, which is easy to
+         fix by inviting more people, and once in bias, which is not fixable that way at all. Plan the invitation count
+         from the expected response rate, then plan the analysis for the bias that remains.</p>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section id="instrument">
+    <div class="section-eyebrow"><div class="num">4</div><h2>The Instrument Is Part of the Design</h2></div>
+    <p>A questionnaire is a measuring device, and like any measuring device it can be miscalibrated. The data type of every
+       answer is fixed the moment the question is written, and with it the entire analysis that will be possible later.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Question type</th><th>Produces</th><th>What you can compute</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Single choice from a list</td><td>Nominal</td><td>Proportions, chi-square, Cramer's V</td></tr>
+          <tr><td class="nm">Choose all that apply</td><td>Several binary variables</td><td>Proportions per option, but the options are not mutually exclusive and must not be treated as one variable</td></tr>
+          <tr class="hi"><td class="nm">Likert agreement scale</td><td>Ordinal</td><td>Medians, top-box shares, rank correlations. <strong>Not means</strong></td></tr>
+          <tr><td class="nm">Numeric entry</td><td>Continuous</td><td>Means, standard deviations, the full parametric toolkit</td></tr>
+          <tr><td class="nm">Ranking task</td><td>Ordinal, dependent within respondent</td><td>Rank correlation, Kendall's W</td></tr>
+          <tr><td class="nm">Open text</td><td>Unstructured</td><td>Coding into categories, then whatever the coding produces</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Four failures account for most bad instruments, and all four are cheap to avoid at the writing stage and impossible
+       to repair afterwards.</p>
+
+    <ul>
+      <li><strong>The leading question.</strong> "How much did you enjoy the new booking process?" has already assumed the
+          answer. "How would you rate the new booking process?" has not.</li>
+      <li><strong>The double-barrelled question.</strong> "Was the service fast and friendly?" cannot be answered by
+          someone who found it fast and rude, and you will never know which half the answer refers to.</li>
+      <li><strong>The missing option.</strong> A scale with no neutral point forces an opinion from people who have none,
+          and no "not applicable" option turns irrelevance into a fabricated answer.</li>
+      <li><strong>Order effects.</strong> Ask about a specific irritation and then about overall satisfaction, and the
+          overall figure drops. The instrument changed the thing it was measuring.</li>
+    </ul>
+  </section>
+
+  <!-- 5 -->
+  <section id="nonresponse">
+    <div class="section-eyebrow"><div class="num">5</div><h2>After Fielding: Who Did Not Answer</h2></div>
+    <p>Every survey in this part ends with a section on the people who are not in it. That is not a formality, and it is
+       where the most commonly repeated mistake in survey reporting lives.</p>
+
+    <div class="embox">
+      <span class="gb-tag">A low response rate is not the problem. Non-response bias is</span>
+      <p style="margin:0.4rem 0 0">A 20 percent response rate is harmless if the 80 percent who declined are like the 20
+         percent who answered. A 90 percent response rate is dangerous if the missing 10 percent are all the people who
+         had a terrible experience. <strong>The response rate tells you nothing on its own.</strong> What matters is
+         whether responding is related to what you are trying to measure, and the response rate cannot tell you that.</p>
+    </div>
+
+    <p>Three moves are available, in increasing order of usefulness. <strong>Compare respondents to the frame</strong> on
+       any variable you hold for everyone, since a frame usually carries age, region, tenure or purchase history whether
+       or not the person replied. <strong>Weight</strong> so the respondent profile matches known population margins, which
+       is what post-stratification and raking do. <strong>Follow up a subsample of non-respondents</strong> aggressively
+       and compare them to the easy responders, which is the only one of the three that measures the bias rather than
+       assuming it away.</p>
+
+    <p>Weighting deserves one warning. It corrects the variables you weighted on and nothing else, and it makes the
+       estimate less precise, because unequal weights waste information. Weights that vary wildly are a sign the sample was
+       badly out of shape to begin with, and no amount of weighting turns a broken sample into a good one.</p>
+  </section>
+
+  <!-- 6 -->
+  <section id="framework">
+    <div class="section-eyebrow"><div class="num">6</div><h2>How the Framework Changes</h2></div>
+    <p>The <a href="the-analysis-framework.html">twelve-step framework</a> from the previous part still runs, unchanged,
+       from the moment the data exists. What these capstones add is five steps in front of it.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Step</th><th>Decision</th><th>What it determines</th></tr></thead>
+        <tbody>
+          <tr class="hi"><td class="nm">D1 &#183; Define</td><td>Who exactly is the target population?</td><td>What the estimate is an estimate <em>of</em></td></tr>
+          <tr class="hi"><td class="nm">D2 &#183; Frame</td><td>What list will you draw from?</td><td>Coverage error, and who is invisible from the start</td></tr>
+          <tr class="hi"><td class="nm">D3 &#183; Method</td><td>How will you draw?</td><td>Whether standard errors are valid at all</td></tr>
+          <tr class="hi"><td class="nm">D4 &#183; Size</td><td>How precise must the answer be?</td><td>Budget, and what differences you can detect</td></tr>
+          <tr class="hi"><td class="nm">D5 &#183; Instrument</td><td>How will you ask?</td><td>The data type of every variable, and so every test</td></tr>
+          <tr><td class="nm">1 to 12</td><td>The analysis framework, unchanged</td><td>Everything from here is the previous part</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Notice that D5 determines the data type, and the data type was step 2 of the analysis framework. These capstones
+       simply push the chain back one link: instead of discovering that a variable is ordinal, you <strong>chose</strong>
+       to make it ordinal, and you could have chosen otherwise.</p>
+  </section>
+
+  <!-- 7 -->
+  <section id="in-ds-ai">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Sampling in Data Science &amp; AI</h2></div>
+    <p>Nothing in this part is confined to questionnaires. Every training set is a sample, and almost none of them come
+       with a sampling plan.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Where it appears</th><th>The sampling question nobody asked</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Training data for a model</td><td>What population does this sample represent, and does the deployment population match it?</td></tr>
+          <tr><td class="nm">Scraped corpora</td><td>The frame is "whatever was reachable and not blocked". Who is systematically absent from that?</td></tr>
+          <tr><td class="nm">Benchmark suites</td><td>A benchmark is a sample of tasks. Scoring well on it generalizes only as far as the sample does</td></tr>
+          <tr><td class="nm">Human labels and preferences</td><td>Which annotators, recruited how, and are their judgments the population's judgments?</td></tr>
+          <tr><td class="nm">Logged behavior</td><td>You observe only the users the current system already serves well. That is non-response by another name</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="research">
+      <span class="rtag">Practice note</span>
+      <p style="margin:0.4rem 0 0">Dataset shift, the standard explanation for a model that degrades after deployment, is
+         usually a sampling failure that was invisible at training time: the training frame did not cover the population
+         the model eventually met. The discipline that prevents it is the one in this chapter, written down before
+         collection rather than reconstructed afterwards from a post-mortem. A dataset shipped without a statement of what
+         population it represents is a dataset whose limits nobody can check.</p>
+    </div>
+  </section>
+
+  <!-- 8 -->
+  <section id="roadmap">
+    <div class="section-eyebrow"><div class="num">8</div><h2>The Four Projects Ahead</h2></div>
+    <p>Four projects, each starting before the data exists. They become clickable as each one is published; the
+       <a href="../toc.html">Contents</a> always shows what is live.</p>
+
+    <div class="cap-group">Probability designs &#183; when you can draw properly</div>
+    <div class="cap-card"><div class="cap-n">1</div><div class="cap-body"><div class="cap-tag">Stratified Sampling</div><div class="cap-t">A National Customer Study</div><div class="cap-q">Write the plan, field the questionnaire, then weight for the people who never replied.</div></div></div>
+    <div class="cap-card"><div class="cap-n">2</div><div class="cap-body"><div class="cap-tag">Cluster &amp; Multistage</div><div class="cap-t">Schools and Students</div><div class="cap-q">When you sample groups rather than people, what does that cost you in precision?</div></div></div>
+
+    <div class="cap-group">When the frame is the problem</div>
+    <div class="cap-card"><div class="cap-n">3</div><div class="cap-body"><div class="cap-tag">Web Scraping</div><div class="cap-t">Job Postings as a Sampling Frame</div><div class="cap-q">You built the dataset yourself. Which population does it actually represent?</div></div></div>
+    <div class="cap-card"><div class="cap-n">4</div><div class="cap-body"><div class="cap-tag">Non-Probability</div><div class="cap-t">Repairing an Online Panel</div><div class="cap-q">A fast, cheap, biased sample. How much can weighting rescue, and how would you know?</div></div></div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>🎓 Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">✓</span><span><strong>A confidence interval covers sampling error only.</strong> Coverage, non-response and measurement error are design problems, and they do not shrink as n grows.</span></li>
+        <li><span class="ck">✓</span><span><strong>Probability or not is the decisive line.</strong> Known non-zero selection probabilities are what make a standard error mean anything.</span></li>
+        <li><span class="ck">✓</span><span><strong>Precision goes as the square root of n</strong>, and barely depends on the fraction of the population sampled. Derive n from the precision you need.</span></li>
+        <li><span class="ck">✓</span><span><strong>The instrument fixes the data type</strong>, and therefore fixes which tests are available. That decision is made when the question is written, not when the analysis starts.</span></li>
+        <li><span class="ck">✓</span><span><strong>The response rate is not the problem</strong>; whether responding relates to the answer is. Weighting fixes the variables you weighted on and nothing else.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">9</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on the plan that comes before the data. Answer them, hit <strong>Check Answers</strong>, and keep
+       refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-store-ratings-across-locations.html">
+      <span style="font-size:1.3rem">←</span>
+      <span><span class="cn-dir">Chapter 175 · Previous</span><br><span class="cn-title">Kruskal-Wallis: Ratings Across Four Stores</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">→</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;·&nbsp;
+  Chapter 176 &nbsp;·&nbsp; © 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch176";
+  window.QUIZ_DATA = [
+    {
+      q: "A confidence interval from a survey quantifies which source of error?",
+      options: ["All error in the study", "Sampling error only", "Coverage and sampling error", "Measurement error"],
+      answer: 1,
+      explain: "Coverage, non-response and measurement error are design problems. The interval is silent about all three."
+    },
+    {
+      q: "Your email list covers 80% of customers. The 20% without an address are systematically older. What error is that?",
+      options: ["Sampling error", "Coverage error", "Non-response error", "Measurement error"],
+      answer: 1,
+      explain: "The frame does not match the population, so those customers had zero chance of selection no matter how large the sample."
+    },
+    {
+      q: "What makes a sample a probability sample?",
+      options: ["It is large", "It was drawn at random from those who volunteered", "Every population member has a known, non-zero chance of selection", "It matches the population on age and region"],
+      answer: 2,
+      explain: "That property is what gives a standard error its meaning. Matching on a few variables afterwards is not the same thing."
+    },
+    {
+      q: "You need to halve your margin of error. What must happen to the sample size?",
+      options: ["Double it", "Quadruple it", "Increase it by 50%", "It depends on the population size"],
+      answer: 1,
+      explain: "Precision improves with the square root of n, so halving the margin needs four times the sample."
+    },
+    {
+      q: "A national poll of 1,000 people and a town poll of 1,000 people. Which is more precise?",
+      options: ["The town poll, since it covers a bigger share of its population", "The national poll, since the population is bigger", "They are about equally precise", "It cannot be determined"],
+      answer: 2,
+      explain: "Precision depends on the absolute sample size, not the fraction of the population sampled."
+    },
+    {
+      q: "A design effect of 2 in a cluster sample means…",
+      options: ["The sample is twice as precise", "Your 1,000 clustered responses carry the information of about 500 independent ones", "You need half the sample size", "Two stages of sampling were used"],
+      answer: 1,
+      explain: "Members of a cluster resemble each other, so each extra one adds less information than a fresh independent draw would."
+    },
+    {
+      q: "Survey A has a 20% response rate, survey B has 90%. Which has less non-response bias?",
+      options: ["Survey B, certainly", "Survey A, certainly", "Cannot be determined from the response rates alone", "Neither has any bias"],
+      answer: 2,
+      explain: "Bias depends on whether responding is related to the answer. A high rate with a systematically missing 10% can be worse than a low but indifferent one."
+    },
+    {
+      q: "What does post-stratification weighting actually fix?",
+      options: ["All the differences between respondents and the population", "Only the imbalance on the variables you weighted on", "Measurement error in the questionnaire", "The sample size"],
+      answer: 1,
+      explain: "It corrects the margins you weighted to and nothing else, and it costs precision because unequal weights waste information."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
