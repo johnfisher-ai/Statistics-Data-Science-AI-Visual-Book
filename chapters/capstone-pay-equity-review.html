@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 185 · Multiple Regression Done Properly: A Pay Equity Review — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .yes { color:#047857; font-weight:700; }
+    .disp-table .no { color:#dc2626; font-weight:700; }
+    .disp-table tr.hi td { background:#fff7ed; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .embox { background:#fff7ed; border:1px solid #fed7aa; border-left:4px solid #c2410c; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .embox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#7c2d12; }
+    .rw-card { background:#fff7ed; border:1px solid #fed7aa; border-left:4px solid #c2410c; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#7c2d12; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#fff7ed; color:#c2410c; border-color:#fed7aa; }
+    .ex-file.doc { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#fff7ed; border:1px solid #fed7aa; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#7c2d12; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #c2410c; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#7c2d12; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+    .svg-wrap { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.9rem 0.6rem 0.3rem; background:var(--panel); }
+    .svg-wrap svg { width:100%; height:auto; display:block; }
+    .svg-wrap .cap { font-size:0.82rem; color:var(--ink-soft); padding:0.55rem 0.6rem 0.4rem; line-height:1.55; }
+    .svg-wrap .cap strong { color:var(--ink); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/capstone-pay-equity-review.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXX &#183; Capstone Projects: Regression</span><span class="sep">/</span>
+      <span>Chapter 185</span>
+    </div>
+    <h1>Multiple Regression Done Properly: A <span class="accent">Pay Equity</span> Review</h1>
+    <p class="dek">Capstone 25. The raw gap is 14.4 percent. Add every control and it is 2.3. Both numbers are correct,
+       they answer different questions, and the control doing most of the work is the one that should never be added
+       without an argument.</p>
+    <div class="hero-meta">
+      <div class="m">&#9201;&#65039; <b>~21 min</b>&nbsp;read</div>
+      <div class="m">&#127919; <b>Multiple regression</b></div>
+      <div class="m">&#128202; <b>Chapter 185</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Part XXIX was about designing your way to a causal answer. This part is about the craft of the model
+       itself, and it starts with the decision that regression makes easiest to get wrong:
+       <span class="hl">which variables belong on the right-hand side</span>.</p>
+
+    <div class="brief-card">
+      <div class="bh">The brief</div>
+      <dl>
+        <dt>Setting</dt><dd>A company's HR system: 3,600 employee records with gender, age, years of experience, education, department, job level, most recent performance rating and annual salary.</dd>
+        <dt>The question</dt><dd><strong>Are women paid less than men at this company, and if so, by how much?</strong></dd>
+        <dt>Why it matters</dt><dd>The answer goes into a regulatory filing and possibly into litigation. It will be read by people who want a single number, and quoted by people who want a small one.</dd>
+        <dt>What we do</dt><dd>Model log pay, add controls one at a time so every step is visible, measure the collinearity among the career variables and show exactly what it does, then stop before the most powerful control and ask whether the company assigns it equally before deciding whether it belongs in the model at all.</dd>
+      </dl>
+    </div>
+
+    <div class="def-card">
+      <div class="sigma">&#8594;</div>
+      <div class="def-body">
+        A control variable that is itself <span class="def-kw">affected by the exposure</span> is a
+        <span class="def-kw">mediator</span>, not a confounder. Adjusting for a confounder removes bias. Adjusting for a
+        mediator removes <span class="def-kw">part of the effect you are trying to measure</span>, and the regression
+        output looks identical either way.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">&#11088;</div>
+      <div><div class="ctitle">The finding, up front</div>
+        <p>Unadjusted, women earn <strong>14.4 percent</strong> less. Experience, education and department take that to
+           <strong>8.1 percent</strong>. Job level alone takes it to <strong>2.3 percent</strong>. But at equal
+           experience, education, performance and department, women's odds of reaching level 4 or above are
+           <strong>43 percent lower</strong>, so job level is carrying the very thing the review is looking for.</p></div>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section id="two">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Two Questions, Not One</h2></div>
+
+    <p>The most common failure in a pay equity review is producing a single number. There are two, they mean different
+       things, and either one on its own is an answer to a question somebody else asked.</p>
+
+    <table class="disp-table">
+      <tr><th>&nbsp;</th><th>The unadjusted question</th><th>The adjusted question</th></tr>
+      <tr><td class="nm">Asks</td><td>What do women in this company earn, against what men earn?</td><td>Among people doing similar work with similar backgrounds, what is the difference?</td></tr>
+      <tr><td class="nm">Describes</td><td>The workforce as it actually is</td><td>How individuals are paid within a grade</td></tr>
+      <tr><td class="nm">Used for</td><td>Reporting, and asking why the distribution looks like that</td><td>Pay-setting policy, and individual review</td></tr>
+      <tr class="hi"><td class="nm">Fails when</td><td>Quoted as evidence about individual pay decisions</td><td>Quoted as the company's pay gap</td></tr>
+    </table>
+
+    <p>Both get reported. Neither is "the" pay gap, and the analysis plan for this review said so in writing before the
+       salary file was opened, alongside one further commitment: <strong>we will not control for a variable the company
+       itself assigns unless we have checked whether it is assigned equally</strong>.</p>
+  </section>
+
+  <!-- 2 -->
+  <section id="clean">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Cleaning, and One Decision Worth Defending</h2></div>
+
+    <table class="disp-table">
+      <tr><th>Step</th><th>Records</th><th>What happened</th></tr>
+      <tr><td class="nm">HRIS export</td><td>3,648</td><td>The extract ran twice</td></tr>
+      <tr><td class="nm">After deduplication</td><td>3,600</td><td>One row per employee</td></tr>
+      <tr><td class="nm">Salaries of zero voided</td><td>3,591</td><td>Nine payroll errors, not nine unpaid employees</td></tr>
+      <tr><td class="nm">Experience sentinels voided</td><td>3,569</td><td>Twenty-two records carried &#8722;1, which is not a tenure</td></tr>
+      <tr class="hi"><td class="nm">Missing performance ratings</td><td>69 kept</td><td>Filled with the median and flagged with an indicator</td></tr>
+    </table>
+
+    <p>That last row is the decision worth defending. Dropping the sixty-nine people with no review on file would have
+       silently changed who the study is about, and people without a recent review are not a random sixty-nine. Filling
+       the rating with the median and adding a <code>perf_missing</code> indicator keeps them in the analysis and keeps
+       the fill visible to the model, so the coefficient on the indicator can tell you whether those employees differ.</p>
+  </section>
+
+  <!-- 3 -->
+  <section id="ladder">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The Specification Ladder</h2></div>
+
+    <p>The outcome is the log of salary, so coefficients read as approximate percentage differences. Controls go in one
+       at a time, because anyone can produce a small number by adding enough variables and the honest presentation is to
+       show the number moving.</p>
+
+    <table class="disp-table">
+      <tr><th>Specification</th><th>Estimated gap</th><th>95% interval</th><th>R&#178;</th></tr>
+      <tr><td class="nm">Unadjusted</td><td class="no">&#8722;14.36%</td><td>&#8212;</td><td>&#8212;</td></tr>
+      <tr><td class="nm">+ experience</td><td>&#8722;10.25%</td><td>[&#8722;11.92%, &#8722;8.55%]</td><td>0.261</td></tr>
+      <tr><td class="nm">+ education</td><td>&#8722;10.44%</td><td>[&#8722;12.05%, &#8722;8.80%]</td><td>0.309</td></tr>
+      <tr><td class="nm">+ department</td><td>&#8722;8.10%</td><td>[&#8722;9.64%, &#8722;6.54%]</td><td>0.415</td></tr>
+      <tr><td class="nm">+ performance</td><td>&#8722;8.10%</td><td>[&#8722;9.58%, &#8722;6.61%]</td><td>0.468</td></tr>
+      <tr class="hi"><td class="nm">+ job level</td><td>&#8722;2.31%</td><td>[&#8722;3.08%, &#8722;1.53%]</td><td>0.875</td></tr>
+    </table>
+
+    <p>Read the last row against the one above it. Experience, education, department and performance between them take
+       the gap from 14.4 percent to 8.1. <strong>Job level alone takes it from 8.1 to 2.3</strong>, and the R-squared
+       leaps from 0.47 to 0.88. One variable is doing more work than all the others combined, and it happens to be the
+       only variable on the list that the company assigns to people.</p>
+
+    <p>Notice also that performance changed nothing at all. Men and women in this workforce are rated the same, which is
+       worth reporting: it removes one common explanation before anybody offers it.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-payequity-ladder.png"
+           alt="Left: six bars showing the estimated pay gap under successive specifications, falling from minus 14.4 percent unadjusted to minus 10.2 with experience, minus 10.4 with education, minus 8.1 with department, minus 8.1 with performance, and minus 2.3 once job level is added. The last bar is highlighted and annotated one variable, most of the movement. Right: grouped bars of the share of each gender at each job level. Women are 31.7 percent at level 1 against men's 20.8, and 2.6 percent at level 6 against men's 6.2, annotated that the odds of reaching level 4 or above are 43 percent lower for women at equal experience and rating.">
+      <figcaption><strong>Left:</strong> the gap under each successive specification. The first four controls explain
+        about six points between them; job level alone explains almost six more. <strong>Right:</strong> why that
+        is.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 4 -->
+  <section id="collinear">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Collinearity, and What It Actually Does</h2></div>
+
+    <p>Age, experience and job level all measure roughly one underlying thing: how far into a career somebody is. Age
+       and experience correlate at 0.829 here, which is unremarkable for a real workforce and enough to matter.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">VIF, age</div><div class="rv">3.21</div><div class="rd">with all four in</div></div>
+      <div class="rchip"><div class="rk">VIF, experience</div><div class="rv">3.45</div><div class="rd">with all four in</div></div>
+      <div class="rchip"><div class="rk">VIF, experience</div><div class="rv">1.22</div><div class="rd">after dropping age</div></div>
+      <div class="rchip"><div class="rk">Threshold</div><div class="rv">None</div><div class="rd">5 and 10 are conventions</div></div>
+    </div>
+
+    <p>A VIF of 3.4 violates nothing. The thresholds people quote, 5 or 10, are conventions rather than rules, and the
+       practical consequence is easier to see by looking directly at what happens when both variables go in.</p>
+
+    <table class="disp-table">
+      <tr><th>Model</th><th>Experience</th><th>Age</th><th>The gender coefficient</th></tr>
+      <tr><td class="nm">Experience only</td><td>+0.01060 (SE 0.00043)</td><td>&#8212;</td><td>&#8722;0.0234 (SE 0.0040)</td></tr>
+      <tr><td class="nm">Age only</td><td>&#8212;</td><td>+0.00705 (SE 0.00036)</td><td>&#8722;0.0273 (SE 0.0041)</td></tr>
+      <tr class="hi"><td class="nm">Both</td><td>+0.01013 (SE 0.00072)</td><td>+0.00048, p = 0.41</td><td>&#8722;0.0234 (SE 0.0040)</td></tr>
+    </table>
+
+    <p>Two things happen, and only one of them is what people expect. Putting both in inflates the standard error on
+       experience by about two thirds, and leaves age with nothing left to explain. What does <em>not</em> happen is any
+       movement in the coefficient we care about: the gender gap sits at &#8722;0.0234 either way.</p>
+
+    <div class="embox">
+      <span class="gb-tag">The rule that follows</span>
+      <p style="margin:0.45rem 0 0"><strong>Collinearity between two controls damages the estimates of those controls
+         and leaves the rest of the model alone.</strong> If neither age nor experience is the quantity of interest,
+         high VIFs among them are a reason to simplify for interpretability, not a threat to the finding. Panic about
+         multicollinearity is usually misdirected: the question is never "is the VIF above 5", it is "is the variable
+         whose standard error just doubled the one I am trying to measure".</p>
+    </div>
+
+    <p>We keep experience and drop age, because experience is what the company's pay policy claims to reward, and a
+       coefficient the reader can map onto a policy is worth more than one they cannot.</p>
+  </section>
+
+  <!-- 5 -->
+  <section id="mediator">
+    <div class="section-eyebrow"><div class="num">5</div><h2>The Control That Should Not Be Added Without an Argument</h2></div>
+
+    <p>Job level took the gap from 8.1 percent to 2.3. Before accepting that as the adjusted answer, ask what job level
+       is. It is not a fact about an employee, like their education. <strong>It is a decision the company made about
+       them.</strong></p>
+
+    <p>If women are promoted more slowly than their experience and performance warrant, then job level is partly a
+       <em>result</em> of unequal treatment. Controlling for it asks whether people are paid fairly once they have
+       arrived at a grade, and treats how they arrived as fixed. That is a legitimate question. It is not the same
+       question, and the regression output looks identical whichever it is answering.</p>
+
+    <div class="svg-wrap">
+      <svg viewBox="0 0 880 250" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="A causal diagram with Gender on the left, Job level in the middle above, and Pay on the right. Two arrows leave Gender: one goes up through Job level and then down to Pay, labeled the promotion path, minus 6 percentage points; the other goes directly across to Pay, labeled the within-level path, minus 2.3 percent. A vertical bar sits on the Job level box labeled controlling for job level closes this path, and a caption notes that the adjusted model measures only the direct arrow.">
+        <rect x="0" y="0" width="880" height="250" fill="#ffffff"/>
+
+        <rect x="36" y="112" width="150" height="48" rx="10" fill="#7c2d12"/>
+        <text x="111" y="142" text-anchor="middle" font-size="14" font-weight="800" fill="#ffffff">Gender</text>
+
+        <rect x="352" y="26" width="176" height="48" rx="10" fill="#c2410c"/>
+        <text x="440" y="50" text-anchor="middle" font-size="13.5" font-weight="800" fill="#ffffff">Job level</text>
+        <text x="440" y="66" text-anchor="middle" font-size="10" font-weight="700" fill="#fed7aa">assigned by the company</text>
+
+        <rect x="700" y="112" width="146" height="48" rx="10" fill="#7c2d12"/>
+        <text x="773" y="142" text-anchor="middle" font-size="14" font-weight="800" fill="#ffffff">Pay</text>
+
+        <path d="M186 124 Q265 52 346 48" stroke="#c2410c" stroke-width="3" fill="none"/>
+        <path d="M352 48 L339 42 L339 54 Z" fill="#c2410c"/>
+        <path d="M528 50 Q612 56 694 122" stroke="#c2410c" stroke-width="3" fill="none"/>
+        <path d="M700 127 L688 118 L682 128 Z" fill="#c2410c"/>
+        <text x="440" y="98" text-anchor="middle" font-size="12" font-weight="800" fill="#c2410c">THE PROMOTION PATH</text>
+        <text x="440" y="114" text-anchor="middle" font-size="11.5" font-weight="700" fill="#7c2d12">odds of level 4+ are 43% lower</text>
+
+        <path d="M192 140 L692 140" stroke="#7c2d12" stroke-width="3" fill="none"/>
+        <path d="M700 140 L686 133 L686 147 Z" fill="#7c2d12"/>
+        <text x="446" y="164" text-anchor="middle" font-size="12" font-weight="800" fill="#7c2d12">THE WITHIN-LEVEL PATH</text>
+        <text x="446" y="180" text-anchor="middle" font-size="11.5" font-weight="700" fill="#7c2d12">&#8722;2.3% at the same grade</text>
+
+        <line x1="604" y1="88" x2="620" y2="54" stroke="#dc2626" stroke-width="5"/>
+        <text x="638" y="40" font-size="11.5" font-weight="800" fill="#dc2626">controlling for job level</text>
+        <text x="638" y="56" font-size="11.5" font-weight="800" fill="#dc2626">closes this path</text>
+
+        <text x="440" y="222" text-anchor="middle" font-size="12" font-weight="800" fill="#7c2d12">The unadjusted 14.4% contains both. The adjusted 2.3% contains only the lower one.</text>
+        <text x="440" y="240" text-anchor="middle" font-size="11.5" font-weight="700" fill="#dc2626">Reporting only the adjusted figure deletes the larger finding.</text>
+      </svg>
+      <div class="cap"><strong>Two paths, and adjustment closes one of them.</strong> A confounder sits <em>before</em>
+        the exposure and adjusting for it removes bias. A mediator sits <em>after</em> it, and adjusting for it removes
+        part of the effect. The arithmetic is identical; only the causal story tells you which you have.</div>
+    </div>
+
+    <p>So the plan required checking. At equal experience, education, performance rating and department, what are the
+       odds of an employee sitting at level 4 or above?</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Odds ratio, women</div><div class="rv">0.569</div><div class="rd">95% CI [0.482, 0.671]</div></div>
+      <div class="rchip"><div class="rk">In words</div><div class="rv">43% lower</div><div class="rd">odds of reaching senior grades</div></div>
+      <div class="rchip"><div class="rk">p-value</div><div class="rv">2 &#215; 10&#8315;&#185;&#185;</div><div class="rd">not a marginal finding</div></div>
+      <div class="rchip"><div class="rk">Level 6</div><div class="rv">2.6% vs 6.2%</div><div class="rd">share of women vs men</div></div>
+    </div>
+
+    <p><strong>This is the finding the adjusted model deletes.</strong> Women are 43 percent less likely to sit at
+       senior grades than men who look identical on everything the company says it promotes on. A report giving only the
+       2.3 percent figure would be arithmetically correct and would leave the mechanism producing most of the gap
+       entirely unmentioned.</p>
+  </section>
+
+  <!-- 6 -->
+  <section id="interaction">
+    <div class="section-eyebrow"><div class="num">6</div><h2>An Average That Describes Nobody</h2></div>
+
+    <p>The 2.3 percent is itself an average across the whole company, and the plan asked in advance whether the
+       within-level gap is the same at every level. It is not.</p>
+
+    <table class="disp-table">
+      <tr><th>Job levels</th><th>Within-level gap</th><th>Against the single average of &#8722;2.3%</th></tr>
+      <tr><td class="nm">1 to 2</td><td>&#8722;1.39%</td><td>The average overstates it by two thirds</td></tr>
+      <tr><td class="nm">3 to 4</td><td>&#8722;4.45%</td><td>Nearly twice the average</td></tr>
+      <tr class="hi"><td class="nm">5 to 6</td><td>&#8722;5.68%</td><td>Two and a half times the average</td></tr>
+    </table>
+
+    <p>The test that the gap is constant across levels returns p = 0.0012, so that pattern is not noise. Quoting 2.3
+       percent to a woman at level 5 would understate her position by more than half, and quoting it to a woman at level
+       1 would overstate hers. <strong>An average is a summary of a distribution, and it is only a good summary when the
+       distribution has one mode.</strong></p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-payequity-interaction.png"
+           alt="Left: the within-level pay gap by group of job levels with 95 percent intervals. Levels 1 to 2 show minus 1.4 percent, levels 3 to 4 minus 4.5 percent, levels 5 to 6 minus 5.7 percent, against a dashed line marking the single averaged figure of minus 2.3 percent. Right: a scatter of annual salary against years of experience with separate fitted curves for men and women, the two curves diverging as experience increases.">
+      <figcaption><strong>Left:</strong> the gap by seniority, with intervals, against the single averaged figure as a
+        dashed line. <strong>Right:</strong> the same story visible without any model, in the unadjusted relationship
+        between pay and experience.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 7 -->
+  <section id="diagnostics">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Diagnostics, and How to Read a Screening Rule</h2></div>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Residual SD</div><div class="rv">0.1161</div><div class="rd">on the log scale</div></div>
+      <div class="rchip"><div class="rk">Skewness</div><div class="rv">+0.050</div><div class="rd">symmetric</div></div>
+      <div class="rchip"><div class="rk">Breusch-Pagan</div><div class="rv">p = 0.445</div><div class="rd">constant variance</div></div>
+      <div class="rchip"><div class="rk">Largest Cook's D</div><div class="rv">0.0070</div><div class="rd">concern starts near 0.5</div></div>
+    </div>
+
+    <p>All three pass, and the influence line needs reading carefully rather than quoting. One hundred and seventy
+       observations exceed the familiar 4/n cutoff, which sounds alarming and is not. <strong>4/n is a screening rule,
+       not a threshold for concern</strong>: in a sample of 3,569 it flags roughly the top few percent by construction,
+       whatever the data look like. The number that matters is the magnitude, and the largest Cook's distance here is
+       0.007 against conventional cause for concern at 0.5. No single employee is moving this model.</p>
+
+    <p>Chapter 186 is about what to do when these checks fail, which they do more often than published papers suggest.
+       Here they pass, and verifying that is worth the four lines it costs.</p>
+  </section>
+
+  <!-- 8 -->
+  <section id="report">
+    <div class="section-eyebrow"><div class="num">8</div><h2>What to Actually Report</h2></div>
+
+    <p>Three numbers, each with a sentence saying what it means. Not one number, and not three numbers offered as
+       alternatives for the reader to choose between.</p>
+
+    <table class="disp-table">
+      <tr><th>Report</th><th>Figure</th><th>The sentence that has to go with it</th></tr>
+      <tr><td class="nm">The workforce gap</td><td>&#8722;14.4%</td><td>What women at this company earn against what men earn. It reflects who holds which jobs, not what any individual is paid for the same work.</td></tr>
+      <tr class="hi"><td class="nm">The promotion gap</td><td>Odds 0.569</td><td>At equal experience, education, performance and department, women are 43 percent less likely to hold a senior grade. This is where most of the workforce gap comes from.</td></tr>
+      <tr><td class="nm">The within-grade gap</td><td>&#8722;1.4% to &#8722;5.7%</td><td>At the same grade, women are paid slightly less, and the difference grows with seniority.</td></tr>
+    </table>
+
+    <p>Presented that way, the company has a clear picture and a clear place to look. Presented as "our adjusted pay gap
+       is 2.3 percent", it has a defensible-sounding number and no idea where its problem is.</p>
+  </section>
+
+  <!-- 9 -->
+  <section id="watch">
+    <div class="section-eyebrow"><div class="num">9</div><h2>What to Watch</h2></div>
+
+    <ul class="checklist">
+      <li><span class="ck">&#10003;</span><span><strong>Never control for a variable the organization assigns without checking how it is assigned.</strong> Job level took the gap from 8.1 percent to 2.3. That is either the right adjustment or the erasure of the finding, and only the promotion model can tell you which.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Show the ladder.</strong> Anyone can reach a small number by adding variables, and the sequence is the first thing an opposing expert will reconstruct. Publishing it yourself costs nothing and removes the accusation.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Collinearity is a problem for the collinear variables.</strong> Check whether the standard error that inflated belongs to the coefficient you are reporting. Here it did not, so the VIFs were a formatting decision rather than a threat.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Test the interaction before averaging.</strong> A gap of 2.3 percent that runs from 1.4 to 5.7 across the company describes nobody in it.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>A coefficient is not a finding about any individual.</strong> It is evidence about a pattern, and it tells you where to look rather than what any one person is owed. Individual cases need individual review.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Watch what a small adjusted figure gets used for.</strong> It is easy to quote as a clean bill of health, and what it actually says is narrower: within a grade, pay is nearly equal. Whether people reach that grade equally is a separate and less comfortable question.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Gender here is a recorded binary field.</strong> That is what the HR system holds. It excludes non-binary employees and anyone whose record is wrong, and the analysis inherits both limitations rather than solving them.</span></li>
+    </ul>
+  </section>
+
+  <!-- 10 -->
+  <section id="ml">
+    <div class="section-eyebrow"><div class="num">10</div><h2>Specification Choices in Data Science &amp; AI</h2></div>
+
+    <table class="disp-table">
+      <tr><th>Where it appears</th><th>The same decision, in a different costume</th></tr>
+      <tr><td class="nm">Feature selection for models</td><td>Adding a feature that the model's own past decisions produced, so the model learns to reproduce them</td></tr>
+      <tr><td class="nm">Fairness auditing</td><td>Deciding which attributes to condition on, where conditioning on a proxy for the protected attribute hides the disparity</td></tr>
+      <tr><td class="nm">Credit and hiring models</td><td>Job title, seniority or prior salary as features, each of which can carry historic discrimination forward</td></tr>
+      <tr><td class="nm">Uplift and marketing models</td><td>Controlling for engagement that the campaign itself produced</td></tr>
+      <tr><td class="nm">Any regression with an ML pipeline</td><td>Automated feature selection makes the mediator decision silently and at scale, with no analyst to argue with</td></tr>
+    </table>
+
+    <div class="research">
+      <span class="rtag">Where the research went</span>
+      <p style="margin:0.4rem 0 0">The mediator problem has a precise name in the causal literature: conditioning on a
+         post-treatment variable, treated formally by <strong>Rosenbaum</strong> in 1984 and now standard in
+         <strong>Pearl's</strong> graphical framework, where the rule is simply that you do not condition on a
+         descendant of the exposure. The decomposition into direct and indirect effects is the subject of
+         <strong>causal mediation analysis</strong>, which gives estimators for exactly the two paths this chapter
+         separates by hand. On the applied side, the <strong>Oaxaca-Blinder decomposition</strong> is the economist's
+         standard tool for splitting a gap into an explained and an unexplained part, and it inherits the same
+         difficulty: what counts as explained depends entirely on which variables you were willing to put in.</p>
+    </div>
+  </section>
+
+  <!-- notebook -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">&#128013;</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook reads the plan before the salary file, cleans the export and keeps the employees
+             with no review on file, builds the specification ladder with an interval at every rung, shows what
+             collinearity does to the standard errors and what it leaves alone, fits the promotion model that job level
+             was concealing, tests the interaction across levels, and closes with the diagnostics and how to read a
+             screening rule.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-pay-equity-review.html">&#128211; View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-pay-equity-review.ipynb"
+           target="_blank" rel="noopener">&#9654; Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-pay-equity-review.ipynb"
+           target="_blank" rel="noopener">&#11015; View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Read the reports &amp; get the data</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong>
+         (<code>capstone-pay-equity-review.xlsx</code>) holds 3,648 HR records with their duplicate export, payroll
+         zeros, experience sentinels and missing reviews intact, the analysis plan agreed before the salary file was
+         opened, and the parameters that generated the data so every estimate can be checked. Two written reports
+         accompany it: a <strong>plain-language brief</strong> for the HR director who has to act on it, and a
+         <strong>technical report</strong> written to survive an opposing expert.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-25-pay-equity-review.html" target="_blank" rel="noopener">&#128196; Plain-language brief <small>read online</small></a>
+        <a class="ex-file doc" href="../reports/capstone-25-pay-equity-review-technical.html" target="_blank" rel="noopener">&#128202; Technical report <small>read online</small></a>
+        <a class="ex-file xls" href="../data/capstone-pay-equity-review.xlsx">&#128202; Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>&#127891; Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">&#10003;</span><span><strong>A pay gap has two honest answers.</strong> The workforce gap is 14.4 percent and the within-grade gap is 2.3, and each is the wrong answer to the other's question.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Adjusting for a mediator deletes the effect.</strong> Job level took the gap from 8.1 to 2.3 because women are 43 percent less likely to hold senior grades at equal experience and rating.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Collinearity hurts the collinear variables.</strong> Age and experience together inflated experience's SE by two thirds and left the gender coefficient at &#8722;0.0234 exactly.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Test the interaction before averaging.</strong> The within-level gap runs from &#8722;1.4 percent at junior grades to &#8722;5.7 at senior ones, p = 0.0012.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>4/n is a screening rule, not a verdict.</strong> A hundred and seventy points cleared it and the largest Cook's distance was 0.007.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">&#10067;</div><h2>Quiz: Test Yourself</h2></div>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-regression-discontinuity-and-iv.html">
+      <span style="font-size:1.3rem">&#8592;</span>
+      <span><span class="cn-dir">Chapter 184 &#183; Previous</span><br><span class="cn-title">Regression Discontinuity and Instrumental Variables</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">&#8594;</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;&#183;&nbsp;
+  Chapter 185 &nbsp;&#183;&nbsp; &#169; 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch185";
+  window.QUIZ_DATA = [
+    {
+      q: "Adding job level took the estimated gap from 8.1 percent to 2.3 percent. Why is that not automatically the better estimate?",
+      options: ["Because the R-squared rose too sharply to be credible", "Because job level is assigned by the company, so it may itself carry the unequal treatment the review is measuring", "Because job level is collinear with experience", "Because job level is an ordinal variable and should not be used as a control"],
+      answer: 1,
+      explain: "A control that is affected by the exposure is a mediator, not a confounder. Adjusting for a confounder removes bias; adjusting for a mediator removes part of the effect. The regression output is identical either way, so only the causal story can distinguish them."
+    },
+    {
+      q: "At equal experience, education, performance and department, women's odds of holding a level 4+ role are 0.569. What does that establish?",
+      options: ["That women are paid 43 percent less", "That job level is not a valid control", "That job level is not assigned equally, which is what makes controlling for it a substantive decision rather than a technical one", "That the promotion model is confounded"],
+      answer: 2,
+      explain: "The plan committed to checking how a company-assigned variable is assigned before controlling for it. Finding a 43 percent gap in the odds is what turns the choice to include job level into a decision that changes what the report means."
+    },
+    {
+      q: "Including both age and experience inflated experience's standard error from 0.00043 to 0.00072 and left age at p = 0.41. What happened to the gender coefficient?",
+      options: ["It shrank toward zero", "It became unstable", "It did not move at all: −0.0234 in both models", "Its standard error doubled"],
+      answer: 2,
+      explain: "Collinearity between two controls damages the estimates of those controls and leaves the rest of the model alone. The useful question is never whether the VIF exceeds some threshold, but whether the coefficient whose standard error inflated is the one you are reporting."
+    },
+    {
+      q: "Performance rating was added to the model and the gap did not change at all. Why report that?",
+      options: ["To show the model is correctly specified", "Because it removes a common explanation before anyone offers it: men and women in this workforce are rated the same", "Because it raises the R-squared", "Because performance is a mediator"],
+      answer: 1,
+      explain: "A control that changes nothing is informative. It rules out differential performance as an explanation of the gap, which is exactly the objection a reader will raise if the analysis does not address it."
+    },
+    {
+      q: "The within-level gap is −1.4 percent at levels 1–2 and −5.7 percent at levels 5–6, with an interaction test at p = 0.0012. What follows for reporting?",
+      options: ["Report the average of −2.3 percent, since the interaction is small", "Report the range, because a single average overstates the gap for junior staff and understates it by more than half for senior staff", "Drop the junior levels from the analysis", "Report only the level 5–6 figure, since it is the largest"],
+      answer: 1,
+      explain: "An average is a good summary only when the distribution has one mode. Here the gap grows with seniority, so quoting 2.3 percent would misdescribe employees at both ends of the ladder."
+    },
+    {
+      q: "One hundred and seventy of 3,569 observations exceeded the 4/n Cook's distance cutoff. How should that be read?",
+      options: ["The model is heavily influenced by outliers and should be refitted robustly", "4/n is a screening rule that flags a few percent of any large sample; the magnitudes matter, and the largest here is 0.007 against concern near 0.5", "The residuals are not normally distributed", "Those 170 records should be removed"],
+      answer: 1,
+      explain: "The count of points above 4/n grows with n almost regardless of the data. Reading the magnitude rather than the count is the discipline, and no single employee is moving this model."
+    },
+    {
+      q: "Sixty-nine employees had no performance rating on file. Why fill with the median and add an indicator rather than drop them?",
+      options: ["Because it increases statistical power", "Because dropping them would silently change who the study is about, and people without a recent review are not a random subset", "Because median imputation is unbiased", "Because the model cannot handle missing values"],
+      answer: 1,
+      explain: "The indicator keeps them in the analysis and keeps the fill visible to the model, so its coefficient can reveal whether those employees differ. Dropping them redefines the population without saying so."
+    },
+    {
+      q: "What is the defensible way to report this review?",
+      options: ["The adjusted gap of 2.3 percent, as the company's pay gap", "The unadjusted gap of 14.4 percent, as the company's pay gap", "All three figures with a sentence each: the workforce gap, the promotion gap, and the within-grade gap", "The average of the adjusted and unadjusted figures"],
+      answer: 2,
+      explain: "Each figure answers a different question and each is misleading alone. Reported together, the company has a clear picture and a clear place to look; reported as a single adjusted number, it has a defensible-sounding figure and no idea where its problem is."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

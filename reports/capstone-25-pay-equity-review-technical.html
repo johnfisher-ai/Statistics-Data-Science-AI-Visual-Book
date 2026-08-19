@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A Pay Equity Review (Technical Report) &#183; Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/report.css">
+  <style>
+    body.report { --rpt-accent:#c2410c; --rpt-accent-dark:#7c2d12; --rpt-accent-bg:#fff7ed; --rpt-accent-line:#fed7aa; }
+  </style>
+</head>
+
+<body class="report">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="../chapters/capstone-pay-equity-review.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">&#8592; Chapter 185</a>
+  </div>
+</nav>
+
+<div class="rpt-sticky" id="rptSticky">
+  <div class="inner">
+    <div class="st-title">Multiple Regression Analysis of Gender Pay Differentials, with Explicit Treatment of a Post-Assignment Control</div>
+    <a class="st-back" href="../chapters/capstone-pay-equity-review.html">&#8592; Chapter 185</a>
+  </div>
+</div>
+
+<div class="rpt-wrap">
+  <article class="rpt-paper tech">
+    <header class="rpt-head">
+      <div class="rpt-topline">
+        <div class="rpt-kicker">Capstone 25 &#183; Technical Report</div>
+        <span class="rpt-badge tech">Technical Report</span>
+      </div>
+      <h1>Multiple Regression Analysis of Gender Pay Differentials, with Explicit Treatment of a Post-Assignment Control</h1>
+      <p class="rpt-sub">A specification-ladder analysis of log pay, a collinearity assessment, a separate model of grade attainment, and an interaction across job levels.</p>
+      <div class="rpt-meta"><div><b>Analysis</b> &nbsp;People Analytics</div><div><b>Design</b> &nbsp;Cross-sectional, observational</div><div><b>Sample</b> &nbsp;3,569 employees after exclusions</div><div><b>Date</b> &nbsp;2026</div></div>
+    </header>
+
+    <div class="rpt-prov">
+      <span class="pv-tag">Where this comes from</span>
+      <div class="pv-row"><div><span>Chapter</span> <a href="../chapters/capstone-pay-equity-review.html">Chapter 185 &#183; Multiple Regression Done Properly: A Pay Equity Review</a></div><div><span>Part</span> Part XXX &#183; Capstone Projects: Regression</div><div><span>Dataset</span> <a href="../data/capstone-pay-equity-review.xlsx">capstone-pay-equity-review.xlsx</a></div><div><span>Notebook</span> <a href="../chapters/notebooks/html/capstone-pay-equity-review.html" target="_blank" rel="noopener">View the analysis</a></div></div>
+    </div>
+
+    <div class="rpt-body">
+      <div class="rpt-abstract"><span class="ab-tag">Abstract</span><p><b>Objective.</b> To estimate gender differentials in compensation, distinguishing the aggregate workforce differential from the differential conditional on grade, and to determine whether grade may properly be treated as a control. <b>Methods.</b> Log annual salary was regressed on a gender indicator with controls entered sequentially: experience, education, department, performance rating with a missingness indicator, and finally job level. Variance inflation factors were computed for the career-progression variables and the consequences of collinearity examined directly. Grade attainment was modelled separately by logistic regression on the same covariates excluding grade. An interaction between gender and grade group tested homogeneity of the conditional differential. <b>Results.</b> The unadjusted differential was &#8722;14.36%. Sequential adjustment gave &#8722;10.25% (experience), &#8722;10.44% (education), &#8722;8.10% (department), &#8722;8.10% (performance) and &#8722;2.31% (95% CI &#8722;3.08% to &#8722;1.53%) on adding job level, with R&#178; rising from 0.468 to 0.875. The odds ratio for women attaining grade 4 or above was 0.569 (95% CI 0.482 to 0.671, p = 2.4 &#215; 10&#8315;&#185;&#185;). The conditional differential varied significantly across grades (p = 0.0012), from &#8722;1.39% at grades 1&#8211;2 to &#8722;5.68% at grades 5&#8211;6. <b>Conclusion.</b> Job level is a post-assignment variable materially associated with gender. Conditioning on it estimates the within-grade differential and removes the between-grade component. Both should be reported, together with the attainment model.</p></div>
+      <div class="rpt-keywords"><b>Keywords:</b> ['multiple regression', 'log-linear model', 'pay equity', 'mediator', 'post-treatment adjustment', 'multicollinearity', 'variance inflation factor', 'interaction', 'Oaxaca-Blinder']</div>
+      <h2>1. Data and exclusions</h2>
+      <div class="rpt-cap"><span class="n">Table 1.</span> Sample construction. Missing performance ratings were retained.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Stage</th><th>n</th><th>Note</th></tr></thead><tbody><tr><td><span class='nm'>HRIS export</span></td><td>3,648</td><td>Extract executed twice</td></tr><tr><td><span class='nm'>Deduplicated</span></td><td>3,600</td><td>One record per employee</td></tr><tr><td><span class='nm'>Non-zero salary</span></td><td>3,591</td><td>Nine zero values are payroll errors</td></tr><tr><td><span class='nm'>Experience known</span></td><td>3,569</td><td>Twenty-two sentinel values of &#8722;1 voided</td></tr><tr><td><span class='nm'>Analysis sample</span></td><td>3,569</td><td>47.0% women</td></tr></tbody></table></div>
+      <p>Sixty-nine employees had no performance rating on file. These were retained by median imputation with an accompanying missingness indicator rather than by listwise deletion. Employees without a recent review are unlikely to be exchangeable with those who have one, and deletion would redefine the estimand without announcement. The indicator permits the model to absorb any systematic difference and makes the imputation visible in the output.</p>
+      <h2>2. Specification</h2>
+      <p>The outcome is the natural logarithm of annual base salary, so coefficients approximate proportional differences. Controls are entered sequentially rather than simultaneously, because the trajectory of the coefficient across specifications is itself the substantive result and is in any case reconstructible by any party with access to the data.</p>
+      <div class="rpt-cap"><span class="n">Table 2.</span> Specification ladder. Percentages are exp(&#946;) &#8722; 1.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Specification</th><th>Gender coefficient</th><th>Approx. %</th><th>95% CI</th><th>R&#178;</th></tr></thead><tbody><tr><td><span class='nm'>Unadjusted</span></td><td>&#8722;0.1550</td><td>&#8722;14.36%</td><td>&#8212;</td><td>&#8212;</td></tr><tr><td><span class='nm'>+ experience</span></td><td>&#8722;0.1081</td><td>&#8722;10.25%</td><td>[&#8722;11.92%, &#8722;8.55%]</td><td>0.261</td></tr><tr><td><span class='nm'>+ education</span></td><td>&#8722;0.1102</td><td>&#8722;10.44%</td><td>[&#8722;12.05%, &#8722;8.80%]</td><td>0.309</td></tr><tr><td><span class='nm'>+ department</span></td><td>&#8722;0.0845</td><td>&#8722;8.10%</td><td>[&#8722;9.64%, &#8722;6.54%]</td><td>0.415</td></tr><tr><td><span class='nm'>+ performance</span></td><td>&#8722;0.0845</td><td>&#8722;8.10%</td><td>[&#8722;9.58%, &#8722;6.61%]</td><td>0.468</td></tr><tr><td><span class='nm'>+ job level</span></td><td>&#8722;0.0234</td><td>&#8722;2.31%</td><td>[&#8722;3.08%, &#8722;1.53%]</td><td>0.875</td></tr></tbody></table></div>
+      <p>Performance rating leaves the coefficient unchanged to four decimal places, indicating no material difference in rating distributions by gender. This is reported because differential performance is the most frequently advanced alternative explanation and is not supported here.</p>
+      <h2>3. Collinearity</h2>
+      <p>Age, experience and job level are alternative measures of career progression. Age and experience correlate at 0.829.</p>
+      <div class="rpt-cap"><span class="n">Table 3.</span> Variance inflation factors. Conventional thresholds of 5 or 10 are not exceeded.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Variable</th><th>VIF, all four</th><th>VIF, age omitted</th></tr></thead><tbody><tr><td><span class='nm'>Age</span></td><td>3.21</td><td>&#8212;</td></tr><tr><td><span class='nm'>Experience</span></td><td>3.45</td><td>1.22</td></tr><tr><td><span class='nm'>Job level</span></td><td>1.29</td><td>1.29</td></tr><tr><td><span class='nm'>Performance</span></td><td>1.07</td><td>1.07</td></tr></tbody></table></div>
+      <div class="rpt-cap"><span class="n">Table 4.</span> Direct demonstration of the consequences of including both progression measures.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Model</th><th>Experience</th><th>Age</th><th>Gender coefficient</th></tr></thead><tbody><tr><td><span class='nm'>Experience only</span></td><td>+0.01060 (SE 0.00043)</td><td>&#8212;</td><td>&#8722;0.0234 (SE 0.0040)</td></tr><tr><td><span class='nm'>Age only</span></td><td>&#8212;</td><td>+0.00705 (SE 0.00036)</td><td>&#8722;0.0273 (SE 0.0041)</td></tr><tr><td><span class='nm'>Both</span></td><td>+0.01013 (SE 0.00072)</td><td>+0.00048 (p = 0.41)</td><td>&#8722;0.0234 (SE 0.0040)</td></tr></tbody></table></div>
+      <p>Including both inflates the standard error on experience by 67% and renders age individually insignificant, while leaving the coefficient of interest numerically unchanged. This is the general result: collinearity degrades inference on the collinear regressors and is inconsequential for orthogonal parameters. Where the collinear variables are nuisance controls rather than targets of estimation, elevated VIFs are a matter of parsimony and interpretation rather than of validity. Experience is retained in preference to age as the variable to which the organization's stated pay policy refers.</p>
+      <h2>4. Job level as a post-assignment variable</h2>
+      <p>Job level accounts for a reduction of 5.79 percentage points in the estimated differential and raises R&#178; from 0.468 to 0.875. Before accepting the conditional estimate, it is necessary to establish whether grade is a pre-assignment characteristic or an organizational decision that may itself embody differential treatment.</p>
+      <div class="rpt-cap"><span class="n">Table 5.</span> Distribution across grades by gender.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Job level</th><th>Share of women (%)</th><th>Share of men (%)</th></tr></thead><tbody><tr><td>1</td><td>31.7</td><td>20.8</td></tr><tr><td>2</td><td>26.4</td><td>21.9</td></tr><tr><td>3</td><td>19.0</td><td>20.9</td></tr><tr><td>4</td><td>13.2</td><td>17.4</td></tr><tr><td>5</td><td>7.0</td><td>12.8</td></tr><tr><td>6</td><td>2.6</td><td>6.2</td></tr></tbody></table></div>
+      <p>A logistic regression of attainment of grade 4 or above on gender, experience, education, performance and department returns an odds ratio for women of 0.569 (95% CI 0.482 to 0.671, p = 2.4 &#215; 10&#8315;&#185;&#185;). Grade is therefore strongly associated with gender conditional on the observed determinants of advancement.</p>
+      <div class="rpt-key"><span class="k-tag">The identification consequence</span><p>Where a control is a consequence of the exposure, conditioning on it estimates the controlled direct effect and removes the component transmitted through that variable. The regression output is indistinguishable from the case in which the control is a genuine confounder. The distinction is not resolvable from model fit and must be argued from the substantive process, which here is documented: grade is assigned by the organization under review.</p></div>
+      <h2>5. Heterogeneity of the within-grade differential</h2>
+      <div class="rpt-cap"><span class="n">Table 6.</span> Gender by grade-group interaction. Joint test of homogeneity: p = 0.0012.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Grade group</th><th>Conditional differential</th><th>Approx. %</th></tr></thead><tbody><tr><td><span class='nm'>1 to 2</span></td><td>&#8722;0.0140</td><td>&#8722;1.39%</td></tr><tr><td><span class='nm'>3 to 4</span></td><td>&#8722;0.0456</td><td>&#8722;4.45%</td></tr><tr><td><span class='nm'>5 to 6</span></td><td>&#8722;0.0585</td><td>&#8722;5.68%</td></tr></tbody></table></div>
+      <p>The pooled conditional estimate of &#8722;2.31% is an average over a differential that increases monotonically with seniority and is approximately four times larger at the top of the structure than at the bottom. Reporting the pooled figure alone would misstate the position at both ends of the distribution.</p>
+      <h2>6. Diagnostics</h2>
+      <div class="rpt-cap"><span class="n">Table 7.</span> Diagnostics on the fully adjusted model.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Diagnostic</th><th>Value</th><th>Assessment</th></tr></thead><tbody><tr><td><span class='nm'>Residual standard deviation</span></td><td>0.1161</td><td>&#8212;</td></tr><tr><td><span class='nm'>Residual skewness</span></td><td>+0.050</td><td>Symmetric</td></tr><tr><td><span class='nm'>Breusch-Pagan</span></td><td>p = 0.445</td><td>No evidence of heteroskedasticity</td></tr><tr><td><span class='nm'>Maximum Cook's distance</span></td><td>0.0070</td><td>No influential observations</td></tr></tbody></table></div>
+      <p>One hundred and seventy observations exceed the 4/n criterion. This is uninformative at this sample size: the criterion identifies a fixed proportion of any large sample by construction. The relevant quantity is the magnitude, and the maximum of 0.0070 is two orders of magnitude below conventional cause for concern.</p>
+      <h2>7. Discussion</h2>
+      <p>The analysis produces three estimands and it is essential that they be distinguished in reporting. The aggregate differential of &#8722;14.36% characterizes the compensation distribution of the workforce. The conditional differential of &#8722;2.31%, heterogeneous across grades, characterizes pay-setting within grade. The attainment odds ratio of 0.569 characterizes the allocation of grades. The second is frequently reported in isolation, and in this instance would convey that the organization has a differential of approximately two percent while the mechanism generating the majority of the aggregate differential goes unremarked.</p>
+      <p>The decomposition performed here by sequential adjustment is closely related to the Oaxaca-Blinder decomposition, which partitions a mean difference into components attributable to differences in characteristics and to differences in returns to those characteristics. That method inherits the same difficulty: the classification of a variable as an explanatory characteristic is a substantive judgment, and grade is precisely the case in which the judgment determines the conclusion.</p>
+      <p>Limitations. The design is cross-sectional and observational; no causal claim is advanced. Compensation components other than base salary are not observed. Gender is recorded as a binary administrative field. Determinants plausibly relevant to both grade and pay, including negotiation at hire, application for promotion and the setting of objectives, are unrecorded and are candidates for the mechanism underlying the attainment result. Finally, a regression coefficient is an estimate of a population-level pattern and does not establish the correctness or otherwise of any individual compensation decision.</p>
+      <h2>8. Conclusion</h2>
+      <p>The unadjusted gender differential in this workforce is &#8722;14.36%. Conditional on experience, education, department, performance and grade it is &#8722;2.31% (95% CI &#8722;3.08% to &#8722;1.53%), increasing from &#8722;1.39% at grades 1&#8211;2 to &#8722;5.68% at grades 5&#8211;6. Grade is not exogenous: the odds of women attaining grade 4 or above are 0.569 those of comparable men. The aggregate differential is therefore attributable principally to grade allocation rather than to within-grade pay determination, and all three quantities should be reported together.</p>
+      <h2>References</h2>
+      <ul class="rpt-refs"><li>Oaxaca, R. (1973). Male-female wage differentials in urban labor markets. <em>International Economic Review</em>, 14(3), 693&#8211;709.</li><li>Blinder, A. S. (1973). Wage discrimination: reduced form and structural estimates. <em>Journal of Human Resources</em>, 8(4), 436&#8211;455.</li><li>Rosenbaum, P. R. (1984). The consequences of adjustment for a concomitant variable that has been affected by the treatment. <em>Journal of the Royal Statistical Society, Series A</em>, 147(5), 656&#8211;666.</li><li>Pearl, J. (2009). <em>Causality: Models, Reasoning, and Inference</em> (2nd ed.). Cambridge University Press.</li><li>VanderWeele, T. J. (2015). <em>Explanation in Causal Inference: Methods for Mediation and Interaction</em>. Oxford University Press.</li><li>Belsley, D. A., Kuh, E., &amp; Welsch, R. E. (1980). <em>Regression Diagnostics</em>. Wiley.</li><li>O'Brien, R. M. (2007). A caution regarding rules of thumb for variance inflation factors. <em>Quality &amp; Quantity</em>, 41(5), 673&#8211;690.</li><li>Cook, R. D. (1977). Detection of influential observation in linear regression. <em>Technometrics</em>, 19(1), 15&#8211;18.</li></ul>
+      <h2>Reproducibility</h2>
+      <p>The dataset (<code>capstone-pay-equity-review.xlsx</code>) contains the HRIS export with its data-quality faults intact, the analysis plan as agreed before the salary file was accessed, and the generating parameters. An executable notebook accompanies the chapter and reproduces every estimate, table and figure. Analyses use NumPy, pandas, SciPy, statsmodels and Matplotlib.</p>
+    </div>
+
+    <div class="rpt-foot"><a class="primary" href="../chapters/capstone-pay-equity-review.html">&#8592; Back to Chapter 185</a><a href="../chapters/notebooks/html/capstone-pay-equity-review.html" target="_blank" rel="noopener">&#128211; Companion notebook</a><a class="xls" href="../data/capstone-pay-equity-review.xlsx">&#128202; Download dataset</a></div>
+    <div class="rpt-colophon">
+      From <strong>Statistics, Data Science and AI: A Visual Handbook</strong> by John Fisher.
+      Every statistic, table, and figure in this report is reproduced by the companion notebook.
+    </div>
+  </article>
+</div>
+
+<script>
+(function(){
+  var bar=document.getElementById('rptSticky');
+  window.addEventListener('scroll',function(){
+    if(window.scrollY>320) bar.classList.add('on'); else bar.classList.remove('on');
+  });
+})();
+</script>
+</body>
+</html>

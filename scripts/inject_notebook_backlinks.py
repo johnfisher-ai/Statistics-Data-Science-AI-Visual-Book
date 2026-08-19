@@ -670,6 +670,8 @@ MAP = {
         ("../../capstone-propensity-score-matching.html#notebook", "Back to the book", "Chapter 183 · Propensity Scores: Matching and Weighting"),
     "capstone-regression-discontinuity-and-iv.html":
         ("../../capstone-regression-discontinuity-and-iv.html#notebook", "Back to the book", "Chapter 184 · Regression Discontinuity and Instrumental Variables"),
+    "capstone-pay-equity-review.html":
+        ("../../capstone-pay-equity-review.html#notebook", "Back to the book", "Chapter 185 · Multiple Regression Done Properly: A Pay Equity Review"),
 }
 
 def card(href, kicker, title):
