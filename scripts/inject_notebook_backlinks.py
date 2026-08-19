@@ -656,6 +656,8 @@ MAP = {
         ("../../capstone-store-ratings-across-locations.html#notebook", "Back to the book", "Chapter 175 · Kruskal-Wallis: Ratings Across Four Stores"),
     "capstone-stratified-customer-survey.html":
         ("../../capstone-stratified-customer-survey.html#notebook", "Back to the book", "Chapter 177 · Stratified Survey: A National Customer Study"),
+    "capstone-cluster-sampling-schools.html":
+        ("../../capstone-cluster-sampling-schools.html#notebook", "Back to the book", "Chapter 178 · Cluster Sampling: Schools and Students"),
 }
 
 def card(href, kicker, title):
