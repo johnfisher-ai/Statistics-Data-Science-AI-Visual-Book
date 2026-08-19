@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 184 · Regression Discontinuity and Instrumental Variables — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .yes { color:#047857; font-weight:700; }
+    .disp-table .no { color:#dc2626; font-weight:700; }
+    .disp-table tr.hi td { background:#fff1f2; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .embox { background:#fff1f2; border:1px solid #fecdd3; border-left:4px solid #9f1239; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .embox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#881337; }
+    .rw-card { background:#fff1f2; border:1px solid #fecdd3; border-left:4px solid #9f1239; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#881337; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#fff1f2; color:#9f1239; border-color:#fecdd3; }
+    .ex-file.doc { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#fff1f2; border:1px solid #fecdd3; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#881337; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #9f1239; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#881337; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+    .svg-wrap { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.9rem 0.6rem 0.3rem; background:var(--panel); }
+    .svg-wrap svg { width:100%; height:auto; display:block; }
+    .svg-wrap .cap { font-size:0.82rem; color:var(--ink-soft); padding:0.55rem 0.6rem 0.4rem; line-height:1.55; }
+    .svg-wrap .cap strong { color:var(--ink); }
+    .partclose { background:linear-gradient(135deg,#fff1f2,#fef2f2); border:1px solid #fecdd3;
+                 border-radius:14px; padding:1.3rem 1.5rem; margin:1.6rem 0; }
+    .partclose h4 { font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:0.07em;
+                    color:#881337; margin-bottom:0.7rem; }
+    .partclose ol { margin:0 0 0 1.1rem; padding:0; }
+    .partclose li { font-size:0.9rem; color:var(--ink-soft); line-height:1.62; margin-bottom:0.45rem; }
+    .partclose li a { color:#9f1239; font-weight:700; text-decoration:none; }
+    .partclose li a:hover { text-decoration:underline; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/capstone-regression-discontinuity-and-iv.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXIX &#183; Capstone Projects: Design &amp; Causal Inference</span><span class="sep">/</span>
+      <span>Chapter 184</span>
+    </div>
+    <h1><span class="accent">Regression Discontinuity</span> and Instrumental Variables</h1>
+    <p class="dek">Capstone 24. The scholarship raises degree completion by twelve points. The obvious comparison says
+       it lowers completion by three. Two designs that assume nothing about unmeasured confounding both find the truth,
+       using an arbitrary cutoff and a funding formula three years out of date.</p>
+    <div class="hero-meta">
+      <div class="m">&#9201;&#65039; <b>~22 min</b>&nbsp;read</div>
+      <div class="m">&#127919; <b>Natural experiments</b></div>
+      <div class="m">&#128202; <b>Chapter 184</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Capstone 23 ended with an estimate nobody should trust, because adjustment can only remove the
+       confounding you measured. This chapter takes the opposite route:
+       <span class="hl">stop trying to measure the confounding, and find a piece of variation that never had any</span>.</p>
+
+    <div class="brief-card">
+      <div class="bh">The brief</div>
+      <dl>
+        <dt>Setting</dt><dd>A state scholarship for students in financial need. Eighty thousand registry records with a means-tested need index, an eligibility cutoff at exactly 60, whether the student actually received the award, the scholarship places allocated to their high school, and whether they completed a degree.</dd>
+        <dt>The question</dt><dd><strong>Does receiving the scholarship raise a student's chance of completing a degree?</strong></dd>
+        <dt>Why it matters</dt><dd>The program is up for reauthorization. The comparison anyone would make first says recipients complete at a lower rate, which reads as evidence that the scholarship harms the students it is meant to help.</dd>
+        <dt>What we do</dt><dd>Build two designs on the same question. One exploits the arbitrariness of the eligibility cutoff; the other exploits an allocation formula that runs on enrollment counts three years stale. Test everything each design allows us to test, state plainly what neither can test, and compare the answers.</dd>
+      </dl>
+    </div>
+
+    <div class="def-card">
+      <div class="sigma">&#8942;</div>
+      <div class="def-body">
+        A <span class="def-kw">natural experiment</span> is a piece of variation in who got treated that was produced
+        by something other than the people involved: a threshold, a lottery, an administrative formula. It substitutes
+        for randomization because it shares randomization's one essential property,
+        <span class="def-kw">it is unrelated to everything else about the person</span>.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">&#11088;</div>
+      <div><div class="ctitle">The finding, up front</div>
+        <p>The naive comparison is <strong>&#8722;3.5 points</strong>, on the wrong side of zero. The fuzzy regression
+           discontinuity gives <strong>+11.1 points</strong>, 95% CI [+6.8, +15.3]. Instrumental variables gives
+           <strong>+10.6 points</strong>, 95% CI [+6.6, +14.5]. The truth is <strong>+12.0</strong>, and the two
+           designs rest on assumptions that have nothing to do with each other.</p></div>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section id="wrongsign">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Comparison With the Wrong Sign</h2></div>
+
+    <p>After deduplication and removing the records where the need index was never assessed, 79,666 students remain.
+       The obvious thing to do with them is the wrong thing.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Received</div><div class="rv">45.31%</div><div class="rd">completed a degree, n = 17,441</div></div>
+      <div class="rchip"><div class="rk">Did not receive</div><div class="rv">48.81%</div><div class="rd">n = 62,225</div></div>
+      <div class="rchip"><div class="rk">Difference</div><div class="rv">&#8722;3.5 pp</div><div class="rd">recipients do worse</div></div>
+      <div class="rchip"><div class="rk">True effect</div><div class="rv">+12.0 pp</div><div class="rd">the scholarship helps</div></div>
+    </div>
+
+    <p>This is worse than an understatement. The scholarship is means tested, so it goes to students from poorer
+       families, and family circumstances predict completion through routes nobody records. A report quoting that
+       difference would conclude that giving money to students in need makes them <em>less</em> likely to graduate.</p>
+
+    <p>Capstone 23 showed what happens if you respond by adjusting for the routes you can see and hoping about the
+       rest. Both designs here refuse that trade. Neither of them assumes that the measured covariates capture
+       selection, because neither of them uses the measured covariates for that purpose at all.</p>
+
+    <div class="svg-wrap">
+      <svg viewBox="0 0 880 260" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="Two panels contrasting the designs. The left panel, labeled adjustment, shows a box of measured covariates feeding an arrow into an estimate, with a red dashed arrow from unmeasured confounders that is not blocked, and the caption assumes you measured everything that mattered. The right panel, labeled a natural experiment, shows an arbitrary cutoff and a stale formula feeding into treatment and then into an estimate, with the unmeasured confounders arrow blocked by a barrier, and the caption assumes only that the cutoff and the formula are arbitrary.">
+        <rect x="0" y="0" width="880" height="260" fill="#ffffff"/>
+
+        <text x="30" y="28" font-size="12" font-weight="800" fill="#64748b">CAPSTONE 23 &#183; ADJUSTMENT</text>
+        <rect x="30" y="42" width="152" height="42" rx="9" fill="#f4f6fb" stroke="#cbd5e1" stroke-width="1.4"/>
+        <text x="106" y="68" text-anchor="middle" font-size="11.5" font-weight="700" fill="#334155">measured covariates</text>
+        <rect x="30" y="150" width="152" height="42" rx="9" fill="#fff1f2" stroke="#dc2626" stroke-width="1.6" stroke-dasharray="6 4"/>
+        <text x="106" y="169" text-anchor="middle" font-size="11" font-weight="800" fill="#9f1239">unmeasured</text>
+        <text x="106" y="184" text-anchor="middle" font-size="11" font-weight="800" fill="#9f1239">confounders</text>
+        <rect x="268" y="96" width="118" height="42" rx="9" fill="#4c0519"/>
+        <text x="327" y="122" text-anchor="middle" font-size="12" font-weight="800" fill="#ffffff">estimate</text>
+        <path d="M182 70 L262 104" stroke="#94a3b8" stroke-width="2.2" fill="none"/>
+        <path d="M268 107 L256 105 L260 96 Z" fill="#94a3b8"/>
+        <path d="M182 168 L262 134" stroke="#dc2626" stroke-width="2.4" fill="none"/>
+        <path d="M268 131 L256 130 L260 139 Z" fill="#dc2626"/>
+        <text x="208" y="228" text-anchor="middle" font-size="11" font-weight="800" fill="#dc2626">assumes you measured</text>
+        <text x="208" y="244" text-anchor="middle" font-size="11" font-weight="800" fill="#dc2626">everything that mattered</text>
+
+        <line x1="440" y1="16" x2="440" y2="244" stroke="#e2e8f0" stroke-width="2"/>
+
+        <text x="472" y="28" font-size="12" font-weight="800" fill="#881337">CAPSTONE 24 &#183; A NATURAL EXPERIMENT</text>
+        <rect x="472" y="42" width="164" height="42" rx="9" fill="#fecdd3" stroke="#9f1239" stroke-width="1.6"/>
+        <text x="554" y="61" text-anchor="middle" font-size="11" font-weight="800" fill="#881337">an arbitrary cutoff</text>
+        <text x="554" y="76" text-anchor="middle" font-size="11" font-weight="800" fill="#881337">a stale formula</text>
+        <rect x="472" y="150" width="164" height="42" rx="9" fill="#fff1f2" stroke="#dc2626" stroke-width="1.6" stroke-dasharray="6 4"/>
+        <text x="554" y="169" text-anchor="middle" font-size="11" font-weight="800" fill="#9f1239">unmeasured</text>
+        <text x="554" y="184" text-anchor="middle" font-size="11" font-weight="800" fill="#9f1239">confounders</text>
+        <rect x="726" y="96" width="118" height="42" rx="9" fill="#9f1239"/>
+        <text x="785" y="122" text-anchor="middle" font-size="12" font-weight="800" fill="#ffffff">estimate</text>
+        <path d="M636 70 L720 104" stroke="#9f1239" stroke-width="2.4" fill="none"/>
+        <path d="M726 107 L714 105 L718 96 Z" fill="#9f1239"/>
+        <path d="M636 168 L690 145" stroke="#dc2626" stroke-width="2.4" fill="none" stroke-dasharray="5 4"/>
+        <line x1="692" y1="132" x2="708" y2="158" stroke="#4c0519" stroke-width="4"/>
+        <line x1="708" y1="132" x2="692" y2="158" stroke="#4c0519" stroke-width="4"/>
+        <text x="658" y="228" text-anchor="middle" font-size="11" font-weight="800" fill="#881337">assumes only that the cutoff</text>
+        <text x="658" y="244" text-anchor="middle" font-size="11" font-weight="800" fill="#881337">and the formula are arbitrary</text>
+      </svg>
+      <div class="cap"><strong>Two ways to handle the same problem.</strong> Adjustment tries to close the red arrow by
+        measuring what is on it. A natural experiment leaves the red arrow alone and derives the estimate from a source
+        of variation the arrow does not touch.</div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section id="cutoff">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Design A: the Cutoff</h2></div>
+
+    <p>Eligibility is a deterministic function of the need index: eligible at 60.0 or above, not eligible below. A
+       student at 59.9 and a student at 60.1 are, in every respect anyone cares about, the same student. One of them is
+       offered a scholarship, and the reason is a number somebody chose.</p>
+
+    <p>That arbitrariness is the whole design. Whatever unmeasured differences exist between high-need and low-need
+       students, those differences change <em>smoothly</em> as the need index rises. Eligibility changes
+       <em>discontinuously</em>. Anything that jumps at 60 is therefore attributable to the rule.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Eligible</div><div class="rv">28,123</div><div class="rd">35.2% of students</div></div>
+      <div class="rchip"><div class="rk">Received</div><div class="rv">17,441</div><div class="rd">62.0% take-up among eligible</div></div>
+      <div class="rchip"><div class="rk">Received while ineligible</div><div class="rv">0</div><div class="rd">the rule is enforced</div></div>
+      <div class="rchip"><div class="rk">So the design is</div><div class="rv">Fuzzy</div><div class="rd">eligibility is not receipt</div></div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section id="rddchecks">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The Two Things an RDD Can Actually Test</h2></div>
+
+    <p><strong>First, no manipulation.</strong> If families could nudge the index across the line, the students on
+       either side stop being comparable. The signature is a jump in the <em>density</em> of the running variable: a
+       pile-up just above the cutoff and a hole just below.</p>
+
+    <p><strong>Second, covariate smoothness.</strong> Anything measured before the scholarship should be continuous at
+       the cutoff. A pre-treatment characteristic that jumps at 60 means something other than the rule changes there.</p>
+
+    <table class="disp-table">
+      <tr><th>Check</th><th>Result</th><th>Reading</th></tr>
+      <tr><td class="nm">Density at the cutoff</td><td>749.8 below, 727.1 above per 0.5-point bin; z = &#8722;0.59</td><td class="yes">No sorting across the line</td></tr>
+      <tr><td class="nm">Family income</td><td>Jump &#8722;0.28 thousand dollars, SE 0.17, z = &#8722;1.63</td><td class="yes">Smooth</td></tr>
+      <tr><td class="nm">School allocation</td><td>Jump &#8722;0.14 places, SE 0.11, z = &#8722;1.23</td><td class="yes">Smooth</td></tr>
+    </table>
+
+    <p>All three pass, and it is worth being precise about what that means. These checks
+       <strong>cannot prove the design works</strong>. They can only fail to find evidence that it does not. That is
+       the most any assumption check has ever offered, in this chapter or any other, and a study that reports them as
+       proof is overstating them.</p>
+
+    <p>The density result is also substantively reassuring here: the index is computed by an agency from submitted
+       documents rather than self-reported, which is exactly the circumstance in which manipulation is hard. Where a
+       running variable <em>is</em> self-reported, or where the threshold is public and the stakes are high, this check
+       frequently fails, and a failed density test is usually the end of the design rather than something to correct.</p>
+  </section>
+
+  <!-- 4 -->
+  <section id="rddresult">
+    <div class="section-eyebrow"><div class="num">4</div><h2>The Discontinuity, and Why It Has to Be Rescaled</h2></div>
+
+    <p>Being eligible is not the same as receiving. Take-up among the eligible is 62 percent, so the jump in completion
+       at the cutoff measures the effect of <em>being offered</em> the scholarship. That is an intention to treat, and
+       it is a perfectly good quantity, just not the one the question asked for.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Jump in completion</div><div class="rv">+6.94 pp</div><div class="rd">intention to treat, SE 1.35</div></div>
+      <div class="rchip"><div class="rk">Jump in take-up</div><div class="rv">+0.626</div><div class="rd">SE 0.009</div></div>
+      <div class="rchip"><div class="rk">Fuzzy RDD</div><div class="rv">+11.1 pp</div><div class="rd">95% CI [+6.8, +15.3]</div></div>
+      <div class="rchip"><div class="rk">Truth</div><div class="rv">+12.0 pp</div><div class="rd">inside the interval</div></div>
+    </div>
+
+    <p>Dividing the outcome jump by the take-up jump rescales the estimate from "offered" to "received". This is the
+       Wald ratio, and it is worth noticing what it is: <strong>a fuzzy RDD is an instrumental variables estimator</strong>
+       in which the instrument is crossing the threshold. The two designs in this chapter are more closely related than
+       their names suggest, which makes it all the more important that their <em>assumptions</em> are different.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-rdd-jump.png"
+           alt="Left: share completing a degree against the need index centered on the cutoff. Points fall in one-point bins, gray to the left of the cutoff and dark red to the right, with a straight line fitted on each side. Both lines slope downward, and the right-hand line starts about 0.069 above where the left-hand line ends, annotated jump = plus 0.069. Right: the same axis showing the share receiving the scholarship, which is exactly zero everywhere below the cutoff and about 0.63 everywhere above, annotated take-up jumps 0.63, not 1.00.">
+      <figcaption><strong>Left:</strong> completion trends downward as need rises, which is why a comparison across
+        the cutoff without the trend would mislead, and it steps up at exactly 60. <strong>Right:</strong> eligibility
+        does not hand out scholarships. It raises the chance of one from zero to about 0.63, and that is the number the
+        jump has to be divided by.</figcaption>
+    </figure>
+
+    <p>A bandwidth is a researcher's choice, so the honest report is a range rather than the one that looked best. Here
+       the estimate runs from +10.4 to +11.6 points across a fourfold change in window width, and every interval
+       contains the truth. That stability is part of the evidence.</p>
+
+    <table class="disp-table">
+      <tr><th>Bandwidth</th><th>Students in the window</th><th>Fuzzy estimate</th><th>95% CI</th></tr>
+      <tr><td class="nm">&#177;5</td><td>14,599</td><td>+0.1089</td><td>[+0.052, +0.166]</td></tr>
+      <tr><td class="nm">&#177;6</td><td>17,405</td><td>+0.1043</td><td>[+0.052, +0.156]</td></tr>
+      <tr class="hi"><td class="nm">&#177;9 (reported)</td><td>25,676</td><td>+0.1109</td><td>[+0.068, +0.153]</td></tr>
+      <tr><td class="nm">&#177;12</td><td>33,580</td><td>+0.1142</td><td>[+0.077, +0.151]</td></tr>
+      <tr><td class="nm">&#177;20</td><td>51,519</td><td>+0.1159</td><td>[+0.087, +0.145]</td></tr>
+    </table>
+
+    <div class="embox">
+      <span class="gb-tag">What an RDD costs</span>
+      <p style="margin:0.45rem 0 0">Notice the sample sizes. There are 79,666 students in this registry, and the
+         reported estimate uses 25,676 of them, with the ones nearest the cutoff weighted most heavily. An RDD buys its
+         credibility by throwing away most of the data, and the price shows up in the interval, which is more than four
+         points wide. That is a real trade and it should be made deliberately rather than discovered afterwards.</p>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section id="iv">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Design B: the Instrument</h2></div>
+
+    <p>The second design uses different variation entirely. Scholarship places are allocated to high schools by a
+       formula that runs on enrollment counts three years out of date. Two otherwise identical schools can therefore
+       have quite different allocations, for reasons that have nothing to do with this year's students, and a student
+       at a well-allocated school is more likely to end up with a scholarship.</p>
+
+    <p>The analysis is restricted to eligible students, since only they can receive the award.</p>
+
+    <table class="disp-table">
+      <tr><th>Quintile of the school's allocation</th><th>Students</th><th>Take-up</th></tr>
+      <tr><td class="nm">Lowest (2.0 to 8.5 places per 100)</td><td>5,629</td><td>0.418</td></tr>
+      <tr><td class="nm">Second (8.5 to 10.8)</td><td>5,714</td><td>0.546</td></tr>
+      <tr><td class="nm">Middle (10.8 to 13.1)</td><td>5,500</td><td>0.612</td></tr>
+      <tr><td class="nm">Fourth (13.1 to 15.3)</td><td>5,644</td><td>0.709</td></tr>
+      <tr><td class="nm">Highest (15.3 to 24.9)</td><td>5,513</td><td>0.820</td></tr>
+    </table>
+
+    <p>Take-up doubles from the least to the most generously allocated schools. That is the variation the design is
+       going to use, and the reason it is usable is that nothing about it was chosen by, or for, the students.</p>
+  </section>
+
+  <!-- 6 -->
+  <section id="ivchecks">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Three Assumptions, and Only One of Them Testable</h2></div>
+
+    <table class="disp-table">
+      <tr><th>Assumption</th><th>Testable?</th><th>Status here</th></tr>
+      <tr class="hi"><td class="nm">Relevance: the instrument moves treatment</td><td class="yes">Yes</td><td>First-stage F = 2,685. An extra place per 100 students raises the chance of receiving by 3.5 points</td></tr>
+      <tr><td class="nm">Monotonicity: more places never makes receipt less likely</td><td>Partially</td><td>Take-up rises across every quintile, which is consistent with it</td></tr>
+      <tr><td class="nm">Exclusion: the allocation affects completion only through receipt</td><td class="no">No</td><td>An argument, not a result</td></tr>
+    </table>
+
+    <p>The first-stage F is 269 times the conventional threshold of 10, which settles relevance and nothing else. A
+       strong first stage is frequently presented as though it validated the instrument. It does not. It establishes
+       that the instrument moves the treatment, which is the easy part.</p>
+
+    <p><strong>The exclusion restriction is where an IV study is attacked, and it should be.</strong> The argument here
+       is that the formula uses enrollment counts three years stale, so the allocation carries no information about this
+       year's cohort. The obvious objection is that a school's enrollment three years ago might proxy for something
+       about the neighborhood that also affects completion. The honest response has three parts: state the objection,
+       note that the covariate check found the allocation smooth at the cutoff and unrelated to family income, and
+       concede that the assumption cannot be proved. An IV paper that does not do all three is hiding something.</p>
+  </section>
+
+  <!-- 7 -->
+  <section id="ivresult">
+    <div class="section-eyebrow"><div class="num">7</div><h2>The IV Estimate, and What LATE Means</h2></div>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">2SLS estimate</div><div class="rv">+10.6 pp</div><div class="rd">SE 2.02</div></div>
+      <div class="rchip"><div class="rk">95% interval</div><div class="rv">[+6.6, +14.5]</div><div class="rd">contains the truth</div></div>
+      <div class="rchip"><div class="rk">Sample</div><div class="rv">28,000</div><div class="rd">eligible students</div></div>
+      <div class="rchip"><div class="rk">OLS, same sample</div><div class="rv">+11.5 pp</div><div class="rd">also close, and that matters</div></div>
+    </div>
+
+    <p>The last chip deserves attention rather than a footnote. Ordinary least squares restricted to the eligible
+       sample gives +11.5 points, which is also close to the truth. That is not luck: within the eligible group, who
+       actually received a scholarship was largely determined by their school's allocation, which is as good as random.
+       Restricting to the eligible removed most of the confounding by itself.</p>
+
+    <p>It would be easy to present the IV as having rescued an analysis that a simple subgroup comparison would have
+       handled. <strong>The IV's contribution is that it does not depend on that being true.</strong> Had take-up among
+       the eligible been driven by how motivated a student was, rather than by an administrative formula, OLS on the
+       eligible would have been badly biased in exactly the way Capstone 23 was, and the IV would still have worked.</p>
+
+    <p>Both estimates are also <strong>local</strong>, and to different localities. The RDD estimates the effect for
+       students near a need index of 60. The IV estimates a local average treatment effect: the effect for students
+       whose receipt was actually shifted by their school's allocation, sometimes called the compliers. Neither is the
+       effect for the average recipient, and neither speaks directly to what would happen if eligibility were widened.
+       Reporting either as "the effect of the scholarship" overstates what was learned.</p>
+  </section>
+
+  <!-- 8 -->
+  <section id="agreement">
+    <div class="section-eyebrow"><div class="num">8</div><h2>Why This Agreement Counts and the Last One Did Not</h2></div>
+
+    <p>Capstone 23 got +1.67 from matching and +1.65 from weighting, and that agreement was worth nothing. Both rested
+       on the same untestable assumption, so they were confounded identically and failed together. This is a different
+       situation, and the difference is worth stating precisely.</p>
+
+    <table class="disp-table">
+      <tr><th>Estimator</th><th>Estimate</th><th>95% CI</th><th>Rests on</th></tr>
+      <tr><td class="nm">Naive comparison</td><td class="no">&#8722;0.0347</td><td>&#8212;</td><td>No unmeasured confounding, across everyone</td></tr>
+      <tr><td class="nm">OLS among the eligible</td><td>+0.1145</td><td>&#8212;</td><td>No unmeasured confounding, within the eligible</td></tr>
+      <tr class="hi"><td class="nm">Fuzzy RDD</td><td>+0.1109</td><td>[+0.068, +0.153]</td><td>Nothing else jumps at need = 60</td></tr>
+      <tr class="hi"><td class="nm">Instrumental variables</td><td>+0.1055</td><td>[+0.066, +0.145]</td><td>The allocation affects completion only via receipt</td></tr>
+      <tr><td class="nm">The truth</td><td>+0.1200</td><td>&#8212;</td><td>&#8212;</td></tr>
+    </table>
+
+    <p>Read the last column. The RDD assumes that nothing except eligibility changes discontinuously at 60. The IV
+       assumes that a stale funding formula affects completion only by changing who gets a scholarship.
+       <strong>Neither assumption implies the other, and neither implies unconfoundedness.</strong> They could both be
+       wrong, but they would have to be wrong in unrelated ways and by coincidentally similar amounts. That is what
+       turns two numbers landing near each other into evidence rather than into a coincidence you were hoping for.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-rdd-iv-compare.png"
+           alt="Left: the fuzzy RDD estimate plotted against the bandwidth from 4 to 20, with a shaded confidence band. The estimate rises gently from about 0.105 to 0.116 and the dashed green truth line at 0.12 lies inside the band throughout. Right: four bars with error bars. Naive is negative at minus 0.035, OLS among the eligible is plus 0.115, fuzzy RDD is plus 0.111 and IV is plus 0.106, against a dashed green truth line at 0.12.">
+      <figcaption><strong>Left:</strong> the fuzzy estimate against the width of the window. It settles quickly and the
+        truth sits inside the interval throughout. <strong>Right:</strong> the four estimates. The naive comparison is
+        on the wrong side of zero; both credible designs land near the truth with intervals wide enough to be honest
+        about how much of the data each one actually used.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 9 -->
+  <section id="watch">
+    <div class="section-eyebrow"><div class="num">9</div><h2>What to Watch</h2></div>
+
+    <ul class="checklist">
+      <li><span class="ck">&#10003;</span><span><strong>State each design's assumption in a sentence a policy reader can object to.</strong> "Nothing else changes at 60" and "a stale formula affects completion only through receipt" can be argued with. An equation cannot.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>A strong first stage validates relevance and nothing else.</strong> An F of 2,685 says the instrument moves the treatment. It says nothing whatever about exclusion.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Report a bandwidth range, not the best one.</strong> The range is the honest summary; a single number is a choice the reader cannot see.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Assumption checks can only fail to find a problem.</strong> A smooth density and smooth covariates are consistent with a valid design and do not establish one.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Do not report a LATE as a program evaluation.</strong> If the question is whether to widen eligibility, the relevant population is students who would newly qualify, and neither design here speaks to them.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>A cutoff is a real boundary for real people.</strong> Students at 59.9 were refused what students at 60.1 received, and the analysis depends on that being arbitrary. A rule that is analytically convenient is, for the people just below it, hard to justify.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>The instrument is itself a finding.</strong> That a three-year-stale formula determined who received a scholarship is a policy result, and arguably a more actionable one than the effect estimate.</span></li>
+    </ul>
+  </section>
+
+  <!-- 10 -->
+  <section id="ml">
+    <div class="section-eyebrow"><div class="num">10</div><h2>Natural Experiments in Data Science &amp; AI</h2></div>
+
+    <table class="disp-table">
+      <tr><th>Where it appears</th><th>The cutoff or the instrument</th></tr>
+      <tr><td class="nm">Credit and lending models</td><td>Score thresholds for approval are textbook RDDs, and are how the causal effect of credit access gets measured at all</td></tr>
+      <tr><td class="nm">Recommender and ranking systems</td><td>The boundary of a top-N list: item 10 is shown and item 11 is not, for a reason that is arbitrary at the margin</td></tr>
+      <tr><td class="nm">Encouragement designs</td><td>Randomizing an invitation rather than the treatment, then instrumenting take-up with the invitation. A fuzzy RDD with a designed instrument</td></tr>
+      <tr><td class="nm">Ad auctions and bidding</td><td>Winning an auction at the margin is as good as random, which turns logged auctions into a discontinuity design</td></tr>
+      <tr><td class="nm">Platform policy changes</td><td>Eligibility thresholds for a feature, a badge or a tier, applied by rule and therefore exploitable</td></tr>
+    </table>
+
+    <div class="research">
+      <span class="rtag">Where the research went</span>
+      <p style="margin:0.4rem 0 0">Regression discontinuity comes from Thistlethwaite and Campbell in 1960 and then
+         sat almost unused for forty years before economists rediscovered it. The modern practice is mostly about the
+         bandwidth: <strong>Imbens and Kalyanaraman</strong> and later <strong>Calonico, Cattaneo and Titiunik</strong>
+         give data-driven choices with bias-corrected intervals, which is what a current paper reports instead of the
+         hand-picked range used here for transparency. On the IV side, the <strong>local average treatment effect</strong>
+         framework of Imbens and Angrist is what makes the complier interpretation precise, and the
+         <strong>weak-instrument</strong> literature explains why an F of 10 became a rule of thumb and why it is not a
+         good one. Both designs now have machine-learning extensions for heterogeneous effects, and every one of them
+         inherits the same untestable assumption unchanged.</p>
+    </div>
+
+    <div class="partclose">
+      <h4>Part XXIX in four capstones</h4>
+      <ol>
+        <li><a href="capstone-designing-an-ab-test.html">Designing an A/B Test Properly</a> designed the experiment and
+          then looked at it too early: peeking turned a 5 percent error rate into 18.7 percent.</li>
+        <li><a href="capstone-designing-a-factorial-experiment.html">Designing a Factorial Experiment</a> designed it
+          too cheaply: a resolution III design reported an interaction under a main effect's name.</li>
+        <li><a href="capstone-propensity-score-matching.html">Propensity Scores: Matching and Weighting</a> could not
+          design at all, and found that balancing every measured covariate removed nine percent of the bias.</li>
+        <li><strong>This chapter</strong> stopped trying to measure the confounding and used variation that never had
+          any, recovering an effect the obvious comparison got backwards.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- notebook -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">&#128013;</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook reads the plan, produces the naive comparison with the wrong sign, runs the density
+             and covariate checks the RDD allows, implements local linear regression with a triangular kernel and
+             robust standard errors from scratch, rescales the intention to treat by the take-up jump, sweeps the
+             bandwidth, fits the first stage and 2SLS by hand, and closes by comparing two designs that fail in
+             unrelated ways.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-regression-discontinuity-and-iv.html">&#128211; View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-regression-discontinuity-and-iv.ipynb"
+           target="_blank" rel="noopener">&#9654; Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-regression-discontinuity-and-iv.ipynb"
+           target="_blank" rel="noopener">&#11015; View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Read the reports &amp; get the data</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong>
+         (<code>capstone-regression-discontinuity-and-iv.xlsx</code>) holds 80,900 registry records with their
+         duplicates, undeclared incomes and need-index sentinels intact, the analysis plan written before the
+         completion data were linked in, and the true effect so both designs can be scored. Two written reports
+         accompany it: a <strong>plain-language brief</strong> for the program director facing reauthorization, and a
+         <strong>technical report</strong> covering both designs and their assumptions.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-24-regression-discontinuity-and-iv.html" target="_blank" rel="noopener">&#128196; Plain-language brief <small>read online</small></a>
+        <a class="ex-file doc" href="../reports/capstone-24-regression-discontinuity-and-iv-technical.html" target="_blank" rel="noopener">&#128202; Technical report <small>read online</small></a>
+        <a class="ex-file xls" href="../data/capstone-regression-discontinuity-and-iv.xlsx">&#128202; Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>&#127891; Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">&#10003;</span><span><strong>The naive comparison had the wrong sign.</strong> Recipients completed 3.5 points less often than non-recipients, and the scholarship raises completion by 12.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>A natural experiment does not adjust for confounding, it sidesteps it.</strong> An arbitrary cutoff and a stale formula both produce variation unrelated to the student.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Eligibility is not receipt.</strong> Take-up jumped 0.626 at the cutoff, so the 6.94-point intention to treat rescales to a fuzzy estimate of +11.1.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Relevance is testable and exclusion is not.</strong> An F of 2,685 settles the easy assumption and leaves the hard one exactly where it was.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Two designs agreeing is evidence when they do not share an assumption.</strong> +11.1 and +10.6, resting on unrelated claims, against a truth of +12.0.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">&#10067;</div><h2>Quiz: Test Yourself</h2></div>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-propensity-score-matching.html">
+      <span style="font-size:1.3rem">&#8592;</span>
+      <span><span class="cn-dir">Chapter 183 &#183; Previous</span><br><span class="cn-title">Propensity Scores: Matching and Weighting</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">&#8594;</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;&#183;&nbsp;
+  Chapter 184 &nbsp;&#183;&nbsp; &#169; 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch184";
+  window.QUIZ_DATA = [
+    {
+      q: "Recipients of the scholarship completed degrees 3.5 points less often than non-recipients, and the true effect is plus 12 points. What produced the sign reversal?",
+      options: ["Measurement error in the completion variable", "The scholarship is means tested, so recipients come from poorer families, and family circumstances predict completion", "The sample of recipients was too small", "Take-up among the eligible was only 62 percent"],
+      answer: 1,
+      explain: "Selection runs opposite to the treatment effect and is larger than it. This is why an observational comparison can be not merely imprecise but backwards."
+    },
+    {
+      q: "What makes an eligibility cutoff useful for causal inference?",
+      options: ["It creates two groups of equal size", "Unmeasured differences change smoothly with the running variable while eligibility changes discontinuously, so anything that jumps at the threshold is attributable to the rule", "It guarantees that the treatment is randomly assigned", "It removes the need to check any assumptions"],
+      answer: 1,
+      explain: "Smooth versus discontinuous is the whole argument. A student at 59.9 and one at 60.1 differ only in a number somebody chose, so the step in the outcome at exactly that number is the rule's doing."
+    },
+    {
+      q: "The density of the need index was 749.8 just below the cutoff and 727.1 just above, z = −0.59. What does this check establish?",
+      options: ["That the design is valid", "That there is no evidence of families sorting across the threshold, which is consistent with a valid design but does not prove one", "That the running variable is normally distributed", "That the bandwidth was chosen correctly"],
+      answer: 1,
+      explain: "A pile-up above the cutoff and a hole below is the signature of manipulation. Its absence is reassuring and is not proof. No assumption check ever offers more than a failure to find a problem."
+    },
+    {
+      q: "The jump in completion at the cutoff was +6.94 points and the jump in take-up was 0.626. Why is +6.94 not the answer?",
+      options: ["Because it is not statistically significant", "Because it measures the effect of being offered the scholarship, and only 62.6 percent of those offered took it up", "Because the bandwidth was too wide", "Because the outcome is binary"],
+      answer: 1,
+      explain: "It is an intention to treat. Dividing by the take-up jump rescales from offered to received, giving +11.1 points. That ratio is the Wald estimator, which is why a fuzzy RDD is an instrumental variables estimator in disguise."
+    },
+    {
+      q: "The first-stage F statistic for the instrument was 2,685. What does that number establish?",
+      options: ["That the exclusion restriction holds", "That the instrument strongly predicts treatment, and nothing more", "That the estimate is unbiased", "That the instrument is valid"],
+      answer: 1,
+      explain: "Relevance is the easy assumption and the only testable one. A strong first stage is routinely presented as though it validated an instrument; it establishes only that the instrument moves the treatment."
+    },
+    {
+      q: "OLS restricted to the eligible sample gave +11.5, close to the truth. What is the right way to read that?",
+      options: ["The IV was unnecessary", "Within the eligible group, receipt was largely determined by an administrative formula, so little confounding remained; the IV's value is that it does not rely on that", "It shows the IV is biased", "It proves the exclusion restriction holds"],
+      answer: 1,
+      explain: "Restricting to the eligible removed most of the confounding by itself, which is worth saying rather than hiding. Had take-up been driven by student motivation instead, OLS would have failed exactly as in Capstone 23 and the IV would still have worked."
+    },
+    {
+      q: "Why is the agreement between the RDD (+11.1) and the IV (+10.6) more meaningful than the agreement between matching and weighting in Capstone 23?",
+      options: ["Because the sample size is larger", "Because these two estimates are closer together", "Because the two designs rest on assumptions that do not imply one another, so they would have to fail in unrelated ways to agree by accident", "Because both use instrumental variables logic"],
+      answer: 2,
+      explain: "Matching and weighting shared an untestable assumption and were confounded identically. An RDD assuming nothing else jumps at 60 and an IV assuming a stale formula is excluded are independent claims, so their agreement is informative."
+    },
+    {
+      q: "The program director asks whether to widen eligibility to a need index of 50. What do these estimates say about that?",
+      options: ["That widening would raise completion by about 11 points", "Very little directly: both estimates are local, to students near the cutoff and to those whose receipt was shifted by their school's allocation", "That widening is unjustified because the naive comparison is negative", "That the RDD estimate applies but the IV estimate does not"],
+      answer: 1,
+      explain: "The RDD estimates the effect near a need index of 60 and the IV estimates a local average treatment effect on compliers. Neither describes students who would newly qualify at 50, and reporting either as a general program effect overstates what was learned."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

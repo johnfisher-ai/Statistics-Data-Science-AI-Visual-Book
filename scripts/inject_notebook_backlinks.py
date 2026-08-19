@@ -668,6 +668,8 @@ MAP = {
         ("../../capstone-designing-a-factorial-experiment.html#notebook", "Back to the book", "Chapter 182 · Designing a Factorial Experiment"),
     "capstone-propensity-score-matching.html":
         ("../../capstone-propensity-score-matching.html#notebook", "Back to the book", "Chapter 183 · Propensity Scores: Matching and Weighting"),
+    "capstone-regression-discontinuity-and-iv.html":
+        ("../../capstone-regression-discontinuity-and-iv.html#notebook", "Back to the book", "Chapter 184 · Regression Discontinuity and Instrumental Variables"),
 }
 
 def card(href, kicker, title):
