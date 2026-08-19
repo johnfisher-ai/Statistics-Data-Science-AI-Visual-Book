@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 182 · Designing a Factorial Experiment — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .yes { color:#047857; font-weight:700; }
+    .disp-table .no { color:#dc2626; font-weight:700; }
+    .disp-table tr.hi td { background:#fff1f2; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .embox { background:#fff1f2; border:1px solid #fecdd3; border-left:4px solid #9f1239; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .embox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#881337; }
+    .rw-card { background:#fff1f2; border:1px solid #fecdd3; border-left:4px solid #9f1239; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#881337; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#fff1f2; color:#9f1239; border-color:#fecdd3; }
+    .ex-file.doc { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#fff1f2; border:1px solid #fecdd3; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#881337; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #9f1239; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#881337; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+    .svg-wrap { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.9rem 0.6rem 0.3rem; background:var(--panel); }
+    .svg-wrap svg { width:100%; height:auto; display:block; }
+    .svg-wrap .cap { font-size:0.82rem; color:var(--ink-soft); padding:0.55rem 0.6rem 0.4rem; line-height:1.55; }
+    .svg-wrap .cap strong { color:var(--ink); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/capstone-designing-a-factorial-experiment.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXIX &#183; Capstone Projects: Design &amp; Causal Inference</span><span class="sep">/</span>
+      <span>Chapter 182</span>
+    </div>
+    <h1>Designing a <span class="accent">Factorial</span> Experiment</h1>
+    <p class="dek">Capstone 22. An eight-run design named line speed as the second-biggest lever on coating strength.
+       Line speed does nothing at all. Its column in the design matrix is identical to another column, and the estimate
+       belonged to that one.</p>
+    <div class="hero-meta">
+      <div class="m">&#9201;&#65039; <b>~21 min</b>&nbsp;read</div>
+      <div class="m">&#127919; <b>Factorial design</b></div>
+      <div class="m">&#128202; <b>Chapter 182</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Capstone 7 analyzed a factorial experiment somebody else had designed. This one is about
+       <span class="hl">the design itself</span>: how many runs you can afford, what a cheaper design stops being able
+       to tell you, and how to find that out before the runs rather than after.</p>
+
+    <div class="brief-card">
+      <div class="bh">The brief</div>
+      <dl>
+        <dt>Setting</dt><dd>A contract coating line. Five process settings can be changed: oven temperature, line speed, primer viscosity, cure time and nozzle pressure. The response is peel strength in newtons, higher is better.</dd>
+        <dt>The question</dt><dd><strong>Which settings raise coating peel strength, and what combination should the line actually run at?</strong></dd>
+        <dt>Why it matters</dt><dd>Every run costs a line changeover, so the experiment has to be small. A design that is too small does not merely lose precision; it makes some effects impossible to tell apart, and the output gives no warning that this has happened.</dd>
+        <dt>What we do</dt><dd>Work out how many runs the full factorial would take, look at the eight-run design the team already ran and the recommendation it produced, show the alias that made that recommendation wrong, run a sixteen-run design that separates the effects, and price what blocking and randomization each contributed.</dd>
+      </dl>
+    </div>
+
+    <div class="def-card">
+      <div class="sigma">&#8801;</div>
+      <div class="def-body">
+        Two effects are <span class="def-kw">aliased</span> when the experiment's design gives them
+        <span class="def-kw">the same column of plus and minus signs</span>. The analysis then returns one number for
+        both, and no amount of care in the analysis can separate them. A design's
+        <span class="def-kw">resolution</span> says which kinds of effect are aliased with which.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">&#11088;</div>
+      <div><div class="ctitle">The finding, up front</div>
+        <p>The eight-run design put line speed at <strong>+6.22 N</strong>, the second-largest effect in the study. The
+           sixteen-run design puts it at <strong>+0.17 N</strong>, p&nbsp;=&nbsp;0.65. The 6.22 belonged to
+           <strong>temperature crossed with cure time</strong>, which the eight-run design had no column for. Slowing
+           the line changed nothing; raising both temperature and cure time together gained
+           <strong>9.46 N</strong>.</p></div>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section id="arithmetic">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Five Factors, and the Arithmetic of Runs</h2></div>
+
+    <p>Five factors at two levels each is 2<sup>5</sup> = 32 distinct settings. Replicated twice, so that noise can be
+       estimated without assuming the model is right, that is 64 runs. Each run needs a line changeover, which is why
+       this is a design problem before it is an analysis problem.</p>
+
+    <table class="disp-table">
+      <tr><th>Design</th><th>Settings</th><th>Runs, 2 replicates</th><th>What it can separate</th></tr>
+      <tr><td class="nm">Full 2<sup>5</sup></td><td>32</td><td>64</td><td>Everything, up to the five-factor interaction</td></tr>
+      <tr class="hi"><td class="nm">Half 2<sup>5&#8722;1</sup>, resolution V</td><td>16</td><td>32</td><td>All 5 main effects and all 10 two-factor interactions</td></tr>
+      <tr><td class="nm">Quarter 2<sup>5&#8722;2</sup>, resolution III</td><td>8</td><td>16</td><td>Five effects, each of which is a sum of a main effect and interactions</td></tr>
+    </table>
+
+    <p>The budget allowed 32 runs. The interesting question is what the quarter fraction, at half that cost, stops being
+       able to tell you, and the honest answer is that it stops being able to tell you what it is telling you.</p>
+
+    <div class="svg-wrap">
+      <svg viewBox="0 0 900 250" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="Three stacked bars representing the full, half and quarter factorial designs. The full design with 32 settings and 64 runs shows all effects separately estimable. The half fraction with 16 settings and 32 runs shows main effects and two-factor interactions separable, aliased only with high-order interactions. The quarter fraction with 8 settings and 16 runs shows main effects sharing columns with two-factor interactions, marked as the design that was run first. A red arrow down the right-hand side is labelled cost falls and so does what you can learn.">
+        <rect x="0" y="0" width="900" height="250" fill="#ffffff"/>
+
+        <text x="30" y="30" font-size="12" font-weight="800" fill="#4c0519">FULL FACTORIAL &#183; 32 SETTINGS &#183; 64 RUNS</text>
+        <rect x="30" y="40" width="660" height="30" rx="5" fill="#047857"/>
+        <text x="360" y="60" text-anchor="middle" font-size="12" font-weight="800" fill="#ffffff">every effect has its own column</text>
+
+        <text x="30" y="105" font-size="12" font-weight="800" fill="#4c0519">HALF FRACTION, RESOLUTION V &#183; 16 SETTINGS &#183; 32 RUNS &#183; the design we ran</text>
+        <rect x="30" y="115" width="330" height="30" rx="5" fill="#9f1239"/>
+        <rect x="360" y="115" width="330" height="30" rx="5" fill="#f1f5f9" stroke="#e2e8f0"/>
+        <text x="195" y="135" text-anchor="middle" font-size="12" font-weight="800" fill="#ffffff">5 main + 10 two-factor</text>
+        <text x="525" y="135" text-anchor="middle" font-size="11" font-weight="700" fill="#94a3b8">aliased only with 3- and 4-factor terms</text>
+
+        <text x="30" y="180" font-size="12" font-weight="800" fill="#dc2626">QUARTER FRACTION, RESOLUTION III &#183; 8 SETTINGS &#183; 16 RUNS &#183; run last quarter</text>
+        <rect x="30" y="190" width="165" height="30" rx="5" fill="#fecdd3" stroke="#dc2626" stroke-width="1.5"/>
+        <rect x="195" y="190" width="495" height="30" rx="5" fill="#fff1f2" stroke="#fecdd3"/>
+        <text x="112" y="210" text-anchor="middle" font-size="12" font-weight="800" fill="#881337">5 estimates</text>
+        <text x="442" y="210" text-anchor="middle" font-size="11.5" font-weight="800" fill="#dc2626">each one is a main effect PLUS a two-factor interaction</text>
+
+        <path d="M726 46 L726 200" stroke="#dc2626" stroke-width="2.5"/>
+        <path d="M726 212 L719 199 L733 199 Z" fill="#dc2626"/>
+        <text x="746" y="112" font-size="11.5" font-weight="800" fill="#4c0519">cost falls,</text>
+        <text x="746" y="130" font-size="11.5" font-weight="800" fill="#dc2626">and so does</text>
+        <text x="746" y="148" font-size="11.5" font-weight="800" fill="#dc2626">what you can learn</text>
+      </svg>
+      <div class="cap"><strong>What each halving costs.</strong> The run count is the visible price and the resolution is
+        the invisible one. A resolution III design returns five confident numbers and does not mention that each of them
+        is a sum.</div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section id="screening">
+    <div class="section-eyebrow"><div class="num">2</div><h2>The Eight-Run Design That Was Run First</h2></div>
+
+    <p>Last quarter the team ran a quarter fraction. With three factors you get eight settings for free; the other two
+       have to be built out of the first three, and the team chose <strong>D = AB</strong> and <strong>E = AC</strong>.
+       Eight settings, two replicates, sixteen runs. Five factors, five effects, all estimated. It looks complete.</p>
+
+    <table class="disp-table">
+      <tr><th>Factor</th><th>Effect (N)</th><th>What the design actually estimates</th></tr>
+      <tr><td class="nm">Oven temperature</td><td>+10.31</td><td>A + BD + CE</td></tr>
+      <tr class="hi"><td class="nm">Line speed</td><td>+6.22</td><td>B + AD</td></tr>
+      <tr><td class="nm">Primer viscosity</td><td>+1.57</td><td>C + AE</td></tr>
+      <tr><td class="nm">Cure time</td><td>+1.28</td><td>D + AB</td></tr>
+      <tr><td class="nm">Nozzle pressure</td><td>&#8722;0.98</td><td>E + AC</td></tr>
+    </table>
+
+    <p>The standard error of an effect here is about 0.86 N, so line speed at +6.22 is more than seven standard errors
+       from zero. By any conventional reading that is a solid, actionable finding, and the recommendation wrote itself:
+       slow the line down.</p>
+  </section>
+
+  <!-- 3 -->
+  <section id="alias">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Resolution, and Seeing an Alias for Yourself</h2></div>
+
+    <p>The right-hand column of that table is not a theoretical caution. It is a statement about arithmetic that you can
+       check in a few lines: build the column of signs for the interaction A&#215;D, and compare it element by element
+       with the column for B.</p>
+
+    <div class="svg-wrap">
+      <svg viewBox="0 0 860 250" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="A table of the eight runs of the quarter-fraction design showing the sign columns for factors A and D, then the column for B and the computed column for the A times D interaction placed side by side. The B column and the A times D column contain exactly the same eight signs and are boxed and joined by a bracket labelled identical.">
+        <rect x="0" y="0" width="860" height="250" fill="#ffffff"/>
+        <text x="40" y="26" font-size="12" font-weight="800" fill="#4c0519">THE EIGHT RUNS, IN SIGNS</text>
+        <text x="60" y="52" font-size="12" font-weight="800" fill="#64748b">run</text>
+        <text x="136" y="52" font-size="12" font-weight="800" fill="#1a2138">A</text>
+        <text x="211" y="52" font-size="12" font-weight="800" fill="#1a2138">D</text>
+        <text x="297" y="52" font-size="12" font-weight="800" fill="#9f1239">B</text>
+        <text x="386" y="52" font-size="12" font-weight="800" fill="#9f1239">A&#215;D</text>
+        <text x="64" y="74" font-size="12" fill="#64748b">1</text><text x="138" y="74" font-size="13" font-weight="700" fill="#1a2138">&#8722;</text><text x="213" y="74" font-size="13" font-weight="700" fill="#1a2138">+</text><text x="300" y="74" font-size="13" font-weight="800" fill="#9f1239">&#8722;</text><text x="392" y="74" font-size="13" font-weight="800" fill="#9f1239">&#8722;</text>
+        <text x="64" y="96" font-size="12" fill="#64748b">2</text><text x="138" y="96" font-size="13" font-weight="700" fill="#1a2138">&#8722;</text><text x="213" y="96" font-size="13" font-weight="700" fill="#1a2138">+</text><text x="300" y="96" font-size="13" font-weight="800" fill="#9f1239">&#8722;</text><text x="392" y="96" font-size="13" font-weight="800" fill="#9f1239">&#8722;</text>
+        <text x="64" y="118" font-size="12" fill="#64748b">3</text><text x="138" y="118" font-size="13" font-weight="700" fill="#1a2138">&#8722;</text><text x="213" y="118" font-size="13" font-weight="700" fill="#1a2138">&#8722;</text><text x="300" y="118" font-size="13" font-weight="800" fill="#9f1239">+</text><text x="392" y="118" font-size="13" font-weight="800" fill="#9f1239">+</text>
+        <text x="64" y="140" font-size="12" fill="#64748b">4</text><text x="138" y="140" font-size="13" font-weight="700" fill="#1a2138">&#8722;</text><text x="213" y="140" font-size="13" font-weight="700" fill="#1a2138">&#8722;</text><text x="300" y="140" font-size="13" font-weight="800" fill="#9f1239">+</text><text x="392" y="140" font-size="13" font-weight="800" fill="#9f1239">+</text>
+        <text x="64" y="162" font-size="12" fill="#64748b">5</text><text x="138" y="162" font-size="13" font-weight="700" fill="#1a2138">+</text><text x="213" y="162" font-size="13" font-weight="700" fill="#1a2138">&#8722;</text><text x="300" y="162" font-size="13" font-weight="800" fill="#9f1239">&#8722;</text><text x="392" y="162" font-size="13" font-weight="800" fill="#9f1239">&#8722;</text>
+        <text x="64" y="184" font-size="12" fill="#64748b">6</text><text x="138" y="184" font-size="13" font-weight="700" fill="#1a2138">+</text><text x="213" y="184" font-size="13" font-weight="700" fill="#1a2138">&#8722;</text><text x="300" y="184" font-size="13" font-weight="800" fill="#9f1239">&#8722;</text><text x="392" y="184" font-size="13" font-weight="800" fill="#9f1239">&#8722;</text>
+        <text x="64" y="206" font-size="12" fill="#64748b">7</text><text x="138" y="206" font-size="13" font-weight="700" fill="#1a2138">+</text><text x="213" y="206" font-size="13" font-weight="700" fill="#1a2138">+</text><text x="300" y="206" font-size="13" font-weight="800" fill="#9f1239">+</text><text x="392" y="206" font-size="13" font-weight="800" fill="#9f1239">+</text>
+        <text x="64" y="228" font-size="12" fill="#64748b">8</text><text x="138" y="228" font-size="13" font-weight="700" fill="#1a2138">+</text><text x="213" y="228" font-size="13" font-weight="700" fill="#1a2138">+</text><text x="300" y="228" font-size="13" font-weight="800" fill="#9f1239">+</text><text x="392" y="228" font-size="13" font-weight="800" fill="#9f1239">+</text>
+        <rect x="287" y="58" width="34" height="180" rx="6" fill="none" stroke="#9f1239" stroke-width="2"/>
+        <rect x="376" y="58" width="42" height="180" rx="6" fill="none" stroke="#9f1239" stroke-width="2"/>
+        <path d="M321 148 L376 148" stroke="#9f1239" stroke-width="2" stroke-dasharray="6 4"/>
+        <text x="348" y="138" text-anchor="middle" font-size="11" font-weight="800" fill="#9f1239">same</text>
+
+        <text x="460" y="100" font-size="13.5" font-weight="800" fill="#4c0519">The design cannot tell them apart,</text>
+        <text x="460" y="122" font-size="13.5" font-weight="800" fill="#4c0519">because within these eight runs</text>
+        <text x="460" y="144" font-size="13.5" font-weight="800" fill="#9f1239">they are the same eight numbers.</text>
+        <text x="460" y="176" font-size="12" fill="#64748b">Whatever the analysis returns for B,</text>
+        <text x="460" y="194" font-size="12" fill="#64748b">it is really returning B + A&#215;D.</text>
+      </svg>
+      <div class="cap"><strong>An alias, in full.</strong> Because the design was built with D = AB, the product A&#215;D
+        equals A&#215;A&#215;B, and A&#215;A is a column of plus signs. So A&#215;D <em>is</em> B. This is not a
+        subtlety of inference; it is multiplication.</div>
+    </div>
+
+    <p>The same check across all five factors gives the whole picture: A is indistinguishable from B&#215;D and
+       C&#215;E, B from A&#215;D, C from A&#215;E, D from A&#215;B, and E from A&#215;C. That is what
+       <strong>resolution III</strong> means, and it is a property of the design, decided before any panel was coated.
+       No analysis recovers information the design never collected.</p>
+  </section>
+
+  <!-- 4 -->
+  <section id="acted">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Acting On It, and the Confirmation That Followed</h2></div>
+
+    <p>The line was slowed from 12 to 8 metres per minute. Forty panels were measured, twenty before and twenty after.
+       The design had promised about six newtons.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Before, 12 m/min</div><div class="rv">60.74 N</div><div class="rd">n = 20</div></div>
+      <div class="rchip"><div class="rk">After, 8 m/min</div><div class="rv">60.58 N</div><div class="rd">n = 20</div></div>
+      <div class="rchip"><div class="rk">Difference</div><div class="rv">&#8722;0.16 N</div><div class="rd">95% CI [&#8722;0.96, +0.63]</div></div>
+      <div class="rchip"><div class="rk">p-value</div><div class="rv">0.68</div><div class="rd">nothing happened</div></div>
+    </div>
+
+    <p>A confirmation run is the cheapest insurance in experimental work, and this is what it buys. The interval runs
+       from about one newton down to two thirds of a newton up, and excludes the promised +6 many times over. Something
+       was wrong with the design, not with the process, and forty panels were enough to find out.</p>
+  </section>
+
+  <!-- 5 -->
+  <section id="sixteen">
+    <div class="section-eyebrow"><div class="num">5</div><h2>The Sixteen-Run Design</h2></div>
+
+    <p>The half fraction uses a single generator, <strong>E = ABCD</strong>, giving the defining relation I = ABCDE.
+       Main effects are now aliased only with four-factor interactions, and two-factor interactions only with
+       three-factor ones. Under the usual assumption that high-order interactions in a physical process are negligible,
+       all five main effects and all ten two-factor interactions are separately estimable. That is
+       <strong>resolution V</strong>, and the notebook confirms it the same way as before: among those fifteen columns,
+       no two are identical.</p>
+
+    <table class="disp-table">
+      <tr><th>Step</th><th>Runs</th><th>What happened</th></tr>
+      <tr><td class="nm">As delivered</td><td>33</td><td>The logger wrote one row twice</td></tr>
+      <tr><td class="nm">After deduplication</td><td>32</td><td>Two full replicates of 16 settings</td></tr>
+      <tr class="hi"><td class="nm">After a failed gauge</td><td>31</td><td>One panel has no reading, so 15 of 16 settings have both replicates</td></tr>
+    </table>
+
+    <p>The lost run leaves the design very slightly unbalanced. Least squares handles that without comment; the
+       hand-computed contrast of the previous section would not, which is a good practical reason to fit a model rather
+       than average columns once a design stops being perfectly balanced.</p>
+  </section>
+
+  <!-- 6 -->
+  <section id="never">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Line Speed Was Never There</h2></div>
+
+    <table class="disp-table">
+      <tr><th>Term</th><th>Effect (N)</th><th>SE</th><th>p</th></tr>
+      <tr><td class="nm">Oven temperature</td><td>+8.47</td><td>0.38</td><td>&lt;0.001</td></tr>
+      <tr class="hi"><td class="nm">Temperature &#215; cure time</td><td>+6.47</td><td>0.38</td><td>&lt;0.001</td></tr>
+      <tr><td class="nm">Viscosity &#215; pressure</td><td>+2.45</td><td>0.38</td><td>&lt;0.001</td></tr>
+      <tr><td class="nm">Primer viscosity</td><td>+2.01</td><td>0.38</td><td>&lt;0.001</td></tr>
+      <tr><td class="nm">Cure time</td><td>+2.01</td><td>0.38</td><td>&lt;0.001</td></tr>
+      <tr><td class="nm">Nozzle pressure</td><td>&#8722;1.04</td><td>0.38</td><td>0.015</td></tr>
+      <tr class="hi"><td class="nm">Line speed</td><td>+0.17</td><td>0.38</td><td>0.65</td></tr>
+    </table>
+
+    <p>Line speed is +0.17 newtons on a standard error of 0.38. It was never there. The +6.22 the eight-run design
+       reported belonged to <strong>oven temperature crossed with cure time</strong>, which appears here at +6.47 and
+       could not have appeared at all in a design where its column and line speed's column were the same numbers.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-factorial-designs.png"
+           alt="Left: grouped bars of the effect on peel strength for five factors plus the temperature-by-cure-time interaction, comparing the 8-run resolution III design against the 16-run resolution V design. Line speed falls from 6.22 to 0.17 between the two, annotated with an arrow, while the temperature-by-cure interaction appears only in the 16-run design at 6.47 and is labelled the effect it was standing in for. The 8-run design has no bar there, labelled not estimable in 8 runs. Right: an interaction plot with mean peel strength against oven temperature, one line for 45 second cure rising gently from 60.9 to 63.2 and one for 75 second cure rising steeply from 56.7 to 71.7.">
+      <figcaption><strong>Left:</strong> the same five factors measured two ways. Line speed collapses from the
+        second-largest effect to nothing, and the interaction the eight-run design had no column for takes its place.
+        <strong>Right:</strong> the interaction itself. Raising the temperature buys 2.3 N at short cure and 14.9 N at
+        long cure, so neither factor on its own is the recommendation.</figcaption>
+    </figure>
+
+    <div class="embox">
+      <span class="gb-tag">Why the eight-run answer was so convincing</span>
+      <p style="margin:0.45rem 0 0">The aliased estimate was not noise. It was a real effect of about the right
+         magnitude, attached to the wrong label. That is what makes resolution III dangerous rather than merely
+         imprecise: a low-resolution design does not produce vague results that invite caution, it produces sharp
+         results that invite action. The standard error was 0.86 N and it was correct. It was measuring the precision of
+         a quantity nobody wanted.</p>
+    </div>
+  </section>
+
+  <!-- 7 -->
+  <section id="block">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Blocking: the Batch You Should Not Randomize</h2></div>
+
+    <p>Thirty-two runs need two batches of primer, and batches differ. The plan put replicate 1 entirely on batch 1 and
+       replicate 2 on batch 2, so <strong>batch is the block</strong>. It enters the model as a term, which takes the
+       batch difference out of the error rather than leaving it there to inflate every standard error.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Residual SD, blocked</div><div class="rv">1.03 N</div><div class="rd">batch in the model</div></div>
+      <div class="rchip"><div class="rk">Residual SD, ignored</div><div class="rv">1.56 N</div><div class="rd">batch left in the error</div></div>
+      <div class="rchip"><div class="rk">SE of an effect</div><div class="rv">0.38 vs 0.57</div><div class="rd">34 percent narrower</div></div>
+      <div class="rchip"><div class="rk">Batch 2 offset</div><div class="rv">+1.69 N</div><div class="rd">real, and not of interest</div></div>
+    </div>
+
+    <p>Note what blocking did not do. The batch difference is still there in the process; it has not been removed from
+       the world, only from the yardstick. And note the choice it represents. Batch was known in advance, so it became a
+       block. Had the batches instead been randomized across runs, the same variation would have gone into the error
+       term and every interval would have been a third wider for no benefit. The rule is short:
+       <strong>block what you can predict, randomize what you cannot</strong>.</p>
+  </section>
+
+  <!-- 8 -->
+  <section id="random">
+    <div class="section-eyebrow"><div class="num">8</div><h2>Randomization: the Drift Nobody Measured</h2></div>
+
+    <p>The oven creeps upward across a shift. Nobody measured that and nobody had to, because run order within each
+       batch was randomized. The value of randomizing is easiest to see by simulating the alternative: running the
+       settings in a convenient order, all the low-pressure runs first, which on a real line saves genuine time.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">True effect</div><div class="rv">&#8722;0.80 N</div><div class="rd">nozzle pressure</div></div>
+      <div class="rchip"><div class="rk">Randomized order</div><div class="rv">&#8722;0.805</div><div class="rd">bias &#8722;0.005</div></div>
+      <div class="rchip"><div class="rk">Sorted by pressure</div><div class="rv">&#8722;0.408</div><div class="rd">bias +0.392</div></div>
+      <div class="rchip"><div class="rk">Consequence</div><div class="rv">Halved</div><div class="rd">across 2,000 simulations</div></div>
+    </div>
+
+    <p>Four tenths of a newton is a five percent distortion of the temperature effect, which nobody would ever notice.
+       On nozzle pressure it is half the effect, and it changes the conclusion about whether pressure matters at all.
+       <strong>You cannot know in advance which of your effects are small</strong>, which is the entire argument for
+       randomizing: it converts a bias you cannot see into noise you can measure.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-factorial-randomize.png"
+           alt="Left: two overlaid histograms of the estimated effect of nozzle pressure across 2000 simulated experiments. The randomized-order distribution is centred on the dashed truth line at minus 0.8, while the distribution from runs sorted by pressure is shifted right, centred near minus 0.4. Right: two bars of the standard error of an effect, 0.377 newtons when blocked on batch and 0.567 when batch is ignored, titled blocking narrowed every interval by 34 percent.">
+      <figcaption><strong>Left:</strong> two thousand simulated experiments each way. Randomizing centers the estimate
+        on the truth; a convenient run order shifts the whole distribution. <strong>Right:</strong> what the block was
+        worth, on the same runs and the same data.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 9 -->
+  <section id="confirm">
+    <div class="section-eyebrow"><div class="num">9</div><h2>The Recommendation, and Confirming It</h2></div>
+
+    <p>The recommendation is not a factor. It is a combination, and the interaction is the reason.</p>
+
+    <table class="disp-table">
+      <tr><th>Mean peel strength (N)</th><th>Cure 45 s</th><th>Cure 75 s</th></tr>
+      <tr><td class="nm">Temperature 170 &#176;C</td><td>60.89</td><td>56.73</td></tr>
+      <tr class="hi"><td class="nm">Temperature 190 &#176;C</td><td>63.19</td><td>71.67</td></tr>
+    </table>
+
+    <p>Read the bottom row against the top. Raising the temperature at short cure gains 2.3 N. Raising it at long cure
+       gains 14.9 N. And at the low temperature, extending the cure actually makes the coating <em>worse</em>, from
+       60.89 down to 56.73. A recommendation that named either factor alone would be wrong in a way that a recommendation
+       naming both is not.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Baseline</div><div class="rv">60.54 N</div><div class="rd">170 &#176;C, 45 s</div></div>
+      <div class="rchip"><div class="rk">Recommended</div><div class="rv">70.00 N</div><div class="rd">190 &#176;C, 75 s</div></div>
+      <div class="rchip"><div class="rk">Gain</div><div class="rv">+9.46 N</div><div class="rd">95% CI [+8.61, +10.31]</div></div>
+      <div class="rchip"><div class="rk">Confirmed</div><div class="rv">40 panels</div><div class="rd">fresh, after the fact</div></div>
+    </div>
+
+    <p>The design that cost twice as much found the lever the cheap design pointed away from, and the confirmation run
+       is what turns an estimate into a change somebody is willing to sign.</p>
+  </section>
+
+  <!-- 10 -->
+  <section id="watch">
+    <div class="section-eyebrow"><div class="num">10</div><h2>What to Watch</h2></div>
+
+    <ul class="checklist">
+      <li><span class="ck">&#10003;</span><span><strong>Report the resolution next to the results, every time.</strong> A reader cannot infer it from an effect table, and a resolution III design produces sharp numbers that invite action rather than vague ones that invite caution.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Aliasing is a property of the design, not of the data.</strong> The only honest options are to run the extra points that break the alias, or to print the alias chain beside the estimate and let the reader see the ambiguity.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Say which interactions you assumed away.</strong> Resolution V is safe on the assumption that three-factor and higher interactions are negligible. That is usually reasonable in a physical process, and it is an assumption, so it belongs in the write-up.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Fifteen effects is fifteen tests.</strong> Six terms here clear p = 0.05, and on a pure-noise design you would expect about one to. Rank by magnitude against the standard error rather than reading down a column of p-values, which is the lesson of Capstone 4 arriving in new clothes.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Randomize even when it is inconvenient.</strong> Sorting runs by a factor saves real time on a production line and buys it by confounding that factor with everything that drifts. The cost never appears in the output.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Confirm before you commit.</strong> Both recommendations here were tested on fresh panels first. The first confirmation is the only reason anyone discovered the screening design had misled them, and it cost forty panels.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>A designed experiment on a production line has consequences.</strong> Running deliberately poor settings makes genuinely worse product, and somebody has to decide what happens to it. That belongs in the plan, not in the write-up.</span></li>
+    </ul>
+  </section>
+
+  <!-- 11 -->
+  <section id="ml">
+    <div class="section-eyebrow"><div class="num">11</div><h2>Design of Experiments in Data Science &amp; AI</h2></div>
+
+    <p>Factorial thinking is older than computing and it keeps being rediscovered wherever runs are expensive.</p>
+
+    <table class="disp-table">
+      <tr><th>Where it appears</th><th>The same idea, in a different costume</th></tr>
+      <tr><td class="nm">Hyperparameter search</td><td>Grid search is a full factorial; random and Latin-hypercube search are fractional designs chosen because the grid does not fit in the budget</td></tr>
+      <tr><td class="nm">Ablation studies</td><td>Removing components one at a time is a one-factor-at-a-time design, which cannot see interactions between components at all</td></tr>
+      <tr><td class="nm">Multivariate web testing</td><td>Several page elements varied at once, usually in a fractional design, usually without the alias structure being reported</td></tr>
+      <tr><td class="nm">Prompt and pipeline tuning</td><td>Instruction, examples, temperature and retrieval depth crossed together, where the interactions are the interesting part</td></tr>
+      <tr><td class="nm">Simulation and A/B infrastructure</td><td>Blocking on day, region or cohort, for exactly the reason batch was blocked here</td></tr>
+    </table>
+
+    <div class="research">
+      <span class="rtag">Where the research went</span>
+      <p style="margin:0.4rem 0 0">Fractional designs come from Finney in 1945 and were developed for industry by Box,
+         Hunter and Hunter, whose book remains the standard reference. Two directions are worth knowing. <strong>Response
+         surface methodology</strong> adds center points and axial runs to fit curvature, which a two-level design
+         cannot see at all: every factor here was tested at exactly two settings, so the analysis assumes the response
+         between them is a straight line. <strong>Optimal design</strong>, the D-optimal and I-optimal families, drops
+         the requirement for a regular fraction entirely and instead searches for the run set that minimizes a stated
+         criterion, which is what most modern software does when the factors will not cooperate with a textbook layout.</p>
+    </div>
+  </section>
+
+  <!-- notebook -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">&#128013;</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook works out the run arithmetic, builds the eight-run design and finds its aliases by
+             comparing columns rather than by quoting a rule, reproduces the screening result and the confirmation run
+             that contradicted it, verifies that the sixteen-run design has no duplicated columns, fits all fifteen
+             effects with batch as a block, prices the block and the randomization in newtons, and closes with the
+             interaction table and the final confirmation.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-designing-a-factorial-experiment.html">&#128211; View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-designing-a-factorial-experiment.ipynb"
+           target="_blank" rel="noopener">&#9654; Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-designing-a-factorial-experiment.ipynb"
+           target="_blank" rel="noopener">&#11015; View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Read the reports &amp; get the data</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong>
+         (<code>capstone-designing-a-factorial-experiment.xlsx</code>) holds both designed experiments with their coded
+         and decoded factor columns, the two confirmation studies, the design plan written before any panel was coated,
+         and the model that generated the data so every estimate can be checked. Two written reports accompany it: a
+         <strong>plain-language brief</strong> for the plant manager, and a <strong>technical report</strong> covering
+         the alias structure, the blocked model and the confirmation.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-22-designing-a-factorial-experiment.html" target="_blank" rel="noopener">&#128196; Plain-language brief <small>read online</small></a>
+        <a class="ex-file doc" href="../reports/capstone-22-designing-a-factorial-experiment-technical.html" target="_blank" rel="noopener">&#128202; Technical report <small>read online</small></a>
+        <a class="ex-file xls" href="../data/capstone-designing-a-factorial-experiment.xlsx">&#128202; Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>&#127891; Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">&#10003;</span><span><strong>An alias is two effects sharing one column of signs.</strong> Because D was built as AB, the A&#215;D column <em>is</em> the B column, and the design returns one number for both.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Low resolution produces sharp wrong answers, not vague ones.</strong> Line speed came out at +6.22 N with a correct standard error of 0.86, and it is truly +0.17.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Block what you can predict, randomize what you cannot.</strong> Blocking on batch cut every standard error by 34 percent; randomizing run order kept a 0.4 N oven drift out of the effects.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>The recommendation was a combination.</strong> Raising temperature gains 2.3 N at short cure and 14.9 N at long cure, so neither factor alone is the answer.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Confirm on fresh material.</strong> Forty panels showed the first recommendation did nothing, and forty more confirmed the second was worth +9.46 N.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">&#10067;</div><h2>Quiz: Test Yourself</h2></div>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-designing-an-ab-test.html">
+      <span style="font-size:1.3rem">&#8592;</span>
+      <span><span class="cn-dir">Chapter 181 &#183; Previous</span><br><span class="cn-title">Designing an A/B Test Properly</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">&#8594;</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;&#183;&nbsp;
+  Chapter 182 &nbsp;&#183;&nbsp; &#169; 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch182";
+  window.QUIZ_DATA = [
+    {
+      q: "The eight-run design was built with D = AB and E = AC. Why is the A×D column identical to the B column?",
+      options: ["Because A and D happen to be correlated in this dataset", "Because A×D = A×(A×B) = (A×A)×B, and A×A is a column of plus signs, so A×D is B", "Because the design was not randomized", "Because only eight of the thirty-two settings were run"],
+      answer: 1,
+      explain: "It is multiplication, not inference. In plus-and-minus coding a column times itself is all plus signs, so A×D collapses to B exactly. That is why no analysis can separate them: within these eight runs they are the same numbers."
+    },
+    {
+      q: "The screening design reported line speed at +6.22 N with a standard error of 0.86. What was wrong with that standard error?",
+      options: ["It was too small because the sample was too small", "It was calculated incorrectly", "Nothing: it correctly described the precision of a quantity that was not the line-speed effect", "It should have been adjusted for multiple comparisons"],
+      answer: 2,
+      explain: "The standard error was right. It described how precisely the design had measured B + A×D. Low resolution does not produce imprecise results, it produces precise results attached to the wrong label, which is what makes it dangerous."
+    },
+    {
+      q: "Moving from the quarter fraction to the half fraction doubled the runs from 16 to 32. What did that buy?",
+      options: ["Narrower confidence intervals on the same five effects", "The ability to estimate all ten two-factor interactions separately from the main effects", "Protection against oven drift", "A larger number of replicates per setting"],
+      answer: 1,
+      explain: "It bought resolution, not just precision. Under resolution V the main effects are aliased only with four-factor interactions and the two-factor interactions only with three-factor ones, so all fifteen effects have their own column."
+    },
+    {
+      q: "Batch was handled by blocking rather than by randomizing batches across runs. Why is that the better choice here?",
+      options: ["Because randomization is only valid for large experiments", "Because the batch difference was predictable, so putting it in the model removes it from the error instead of leaving it there", "Because blocking increases the number of degrees of freedom", "Because batches cannot be randomized in a factory"],
+      answer: 1,
+      explain: "Block what you can predict, randomize what you cannot. Modelling the known batch difference cut the residual standard deviation from 1.56 to 1.03 and every standard error by 34 percent. Randomizing batches would have left that variation in the error term."
+    },
+    {
+      q: "The simulation showed that sorting runs by nozzle pressure shifted its estimated effect from −0.80 to −0.41. Why does that matter more for pressure than for temperature?",
+      options: ["Because pressure was measured less accurately", "Because the bias is a fixed size, about 0.4 N, so it is trivial next to an 8.5 N effect and half of a 0.8 N one", "Because pressure interacts with cure time", "Because pressure had fewer replicates"],
+      answer: 1,
+      explain: "The drift bias is roughly constant and lands on whichever factor the runs were sorted by. Since you cannot know in advance which of your effects are small, randomizing is the only general defense."
+    },
+    {
+      q: "At 170 °C, extending the cure from 45 to 75 seconds moved peel strength from 60.89 to 56.73 N. What does that tell you about reporting the cure-time main effect on its own?",
+      options: ["The main effect of cure time is negative", "The main effect of +2.01 N averages over two temperatures where cure time does opposite things, so quoting it alone would mislead", "Cure time should be dropped from the model", "The interaction must be an artifact of the missing run"],
+      answer: 1,
+      explain: "With a strong interaction the main effect is an average across conditions in which the factor behaves differently. Extending the cure helps at 190 °C and hurts at 170 °C, so the recommendation has to name the combination."
+    },
+    {
+      q: "Six of the fifteen estimated terms reached p < 0.05. What is the right way to read that?",
+      options: ["All six are real effects", "Six from fifteen tests is roughly what pure noise would produce", "Rank effects by magnitude against the standard error, and treat borderline terms with the caution that fifteen tests deserve", "The model is overfitted and should be reduced"],
+      answer: 2,
+      explain: "Fifteen tests at α = 0.05 would produce about one false positive by chance, not six, so most of these are real. The discipline is still to read magnitudes against the standard error rather than scanning a p-value column, exactly as in Capstone 4."
+    },
+    {
+      q: "Both recommendations in this chapter were tested on fresh panels before anything changed. What did the first confirmation accomplish?",
+      options: ["It improved the precision of the screening estimate", "It revealed that the screening design had misled them, for the cost of forty panels", "It validated the resolution III design", "It established that line speed interacts with temperature"],
+      answer: 1,
+      explain: "The confirmation put the difference at −0.16 N with an interval of [−0.96, +0.63], which excludes the promised +6 many times over. Without it, the alias would have gone undetected and the line would have run slower for nothing."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

@@ -664,6 +664,8 @@ MAP = {
         ("../../capstone-repairing-an-online-panel.html#notebook", "Back to the book", "Chapter 180 · When the Sample Is Not Random: Repairing a Panel"),
     "capstone-designing-an-ab-test.html":
         ("../../capstone-designing-an-ab-test.html#notebook", "Back to the book", "Chapter 181 · Designing an A/B Test Properly"),
+    "capstone-designing-a-factorial-experiment.html":
+        ("../../capstone-designing-a-factorial-experiment.html#notebook", "Back to the book", "Chapter 182 · Designing a Factorial Experiment"),
 }
 
 def card(href, kicker, title):
