@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 183 · Propensity Scores: Matching and Weighting — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .yes { color:#047857; font-weight:700; }
+    .disp-table .no { color:#dc2626; font-weight:700; }
+    .disp-table tr.hi td { background:#fff1f2; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .embox { background:#fff1f2; border:1px solid #fecdd3; border-left:4px solid #9f1239; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .embox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#881337; }
+    .rw-card { background:#fff1f2; border:1px solid #fecdd3; border-left:4px solid #9f1239; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#881337; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#fff1f2; color:#9f1239; border-color:#fecdd3; }
+    .ex-file.doc { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#fff1f2; border:1px solid #fecdd3; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#881337; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #9f1239; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#881337; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+    .svg-wrap { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.9rem 0.6rem 0.3rem; background:var(--panel); }
+    .svg-wrap svg { width:100%; height:auto; display:block; }
+    .svg-wrap .cap { font-size:0.82rem; color:var(--ink-soft); padding:0.55rem 0.6rem 0.4rem; line-height:1.55; }
+    .svg-wrap .cap strong { color:var(--ink); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/capstone-propensity-score-matching.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXIX &#183; Capstone Projects: Design &amp; Causal Inference</span><span class="sep">/</span>
+      <span>Chapter 183</span>
+    </div>
+    <h1>Propensity Scores: <span class="accent">Matching</span> and Weighting</h1>
+    <p class="dek">Capstone 23. Every measured covariate balances to within 0.025 of a standard deviation. The estimate
+       moves by nine percent, and all of what remains is bias. The balance table was not lying; it was answering a
+       different question.</p>
+    <div class="hero-meta">
+      <div class="m">&#9201;&#65039; <b>~21 min</b>&nbsp;read</div>
+      <div class="m">&#127919; <b>Causal inference</b></div>
+      <div class="m">&#128202; <b>Chapter 183</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">The last two capstones designed their own experiments. This one arrives after the fact, with a
+       program that was never randomized and a question that
+       <span class="hl">the data may not be able to answer</span>. The work is to find out which.</p>
+
+    <div class="brief-card">
+      <div class="bh">The brief</div>
+      <dl>
+        <dt>Setting</dt><dd>An employer's voluntary management-training program. Four thousand employee records, each with department, education, age, tenure, prior performance rating and prior salary, all recorded before enrollment, plus salary growth over the following 12 months.</dd>
+        <dt>The question</dt><dd><strong>Did the training program raise the salary growth of the people who took it?</strong></dd>
+        <dt>Why it matters</dt><dd>The program is popular and its budget is up for renewal. A naive comparison makes it look like an unambiguous success, and that comparison is what will be quoted unless somebody does better.</dd>
+        <dt>What we do</dt><dd>Fit a propensity model on every pre-enrollment covariate, check common support, match with a caliper, verify balance, cross-check with inverse probability weighting, and then ask the only question that can address what the covariates missed: how strong would an unmeasured confounder have to be?</dd>
+      </dl>
+    </div>
+
+    <div class="def-card">
+      <div class="sigma">e(x)</div>
+      <div class="def-body">
+        The <span class="def-kw">propensity score</span> is the probability of receiving treatment given the measured
+        covariates. Among people with the same score, treatment is as good as randomly assigned
+        <span class="def-kw">with respect to those covariates</span>. That final clause is not a technicality. It is
+        where every propensity analysis lives or dies.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">&#11088;</div>
+      <div><div class="ctitle">The finding, up front</div>
+        <p>The naive difference is <strong>+1.83 percentage points</strong>. After matching on six pre-enrollment
+           covariates, with every standardized difference under <strong>0.025</strong>, it is
+           <strong>+1.67</strong>. Weighting agrees at +1.65. The true effect of the program is
+           <strong>exactly zero</strong>, and the variable that explains the whole thing was never in the file.</p></div>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section id="notexp">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Why This Is Not an Experiment</h2></div>
+
+    <p>Nobody was randomized. Employees decided for themselves whether to enroll, which means the two groups differ in
+       every respect that influenced that decision, and only some of those respects were written down. The whole
+       apparatus of this chapter exists to substitute for a randomization that never happened.</p>
+
+    <p>The analysis plan was written before the outcome data were linked in. Six covariates, all measured
+       <em>before</em> enrollment, an explicit estimand, a balance target, a cross-check by a second method, and a
+       sensitivity analysis that is stated to be non-optional.</p>
+
+    <div class="svg-wrap">
+      <svg viewBox="0 0 900 250" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="A causal diagram in the classic confounding layout. Enrolled sits on the left and Salary growth on the right, joined by a dashed horizontal arrow labeled the effect we want, true value zero. Above them a gray box of measured covariates, listing department, education, age, tenure, prior rating and prior salary, marked adjusted for, sends gray arrows down into both. Below them a red dashed ellipse labeled ambition, not in the file, sends red arrows up into both, annotated as the two arrows matching cannot see.">
+        <rect x="0" y="0" width="900" height="250" fill="#ffffff"/>
+
+        <rect x="300" y="14" width="270" height="78" rx="12" fill="#f4f6fb" stroke="#cbd5e1" stroke-width="1.5"/>
+        <text x="435" y="36" text-anchor="middle" font-size="11.5" font-weight="800" fill="#334155">MEASURED COVARIATES</text>
+        <text x="435" y="54" text-anchor="middle" font-size="10.5" fill="#64748b">department &#183; education &#183; age &#183; tenure</text>
+        <text x="435" y="69" text-anchor="middle" font-size="10.5" fill="#64748b">prior rating &#183; prior salary</text>
+        <text x="435" y="86" text-anchor="middle" font-size="10.5" font-weight="800" fill="#047857">adjusted for</text>
+
+        <rect x="34" y="108" width="152" height="46" rx="10" fill="#9f1239"/>
+        <text x="110" y="137" text-anchor="middle" font-size="13" font-weight="800" fill="#ffffff">Enrolled</text>
+
+        <rect x="690" y="108" width="176" height="46" rx="10" fill="#4c0519"/>
+        <text x="778" y="137" text-anchor="middle" font-size="13" font-weight="800" fill="#ffffff">Salary growth</text>
+
+        <ellipse cx="435" cy="204" rx="132" ry="34" fill="#fff1f2" stroke="#dc2626" stroke-width="2" stroke-dasharray="7 4"/>
+        <text x="435" y="200" text-anchor="middle" font-size="12.5" font-weight="800" fill="#9f1239">ambition</text>
+        <text x="435" y="219" text-anchor="middle" font-size="10.5" font-weight="800" fill="#dc2626">not in the file</text>
+
+        <path d="M300 62 L196 108" stroke="#94a3b8" stroke-width="2.2" fill="none"/>
+        <path d="M188 112 L200 112 L196 101 Z" fill="#94a3b8"/>
+        <path d="M570 62 L678 108" stroke="#94a3b8" stroke-width="2.2" fill="none"/>
+        <path d="M686 112 L674 112 L678 101 Z" fill="#94a3b8"/>
+
+        <path d="M312 186 L198 154" stroke="#dc2626" stroke-width="2.4" fill="none"/>
+        <path d="M189 151 L200 148 L198 160 Z" fill="#dc2626"/>
+        <path d="M558 186 L676 154" stroke="#dc2626" stroke-width="2.4" fill="none"/>
+        <path d="M685 151 L674 148 L676 160 Z" fill="#dc2626"/>
+
+        <path d="M186 131 L676 131" stroke="#4c0519" stroke-width="2.4" fill="none" stroke-dasharray="6 5"/>
+        <path d="M688 131 L674 125 L674 137 Z" fill="#4c0519"/>
+        <text x="431" y="112" text-anchor="middle" font-size="11.5" font-weight="800" fill="#4c0519">the effect we want &#183; true value: zero</text>
+
+        <text x="435" y="246" text-anchor="middle" font-size="11" font-weight="800" fill="#dc2626">the two red arrows are what matching cannot see</text>
+      </svg>
+      <div class="cap"><strong>Two paths into the outcome, and only one of them is adjustable.</strong> The gray arrows
+        run through variables the HR system recorded, so matching closes them. The red arrows run through something
+        nobody wrote down, and no amount of care with the gray box touches them.</div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section id="naive">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Cleaning, and the Naive Comparison</h2></div>
+
+    <table class="disp-table">
+      <tr><th>Step</th><th>Rows</th><th>What happened</th></tr>
+      <tr><td class="nm">HR export</td><td>4,055</td><td>The extract ran twice</td></tr>
+      <tr><td class="nm">After deduplication</td><td>4,000</td><td>One row per employee</td></tr>
+      <tr class="hi"><td class="nm">Complete cases</td><td>3,880</td><td>90 with no prior rating on file, 30 with a tenure of &#8722;1, which is a sentinel and not a tenure</td></tr>
+    </table>
+
+    <p>Complete-case analysis is a decision, not a default. Dropping 120 employees is defensible only if the reason
+       their records are incomplete is unrelated to their salary growth, which is an assumption nobody has tested. It is
+       disclosed here rather than solved; Capstone 31 takes it up properly.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Enrolled</div><div class="rv">4.49%</div><div class="rd">n = 1,247</div></div>
+      <div class="rchip"><div class="rk">Not enrolled</div><div class="rv">2.66%</div><div class="rd">n = 2,633</div></div>
+      <div class="rchip"><div class="rk">Difference</div><div class="rv">+1.83 pp</div><div class="rd">95% CI [+1.68, +1.98]</div></div>
+      <div class="rchip"><div class="rk">Reading</div><div class="rv">Not yet</div><div class="rd">these are different people</div></div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section id="ps">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The Propensity Score, and Common Support</h2></div>
+
+    <p>A logistic regression of enrollment on the six covariates gives each employee a probability of enrolling. Before
+       anything is matched, the two distributions have to be compared, because anyone whose score falls outside the
+       range covered by the other group has no counterpart in the data at all.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Score, enrolled</div><div class="rv">0.10 to 0.64</div><div class="rd">mean 0.348</div></div>
+      <div class="rchip"><div class="rk">Score, not enrolled</div><div class="rv">0.08 to 0.64</div><div class="rd">mean 0.309</div></div>
+      <div class="rchip"><div class="rk">Off common support</div><div class="rv">5</div><div class="rd">of 3,880 employees</div></div>
+      <div class="rchip"><div class="rk">Overlap</div><div class="rv">Excellent</div><div class="rd">not the problem here</div></div>
+    </div>
+
+    <p>Good overlap is itself a finding worth reporting: enrollment was not concentrated in some corner of the workforce
+       that nobody else occupies. Five employees have no comparable counterpart and are dropped. In many observational
+       studies this step removes a substantial fraction of the sample and quietly changes who the estimate is about,
+       which is why the number belongs in the write-up whether it is five or five hundred.</p>
+  </section>
+
+  <!-- 4 -->
+  <section id="match">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Matching, and a Balance Table That Passes</h2></div>
+
+    <p>One-to-one nearest neighbor on the logit of the score, without replacement, with a caliper of 0.2 standard
+       deviations. A treated employee with no control inside the caliper is left unmatched rather than paired with
+       somebody who is not really similar: 1,220 pairs from 1,247 enrolled employees, with 27 discarded.</p>
+
+    <table class="disp-table">
+      <tr><th>Covariate</th><th>SMD before</th><th>SMD after</th></tr>
+      <tr><td class="nm">Prior performance rating</td><td>+0.285</td><td class="yes">+0.012</td></tr>
+      <tr><td class="nm">Education, postgraduate</td><td>+0.167</td><td class="yes">&#8722;0.019</td></tr>
+      <tr><td class="nm">Tenure, years</td><td>&#8722;0.158</td><td class="yes">&#8722;0.003</td></tr>
+      <tr><td class="nm">Education, high school</td><td>&#8722;0.157</td><td class="yes">+0.015</td></tr>
+      <tr><td class="nm">Department, Sales</td><td>+0.109</td><td class="yes">&#8722;0.013</td></tr>
+      <tr><td class="nm">Department, Operations</td><td>&#8722;0.107</td><td class="yes">+0.016</td></tr>
+      <tr><td class="nm">Age</td><td>&#8722;0.081</td><td class="yes">+0.025</td></tr>
+      <tr><td class="nm">Prior salary</td><td>+0.011</td><td class="yes">&#8722;0.012</td></tr>
+    </table>
+
+    <p>The largest remaining standardized difference is <strong>0.025</strong>, against a conventional target of 0.10.
+       This is what a successful match looks like, and in most published work it is the exhibit offered as evidence that
+       the comparison is now fair.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-psm-balance.png"
+           alt="Left: overlaid histograms of the propensity score for enrolled and not-enrolled employees, almost entirely overlapping, with dashed lines marking the common support boundaries at 0.10 and 0.64. Right: a balance plot of standardized mean differences. Open circles show values before matching, spread between minus 0.16 and plus 0.29. Filled circles show values after matching, all within a shaded target band from minus 0.1 to plus 0.1. A red diamond at the bottom, labeled ambition not measured, sits at plus 1.06, far outside the plot's other points.">
+      <figcaption><strong>Left:</strong> the scores overlap almost completely, so common support is not the difficulty.
+        <strong>Right:</strong> the balance plot that goes in the appendix. Every measured covariate lands inside the
+        target band. The red diamond is the variable nobody measured.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 5 -->
+  <section id="estimate">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Two Methods, One Answer, and Barely Any Movement</h2></div>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Naive</div><div class="rv">+1.83 pp</div><div class="rd">no adjustment</div></div>
+      <div class="rchip"><div class="rk">Matched</div><div class="rv">+1.67 pp</div><div class="rd">SE 0.09, CI [+1.49, +1.84]</div></div>
+      <div class="rchip"><div class="rk">Weighted (IPTW)</div><div class="rv">+1.65 pp</div><div class="rd">same covariates, ATT weights</div></div>
+      <div class="rchip"><div class="rk">Adjustment moved it</div><div class="rv">9%</div><div class="rd">of the naive difference</div></div>
+    </div>
+
+    <p>Two different adjustment methods agreeing closely is genuinely reassuring, and it is reassuring about the
+       arithmetic rather than about the assumption. Matching and weighting use the same six covariates, so they are
+       confounded by anything those covariates miss, and they are confounded by it in the same direction and to the same
+       degree. <strong>Agreement between two methods that share an assumption is not evidence for the
+       assumption.</strong></p>
+
+    <p>The more uncomfortable number is that adjustment moved the estimate by nine percent. On a well-behaved
+       observational study you might expect the covariates to absorb most of the confounding. Here they absorbed almost
+       none of it, which is a signal about what the covariates are, not about how carefully the matching was done.</p>
+  </section>
+
+  <!-- 6 -->
+  <section id="sensitivity">
+    <div class="section-eyebrow"><div class="num">6</div><h2>How Strong Would a Missing Confounder Have to Be?</h2></div>
+
+    <p>This is the step that gets skipped, and it is the only one capable of saying anything about what the covariates
+       did not capture. The <strong>E-value</strong> is the smallest association an unmeasured confounder would need
+       with both enrollment and salary growth, over and above the measured covariates, to account for the whole
+       estimate.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Standardized effect</div><div class="rv">d = 0.745</div><div class="rd">matched sample</div></div>
+      <div class="rchip"><div class="rk">Approximate risk ratio</div><div class="rv">1.97</div><div class="rd">VanderWeele and Ding</div></div>
+      <div class="rchip"><div class="rk">E-value</div><div class="rv">3.35</div><div class="rd">on both associations</div></div>
+      <div class="rchip"><div class="rk">Verdict</div><div class="rv">Sounds safe</div><div class="rd">and is the trap</div></div>
+    </div>
+
+    <p>In much of the applied literature an E-value above 2 is presented as evidence of robustness, and 3.35 would pass
+       without comment. But look carefully at what the E-value says. It tells you <em>how strong</em> a confounder would
+       have to be. It cannot tell you <em>whether one exists</em>, and nothing in the data can, because the data do not
+       contain it.</p>
+
+    <p>So the question to put to the client is not a statistical one. Is there some characteristic of an employee, not
+       on our list, that makes them both substantially likelier to sign up for management training and substantially
+       likelier to get a raise? Anyone who has worked in an organization can answer that in about a second, and their
+       answer is worth more than the E-value.</p>
+
+    <div class="embox">
+      <span class="gb-tag">Reading a sensitivity surface</span>
+      <p style="margin:0.45rem 0 0">The contour is easier to act on than a single number. Suppose an unmeasured
+         characteristic differs between the groups by &#948; standard deviations and is worth &#947; percentage points
+         of salary growth per standard deviation. The estimate falls to zero wherever &#948;&#160;&#215;&#160;&#947;
+         reaches 1.67. A variable worth 1.2 points per standard deviation needs a gap of 1.39 SD; one worth 1.75 points
+         needs a gap of 0.95. Both are entirely ordinary sizes for a workplace characteristic, which is the honest
+         conclusion of the analysis <em>before</em> anyone looks at the answer.</p>
+    </div>
+  </section>
+
+  <!-- 7 -->
+  <section id="reveal">
+    <div class="section-eyebrow"><div class="num">7</div><h2>The Sheet That Was Never Available</h2></div>
+
+    <p>The workbook carries a second sheet holding an index of how hard each employee was pushing for advancement. It
+       was never in the HR system and no analyst could have used it. We can, because this is a book.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Ambition, enrolled</div><div class="rv">+0.601</div><div class="rd">matched sample</div></div>
+      <div class="rchip"><div class="rk">Ambition, not enrolled</div><div class="rv">&#8722;0.347</div><div class="rd">matched sample</div></div>
+      <div class="rchip"><div class="rk">Standardized difference</div><div class="rv">+1.06</div><div class="rd">forty times the worst measured one</div></div>
+      <div class="rchip"><div class="rk">Effect with it in</div><div class="rv">+0.02 pp</div><div class="rd">p = 0.70. True value: zero</div></div>
+    </div>
+
+    <p><strong>The program does nothing, and it never did.</strong> The +1.83 was selection from start to finish, and
+       matching on six carefully chosen pre-treatment covariates removed nine percent of it. The balance table was not
+       misleading anybody: those covariates really were balanced. They were simply not the ones that mattered.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-psm-sensitivity.png"
+           alt="Left: a contour surface with the effect of an unmeasured variable on growth in percentage points per standard deviation on the horizontal axis and the gap between the groups in standard deviations on the vertical axis. A dark curve marks where the adjusted estimate reaches zero, and a yellow star marks the position of the ambition variable, sitting on that curve. Right: five bars of the estimated effect, naive at 1.83, matched at 1.67, IPTW at 1.65, adding ambition at 0.02, and the truth at zero.">
+      <figcaption><strong>Left:</strong> every combination of confounder strength that would drive the estimate to zero
+        lies above the dark curve, and the star is where the real variable turned out to sit. The sensitivity analysis
+        could not tell you the star exists; it told you exactly how big it would have to be.
+        <strong>Right:</strong> the chapter in five bars.</figcaption>
+    </figure>
+
+    <p>Notice the order in which that was done. The sensitivity analysis was computed before the reveal, and it gave the
+       correct warning: a confounder of entirely ordinary size would flatten this estimate. Had the analysis stopped at
+       the balance table, the report would have said the program raises salary growth by 1.7 points, and the balance
+       table would have been the proof.</p>
+  </section>
+
+  <!-- 8 -->
+  <section id="what">
+    <div class="section-eyebrow"><div class="num">8</div><h2>What Propensity Methods Do and Do Not Do</h2></div>
+
+    <table class="disp-table">
+      <tr><th>They do</th><th>They do not</th></tr>
+      <tr><td>Remove confounding carried by the covariates you have</td><td>Remove confounding carried by anything else</td></tr>
+      <tr><td>Make the comparison transparent, with a balance table anyone can check</td><td>Make the comparison valid</td></tr>
+      <tr><td>Reveal where the two groups do not overlap at all</td><td>Tell you whether the overlap you have is on the right variables</td></tr>
+      <tr><td>Separate the design stage from the outcome stage, so balance is checked before results are seen</td><td>Substitute for randomization</td></tr>
+      <tr><td>Give a defensible estimate when the covariates really are the whole story</td><td>Tell you whether they are</td></tr>
+    </table>
+
+    <p>None of that makes the method a bad one. The propensity model in this chapter did its job correctly and the
+       matching was sound. What failed was <strong>the assumption of no unmeasured confounding</strong>, which is
+       untestable by construction, and which every observational causal claim rests on whether or not it is stated. The
+       contribution of a careful analysis is to make that dependence visible and to price it, which is what the
+       sensitivity analysis did.</p>
+  </section>
+
+  <!-- 9 -->
+  <section id="watch">
+    <div class="section-eyebrow"><div class="num">9</div><h2>What to Watch</h2></div>
+
+    <ul class="checklist">
+      <li><span class="ck">&#10003;</span><span><strong>A balance table is evidence about its own columns.</strong> Presenting one without saying what is missing invites a reader to conclude something it cannot support.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Put the sensitivity analysis next to the estimate.</strong> An E-value is one number and belongs in the abstract. Its absence reads as a claim that no confounder could exist, which nobody would defend in words.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>A large E-value is not a clean bill of health.</strong> This one was 3.35, and "how much somebody wants a promotion" clears that comfortably.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Adjust only on pre-treatment variables.</strong> Adjusting for something measured after enrollment, such as projects led during the year, would remove part of the effect rather than part of the confounding.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Name the estimand.</strong> This is an ATT, the effect on those who enrolled. It is not what would happen if the program were made compulsory.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Report who was discarded.</strong> Twenty-seven enrolled employees had no acceptable match, five fell outside common support, and 120 were dropped for missing covariates. Each changes who the estimate describes.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Two methods agreeing is not two pieces of evidence.</strong> Matching and weighting share an assumption, so they fail together and their agreement says nothing about whether it holds.</span></li>
+    </ul>
+  </section>
+
+  <!-- 10 -->
+  <section id="ml">
+    <div class="section-eyebrow"><div class="num">10</div><h2>Propensity Methods in Data Science &amp; AI</h2></div>
+
+    <table class="disp-table">
+      <tr><th>Where it appears</th><th>The same assumption, in a different costume</th></tr>
+      <tr><td class="nm">Marketing attribution</td><td>Comparing exposed and unexposed users on observed features, where the thing that drove exposure was intent</td></tr>
+      <tr><td class="nm">Uplift and heterogeneous effects</td><td>Causal forests and meta-learners estimate who benefits most, and inherit unconfoundedness whole</td></tr>
+      <tr><td class="nm">Off-policy evaluation</td><td>Inverse propensity scoring of a logged bandit policy, where the propensities are known rather than estimated, which is the rare good case</td></tr>
+      <tr><td class="nm">Observational model monitoring</td><td>Comparing outcomes for users who did and did not receive a model's recommendation</td></tr>
+      <tr><td class="nm">Algorithmic fairness auditing</td><td>Adjusting for measured covariates to ask whether a disparity is explained, where the unmeasured ones are usually the argument</td></tr>
+    </table>
+
+    <div class="research">
+      <span class="rtag">Where the research went</span>
+      <p style="margin:0.4rem 0 0">The propensity score comes from Rosenbaum and Rubin in 1983, and Rosenbaum's own
+         <strong>sensitivity bounds</strong> arrived alongside it, which says something about how central the concern
+         always was. The modern alternatives are worth knowing. <strong>Doubly robust</strong> estimators combine a
+         propensity model with an outcome model and remain consistent if either is right, which helps with
+         misspecification and not at all with a missing variable. <strong>Targeted maximum likelihood</strong> and
+         <strong>double machine learning</strong> let flexible learners estimate both stages while preserving valid
+         inference. Every one of them assumes no unmeasured confounding. The methods of the next chapter do not, which
+         is why they exist.</p>
+    </div>
+  </section>
+
+  <!-- notebook -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">&#128013;</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook reads the analysis plan before the outcomes, cleans the export and reports what it
+             discards, fits the propensity model, trims to common support, implements caliper matching without
+             replacement from scratch, builds the balance table, cross-checks with ATT weighting, computes an E-value
+             and a two-dimensional sensitivity surface, and only then joins the sheet that shows the entire estimate
+             was selection.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-propensity-score-matching.html">&#128211; View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-propensity-score-matching.ipynb"
+           target="_blank" rel="noopener">&#9654; Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-propensity-score-matching.ipynb"
+           target="_blank" rel="noopener">&#11015; View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Read the reports &amp; get the data</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong>
+         (<code>capstone-propensity-score-matching.xlsx</code>) holds 4,055 HR records with their duplicates, missing
+         ratings and tenure sentinels intact, the analysis plan written before the outcomes were linked, and a separate
+         sheet carrying the variable that was never observed. Two written reports accompany it: a
+         <strong>plain-language brief</strong> for the HR director whose budget depends on the answer, and a
+         <strong>technical report</strong> covering the propensity model, the balance diagnostics and the sensitivity
+         analysis.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-23-propensity-score-matching.html" target="_blank" rel="noopener">&#128196; Plain-language brief <small>read online</small></a>
+        <a class="ex-file doc" href="../reports/capstone-23-propensity-score-matching-technical.html" target="_blank" rel="noopener">&#128202; Technical report <small>read online</small></a>
+        <a class="ex-file xls" href="../data/capstone-propensity-score-matching.xlsx">&#128202; Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>&#127891; Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">&#10003;</span><span><strong>Matching balances the covariates you have.</strong> Every measured one landed inside 0.025 SD, and the unmeasured one was still separated by 1.06.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Adjustment moved the estimate by nine percent.</strong> The covariates carried almost none of the confounding, which is a fact about the covariates, not about the method.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Two methods agreeing is one piece of evidence.</strong> Matching and weighting share an assumption and fail together.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>The E-value says how strong, never whether.</strong> A value of 3.35 read as reassuring, and the missing variable cleared it easily.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>The program's true effect was zero.</strong> A textbook-clean analysis reported +1.67 points, and the sensitivity analysis was the only part of it that gave the right warning.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">&#10067;</div><h2>Quiz: Test Yourself</h2></div>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-designing-a-factorial-experiment.html">
+      <span style="font-size:1.3rem">&#8592;</span>
+      <span><span class="cn-dir">Chapter 182 &#183; Previous</span><br><span class="cn-title">Designing a Factorial Experiment</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">&#8594;</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;&#183;&nbsp;
+  Chapter 183 &nbsp;&#183;&nbsp; &#169; 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch183";
+  window.QUIZ_DATA = [
+    {
+      q: "After matching, every measured covariate had a standardized mean difference below 0.025. What does that establish?",
+      options: ["That the two groups are comparable", "That the causal estimate is unbiased", "That the two groups are comparable on those covariates, and nothing about any other variable", "That the propensity model was correctly specified"],
+      answer: 2,
+      explain: "A balance table is evidence about its own columns. In this study the unmeasured variable was still separated by 1.06 standard deviations after matching, which is forty times the worst measured imbalance."
+    },
+    {
+      q: "Matching and inverse probability weighting gave +1.67 and +1.65. Why is that agreement less reassuring than it looks?",
+      options: ["Because the sample sizes differ between the two methods", "Because both use the same covariates, so they share the untestable assumption and fail together", "Because IPTW is less efficient than matching", "Because the weights were not trimmed"],
+      answer: 1,
+      explain: "Agreement between two methods that rest on the same assumption is not two pieces of evidence. Both are confounded by whatever the covariates miss, in the same direction and by the same amount."
+    },
+    {
+      q: "Adjustment moved the estimate from +1.83 to +1.67, about nine percent. What does that indicate?",
+      options: ["The matching was done badly", "The measured covariates carried almost none of the confounding", "The sample was too small", "The true effect is close to +1.67"],
+      answer: 1,
+      explain: "The matching was sound and the balance table proves it. Propensity methods remove exactly the confounding carried by the covariates you have; here those covariates were nearly orthogonal to the variable that actually drove enrollment."
+    },
+    {
+      q: "The E-value was 3.35. What exactly does that number say?",
+      options: ["There is a 3.35 percent chance the result is confounded", "An unmeasured confounder would need associations of about 3.35 with both treatment and outcome, beyond the measured covariates, to explain the estimate away", "The estimate is 3.35 standard errors from zero", "The result is robust because 3.35 exceeds 2"],
+      answer: 1,
+      explain: "It quantifies how strong such a confounder would have to be. It cannot say whether one exists, which is a question for domain knowledge. Here a variable of exactly that strength was sitting in the next sheet."
+    },
+    {
+      q: "Why must every covariate in the propensity model be measured before enrollment?",
+      options: ["To keep the model from overfitting", "Because post-treatment variables may be consequences of the treatment, so adjusting for them removes part of the effect rather than part of the confounding", "Because logistic regression requires it", "To ensure common support"],
+      answer: 1,
+      explain: "Adjusting for something the treatment caused, such as projects led during the year, blocks part of the causal path being estimated. Every covariate here was recorded at or before enrollment."
+    },
+    {
+      q: "Five employees were dropped for falling outside common support. Why does that number belong in the write-up?",
+      options: ["To document computational cost", "Because it changes who the estimate is about, and in many studies this step removes a large fraction of the sample", "Because it affects the standard error", "Because they are likely to be outliers"],
+      answer: 1,
+      explain: "Trimming to common support is the right thing to do and it silently redefines the population the estimate describes. Here it was five; elsewhere it can be a third of the sample, and a reader cannot tell unless it is reported."
+    },
+    {
+      q: "The chapter computes the sensitivity analysis before revealing the hidden variable. Why does the order matter?",
+      options: ["To keep the notebook shorter", "To show that the sensitivity analysis gives the correct warning using only information a real analyst would have had", "Because the E-value formula requires it", "Because the reveal changes the matched sample"],
+      answer: 1,
+      explain: "Any analysis looks prescient once the answer is known. The point is that the sensitivity surface said a confounder of entirely ordinary size would flatten the estimate, and it said so from the observed data alone."
+    },
+    {
+      q: "Given all of this, what is the defensible conclusion to report about the training program?",
+      options: ["The program raises salary growth by 1.67 percentage points", "The program has no effect", "The observed difference is consistent with either a real effect or with selection on a characteristic of ordinary strength, and the data cannot distinguish them", "The study should be discarded as uninformative"],
+      answer: 2,
+      explain: "That is what an analyst could honestly say from the observed data. The reveal shows the truth is zero, but the reveal was never available, and a report claiming certainty in either direction would be overstating what this design can support."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

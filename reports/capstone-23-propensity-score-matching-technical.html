@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Propensity Scores: Matching and Weighting (Technical Report) &#183; Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/report.css">
+  <style>
+    body.report { --rpt-accent:#9f1239; --rpt-accent-dark:#4c0519; --rpt-accent-bg:#fff1f2; --rpt-accent-line:#fecdd3; }
+  </style>
+</head>
+
+<body class="report">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="../chapters/capstone-propensity-score-matching.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">&#8592; Chapter 183</a>
+  </div>
+</nav>
+
+<div class="rpt-sticky" id="rptSticky">
+  <div class="inner">
+    <div class="st-title">Propensity Score Matching and Weighting with a Sensitivity Analysis for Unmeasured Confounding</div>
+    <a class="st-back" href="../chapters/capstone-propensity-score-matching.html">&#8592; Chapter 183</a>
+  </div>
+</div>
+
+<div class="rpt-wrap">
+  <article class="rpt-paper tech">
+    <header class="rpt-head">
+      <div class="rpt-topline">
+        <div class="rpt-kicker">Capstone 23 &#183; Technical Report</div>
+        <span class="rpt-badge tech">Technical Report</span>
+      </div>
+      <h1>Propensity Score Matching and Weighting with a Sensitivity Analysis for Unmeasured Confounding</h1>
+      <p class="rpt-sub">An observational evaluation in which covariate balance is achieved to a high standard and the estimate remains almost entirely confounded.</p>
+      <div class="rpt-meta"><div><b>Analysis</b> &nbsp;People Analytics</div><div><b>Design</b> &nbsp;Observational, ATT</div><div><b>Sample</b> &nbsp;3,880 complete cases; 1,220 matched pairs</div><div><b>Date</b> &nbsp;2026</div></div>
+    </header>
+
+    <div class="rpt-prov">
+      <span class="pv-tag">Where this comes from</span>
+      <div class="pv-row"><div><span>Chapter</span> <a href="../chapters/capstone-propensity-score-matching.html">Chapter 183 &#183; Propensity Scores: Matching and Weighting</a></div><div><span>Part</span> Part XXIX &#183; Capstone Projects: Design &amp; Causal Inference</div><div><span>Dataset</span> <a href="../data/capstone-propensity-score-matching.xlsx">capstone-propensity-score-matching.xlsx</a></div><div><span>Notebook</span> <a href="../chapters/notebooks/html/capstone-propensity-score-matching.html" target="_blank" rel="noopener">View the analysis</a></div></div>
+    </div>
+
+    <div class="rpt-body">
+      <div class="rpt-abstract"><span class="ab-tag">Abstract</span><p><b>Objective.</b> To estimate the effect of a voluntary management-training program on 12-month salary growth, and to characterize the sensitivity of that estimate to unmeasured confounding. <b>Methods.</b> Propensity scores were estimated by logistic regression on six pre-enrollment covariates. The sample was trimmed to common support and 1:1 nearest-neighbor matching was performed on the logit of the score without replacement, with a caliper of 0.2 SD. Balance was assessed by standardized mean differences against a target of 0.10. Inverse probability of treatment weighting targeting the ATT was fitted as a cross-check. Sensitivity was assessed by an E-value and by a two-parameter bias surface. <b>Results.</b> The unadjusted difference was +1.829 pp (95% CI +1.675 to +1.983). Matching produced 1,220 pairs with a maximum absolute SMD of 0.025 across all covariates, and an estimate of +1.667 pp (SE 0.091). IPTW gave +1.649 pp. Adjustment altered the estimate by 8.9% of the unadjusted difference. The E-value was 3.35. <b>Conclusion.</b> Covariate balance was achieved to a standard well beyond convention and the adjusted estimate remains consistent with a null effect under an unmeasured confounder of unremarkable magnitude. In this instance the data-generating process is known and the true effect is zero, so the residual is entirely selection.</p></div>
+      <div class="rpt-keywords"><b>Keywords:</b> ['propensity score', 'matching', 'inverse probability weighting', 'covariate balance', 'standardized mean difference', 'common support', 'unmeasured confounding', 'E-value', 'sensitivity analysis', 'ATT']</div>
+      <h2>1. Design and estimand</h2>
+      <p>The estimand is the average treatment effect on the treated. This is the appropriate target where the policy question concerns the value delivered to those who took up a voluntary program, rather than what would occur under universal assignment. The distinction is material: an ATE would additionally require extrapolation to employees whose propensity to enroll is very low, for whom the data contain little information.</p>
+      <p>Identification rests on two conditions. Positivity is assessed directly and is satisfied. Conditional ignorability given the six covariates is untestable, is almost certainly false here, and is the subject of section 6.</p>
+      <h2>2. Data preparation</h2>
+      <div class="rpt-cap"><span class="n">Table 1.</span> Sample construction. Each exclusion alters the population the estimate describes.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Stage</th><th>n</th><th>Note</th></tr></thead><tbody><tr><td><span class='nm'>HR export</span></td><td>4,055</td><td>Extract executed twice</td></tr><tr><td><span class='nm'>Deduplicated</span></td><td>4,000</td><td>One record per employee</td></tr><tr><td><span class='nm'>Complete cases</span></td><td>3,880</td><td>90 missing prior rating; 30 tenure sentinels of &#8722;1 voided</td></tr><tr><td><span class='nm'>On common support</span></td><td>3,875</td><td>5 outside the overlapping propensity range</td></tr><tr><td><span class='nm'>Matched</span></td><td>2,440</td><td>1,220 pairs; 27 treated units unmatched within the caliper</td></tr></tbody></table></div>
+      <p>Complete-case analysis is adopted and disclosed rather than defended. Its validity requires missingness to be unrelated to the outcome conditional on the covariates, which has not been established. Multiple imputation would be the appropriate treatment and is deferred.</p>
+      <h2>3. Propensity model and overlap</h2>
+      <p>Logistic regression on age, tenure, prior rating, prior salary, department and education. Estimated scores range from 0.101 to 0.640 among the treated and 0.084 to 0.641 among controls, with means of 0.348 and 0.309. Overlap is extensive and only five units fall outside common support.</p>
+      <p>Good overlap is a substantive finding and not merely a diagnostic. It indicates that enrollment was not confined to a region of covariate space unoccupied by non-participants, which is the circumstance under which matching estimators become heavily dependent on functional form.</p>
+      <h2>4. Matching and balance</h2>
+      <div class="rpt-cap"><span class="n">Table 2.</span> Standardized mean differences before and after 1:1 caliper matching. Maximum absolute value after matching: 0.025.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Covariate</th><th>SMD before</th><th>SMD after</th></tr></thead><tbody><tr><td><span class='nm'>Prior performance rating</span></td><td>+0.285</td><td>+0.012</td></tr><tr><td><span class='nm'>Education: postgraduate</span></td><td>+0.167</td><td>&#8722;0.019</td></tr><tr><td><span class='nm'>Tenure</span></td><td>&#8722;0.158</td><td>&#8722;0.003</td></tr><tr><td><span class='nm'>Education: high school</span></td><td>&#8722;0.157</td><td>+0.015</td></tr><tr><td><span class='nm'>Department: Sales</span></td><td>+0.109</td><td>&#8722;0.013</td></tr><tr><td><span class='nm'>Department: Operations</span></td><td>&#8722;0.107</td><td>+0.016</td></tr><tr><td><span class='nm'>Age</span></td><td>&#8722;0.081</td><td>+0.025</td></tr><tr><td><span class='nm'>Prior salary</span></td><td>+0.011</td><td>&#8722;0.012</td></tr><tr><td><span class='nm'>Department: Support</span></td><td>&#8722;0.086</td><td>&#8722;0.022</td></tr></tbody></table></div>
+      <p>Balance is achieved to approximately four times the conventional tolerance on every covariate. Presented in isolation, this table constitutes the principal evidence offered in a large proportion of the published observational literature.</p>
+      <h2>5. Effect estimates</h2>
+      <div class="rpt-cap"><span class="n">Table 3.</span> Effect estimates on 12-month salary growth in percentage points.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Estimator</th><th>Estimate (pp)</th><th>SE</th><th>95% CI</th></tr></thead><tbody><tr><td><span class='nm'>Unadjusted</span></td><td>+1.829</td><td>0.079</td><td>[+1.675, +1.983]</td></tr><tr><td><span class='nm'>1:1 caliper matching</span></td><td>+1.667</td><td>0.091</td><td>[+1.489, +1.844]</td></tr><tr><td><span class='nm'>IPTW, ATT weights</span></td><td>+1.649</td><td>&#8212;</td><td>&#8212;</td></tr></tbody></table></div>
+      <p>Adjustment altered the estimate by 0.163 pp, or 8.9% of the unadjusted difference. Two estimators resting on the same conditioning set agree closely. This concordance is informative about specification and computation and carries no information about the identifying assumption, since both estimators are confounded identically by any omitted variable.</p>
+      <h2>6. Sensitivity to unmeasured confounding</h2>
+      <p>The standardized effect in the matched sample is d = 0.745. Applying the approximation RR &#8776; exp(0.91d) gives an approximate risk ratio of 1.970 and an E-value of 3.35. An unmeasured confounder would therefore require associations of approximately 3.35 with both treatment and outcome, conditional on the measured covariates, to reduce the estimate to the null.</p>
+      <p>It is important to interpret this correctly. An E-value of this magnitude is frequently reported as evidence of robustness. It establishes only the magnitude required, not the plausibility of a confounder attaining it, which is a question of subject-matter knowledge and cannot be resolved from data that exclude the variable.</p>
+      <div class="rpt-cap"><span class="n">Table 4.</span> Combinations of confounder strength that would reduce the matched estimate to zero. The estimate is nullified wherever the product of the two columns reaches 1.667.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Effect of U on outcome (pp per SD)</th><th>Required treatment&#8211;control gap in U (SD)</th></tr></thead><tbody><tr><td>0.80</td><td>2.08</td></tr><tr><td>1.20</td><td>1.39</td></tr><tr><td>1.75</td><td>0.95</td></tr><tr><td>2.20</td><td>0.76</td></tr></tbody></table></div>
+      <p>None of these combinations is extreme for a workplace characteristic associated with both volunteering for development and subsequent advancement.</p>
+      <figure class="rpt-fig"><img src="../assets/img/capstone-psm-sensitivity.png" alt="A filled contour plot with a marked zero curve and a star, and a five-bar comparison of estimates."><figcaption><span class="n">Figure 1.</span> Bias surface over confounder strength and group separation, with the zero contour and the position of the true confounder (left), and estimates from each approach against the true value (right).</figcaption></figure>
+      <h2>7. The known data-generating process</h2>
+      <p>This dataset is simulated and the generating model is supplied with it, which permits an assessment not available in practice. The true program effect is exactly zero. An unmeasured characteristic, denoted ambition, enters both the enrollment model and the outcome model. In the matched sample its standardized difference is +1.060, approximately forty times the largest imbalance on any measured covariate. Including it in an outcome regression reduces the treatment coefficient from +1.626 pp to +0.023 pp (SE 0.060, p = 0.70).</p>
+      <p>The exercise therefore demonstrates a specific and uncomfortable point. Matching removed 8.9% of the confounding because the measured covariates were nearly orthogonal to the variable that governed selection. Nothing in the diagnostics distinguishes this situation from one in which the covariates capture the selection mechanism entirely, and the balance table is identical in both cases.</p>
+      <h2>8. Discussion</h2>
+      <p>Three conclusions follow. First, covariate balance is a property of the covariates included and should never be presented as evidence of exchangeability without an explicit statement of what is absent. Second, sensitivity analysis is not supplementary. It is the only component of the analysis that addresses the identifying assumption, and reporting an observational effect estimate without one implicitly asserts that no confounder exists.</p>
+      <p>Third, the appropriate remedy is design rather than estimation. Randomizing allocation where a voluntary program is oversubscribed converts the problem into an experiment at negligible cost, and recording a pre-enrollment proxy for motivation would give the adjustment purchase on the mechanism that matters. Neither is a statistical innovation; both are decisions taken before data collection.</p>
+      <p>A limitation of the sensitivity framework used here is that it treats a single unmeasured confounder with a linear effect. Multiple correlated confounders, or non-linear dependence, are not represented, and the bounds should be read as illustrative of magnitude rather than exhaustive.</p>
+      <h2>9. Conclusion</h2>
+      <p>Matching on six pre-enrollment covariates achieved a maximum standardized imbalance of 0.025 and yielded an ATT estimate of +1.667 pp (95% CI +1.489 to +1.844), closely reproduced by IPTW at +1.649 pp. The E-value is 3.35. The true effect is zero and the residual estimate is entirely attributable to an unmeasured characteristic with a standardized between-group difference of 1.060 after matching. The analysis should be reported as consistent with a null effect and as incapable of excluding one.</p>
+      <h2>References</h2>
+      <ul class="rpt-refs"><li>Rosenbaum, P. R., &amp; Rubin, D. B. (1983). The central role of the propensity score in observational studies for causal effects. <em>Biometrika</em>, 70(1), 41&#8211;55.</li><li>Rosenbaum, P. R. (2002). <em>Observational Studies</em> (2nd ed.). Springer.</li><li>Austin, P. C. (2011). An introduction to propensity score methods for reducing the effects of confounding in observational studies. <em>Multivariate Behavioral Research</em>, 46(3), 399&#8211;424.</li><li>VanderWeele, T. J., &amp; Ding, P. (2017). Sensitivity analysis in observational research: introducing the E-value. <em>Annals of Internal Medicine</em>, 167(4), 268&#8211;274.</li><li>Stuart, E. A. (2010). Matching methods for causal inference: a review and a look forward. <em>Statistical Science</em>, 25(1), 1&#8211;21.</li><li>Imbens, G. W., &amp; Rubin, D. B. (2015). <em>Causal Inference for Statistics, Social, and Biomedical Sciences</em>. Cambridge University Press.</li><li>Chernozhukov, V., Chetverikov, D., Demirer, M., et al. (2018). Double/debiased machine learning for treatment and structural parameters. <em>The Econometrics Journal</em>, 21(1), C1&#8211;C68.</li><li>King, G., &amp; Nielsen, R. (2019). Why propensity scores should not be used for matching. <em>Political Analysis</em>, 27(4), 435&#8211;454.</li></ul>
+      <h2>Reproducibility</h2>
+      <p>The dataset (<code>capstone-propensity-score-matching.xlsx</code>) contains the HR export with its data-quality faults intact, the analysis plan as written before outcome linkage, and a separate sheet holding the unmeasured confounder and the true effect. An executable notebook accompanies the chapter and reproduces every estimate, table and figure, implementing caliper matching without replacement directly rather than through a matching package. Analyses use NumPy, pandas, SciPy, scikit-learn, statsmodels and Matplotlib.</p>
+    </div>
+
+    <div class="rpt-foot"><a class="primary" href="../chapters/capstone-propensity-score-matching.html">&#8592; Back to Chapter 183</a><a href="../chapters/notebooks/html/capstone-propensity-score-matching.html" target="_blank" rel="noopener">&#128211; Companion notebook</a><a class="xls" href="../data/capstone-propensity-score-matching.xlsx">&#128202; Download dataset</a></div>
+    <div class="rpt-colophon">
+      From <strong>Statistics, Data Science and AI: A Visual Handbook</strong> by John Fisher.
+      Every statistic, table, and figure in this report is reproduced by the companion notebook.
+    </div>
+  </article>
+</div>
+
+<script>
+(function(){
+  var bar=document.getElementById('rptSticky');
+  window.addEventListener('scroll',function(){
+    if(window.scrollY>320) bar.classList.add('on'); else bar.classList.remove('on');
+  });
+})();
+</script>
+</body>
+</html>
