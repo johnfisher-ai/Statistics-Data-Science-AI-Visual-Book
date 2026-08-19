@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 179 · Web Scraping as a Sampling Frame: Job Postings — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .yes { color:#047857; font-weight:700; }
+    .disp-table .no { color:#dc2626; font-weight:700; }
+    .disp-table tr.hi td { background:#ecfdf5; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .embox { background:#ecfdf5; border:1px solid #a7f3d0; border-left:4px solid #047857; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .embox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#065f46; }
+    .rw-card { background:#ecfdf5; border:1px solid #a7f3d0; border-left:4px solid #047857; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#065f46; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file.doc { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#ecfdf5; border:1px solid #a7f3d0; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#065f46; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #047857; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#065f46; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+    .svg-wrap { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.9rem 0.6rem 0.3rem; background:var(--panel); }
+    .svg-wrap svg { width:100%; height:auto; display:block; }
+    .svg-wrap .cap { font-size:0.82rem; color:var(--ink-soft); padding:0.55rem 0.6rem 0.4rem; line-height:1.55; }
+    .svg-wrap .cap strong { color:var(--ink); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/capstone-web-scraping-job-postings.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXVIII &#183; Capstone Projects: Sampling &amp; Data Collection</span><span class="sep">/</span>
+      <span>Chapter 179</span>
+    </div>
+    <h1>Job Postings as a <span class="accent">Sampling Frame</span></h1>
+    <p class="dek">Capstone 19. You built this dataset yourself, so there is no sampling error at all. Every listing that
+       matched was captured. The salary estimate is still wrong by eleven percent, and no confidence interval will ever
+       tell you.</p>
+    <div class="hero-meta">
+      <div class="m">&#9201;&#65039; <b>~19 min</b>&nbsp;read</div>
+      <div class="m">&#127919; <b>Scraped frames</b></div>
+      <div class="m">&#128202; <b>Chapter 179</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">The previous two capstones drew samples and worried about sampling error. This one does not sample at
+       all. It takes <span class="hl">everything the job board would show</span>, which removes the only error most
+       analyses know how to measure and leaves every other one intact.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#128441;</div>
+      <div class="def-body">
+        A <span class="def-kw">scraped frame</span> is whatever was reachable and not blocked. Nobody designed it for
+        research, nobody documents it, and membership is decided by
+        <span class="def-kw">business practice</span> rather than by a sampling rule. It is a frame all the same, and it
+        carries <span class="def-kw">coverage error</span> like any other.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">&#11088;</div>
+      <div><div class="ctitle">The finding, up front</div>
+        <p>Counting rows overstates the market by <strong>71 percent</strong>. The scraped mean salary is
+           <strong>&#163;40,094</strong> against an official benchmark of <strong>&#163;44,900</strong>, low by 10.7
+           percent. And the standard error is &#163;440, so the naive interval is confidently, precisely wrong.</p></div>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section id="census">
+    <div class="section-eyebrow"><div class="num">1</div><h2>A Census of the Frame Has No Sampling Error</h2></div>
+    <p>The target population is every open data-analyst vacancy in the region this quarter. There is no register of
+       vacancies, so the frame became whatever one public job board would show: <strong>vacancies visible on that board,
+       not excluded by robots.txt, and reachable inside the rate limit we set</strong>.</p>
+
+    <p>Every listing matching the search was captured. That makes this a <strong>census of the frame, not a sample of
+       it</strong>, and the consequence is worth stating plainly.</p>
+
+    <div class="embox">
+      <span class="gb-tag">Why scraped data is dangerous rather than merely imperfect</span>
+      <p style="margin:0.4rem 0 0">Sampling error here is <strong>zero</strong>. Any confidence interval computed from
+         these data is answering a question that was never at issue. The one error a statistician is trained to look for
+         is the one error that is definitely absent, and the three that remain, <strong>coverage, duplication and
+         non-disclosure</strong>, have no standard formula and produce no warning in any output.</p>
+      <p style="margin:0.7rem 0 0">Scraping ten times as many pages would narrow the interval around exactly the same
+         wrong number. <strong>More data does not fix a frame problem.</strong></p>
+    </div>
+
+    <div class="svg-wrap">
+      <svg viewBox="0 0 760 244" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="A diagram showing the four error sources from the part opener with sampling error struck through, because a census of the frame has none, while coverage, duplication and non-disclosure remain active.">
+        <text x="24" y="26" font-family="Inter,Segoe UI,sans-serif" font-size="12.5" font-weight="800" fill="#064e3b">A CENSUS REMOVES EXACTLY ONE OF THE FOUR ERRORS</text>
+        <rect x="24" y="48" width="164" height="58" rx="10" fill="#ecfdf5" stroke="#a7f3d0"/>
+        <text x="106" y="70" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="12" font-weight="800" fill="#047857">sampling error</text>
+        <text x="106" y="92" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="13" font-weight="800" fill="#047857">= ZERO</text>
+        <rect x="204" y="48" width="164" height="58" rx="10" fill="#fef2f2" stroke="#fecaca"/>
+        <text x="286" y="72" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="12" font-weight="800" fill="#dc2626">coverage error</text>
+        <text x="286" y="92" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" fill="#991b1b">30% never advertised</text>
+        <rect x="384" y="48" width="164" height="58" rx="10" fill="#fef2f2" stroke="#fecaca"/>
+        <text x="466" y="72" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="12" font-weight="800" fill="#dc2626">duplication</text>
+        <text x="466" y="92" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" fill="#991b1b">counts inflated 71%</text>
+        <rect x="564" y="48" width="172" height="58" rx="10" fill="#fef2f2" stroke="#fecaca"/>
+        <text x="650" y="72" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="12" font-weight="800" fill="#dc2626">non-disclosure</text>
+        <text x="650" y="92" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" fill="#991b1b">salary MNAR</text>
+
+        <rect x="24" y="132" width="164" height="34" rx="8" fill="#047857"/>
+        <text x="106" y="154" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" font-weight="800" fill="#ffffff">the one with a formula</text>
+        <rect x="204" y="132" width="532" height="34" rx="8" fill="#991b1b"/>
+        <text x="470" y="154" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" font-weight="800" fill="#ffffff">the three without one, and the three that are actually present</text>
+
+        <text x="380" y="198" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" fill="#3f3f46">A confidence interval will be computed happily, look reassuringly narrow,</text>
+        <text x="380" y="216" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" fill="#3f3f46">and describe the only thing that was never wrong.</text>
+      </svg>
+      <div class="cap"><strong>The opener's four-error chain, with the census applied.</strong> Removing sampling error
+        does not improve the estimate; it removes the warning light while leaving the engine trouble untouched.</div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section id="permissions">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Permissions Come Before Code</h2></div>
+    <p>The collection plan records what was and was not done, and it belongs in the method section of any scraped study
+       exactly as an ethics approval number would.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Check</th><th>What was done</th><th>Why it matters</th></tr></thead>
+        <tbody>
+          <tr class="hi"><td class="nm">robots.txt</td><td>Checked and honored</td><td>Governs whether you may collect at all</td></tr>
+          <tr class="hi"><td class="nm">Terms of service</td><td>Read; collection within permitted use</td><td>Legal basis, independent of robots.txt</td></tr>
+          <tr><td class="nm">Rate limit</td><td>One request per two seconds</td><td>Protects the host from your convenience</td></tr>
+          <tr><td class="nm">User agent</td><td>Identifying string with a contact address</td><td>Lets the host reach you instead of blocking you</td></tr>
+          <tr><td class="nm">Login walls</td><td>Not bypassed</td><td>Circumvention changes the legal picture entirely</td></tr>
+          <tr class="hi"><td class="nm">Personal data</td><td>Named recruiters and direct contacts discarded</td><td>Vacancy text is corporate; the contact block is not</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>The distinction that matters is that "technically possible" is not "permitted".</strong> None of the six
+       rows above is enforced by your code failing. A scraper that ignores all of them runs perfectly well, which is
+       precisely why the decisions have to be made deliberately and written down.</p>
+  </section>
+
+  <!-- 3 -->
+  <section id="entity">
+    <div class="section-eyebrow"><div class="num">3</div><h2>A Row Is a Listing, Not a Job</h2></div>
+    <p>This is the first substantive finding and it arrives before any statistics. The crawler ran twice, which is trivial
+       to fix. The real problem is that <strong>the same vacancy is advertised repeatedly</strong>, sometimes by the
+       employer and sometimes by an agency acting for them under a different name.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-scrape-coverage.png" alt="Left: a three-bar funnel showing 1,385 scraped rows falling to 1,382 after removing crawler duplicates and then to 808 resolved vacancies. Right: a stacked horizontal bar showing 70 percent of regional vacancies appear on the board and 30 percent are never advertised publicly.">
+      <figcaption><strong>Left:</strong> 1,382 listings resolve to 808 vacancies. Counting rows overstates the market by <strong>71 percent</strong>, and that is the number a naive row count produces. <strong>Right:</strong> the error the file cannot see from the inside.</figcaption>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Listings for one vacancy</th><th>Vacancies</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">1</td><td>458</td></tr>
+          <tr><td class="nm">2</td><td>182</td></tr>
+          <tr><td class="nm">3</td><td>112</td></tr>
+          <tr class="hi"><td class="nm">4</td><td>56</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>A headline of "1,382 data-analyst vacancies advertised this quarter" would be wrong by 71 percent. Entity
+       resolution is not a tidying step here; it is the difference between 1,382 jobs and 808.</p>
+  </section>
+
+  <!-- 4 -->
+  <section id="mnar">
+    <div class="section-eyebrow"><div class="num">4</div><h2>The Salary Is Missing, and Not at Random</h2></div>
+    <p>Thirty-seven percent of vacancies publish no number, printing "Competitive", "DOE" or "Negotiable" instead. If that
+       were a coin flip it would cost precision and nothing else. It is not a coin flip.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Seniority</th><th>Vacancies</th><th>Published a salary</th><th>Mean of those disclosed</th></tr></thead>
+        <tbody>
+          <tr class="hi"><td class="nm">Junior</td><td>211</td><td class="yes">86.3%</td><td>&#163;31,349</td></tr>
+          <tr><td class="nm">Mid</td><td>368</td><td>64.4%</td><td>&#163;41,264</td></tr>
+          <tr><td class="nm">Senior</td><td>165</td><td>46.1%</td><td>&#163;52,745</td></tr>
+          <tr class="hi"><td class="nm">Lead</td><td>64</td><td class="no">23.4%</td><td>&#163;63,617</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="svg-wrap">
+      <svg viewBox="0 0 760 258" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="A salary distribution drawn as a row of bars from low to high pay. The bars at the low end are solid and labelled published, and the bars at the high end are faded and labelled hidden behind the word Competitive. The mean of the published bars sits well left of the mean of all bars.">
+        <text x="24" y="26" font-family="Inter,Segoe UI,sans-serif" font-size="12.5" font-weight="800" fill="#064e3b">WHAT DROPPING THE BLANKS ACTUALLY REMOVES</text>
+        <g>
+          <rect x="60" y="150" width="44" height="46" rx="4" fill="#047857"/>
+          <rect x="110" y="126" width="44" height="70" rx="4" fill="#047857"/>
+          <rect x="160" y="104" width="44" height="92" rx="4" fill="#047857"/>
+          <rect x="210" y="92" width="44" height="104" rx="4" fill="#047857"/>
+          <rect x="260" y="98" width="44" height="98" rx="4" fill="#059669"/>
+          <rect x="310" y="112" width="44" height="84" rx="4" fill="#10b981"/>
+          <rect x="360" y="130" width="44" height="66" rx="4" fill="#a7f3d0"/>
+          <rect x="410" y="146" width="44" height="50" rx="4" fill="#d1fae5"/>
+          <rect x="460" y="160" width="44" height="36" rx="4" fill="#ecfdf5" stroke="#a7f3d0"/>
+          <rect x="510" y="172" width="44" height="24" rx="4" fill="#ecfdf5" stroke="#a7f3d0"/>
+          <rect x="560" y="180" width="44" height="16" rx="4" fill="#ecfdf5" stroke="#a7f3d0"/>
+        </g>
+        <line x1="52" y1="196" x2="620" y2="196" stroke="#064e3b" stroke-width="1.8"/>
+        <text x="82" y="214" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="10.5" fill="#3f3f46">lower pay</text>
+        <text x="582" y="216" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="10.5" fill="#3f3f46">higher pay</text>
+
+        <rect x="56" y="60" width="300" height="24" rx="7" fill="#047857"/>
+        <text x="206" y="77" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" font-weight="800" fill="#ffffff">published a number</text>
+        <rect x="392" y="60" width="216" height="24" rx="7" fill="#e5e7eb"/>
+        <text x="500" y="77" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" font-weight="800" fill="#57534e">"Competitive" / "DOE"</text>
+
+        <line x1="218" y1="88" x2="218" y2="204" stroke="#dc2626" stroke-width="2.4" stroke-dasharray="5 4"/>
+        <text x="200" y="242" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" font-weight="800" fill="#dc2626">mean of what you keep</text>
+        <line x1="330" y1="88" x2="330" y2="204" stroke="#064e3b" stroke-width="2.4"/>
+        <text x="352" y="242" font-family="Inter,Segoe UI,sans-serif" font-size="11" font-weight="800" fill="#064e3b">true mean</text>
+
+        <path d="M232 214 L316 214" stroke="#dc2626" stroke-width="2"/>
+        <path d="M240 209 L232 214 L240 219" fill="none" stroke="#dc2626" stroke-width="2"/>
+        <text x="274" y="208" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" font-weight="800" fill="#dc2626">&#8722;10.7%</text>
+      </svg>
+      <div class="cap"><strong>The blanks are not scattered across the distribution, they are concentrated at one end.</strong>
+        Solid bars published a number; faded ones printed "Competitive". Because the faded ones sit to the right, the mean
+        of what survives sits to the left of the truth. A complete-case analysis is not a smaller sample of the same
+        thing; it is a full sample of a different, poorer thing.</div>
+    </div>
+
+    <div class="embox">
+      <span class="gb-tag">Missing not at random, in its purest form</span>
+      <p style="margin:0.4rem 0 0">The probability that a value is missing depends on <strong>the value itself</strong>.
+         Junior roles publish a number 86 percent of the time; lead roles do so 23 percent of the time, and lead roles pay
+         roughly twice as much.</p>
+      <p style="margin:0.7rem 0 0">Dropping the blanks, which is what every default does, therefore does not merely lose
+         data. It <strong>removes the top of the distribution</strong>, and the mean of what remains is pulled down.</p>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section id="benchmark">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Compare Against Something Outside the Frame</h2></div>
+    <p>The damage is invisible from inside the dataset. The only way to see it is a measurement that did not come from the
+       job board, and the regional occupational earnings survey covers all employers, advertised or not.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Scraped mean</div><div class="rv">&#163;40,094</div><div class="rd">disclosed salaries only</div></div>
+      <div class="rchip"><div class="rk">Official benchmark</div><div class="rv">&#163;44,900</div><div class="rd">covers all employers</div></div>
+      <div class="rchip"><div class="rk">Gap</div><div class="rv">&#8722;10.7%</div><div class="rd">&#8722;&#163;4,806</div></div>
+      <div class="rchip"><div class="rk">Standard error</div><div class="rv">&#163;440</div><div class="rd">and utterly beside the point</div></div>
+    </div>
+
+    <p>The naive 95 percent interval runs from &#163;39,231 to &#163;40,957. It does not contain the benchmark, and it
+       never would however many pages were scraped, <strong>because the error is not sampling error</strong>. That is the
+       sentence to carry out of this chapter.</p>
+  </section>
+
+  <!-- 6 -->
+  <section id="repair">
+    <div class="section-eyebrow"><div class="num">6</div><h2>How Much Can Be Repaired</h2></div>
+    <p>Some of the damage is structure we can see. Disclosure varies by seniority, and seniority is known for every
+       vacancy whether or not it published a salary. That makes it usable as a weighting variable, exactly as age was in
+       <a href="capstone-stratified-customer-survey.html">Capstone 17</a>.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Estimate</th><th>Value</th><th>Gap</th><th>Fixes</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Unadjusted, disclosed only</td><td>&#163;40,094</td><td class="no">&#8722;10.7%</td><td>nothing</td></tr>
+          <tr class="hi"><td class="nm">Reweighted to the board's seniority mix</td><td>&#163;42,790</td><td>&#8722;4.7%</td><td>the disclosure filter</td></tr>
+          <tr class="hi"><td class="nm">Reweighted to the region's seniority mix</td><td>&#163;43,595</td><td>&#8722;2.9%</td><td>disclosure and coverage skew</td></tr>
+          <tr><td class="nm">Official benchmark</td><td>&#163;44,900</td><td>&#8212;</td><td>&#8212;</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-scrape-disclosure.png" alt="Left: bars of salary disclosure rate by seniority falling from 86 percent at junior to 23 percent at lead, with the mean disclosed salary printed inside each bar rising from 31k to 64k. Right: four bars comparing the scraped mean, two reweighted estimates and the official benchmark against a dashed benchmark line.">
+      <figcaption><strong>Left:</strong> disclosure and pay move in opposite directions, which is what makes the missingness so damaging. <strong>Right:</strong> the two reweightings recover 56 and 73 percent of the gap respectively, and neither closes it.</figcaption>
+    </figure>
+
+    <p><strong>What remains is unreachable.</strong> Within every seniority band, the employers who published a number
+       still pay less than those who did not, so each band mean is itself biased downward. No weighting scheme built from
+       the board can see inside a band it never observed.</p>
+  </section>
+
+  <!-- 7 -->
+  <section id="coverage">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Who Never Appeared</h2></div>
+    <p>Thirty percent of the region's vacancies never reached any public board. Absent vacancies leave no trace in the
+       file, so this is the error the analysis cannot see from the inside at all; the employer census supplies the number.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Group</th><th>Reaches a public board</th><th>Pays</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Small employers</td><td>79.2%</td><td>around average</td></tr>
+          <tr><td class="nm">Medium employers</td><td>74.3%</td><td>around average</td></tr>
+          <tr class="hi"><td class="nm">Large employers</td><td class="no">50.5%</td><td class="no">above average</td></tr>
+          <tr><td class="nm">Junior roles</td><td>75.4%</td><td>below average</td></tr>
+          <tr class="hi"><td class="nm">Lead roles</td><td class="no">58.2%</td><td class="no">well above average</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="embox">
+      <span class="gb-tag">The two errors point the same way, which is the worst case</span>
+      <p style="margin:0.4rem 0 0">Under-coverage removes senior roles at large employers. Non-disclosure removes high
+         salaries within every band. Neither cancels the other and both drag the estimate down.</p>
+      <p style="margin:0.7rem 0 0">Had they pointed in opposite directions the scraped mean might have looked correct
+         while resting on two large offsetting errors, which is a <strong>more</strong> dangerous situation than a visibly
+         wrong number, because nothing would have prompted anyone to look.</p>
+    </div>
+  </section>
+
+  <!-- 8 -->
+  <section id="survived">
+    <div class="section-eyebrow"><div class="num">8</div><h2>The Variable That Survived</h2></div>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Remote share, board</div><div class="rv">36.5%</div><div class="rd">from the scrape</div></div>
+      <div class="rchip"><div class="rk">Remote share, benchmark</div><div class="rv">37.2%</div><div class="rd">official</div></div>
+      <div class="rchip"><div class="rk">Gap</div><div class="rv">&#8722;1.9%</div><div class="rd">against &#8722;10.7% for salary</div></div>
+    </div>
+
+    <p>Whether a role is remote is printed on essentially every listing, so there is no disclosure filter. Coverage still
+       applies, but remote working is not strongly related to whether a vacancy reaches a public board, so the two-stage
+       filter that wrecked the salary estimate leaves this one nearly intact.</p>
+
+    <div class="embox">
+      <span class="gb-tag">The transferable lesson</span>
+      <p style="margin:0.4rem 0 0">Salary is filtered twice, by coverage and by disclosure. Remote status is filtered
+         once, and roughly neutrally. <strong>A dataset is not trustworthy or untrustworthy as a whole.</strong> Each
+         variable has to be argued for separately, and the argument is always about the mechanism that decided whether
+         the value would exist at all.</p>
+    </div>
+  </section>
+
+  <!-- 9 -->
+  <section id="ethics">
+    <div class="section-eyebrow"><div class="num">9</div><h2>What to Watch</h2></div>
+    <ul>
+      <li><strong>Permission is not a technicality.</strong> robots.txt and the terms of service decide whether collection
+          is allowed; a rate limit decides whether it is considerate. None is enforced by your code working, and a study
+          that cannot state what was checked should not be published.</li>
+      <li><strong>Personal data has a different bar entirely.</strong> Vacancy text is corporate, but scraped pages
+          routinely carry named recruiters, direct numbers and email addresses. Discarding them is a design decision made
+          before collection, not a cleaning step afterwards.</li>
+      <li><strong>The frame is a business artifact.</strong> Which vacancies appear publicly is decided by hiring
+          practice, agency contracts and cost. That is a selection mechanism nobody designed for research and nobody
+          documents.</li>
+      <li><strong>State the population the data actually describes.</strong> Not "data-analyst salaries in the region"
+          but "advertised salary bands, among publicly advertised vacancies that chose to publish one, on one board,
+          during one quarter". The longer sentence is the honest one.</li>
+      <li><strong>Scraped data ages badly.</strong> The board is a live system: postings expire, get edited and reappear.
+          Two scrapes a week apart are two different frames, so comparisons over time confound real change with changes
+          in what the board was showing.</li>
+    </ul>
+  </section>
+
+  <!-- 10 -->
+  <section id="in-ds-ai">
+    <div class="section-eyebrow"><div class="num">10</div><h2>Scraped Frames in Data Science &amp; AI</h2></div>
+    <p>Most large modern datasets are scraped, and almost none ship with a statement of what population they represent.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Where it appears</th><th>The frame, stated honestly</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Web-scale training corpora</td><td>Text that was reachable, not paywalled and not blocked, in the languages that dominate the open web</td></tr>
+          <tr><td class="nm">Product review datasets</td><td>Reviews from customers motivated enough to write one, on platforms that permit collection</td></tr>
+          <tr><td class="nm">Public code repositories</td><td>Code its authors chose to publish, under licences permitting reuse</td></tr>
+          <tr><td class="nm">Social media panels</td><td>Accounts that are public, active, and not rate-limited away during collection</td></tr>
+          <tr><td class="nm">Price or listing monitors</td><td>Whatever the site rendered to an unauthenticated visitor on the day</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="research">
+      <span class="rtag">Practice note</span>
+      <p style="margin:0.4rem 0 0">The duplication problem in section 3 has a direct analogue at scale. Web corpora
+         contain the same document many times over, mirrored, syndicated and quoted, and near-duplicate removal is
+         standard practice precisely because raw counts overstate coverage and repeated text is over-weighted in
+         training. The salary problem has an analogue too: <strong>a field is present only when someone chose to publish
+         it</strong>, and that choice is rarely independent of the value. Any statistic computed over rows where a field
+         happens to be populated inherits whatever decided the populating.</p>
+    </div>
+  </section>
+
+  <!-- notebook + downloads -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">&#128013;</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook prints the collection plan and its permissions, resolves 1,382 listings to 808
+             vacancies and shows one vacancy advertised four times under three titles, voids the scraper's parse
+             failures, tabulates salary disclosure against seniority, compares the result to an external benchmark, runs
+             two levels of reweighting and reports what each recovers, quantifies the coverage shortfall it cannot reach,
+             and closes on the one variable that came through intact.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-web-scraping-job-postings.html">&#128211; View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-web-scraping-job-postings.ipynb"
+           target="_blank" rel="noopener">&#9654; Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-web-scraping-job-postings.ipynb"
+           target="_blank" rel="noopener">&#11015; View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Read the reports &amp; get the data</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong>
+         (<code>capstone-web-scraping-job-postings.xlsx</code>) holds the raw scrape with every flaw intact: crawler
+         duplicates, one vacancy under several employer names, parse failures and undisclosed salaries. It also carries
+         the written collection plan with its permissions record, and an external benchmark sheet. Two written reports
+         accompany it: a <strong>plain-language brief</strong> for a research lead, and a <strong>technical
+         report</strong> covering entity resolution, the missingness mechanism and the reweighting.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-19-web-scraping-job-postings.html" target="_blank" rel="noopener">&#128196; Plain-language brief <small>read online</small></a>
+        <a class="ex-file doc" href="../reports/capstone-19-web-scraping-job-postings-technical.html" target="_blank" rel="noopener">&#128196; Technical report <small>journal-style</small></a>
+        <a class="ex-file xls" href="../data/capstone-web-scraping-job-postings.xlsx">&#128202; Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>&#127891; Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">&#10003;</span><span><strong>A census of the frame has zero sampling error</strong> and can still be badly wrong. It removes the warning light, not the fault.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>A row is a listing, not a job.</strong> 1,382 listings were 808 vacancies; counting rows overstates the market by 71%.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Salary is missing not at random.</strong> Disclosure falls from 86% at junior level to 23% at lead level, so dropping blanks removes the top of the distribution.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Reweighting recovered 73% of the gap and no more.</strong> What is left is inside bands the board never observed.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Judge each variable separately.</strong> The same frame was 10.7% wrong on salary and 1.9% wrong on remote share.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">11</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on scraped frames, entity resolution and missingness. Answer them, hit
+       <strong>Check Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-cluster-sampling-schools.html">
+      <span style="font-size:1.3rem">&#8592;</span>
+      <span><span class="cn-dir">Chapter 178 &#183; Previous</span><br><span class="cn-title">Cluster Sampling: Schools and Students</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">&#8594;</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;&#183;&nbsp;
+  Chapter 179 &nbsp;&#183;&nbsp; &#169; 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch179";
+  window.QUIZ_DATA = [
+    {
+      q: "This dataset is a census of everything the job board showed. What does that imply about sampling error?",
+      options: ["It is halved", "It is zero, and the other error sources are untouched", "It cannot be calculated", "It is larger than in a sample"],
+      answer: 1,
+      explain: "Removing sampling error removes the only error most analyses measure, while coverage, duplication and non-disclosure remain."
+    },
+    {
+      q: "1,382 listings resolved to 808 vacancies. What is the consequence of skipping that step?",
+      options: ["A loss of precision", "The market size is overstated by 71%", "Salaries are biased upward", "Nothing, listings and vacancies are equivalent"],
+      answer: 1,
+      explain: "The same job is advertised up to four times, sometimes by agencies under different names."
+    },
+    {
+      q: "Salary disclosure fell from 86% at junior level to 23% at lead level. What kind of missingness is that?",
+      options: ["Missing completely at random", "Missing at random", "Missing not at random: the probability of being missing depends on the value", "Not missingness, just a small sample"],
+      answer: 2,
+      explain: "The roles that hide the number are the ones that pay most, so dropping the blanks removes the top of the distribution."
+    },
+    {
+      q: "The scraped mean was 40,094 with a standard error of 440, and the benchmark was 44,900. What does the standard error tell you?",
+      options: ["That the estimate is precise and therefore accurate", "Almost nothing useful: it measures sampling error, which is not the problem here", "That the sample is too small", "That the benchmark must be wrong"],
+      answer: 1,
+      explain: "The interval is narrow and does not contain the benchmark, and scraping more pages would only narrow it further around the same wrong number."
+    },
+    {
+      q: "Why could seniority be used as a weighting variable but salary could not?",
+      options: ["Seniority is categorical", "Seniority is known for every vacancy, disclosed or not; salary is known only where it was disclosed", "Salary is continuous", "Seniority has fewer categories"],
+      answer: 1,
+      explain: "The same rule as survey weighting: you can only adjust on variables observed for the units you are adjusting away from."
+    },
+    {
+      q: "Reweighting recovered 73% of the gap. What accounts for the rest?",
+      options: ["Random noise", "Within each seniority band, employers who disclosed still pay less than those who did not", "An error in the weights", "The benchmark is imprecise"],
+      answer: 1,
+      explain: "No weighting scheme built from the board can see inside a band it never observed."
+    },
+    {
+      q: "Remote share was 36.5% on the board against a 37.2% benchmark, while salary was 10.7% out. Why the difference?",
+      options: ["Remote status is easier to measure", "Remote status is printed on nearly every listing, so it passes through one filter rather than two", "The benchmark for remote work is less reliable", "Remote roles are less likely to be duplicated"],
+      answer: 1,
+      explain: "Salary is filtered by coverage and by disclosure; remote status only by coverage, which is roughly neutral for it."
+    },
+    {
+      q: "Which statement correctly describes the population this dataset represents?",
+      options: ["Data-analyst salaries in the region", "All advertised jobs in the region", "Advertised salary bands, among publicly advertised vacancies that chose to publish one, on one board, in one quarter", "A random sample of regional vacancies"],
+      answer: 2,
+      explain: "The longer sentence is the honest one, and it is what the method section has to say."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
