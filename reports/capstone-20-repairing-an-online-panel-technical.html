@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Repairing an Online Panel (Technical Report) &#183; Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/report.css">
+  <style>
+    body.report { --rpt-accent:#047857; --rpt-accent-dark:#064e3b; --rpt-accent-bg:#ecfdf5; --rpt-accent-line:#a7f3d0; }
+  </style>
+</head>
+
+<body class="report">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="../chapters/capstone-repairing-an-online-panel.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">&#8592; Chapter 180</a>
+  </div>
+</nav>
+
+<div class="rpt-sticky" id="rptSticky">
+  <div class="inner">
+    <div class="st-title">Bias in a Quota-Matched Volunteer Panel: The Limits of Raking and the Value of a Probability Benchmark</div>
+    <a class="st-back" href="../chapters/capstone-repairing-an-online-panel.html">&#8592; Chapter 180</a>
+  </div>
+</div>
+
+<div class="rpt-wrap">
+  <article class="rpt-paper tech">
+    <header class="rpt-head">
+      <div class="rpt-topline">
+        <div class="rpt-kicker">Capstone 20 &#183; Technical Report</div>
+        <span class="rpt-badge tech">Technical Report</span>
+      </div>
+      <h1>Bias in a Quota-Matched Volunteer Panel: The Limits of Raking and the Value of a Probability Benchmark</h1>
+      <p class="rpt-sub">Why margin calibration on demographics achieved nothing, and what the panel is worth in random-sample equivalents.</p>
+      <div class="rpt-meta"><div><b>Author</b> &nbsp;John Fisher</div><div><b>Series</b> &nbsp;Statistics, Data Science and AI: A Visual Handbook</div><div><b>Design</b> &nbsp;Opt-in quota panel, n = 5,197, against a probability sample of 420</div></div>
+    </header>
+
+    <div class="rpt-prov">
+      <span class="pv-tag">Where this comes from</span>
+      <div class="pv-row"><div><span>Chapter</span> <a href="../chapters/capstone-repairing-an-online-panel.html">Chapter 180 &#183; When the Sample Is Not Random: Repairing a Panel</a></div><div><span>Part</span> Part XXVIII &#183; Capstone Projects: Sampling &amp; Data Collection</div><div><span>Dataset</span> <a href="../data/capstone-repairing-an-online-panel.xlsx">capstone-repairing-an-online-panel.xlsx</a></div><div><span>Notebook</span> <a href="../chapters/notebooks/html/capstone-repairing-an-online-panel.html" target="_blank" rel="noopener">View the analysis</a></div></div>
+    </div>
+
+    <div class="rpt-body">
+      <div class="rpt-abstract"><span class="ab-tag">Abstract</span><p><b>Objective.</b> To estimate the population prevalence of an online service, and to characterize the bias structure of a quota-matched volunteer panel. <b>Methods.</b> An opt-in panel (n = 5,197) recruited to population quotas on age, sex and region was compared against an independent probability sample (n = 420) and against the enumerated population value. Weights were constructed by iterative proportional fitting, first to the demographic margins alone and then additionally to an externally published internet-use margin. Estimator performance is reported in equivalent simple-random-sample size. <b>Results.</b> Quota agreement was exact to three decimal places on all margins. The unweighted panel estimate was 0.4424 against a population value of 0.3409, a bias of +0.1015. Raking to the demographic margins produced weights in [0.999, 1.002] and altered the estimate by -0.00001. The panel over-represented high internet users by +19.0 points and under-represented low users by -20.5; service use varied from 0.133 to 0.625 across those bands. Raking additionally on internet use gave 0.3559 (bias +0.0150), removing 85% of the bias, with weights in [0.25, 8.29] and effective n = 2990. In equivalent-SRS terms the unweighted panel is worth 22 observations and the probability sample 769. <b>Conclusions.</b> Margin calibration cannot correct a sample whose margins are already correct. Bias correction requires a covariate associated with both selection and outcome, and its availability is contingent rather than assured.</p></div>
+      <div class="rpt-keywords"><b>Keywords:</b> Non-probability sampling; quota sampling; raking; iterative proportional fitting; selection bias; effective sample size; probability benchmark; data defect.</div>
+      <h2>1. Introduction</h2>
+      <p>Volunteer panels are the dominant vehicle for survey research on cost grounds, and their standard quality assurance is demographic representativeness: the achieved sample is compared against census margins, and weights are constructed to reconcile any discrepancy. This report examines a case in which that assurance is vacuous by construction, because the sample was recruited to satisfy precisely the criterion the assurance tests.</p>
+      <p>The case is instructive rather than exceptional. Quota recruitment guarantees margin agreement; margin calibration then finds nothing to correct; and the bias arising from differential willingness to join, which is the defining feature of a volunteer sample, is untouched by either. The magnitude of the resulting error is quantified here against an enumerated population, and its practical significance is expressed in equivalent random-sample terms.</p>
+      <h2>2. Design</h2>
+      <div class="rpt-cap"><span class="n">Table 1.</span> The two designs compared. Only one supports a design-based standard error.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Element</th><th>Panel</th><th>Probability sample</th></tr></thead><tbody><tr><td><span class='nm'>Frame</span></td><td>None; opt-in via advertising and referral</td><td>Electoral register</td></tr><tr><td><span class='nm'>Selection probabilities</span></td><td>Unknown and unrecoverable</td><td>Known</td></tr><tr><td><span class='nm'>Method</span></td><td>Quota sampling on age, sex, region</td><td>Simple random sampling with in-person follow-up</td></tr><tr><td><span class='nm'>Achieved n</span></td><td>5,197</td><td>420</td></tr><tr><td><span class='nm'>Cost profile</span></td><td>Low per interview</td><td>High per interview</td></tr></tbody></table></div>
+      <h2>3. Quota agreement</h2>
+      <div class="rpt-cap"><span class="n">Table 2.</span> Achieved quota agreement. Exact agreement is a property of the recruitment protocol, not evidence of representativeness.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Margin</th><th>Panel</th><th>Population</th><th>Difference</th></tr></thead><tbody><tr><td><span class='nm'>Age 18-34</span></td><td>30.1%</td><td>30.1%</td><td>0.0 pp</td></tr><tr><td><span class='nm'>Age 35-54</span></td><td>34.9%</td><td>35.0%</td><td>0.0 pp</td></tr><tr><td><span class='nm'>Age 55+</span></td><td>34.9%</td><td>34.9%</td><td>0.0 pp</td></tr><tr><td><span class='nm'>Female</span></td><td>51.1%</td><td>51.1%</td><td>0.0 pp</td></tr><tr><td><span class='nm'>North</span></td><td>27.8%</td><td>27.8%</td><td>0.0 pp</td></tr><tr><td><span class='nm'>Midlands</span></td><td>22.2%</td><td>22.2%</td><td>0.0 pp</td></tr><tr><td><span class='nm'>South</span></td><td>34.9%</td><td>34.9%</td><td>0.0 pp</td></tr><tr><td><span class='nm'>London</span></td><td>15.0%</td><td>15.0%</td><td>0.0 pp</td></tr></tbody></table></div>
+      <h2>4. Estimation and calibration</h2>
+      <div class="rpt-cap"><span class="n">Table 3.</span> Successive estimators against the enumerated population value.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Estimator</th><th>Estimate</th><th>Bias</th><th>Weight range</th><th>Effective n</th></tr></thead><tbody><tr><td><span class='nm'>Panel, unweighted</span></td><td>0.4424</td><td>+0.1015</td><td>&#8212;</td><td>5,197</td></tr><tr><td><span class='nm'>Panel, raked to demographics</span></td><td>0.4424</td><td>+0.1015</td><td>[0.999, 1.002]</td><td>5,197</td></tr><tr><td><span class='nm'>Panel, raked + internet use</span></td><td>0.3559</td><td>+0.0150</td><td>[0.25, 8.29]</td><td>2990</td></tr><tr><td><span class='nm'>Probability sample</span></td><td>0.3238</td><td>-0.0171</td><td>&#8212;</td><td>420</td></tr><tr><td><span class='nm'>Population value</span></td><td>0.3409</td><td>&#8212;</td><td>&#8212;</td><td>240,000</td></tr></tbody></table></div>
+      <p>Demographic raking altered the estimate by -0.00001, with all weights within 0.2% of unity. This is the expected result and not a failure of implementation: iterative proportional fitting converges immediately when the achieved margins already equal the targets. The procedure has no purchase on within-cell composition, which is where quota sampling concentrates its selection.</p>
+      <h2>5. Locating the selection variable</h2>
+      <div class="rpt-cap"><span class="n">Table 4.</span> Composition and outcome by internet-use band. The variable satisfies both conditions for confounding selection: it is unbalanced in the panel and strongly associated with the outcome.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Internet use</th><th>Panel share</th><th>Population share</th><th>Difference</th><th>Service use</th></tr></thead><tbody><tr><td><span class='nm'>Low</span></td><td>8.9%</td><td>29.4%</td><td>-20.5 pp</td><td>13.3%</td></tr><tr><td><span class='nm'>Medium</span></td><td>45.9%</td><td>44.3%</td><td>+1.6 pp</td><td>32.2%</td></tr><tr><td><span class='nm'>High</span></td><td>45.3%</td><td>26.3%</td><td>+19.0 pp</td><td>62.5%</td></tr></tbody></table></div>
+      <p>Internet use is orthogonal to the quota variables in the sense that matters: a sample can be exactly balanced on age, sex and region while containing three times too few low-use respondents. No demographic diagnostic would detect this, and no demographic weighting scheme can correct it.</p>
+      <p>Including the margin in the raking recovers 85% of the bias. The residual of +0.0150 reflects the coarseness of a three-level proxy for what is in reality a continuous propensity, and within-band selection persists.</p>
+      <figure class="rpt-fig"><img src="../assets/img/capstone-panel-quotas.png" alt="Two grouped bar charts contrasting exact agreement on region with large discrepancies on internet use."><figcaption><span class="n">Figure 1.</span> Panel and population composition on a quota variable (left) and on the unquota-ed selection variable (right).</figcaption></figure>
+      <h2>6. Estimator value in equivalent random-sample terms</h2>
+      <div class="rpt-cap"><span class="n">Table 5.</span> Sample size of a simple random sample whose standard error equals the observed absolute error.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Sample</th><th>n</th><th>Absolute error</th><th>Equivalent SRS n</th></tr></thead><tbody><tr><td><span class='nm'>Panel, unweighted</span></td><td>5,197</td><td>0.1015</td><td>22</td></tr><tr><td><span class='nm'>Panel, raked to demographics</span></td><td>5,197</td><td>0.1015</td><td>22</td></tr><tr><td><span class='nm'>Panel, raked + internet use</span></td><td>5,197</td><td>0.0150</td><td>1,003</td></tr><tr><td><span class='nm'>Probability sample</span></td><td>420</td><td>0.0171</td><td>769</td></tr></tbody></table></div>
+      <p>Expressing accuracy as an equivalent random-sample size makes the comparison interpretable to non-specialists and removes the misleading reassurance of a large n. On this metric the panel of 5,197 is worth 22 observations unweighted, and the probability sample of 420 is worth 769. The disparity is a factor of approximately 35 in favour of the design twelve times smaller.</p>
+      <p>It follows that increasing panel size is not a remedy. Sample size reduces variance; the deficiency here is bias, which is invariant to n. Doubling the panel would halve a standard error of approximately 1.4 percentage points while leaving a bias of 10 points unchanged, and would increase confidence in a wrong answer.</p>
+      <figure class="rpt-fig"><img src="../assets/img/capstone-panel-worth.png" alt="Four estimate bars against a dashed truth line, and horizontal bars of equivalent random sample size."><figcaption><span class="n">Figure 2.</span> Estimates against the population value (left) and equivalent random-sample sizes (right).</figcaption></figure>
+      <h2>7. Discussion</h2>
+      <p>Three conclusions follow. First, demographic representativeness is a necessary and conspicuously insufficient condition, and in a quota design it is guaranteed rather than informative. Reporting it as evidence of sample quality is misleading, and reporting margin calibration performed on already-matching margins is doubly so.</p>
+      <p>Second, bias correction requires an auxiliary variable associated with both selection and outcome, together with an external population margin for it. Both were available here by good fortune: the instrument happened to carry an internet-use item and an official communications survey publishes the corresponding distribution. Where they are not available the bias is neither correctable nor detectable, and the estimate will be reported with unwarranted confidence.</p>
+      <p>Third, the probability benchmark is what converted an invisible problem into a measured one, at a small fraction of the panel's cost. Maintaining a modest probability sample alongside a large volunteer panel is the most economical insurance available against exactly this failure.</p>
+      <p>A note on weight diagnostics. The final weights span a 34-fold range, materially wider than is usually considered acceptable, and the effective sample size falls to approximately 3,000. The corrected estimate rests heavily on a few hundred low-internet-use respondents, and its stability is correspondingly limited. The weight range should be published alongside any weighted estimate.</p>
+      <h2>8. Conclusion</h2>
+      <p>A volunteer panel matching population quotas exactly on age, sex and region produced an estimate biased by +0.1015. Raking to those margins changed the estimate by -0.00001, since the margins were already satisfied by construction. Raking additionally to an external internet-use margin recovered 85% of the bias. Measured in equivalent random-sample size, the unweighted panel of 5,197 is worth 22 observations and a probability sample of 420 is worth 769.</p>
+      <h2>References</h2>
+      <ul class="rpt-refs"><li>Meng, X.-L. (2018). Statistical paradises and paradoxes in big data. <em>Annals of Applied Statistics</em>, 12(2), 685&#8211;726.</li><li>Bradley, V. C., Kuriwaki, S., Isakov, M., Sejdinovic, D., Meng, X.-L., &amp; Flaxman, S. (2021). Unrepresentative big surveys significantly overestimated US vaccine uptake. <em>Nature</em>, 600, 695&#8211;700.</li><li>Deming, W. E., &amp; Stephan, F. F. (1940). On a least squares adjustment of a sampled frequency table. <em>Annals of Mathematical Statistics</em>, 11(4), 427&#8211;444.</li><li>Baker, R., Brick, J. M., Bates, N. A., et al. (2013). Summary report of the AAPOR task force on non-probability sampling. <em>Journal of Survey Statistics and Methodology</em>, 1(2), 90&#8211;143.</li><li>Kish, L. (1965). <em>Survey Sampling</em>. Wiley.</li><li>Little, R. J. A., &amp; Vartivarian, S. (2005). Does weighting for nonresponse increase the variance of survey means? <em>Survey Methodology</em>, 31(2), 161&#8211;168.</li><li>Valliant, R., Dever, J. A., &amp; Kreuter, F. (2018). <em>Practical Tools for Designing and Weighting Survey Samples</em> (2nd ed.). Springer.</li></ul>
+      <h2>Reproducibility</h2>
+      <p>The dataset (<code>capstone-repairing-an-online-panel.xlsx</code>), containing the panel, the probability sample, the census and official margins and the enumerated population value, accompanies the chapter together with an executable notebook implementing iterative proportional fitting from first principles and reproducing every statistic, table and figure. Analyses use NumPy, pandas and Matplotlib.</p>
+    </div>
+
+    <div class="rpt-foot"><a class="primary" href="../chapters/capstone-repairing-an-online-panel.html">&#8592; Back to Chapter 180</a><a href="../chapters/notebooks/html/capstone-repairing-an-online-panel.html" target="_blank" rel="noopener">&#128211; Companion notebook</a><a class="xls" href="../data/capstone-repairing-an-online-panel.xlsx">&#128202; Download dataset</a></div>
+    <div class="rpt-colophon">
+      From <strong>Statistics, Data Science and AI: A Visual Handbook</strong> by John Fisher.
+      Every statistic, table, and figure in this report is reproduced by the companion notebook.
+    </div>
+  </article>
+</div>
+
+<script>
+(function(){
+  var bar=document.getElementById('rptSticky');
+  window.addEventListener('scroll',function(){
+    if(window.scrollY>320) bar.classList.add('on'); else bar.classList.remove('on');
+  });
+})();
+</script>
+</body>
+</html>

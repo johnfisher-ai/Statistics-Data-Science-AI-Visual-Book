@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 180 · When the Sample Is Not Random: Repairing a Panel — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .yes { color:#047857; font-weight:700; }
+    .disp-table .no { color:#dc2626; font-weight:700; }
+    .disp-table tr.hi td { background:#ecfdf5; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .embox { background:#ecfdf5; border:1px solid #a7f3d0; border-left:4px solid #047857; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .embox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#065f46; }
+    .rw-card { background:#ecfdf5; border:1px solid #a7f3d0; border-left:4px solid #047857; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#065f46; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#ecfdf5; color:#047857; border-color:#a7f3d0; }
+    .ex-file.doc { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#ecfdf5; border:1px solid #a7f3d0; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#065f46; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #047857; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#065f46; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+    .svg-wrap { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.9rem 0.6rem 0.3rem; background:var(--panel); }
+    .svg-wrap svg { width:100%; height:auto; display:block; }
+    .svg-wrap .cap { font-size:0.82rem; color:var(--ink-soft); padding:0.55rem 0.6rem 0.4rem; line-height:1.55; }
+    .svg-wrap .cap strong { color:var(--ink); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/capstone-repairing-an-online-panel.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXVIII &#183; Capstone Projects: Sampling &amp; Data Collection</span><span class="sep">/</span>
+      <span>Chapter 180</span>
+    </div>
+    <h1>Repairing an <span class="accent">Online Panel</span></h1>
+    <p class="dek">Capstone 20. Five thousand two hundred people, matched to the census on age, sex and region. It is ten
+       points wrong, the standard repair does not move it at all, and a probability sample one twelfth the size beats it
+       comfortably.</p>
+    <div class="hero-meta">
+      <div class="m">&#9201;&#65039; <b>~18 min</b>&nbsp;read</div>
+      <div class="m">&#127919; <b>Non-probability samples</b></div>
+      <div class="m">&#128202; <b>Chapter 180</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">This panel passes every check a client knows how to ask for. Age matches the census, sex matches, region
+       matches. <span class="hl">It is ten percentage points wrong</span>, and the weighting procedure designed to fix
+       exactly this problem leaves it precisely where it was.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#8721;w</div>
+      <div class="def-body">
+        <span class="def-kw">Quota sampling</span> recruits until the sample matches known population shares.
+        <span class="def-kw">Raking</span> then adjusts weights until every margin matches. Both operate on
+        <span class="def-kw">margins</span>, and neither controls <span class="def-kw">who was selected within a
+        cell</span>, which is where a volunteer panel does its damage.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">&#11088;</div>
+      <div><div class="ctitle">The finding, up front</div>
+        <p>The panel says <strong>44.2%</strong>; the truth is <strong>34.1%</strong>. Raking to the census changes the
+           estimate by <strong>0.001 of a percentage point</strong>. Priced honestly, 5,197 opt-in respondents are worth
+           a random sample of <strong>22 people</strong>, and the 420-person probability sample is worth 769.</p></div>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section id="noframe">
+    <div class="section-eyebrow"><div class="num">1</div><h2>A Sample With No Selection Probabilities</h2></div>
+    <p>The target population is 240,000 adults. There is no frame. Panel members opted in through advertising and
+       referrals, so <strong>the probability that any given adult is in this sample is unknown and cannot be
+       recovered</strong>. That one sentence rules out every standard error in the book.</p>
+
+    <p>Quota sampling is the industry's answer. Recruitment continues until the panel matches known population shares on
+       a few demographics: fast, cheap, and the resulting file looks convincing.</p>
+
+    <div class="embox">
+      <span class="gb-tag">Matching a margin is not random selection</span>
+      <p style="margin:0.4rem 0 0">A quota tells the recruiter <em>how many</em> 35-to-54-year-old women in the Midlands
+         to sign up. It says nothing about <strong>which ones</strong>. Inside every quota cell, membership was decided by
+         willingness to join an online panel, and willingness is not a coin flip.</p>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section id="quotas">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Every Check a Client Would Run, Passed</h2></div>
+    <p>Cleaning removed two duplicate submissions and three blank outcomes, leaving <strong>5,197</strong> usable
+       respondents. Then the representativeness checks.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Variable</th><th>Panel</th><th>Population</th><th>Gap</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Age 18-34</td><td>30.1%</td><td>30.1%</td><td class="yes">0.0</td></tr>
+          <tr><td class="nm">Age 35-54</td><td>34.9%</td><td>35.0%</td><td class="yes">0.0</td></tr>
+          <tr><td class="nm">Age 55+</td><td>34.9%</td><td>34.9%</td><td class="yes">0.0</td></tr>
+          <tr><td class="nm">Female</td><td>51.1%</td><td>51.1%</td><td class="yes">0.0</td></tr>
+          <tr><td class="nm">North / Midlands</td><td>27.8% / 22.2%</td><td>27.8% / 22.2%</td><td class="yes">0.0</td></tr>
+          <tr><td class="nm">South / London</td><td>34.9% / 15.0%</td><td>34.9% / 15.0%</td><td class="yes">0.0</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Every quota was met to within a rounding error. <strong>If a client asked whether the sample was representative,
+       every check they know how to run would say yes.</strong></p>
+  </section>
+
+  <!-- 3 -->
+  <section id="result">
+    <div class="section-eyebrow"><div class="num">3</div><h2>And It Is Ten Points Wrong</h2></div>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Opt-in panel</div><div class="rv">44.2%</div><div class="rd">n = 5,197</div></div>
+      <div class="rchip"><div class="rk">Probability sample</div><div class="rv">32.4%</div><div class="rd">n = 420, CI 27.9 to 36.9</div></div>
+      <div class="rchip"><div class="rk">True value</div><div class="rv">34.1%</div><div class="rd">knowable only here</div></div>
+      <div class="rchip"><div class="rk">Panel error</div><div class="rv">+10.2 pp</div><div class="rd">6&#215; the small sample's</div></div>
+    </div>
+
+    <p>The probability sample of 420 is out by 1.7 points and its interval contains the truth. The panel's error is six
+       times larger on twelve times the sample. That is the entire argument for probability sampling in two lines, and it
+       is why survey organizations still pay for expensive fieldwork when a panel costs a fraction as much.</p>
+  </section>
+
+  <!-- 4 -->
+  <section id="raking">
+    <div class="section-eyebrow"><div class="num">4</div><h2>The Standard Repair Does Nothing</h2></div>
+    <p>Raking is the accepted fix: adjust the weights until every margin matches the census. Applied here to age by sex
+       and to region, it produces weights between <strong>0.999 and 1.002</strong> and moves the estimate by
+       <strong>0.001 of a percentage point</strong>.</p>
+
+    <div class="embox">
+      <span class="gb-tag">The trap, in one sentence</span>
+      <p style="margin:0.4rem 0 0"><strong>Raking corrects a sample whose margins are wrong, and these margins were
+         already right</strong>, because the panel was recruited to make them right. There is nothing left for the
+         procedure to adjust.</p>
+      <p style="margin:0.7rem 0 0">So the panel was built to pass exactly the check that the standard repair performs. The
+         repair certifies it, changes nothing, and the ten-point error survives untouched. A report that said "weighted
+         to census margins" would be true and would mean nothing.</p>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section id="culprit">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Find What Actually Selected People</h2></div>
+    <p>If demographics are not what makes this panel unusual, something else is. The questionnaire also carried a
+       self-reported internet-use band, and an official communications survey publishes the same bands for the whole
+       population.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-panel-quotas.png" alt="Left: grouped bars of region shares for panel and population, matching exactly with gaps of zero. Right: grouped bars of internet-use bands, where the panel has 8.9 percent low users against a population 29.4 percent, and 45.3 percent high users against 26.3 percent.">
+      <figcaption><strong>Left:</strong> every quota variable matches. <strong>Right:</strong> the variable nobody set a quota on. The panel holds <strong>8.9% light internet users against a population 29.4%</strong>, and 45.3% heavy users against 26.3%.</figcaption>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Internet use</th><th>Panel</th><th>Population</th><th>Gap</th><th>Used the service</th></tr></thead>
+        <tbody>
+          <tr class="hi"><td class="nm">Low</td><td>8.9%</td><td>29.4%</td><td class="no">&#8722;20.5 pp</td><td>13.3%</td></tr>
+          <tr><td class="nm">Medium</td><td>45.9%</td><td>44.3%</td><td>+1.6 pp</td><td>32.2%</td></tr>
+          <tr class="hi"><td class="nm">High</td><td>45.3%</td><td>26.3%</td><td class="no">+19.0 pp</td><td class="yes">62.5%</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>There it is.</strong> That is who volunteers for an online panel, and it was invisible in every demographic
+       check because <strong>it cuts across age, sex and region rather than lining up with them</strong>. It also matters
+       enormously here: heavy internet users are nearly five times likelier to have used an online service. A variable that
+       predicts both joining and the outcome is the definition of the thing that biases an estimate.</p>
+
+    <div class="svg-wrap">
+      <svg viewBox="0 0 760 236" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="A diagram showing internet confidence feeding both the decision to join the panel and the outcome of using the service, while age, sex and region feed neither, which is why weighting on them changes nothing.">
+        <text x="24" y="26" font-family="Inter,Segoe UI,sans-serif" font-size="12.5" font-weight="800" fill="#064e3b">WHY WEIGHTING ON DEMOGRAPHICS CHANGED NOTHING</text>
+        <rect x="286" y="48" width="188" height="44" rx="11" fill="#dc2626"/>
+        <text x="380" y="68" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="12.5" font-weight="800" fill="#ffffff">internet confidence</text>
+        <text x="380" y="84" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="10.5" font-style="italic" fill="#fecaca">nobody set a quota on this</text>
+        <rect x="72" y="150" width="176" height="44" rx="11" fill="#047857"/>
+        <text x="160" y="177" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="12.5" font-weight="800" fill="#ffffff">joined the panel</text>
+        <rect x="512" y="150" width="176" height="44" rx="11" fill="#047857"/>
+        <text x="600" y="177" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="12.5" font-weight="800" fill="#ffffff">used the service</text>
+        <path d="M318 94 L188 146" stroke="#dc2626" stroke-width="2.6"/>
+        <path d="M195 138 L188 146 L198 148" fill="none" stroke="#dc2626" stroke-width="2.6"/>
+        <path d="M442 94 L572 146" stroke="#dc2626" stroke-width="2.6"/>
+        <path d="M565 138 L572 146 L562 148" fill="none" stroke="#dc2626" stroke-width="2.6"/>
+        <rect x="286" y="150" width="188" height="44" rx="11" fill="#e5e7eb"/>
+        <text x="380" y="170" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" font-weight="800" fill="#57534e">age, sex, region</text>
+        <text x="380" y="186" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="10" fill="#78716c">quota-ed, and already balanced</text>
+        <text x="380" y="222" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" fill="#3f3f46">Weighting fixes the grey box. The red arrows were never touched.</text>
+      </svg>
+      <div class="cap"><strong>The selector has to be on the weighting list.</strong> Demographics were balanced by
+        recruitment, so adjusting them accomplished nothing. The variable driving both membership and the outcome sat
+        outside the procedure entirely, which is why the estimate did not move.</div>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section id="repair">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Rake Again, on the Variable That Matters</h2></div>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Estimate</th><th>Value</th><th>Error</th><th>Recovered</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Panel, unweighted</td><td>44.24%</td><td class="no">+10.15 pp</td><td>&#8212;</td></tr>
+          <tr><td class="nm">Panel, raked on demographics</td><td>44.24%</td><td class="no">+10.15 pp</td><td class="no">0%</td></tr>
+          <tr class="hi"><td class="nm">Panel, raked + internet use</td><td>35.59%</td><td>+1.50 pp</td><td class="yes">85%</td></tr>
+          <tr><td class="nm">Probability sample</td><td>32.38%</td><td>&#8722;1.71 pp</td><td>&#8212;</td></tr>
+          <tr><td class="nm">True value</td><td>34.09%</td><td>&#8212;</td><td>&#8212;</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Eighty-five percent of the bias, gone. Two warnings come with it.</p>
+
+    <p>The <strong>weight range is 34 to 1</strong>, far beyond the four-to-one in
+       <a href="capstone-stratified-customer-survey.html">Capstone 17</a>. A few hundred light internet users are each
+       standing in for dozens of people, and if those few happen to be unusual the correction inherits their oddity. The
+       effective sample size falls from 5,197 to about 3,000, a design effect of 1.74.</p>
+
+    <div class="embox">
+      <span class="gb-tag">The repair depended on luck</span>
+      <p style="margin:0.4rem 0 0">This worked because someone thought to ask about internet use <em>and</em> an official
+         source published the matching margin. Neither was guaranteed. Had the panel carried nothing but demographics, the
+         ten-point error would have been not merely unfixable but <strong>undetectable</strong>, and the study would have
+         reported 44 percent with total confidence.</p>
+    </div>
+  </section>
+
+  <!-- 7 -->
+  <section id="worth">
+    <div class="section-eyebrow"><div class="num">7</div><h2>What Is This Panel Actually Worth?</h2></div>
+    <p>Sample size is the wrong currency for a biased sample. The useful question is how large a <strong>random</strong>
+       sample would have to be to be this far off. Setting the standard error of a simple random sample equal to the
+       observed error and solving for n answers it.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-panel-worth.png" alt="Left: four bars of estimates against a dashed truth line at 34.1 percent, with the unweighted and demographically raked bars identical at 44.2. Right: horizontal bars of equivalent random sample size, 22 for the unweighted panel, 22 for the raked panel, 1003 with internet use, and 769 for the 420-person probability sample.">
+      <figcaption><strong>Left:</strong> the first two bars are identical, which is the finding. <strong>Right:</strong> the same four samples priced in random-sample equivalents. The 420-person probability sample towers over an opt-in panel twelve times its size.</figcaption>
+    </figure>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Sample</th><th>n</th><th>Error</th><th>Equivalent random sample</th></tr></thead>
+        <tbody>
+          <tr class="hi"><td class="nm">Opt-in panel, unweighted</td><td>5,197</td><td>10.15 pp</td><td class="no">22</td></tr>
+          <tr class="hi"><td class="nm">Opt-in panel, raked demographics</td><td>5,197</td><td>10.15 pp</td><td class="no">22</td></tr>
+          <tr><td class="nm">Opt-in panel, + internet use</td><td>5,197</td><td>1.50 pp</td><td class="yes">1,003</td></tr>
+          <tr><td class="nm">Probability sample</td><td>420</td><td>1.71 pp</td><td class="yes">769</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>The 5,197-person panel is worth about twenty-two people.</strong> That is not rhetoric, it is the
+       arithmetic. Raking on demographics leaves it at twenty-two, because it changed nothing. Raking on internet use
+       lifts it to around a thousand, a genuine achievement that still means 80 percent of the fieldwork bought nothing.</p>
+
+    <div class="svg-wrap">
+      <svg viewBox="0 0 760 250" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="Two panels. On the left, sampling error shrinking as the sample grows from 500 to 20000 while a constant bias band stays fixed. On the right, the same picture for a random sample where the error shrinks all the way to nothing.">
+        <text x="24" y="26" font-family="Inter,Segoe UI,sans-serif" font-size="12.5" font-weight="800" fill="#064e3b">WHAT GROWING THE SAMPLE DOES, AND DOES NOT DO</text>
+        <rect x="14" y="44" width="360" height="192" rx="13" fill="#fef2f2" stroke="#fecaca"/>
+        <rect x="392" y="44" width="354" height="192" rx="13" fill="#f0fdf4" stroke="#bbf7d0"/>
+        <text x="194" y="66" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="12" font-weight="800" fill="#dc2626">OPT-IN PANEL</text>
+        <text x="569" y="66" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="12" font-weight="800" fill="#15803d">RANDOM SAMPLE</text>
+
+        <line x1="46" y1="200" x2="352" y2="200" stroke="#064e3b" stroke-width="1.6"/>
+        <line x1="424" y1="200" x2="726" y2="200" stroke="#064e3b" stroke-width="1.6"/>
+        <text x="199" y="220" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="10.5" fill="#3f3f46">sample size &#8594;</text>
+        <text x="575" y="220" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="10.5" fill="#3f3f46">sample size &#8594;</text>
+
+        <path d="M56 92 Q120 150 200 166 T344 174" fill="none" stroke="#94a3b8" stroke-width="2.4"/>
+        <text x="300" y="160" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="10" fill="#64748b">sampling error</text>
+        <rect x="46" y="102" width="306" height="16" rx="4" fill="#dc2626" opacity="0.28"/>
+        <line x1="46" y1="110" x2="352" y2="110" stroke="#dc2626" stroke-width="2.6"/>
+        <text x="199" y="94" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" font-weight="800" fill="#dc2626">bias: flat forever</text>
+        <text x="199" y="240" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" fill="#3f3f46">total error never falls below the bias</text>
+
+        <path d="M434 92 Q498 150 578 174 T718 192" fill="none" stroke="#15803d" stroke-width="2.6"/>
+        <line x1="424" y1="196" x2="726" y2="196" stroke="#15803d" stroke-width="2" stroke-dasharray="5 4"/>
+        <text x="575" y="120" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" font-weight="800" fill="#15803d">no bias to stop at</text>
+        <text x="575" y="240" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" fill="#3f3f46">total error goes to zero as n grows</text>
+      </svg>
+      <div class="cap"><strong>Sample size fights variance, and only variance.</strong> On the left the grey curve is the
+        part that shrinks and the red band is the part that does not, so the total error flattens out at the bias and
+        stays there no matter how many people are recruited. On the right there is no floor to hit. This is why 420
+        randomly chosen adults beat 5,197 volunteers.</div>
+    </div>
+
+    <div class="embox">
+      <span class="gb-tag">And bigger panels do not help</span>
+      <p style="margin:0.4rem 0 0">Doubling the panel to 10,000 would halve the sampling error, which was never the
+         problem, and leave the ten-point bias exactly where it is. <strong>Sample size fights variance, and this was
+         never a variance problem.</strong> The 420 expensive interviews beat the 5,197 cheap ones because they were
+         drawn at random, and nothing else about them was better.</p>
+    </div>
+  </section>
+
+  <!-- 8 -->
+  <section id="ethics">
+    <div class="section-eyebrow"><div class="num">8</div><h2>What to Watch</h2></div>
+    <ul>
+      <li><strong>A quota sample that matches the census is not representative, and it is sold as though it were.</strong>
+          Every demographic check passes. That is a fact about the recruitment, not evidence about the estimate.</li>
+      <li><strong>Weight on what selected people, not on what is conventional.</strong> Age, sex and region get weighted
+          because they are always available, not because they are always the drivers. Here they were irrelevant.</li>
+      <li><strong>Publish the weight range.</strong> A 34-to-1 spread means a few respondents carry whole population
+          segments. That is a fragile estimate however good the central value looks.</li>
+      <li><strong>Never quote a margin of error for an opt-in panel without saying what it excludes.</strong> The
+          sampling error on 5,197 responses is about 1.4 points. The actual error was 10.</li>
+      <li><strong>Keep a probability benchmark if you can afford one at all.</strong> A small random sample alongside a
+          large panel is what turned an invisible problem into a measured one, and it cost a fraction of the panel.</li>
+    </ul>
+  </section>
+
+  <!-- 9 -->
+  <section id="in-ds-ai">
+    <div class="section-eyebrow"><div class="num">9</div><h2>Non-Probability Samples in Data Science &amp; AI</h2></div>
+    <p>Almost every dataset in modern practice is a convenience sample, and the panel's failure mode is the standard one.</p>
+
+    <div style="overflow-x:auto">
+      <table class="disp-table">
+        <thead><tr><th>Where it appears</th><th>The unmeasured selector</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">App telemetry</td><td>Willingness to keep the app installed, which tracks satisfaction</td></tr>
+          <tr><td class="nm">Opt-in feedback widgets</td><td>Strength of feeling, in both directions</td></tr>
+          <tr><td class="nm">Crowdsourced labels</td><td>Whoever finds the task worth the fee at that hour</td></tr>
+          <tr><td class="nm">Beta programme users</td><td>Enthusiasm and technical confidence, exactly as here</td></tr>
+          <tr><td class="nm">Balanced benchmark suites</td><td>Balanced on the axes someone thought of, and no others</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="research">
+      <span class="rtag">Practice note</span>
+      <p style="margin:0.4rem 0 0">Rebalancing a training set on demographic attributes is this chapter's raking step, and
+         it inherits the same limitation. If the mechanism that decided which examples were collected is not one of the
+         attributes you balanced on, balancing changes the composition and not the bias. The uncomfortable corollary is
+         the arithmetic in section 7: <strong>a very large biased dataset can carry less information about a population
+         than a small carefully drawn one</strong>, and no amount of scale reverses it. Meng's work on this shows the
+         effect worsens as the population grows, which is precisely the regime modern datasets operate in.</p>
+    </div>
+  </section>
+
+  <!-- notebook + downloads -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">&#128013;</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook verifies that every quota was met, compares the panel against a probability sample and
+             against the truth, implements iterative proportional fitting from scratch and shows it changing nothing,
+             locates the variable that actually selected respondents, rakes again to recover 85 percent of the bias, and
+             closes by pricing all four estimates in equivalent-random-sample terms.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-repairing-an-online-panel.html">&#128211; View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-repairing-an-online-panel.ipynb"
+           target="_blank" rel="noopener">&#9654; Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-repairing-an-online-panel.ipynb"
+           target="_blank" rel="noopener">&#11015; View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Read the reports &amp; get the data</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong>
+         (<code>capstone-repairing-an-online-panel.xlsx</code>) holds the 5,200-member opt-in panel, an independent
+         420-person probability sample for comparison, the census margins for raking, an official internet-use margin,
+         and the true population value. Two written reports accompany it: a <strong>plain-language brief</strong> for a
+         research buyer, and a <strong>technical report</strong> covering the raking, the weight diagnostics and the
+         equivalent-sample-size argument.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-20-repairing-an-online-panel.html" target="_blank" rel="noopener">&#128196; Plain-language brief <small>read online</small></a>
+        <a class="ex-file doc" href="../reports/capstone-20-repairing-an-online-panel-technical.html" target="_blank" rel="noopener">&#128196; Technical report <small>journal-style</small></a>
+        <a class="ex-file xls" href="../data/capstone-repairing-an-online-panel.xlsx">&#128202; Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>&#127891; Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">&#10003;</span><span><strong>Matching the census is not being representative.</strong> Every quota matched to a rounding error and the estimate was 10 points out.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Raking cannot fix margins that already match.</strong> Weights came out at 1.00 and the estimate moved by 0.001 points.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Weight on the selector.</strong> Internet use drove both joining and the outcome; adding it recovered 85% of the bias.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Price the sample honestly.</strong> 5,197 opt-in respondents were worth a random sample of 22; the 420-person probability sample was worth 769.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Scale fights variance, not bias.</strong> Doubling the panel would halve a standard error that was never the problem.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">10</div><h2>Quiz: Test Yourself</h2></div>
+    <p>Eight questions on quota samples, raking and what a biased sample is worth. Answer them, hit
+       <strong>Check Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-web-scraping-job-postings.html">
+      <span style="font-size:1.3rem">&#8592;</span>
+      <span><span class="cn-dir">Chapter 179 &#183; Previous</span><br><span class="cn-title">Web Scraping as a Sampling Frame: Job Postings</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">&#8594;</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;&#183;&nbsp;
+  Chapter 180 &nbsp;&#183;&nbsp; &#169; 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch180";
+  window.QUIZ_DATA = [
+    {
+      q: "The panel matched the census on age, sex and region. What does that establish about the estimate?",
+      options: ["That it is representative", "Very little: quotas were enforced during recruitment, so matching is a fact about the fieldwork, not evidence about the estimate", "That sampling error is small", "That raking is unnecessary"],
+      answer: 1,
+      explain: "The panel was recruited until the margins matched. Passing that check was guaranteed by construction."
+    },
+    {
+      q: "Raking to the census margins changed the estimate by 0.001 percentage points. Why?",
+      options: ["The raking code was wrong", "The margins already matched, so the procedure had nothing to adjust", "The sample was too large for raking", "Raking only works on continuous variables"],
+      answer: 1,
+      explain: "Raking corrects a sample whose margins are wrong. These were right, so every weight came out at 1.00."
+    },
+    {
+      q: "Why was internet use the variable that mattered?",
+      options: ["It was measured most accurately", "It predicted both joining the panel and using the service", "It had the most categories", "It was a quota variable"],
+      answer: 1,
+      explain: "A variable that drives selection and relates to the outcome is exactly what biases an estimate, and it cut across the demographics rather than lining up with them."
+    },
+    {
+      q: "Why did the demographic checks fail to reveal the problem?",
+      options: ["The checks were computed incorrectly", "Internet use cuts across age, sex and region rather than lining up with them", "The sample was too small to detect it", "The census margins were out of date"],
+      answer: 1,
+      explain: "The panel could be perfectly balanced on all three demographics and still contain three times too few light internet users."
+    },
+    {
+      q: "The 5,197-person panel had the accuracy of a random sample of about 22. How is that figure derived?",
+      options: ["By dividing by the design effect", "By setting the standard error of a simple random sample equal to the observed error and solving for n", "From the Kish effective sample size", "By counting the respondents who answered honestly"],
+      answer: 1,
+      explain: "n = p(1-p)/error squared. It prices the sample in accuracy rather than in headcount."
+    },
+    {
+      q: "Would doubling the panel to 10,000 respondents help?",
+      options: ["Yes, it would halve the error", "No: it would halve the sampling error, which was never the problem, and leave the bias untouched", "Yes, if the quotas were re-enforced", "Only if the response rate improved"],
+      answer: 1,
+      explain: "Sample size fights variance. This was a bias problem, and scale does not touch bias."
+    },
+    {
+      q: "After raking on internet use the weights ranged from 0.25 to 8.29. What should the report do with that?",
+      options: ["Nothing, weights are an internal detail", "Publish the range, because a few respondents are standing in for dozens of people and the estimate is fragile", "Trim the weights until the range is 2 to 1", "Discard the respondents with extreme weights"],
+      answer: 1,
+      explain: "A 34-to-1 spread is a legitimate warning about fragility, and a reader cannot judge it if the range is hidden."
+    },
+    {
+      q: "What made the bias detectable at all in this study?",
+      options: ["The large sample size", "The independent probability sample commissioned alongside, plus an official margin for internet use", "The quota checks", "The low non-response rate"],
+      answer: 1,
+      explain: "Without an external benchmark and a published margin for the selector, the panel would have reported 44 percent with total confidence."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
