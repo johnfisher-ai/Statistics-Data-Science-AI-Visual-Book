@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Designing an A/B Test Properly (Technical Report) &#183; Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/report.css">
+  <style>
+    body.report { --rpt-accent:#9f1239; --rpt-accent-dark:#4c0519; --rpt-accent-bg:#fff1f2; --rpt-accent-line:#fecdd3; }
+  </style>
+</head>
+
+<body class="report">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="../chapters/capstone-designing-an-ab-test.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">&#8592; Chapter 181</a>
+  </div>
+</nav>
+
+<div class="rpt-sticky" id="rptSticky">
+  <div class="inner">
+    <div class="st-title">A Pre-Registered Two-Arm Online Experiment: Power, Sequential Monitoring and Variance Reduction</div>
+    <a class="st-back" href="../chapters/capstone-designing-an-ab-test.html">&#8592; Chapter 181</a>
+  </div>
+</div>
+
+<div class="rpt-wrap">
+  <article class="rpt-paper tech">
+    <header class="rpt-head">
+      <div class="rpt-topline">
+        <div class="rpt-kicker">Capstone 21 &#183; Technical Report</div>
+        <span class="rpt-badge tech">Technical Report</span>
+      </div>
+      <h1>A Pre-Registered Two-Arm Online Experiment: Power, Sequential Monitoring and Variance Reduction</h1>
+      <p class="rpt-sub">Design, execution and analysis of a 14-day conversion experiment with a null true effect, including a simulation study of the inflation caused by repeated interim analysis.</p>
+      <div class="rpt-meta"><div><b>Analysis</b> &nbsp;Experimentation</div><div><b>Design</b> &nbsp;Two-arm parallel, visitor-level randomization</div><div><b>Sample</b> &nbsp;79,704 visitors after exclusions</div><div><b>Date</b> &nbsp;2026</div></div>
+    </header>
+
+    <div class="rpt-prov">
+      <span class="pv-tag">Where this comes from</span>
+      <div class="pv-row"><div><span>Chapter</span> <a href="../chapters/capstone-designing-an-ab-test.html">Chapter 181 &#183; Designing an A/B Test Properly</a></div><div><span>Part</span> Part XXIX &#183; Capstone Projects: Design &amp; Causal Inference</div><div><span>Dataset</span> <a href="../data/capstone-designing-an-ab-test.xlsx">capstone-designing-an-ab-test.xlsx</a></div><div><span>Notebook</span> <a href="../chapters/notebooks/html/capstone-designing-an-ab-test.html" target="_blank" rel="noopener">View the analysis</a></div></div>
+    </div>
+
+    <div class="rpt-body">
+      <div class="rpt-abstract"><span class="ab-tag">Abstract</span><p><b>Objective.</b> To estimate the effect of a redesigned checkout on visitor-to-order conversion, and to quantify the inferential cost of interim analysis in a design where the true effect is known to be null. <b>Methods.</b> A two-arm parallel experiment randomized 79,704 visitors 1:1 over 14 days. Sample size was fixed in advance at 39,472 per arm for 80% power to detect a 10% relative lift from a 4.0% baseline at &#945; = 0.05 two-sided. The analysis plan, including a single terminal analysis, a calibrated sequential alternative, exclusion criteria and secondary-metric handling, was registered before collection. Sample ratio mismatch was tested prior to outcome inspection. A Monte Carlo study of 5,000 null experiments quantified type I error inflation under daily interim analysis and calibrated a constant stopping boundary. CUPED was applied to revenue per visitor using pre-assignment 30-day spend. <b>Results.</b> The SRM check passed (&#967;&#178; = 0.472, p = 0.492). At the planned terminus, conversion was 4.0652% (treatment) against 4.1102% (control), a difference of &#8722;0.045 percentage points (z = &#8722;0.321, p = 0.748), 95% CI on the relative effect [&#8722;7.78%, +5.59%]. An interim analysis on day 4 would have yielded +15.30% (p = 0.023). Daily monitoring against a fixed 1.96 boundary produced a false-positive rate of 18.7%; a simulation-calibrated boundary of 2.552 restored 5.0%. CUPED reduced outcome variance by 22.5% (r = 0.475), lowering the standard error of the mean difference by 12.0%. <b>Conclusion.</b> The interval excludes the pre-specified minimum detectable effect, supporting a decision not to deploy. The day-4 result illustrates that unplanned interim analysis, absent any analytic misconduct, is sufficient to generate a confident and reversed conclusion.</p></div>
+      <div class="rpt-keywords"><b>Keywords:</b> ['A/B testing', 'sequential analysis', 'type I error inflation', 'statistical power', 'minimum detectable effect', 'CUPED', 'variance reduction', 'pre-registration', 'sample ratio mismatch']</div>
+      <h2>1. Design</h2>
+      <p>The experiment is a two-arm parallel-group design with allocation at the visitor level. The randomization unit, the analysis unit and the unit of inference coincide, which is a precondition for the standard two-proportion estimator to have its nominal properties. Where a design randomizes visitors but analyzes sessions, the resulting correlation within visitor produces the design-effect inflation treated in Capstone 18.</p>
+      <div class="rpt-cap"><span class="n">Table 1.</span> Registered design parameters. All values were fixed prior to data collection.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Element</th><th>Specification</th></tr></thead><tbody><tr><td>Population</td><td>Visitors reaching the checkout during the test window</td></tr><tr><td>Allocation</td><td>1:1, visitor level, persistent across sessions</td></tr><tr><td>Primary endpoint</td><td>Binary: order placed during the test window</td></tr><tr><td>Baseline</td><td>4.0% (historical)</td></tr><tr><td>MDE</td><td>10% relative, 4.00% to 4.40%, a 0.40 point absolute difference</td></tr><tr><td>Power / &#945;</td><td>80% / 0.05, two-sided</td></tr><tr><td>Planned n</td><td>39,472 per arm; 78,944 total; 14 days at ~5,700/day</td></tr><tr><td>Interim analyses</td><td>None planned. A calibrated boundary specified as an alternative</td></tr><tr><td>Secondary endpoints</td><td>Revenue per visitor, average order value; estimation only</td></tr></tbody></table></div>
+      <p>The sample size follows the standard normal-approximation formula for the difference of two independent proportions. The arcsine-transformed calculation implemented in statsmodels returns 39,454 for the same inputs, a difference of 0.05% and of no practical consequence at this scale.</p>
+      <p>The relationship between the MDE and the required sample size is quadratic in the reciprocal, so the elasticity of duration to the detectable effect is severe: 20% relative requires 4 days, 10% requires 14, and 3% requires 149. Specifying the MDE is therefore the binding design decision, and it is not a statistical one. It is a statement about the smallest effect that would change the deployment decision, and it should be elicited from the decision maker and recorded.</p>
+      <h2>2. Data preparation</h2>
+      <p>Four data-quality faults were present in the assignment log, all of them anticipated in the registered plan. Specifying exclusions in advance is material here: each of the four could plausibly be handled in more than one way, and the choice among them is not neutral with respect to the estimate.</p>
+      <div class="rpt-cap"><span class="n">Table 2.</span> Data preparation. Exclusion criteria were pre-specified.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Stage</th><th>Rows</th><th>Removed</th><th>Rationale</th></tr></thead><tbody><tr><td>Raw log</td><td>80,236</td><td></td><td>One record per assignment event</td></tr><tr><td>Exact duplicate removal</td><td>79,896</td><td>340</td><td>Logger retry on timeout</td></tr><tr><td>Cross-arm exclusion</td><td>79,704</td><td>192 (96 visitors)</td><td>Visitors with records in both arms</td></tr><tr><td>One record per visitor</td><td>79,704</td><td>0</td><td>Analysis file</td></tr><tr><td>Refund sentinel voiding</td><td>&#8212;</td><td>120 values</td><td>Revenue of &#8722;1 denotes a refunded order</td></tr></tbody></table></div>
+      <p>The cross-arm exclusion warrants comment. Retaining the earlier of two conflicting assignments is a common convention and is not defensible here: the subset of visitors affected by a bucketing fault is not exchangeable with the remainder, and conditioning on the order in which their records were written reintroduces selection into an otherwise randomized comparison. Visitors without a unique valid assignment are excluded from both arms.</p>
+      <h2>3. Randomization check</h2>
+      <p>Sample ratio mismatch was assessed before any outcome was examined. The ordering is a procedural safeguard: a diagnostic evaluated after the primary result is known is subject to the analyst's disposition toward that result.</p>
+      <div class="rpt-cap"><span class="n">Table 3.</span> Sample ratio mismatch check against a 1:1 allocation.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Arm</th><th>n</th><th>Share</th><th>Test</th></tr></thead><tbody><tr><td><span class='nm'>Control</span></td><td>39,755</td><td>49.88%</td><td>&#967;&#178; = 0.472</td></tr><tr><td><span class='nm'>Treatment</span></td><td>39,949</td><td>50.12%</td><td>p = 0.492</td></tr></tbody></table></div>
+      <p>The check passes. Practice in large-scale experimentation is to set the action threshold considerably stricter than the conventional 0.05, commonly in the range 0.0001 to 0.001, because at these sample sizes the test is sensitive to trivial imbalances and the diagnostic is intended to detect pipeline defects rather than sampling variation. Both arms exceed the registered per-arm requirement, so the realized power matches the design.</p>
+      <h2>4. Primary result</h2>
+      <div class="rpt-cap"><span class="n">Table 4.</span> Primary endpoint at the unplanned interim and at the registered terminus. Wald intervals for the difference of independent proportions, expressed relative to the control rate.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Analysis point</th><th>n</th><th>Control</th><th>Treatment</th><th>Relative effect</th><th>95% CI</th><th>z</th><th>p</th></tr></thead><tbody><tr><td><span class='nm'>Day 4 (unplanned)</span></td><td>22,773</td><td>4.0056%</td><td>4.6185%</td><td>+15.30%</td><td>[+2.13%, +28.47%]</td><td>2.277</td><td>0.0228</td></tr><tr><td><span class='nm'>Day 14 (planned)</span></td><td>79,704</td><td>4.1102%</td><td>4.0652%</td><td>&#8722;1.09%</td><td>[&#8722;7.78%, +5.59%]</td><td>&#8722;0.321</td><td>0.7484</td></tr></tbody></table></div>
+      <p>The absolute difference at the planned terminus is &#8722;0.045 percentage points with a 95% interval of [&#8722;0.320, +0.230] points. The registered MDE corresponds to an absolute difference of +0.411 points, which lies above the upper limit of the interval.</p>
+      <div class="rpt-key"><span class="k-tag">The interval, not the p-value, is the result</span><p>A non-significant result is uninformative unless the design's resolving power is known. Here it is known, because n was fixed against a stated MDE, and the interval excludes that MDE. The conclusion is therefore not a failure to detect an effect but a positive finding that any effect present is smaller than the threshold at which deployment was to be justified.</p></div>
+      <h2>5. Type I error under interim analysis</h2>
+      <p>A Monte Carlo study quantified the inflation. Five thousand experiments were generated under an exact null with 2,850 visitors per arm per day for 14 days, and a two-proportion z-test was computed on the cumulative data at the end of each day from day 2, giving 13 interim analyses.</p>
+      <div class="rpt-cap"><span class="n">Table 5.</span> Empirical type I error rate as a function of the number of interim analyses, nominal &#945; = 0.05.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Monitoring regime</th><th>Interim analyses</th><th>Rejection rate under H&#8320;</th></tr></thead><tbody><tr><td><span class='nm'>Terminal analysis only</span></td><td>0</td><td>4.7%</td></tr><tr><td><span class='nm'>Daily to day 3</span></td><td>3</td><td>9.6%</td></tr><tr><td><span class='nm'>Daily to day 6</span></td><td>6</td><td>13.8%</td></tr><tr><td><span class='nm'>Daily to day 9</span></td><td>9</td><td>16.3%</td></tr><tr><td><span class='nm'>Daily to day 14</span></td><td>13</td><td>18.7%</td></tr></tbody></table></div>
+      <p>The rate rises to 18.7%, well below the 1 &#8722; 0.95&#8319; &#8776; 48.7% that would obtain for 13 independent tests. The discrepancy is attributable to the strong positive dependence among successive test statistics: each interim analysis is computed on data containing all observations available at the previous one, so the sequence of z-statistics behaves approximately as a Brownian motion on the information scale rather than as independent draws.</p>
+      <h2>6. A calibrated stopping boundary</h2>
+      <p>Prohibiting interim analysis is neither realistic nor desirable, since monitoring serves purposes other than inference, notably the early detection of harm. The alternative is a boundary that controls the family-wise error rate across the monitoring schedule. Exploiting the same simulation, the boundary is the 95th percentile of the distribution of the maximum absolute z-statistic over the 13 analyses.</p>
+      <div class="rpt-cap"><span class="n">Table 6.</span> Constant stopping boundaries and their operating characteristics under the registered monitoring schedule.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Rule</th><th>Boundary</th><th>Equivalent single-look p</th><th>Type I error over 13 looks</th></tr></thead><tbody><tr><td><span class='nm'>Fixed-sample</span></td><td>1.960</td><td>0.0500</td><td>18.7%</td></tr><tr><td><span class='nm'>Simulation-calibrated</span></td><td>2.552</td><td>0.0107</td><td>5.0%</td></tr><tr><td><span class='nm'>&#352;id&#225;k, treating looks as independent</span></td><td>2.884</td><td>0.0039</td><td>conservative</td></tr></tbody></table></div>
+      <p>The calibrated boundary is materially less severe than the independence-based correction, which is the practical return on modelling the dependence rather than bounding it. The day-4 statistic of 2.277 does not cross 2.552, so a design incorporating this rule would have continued to the planned terminus.</p>
+      <p>This is a Pocock-type constant boundary, chosen for expositional transparency. Alpha-spending formulations, particularly the O'Brien-Fleming boundary, allocate error unevenly across the schedule, remaining highly conservative at early analyses and approaching the fixed-sample critical value at the terminus. That profile is generally preferable where the planned terminal analysis is the primary one, since it preserves nearly all of the terminal power. Confidence-sequence methods provide an anytime-valid alternative requiring no pre-specified schedule, at the cost of wider intervals throughout.</p>
+      <h2>7. Variance reduction</h2>
+      <p>CUPED forms the adjusted outcome Y&#8320; = Y &#8722; &#952;(X &#8722; X&#772;), where X is a pre-assignment covariate and &#952; = Cov(Y, X) / Var(X). Because X is realized before randomization, it is independent of assignment in expectation, and the adjustment is unbiased for the treatment effect while reducing variance by a factor of exactly 1 &#8722; &#961;&#178;.</p>
+      <div class="rpt-cap"><span class="n">Table 7.</span> CUPED applied to revenue per visitor using 30-day pre-assignment spend as the covariate.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Quantity</th><th>Unadjusted</th><th>CUPED-adjusted</th></tr></thead><tbody><tr><td><span class='nm'>Correlation with covariate</span></td><td>r = 0.475</td><td>&#8212;</td></tr><tr><td><span class='nm'>Outcome variance</span></td><td>3,118.6</td><td>2,415.5</td></tr><tr><td><span class='nm'>Variance reduction</span></td><td>&#8212;</td><td>22.5%</td></tr><tr><td><span class='nm'>SE of the mean difference</span></td><td>$0.3958</td><td>$0.3483</td></tr><tr><td><span class='nm'>Reduction in SE</span></td><td>&#8212;</td><td>12.0%</td></tr><tr><td><span class='nm'>Traffic for equal precision</span></td><td>100%</td><td>77.5%</td></tr></tbody></table></div>
+      <p>The realized reduction of 22.5% matches r&#178; to three decimal places, as it must. This identity is the practical value of the method: its benefit can be evaluated on historical data before any implementation work is undertaken. Applied instead to the binary primary endpoint, the same covariate would yield a reduction of approximately 2%, since a rare binary outcome admits little linear prediction from any covariate.</p>
+      <figure class="rpt-fig"><img src="../assets/img/capstone-abtest-cuped.png" alt="Ten decile means with a straight fitted line of slope 0.31, and two bars showing traffic at 100 percent and 77 percent."><figcaption><span class="n">Figure 1.</span> Deciles of pre-assignment spend against mean in-test revenue with the fitted adjustment (left), and the implied reduction in required traffic (right).</figcaption></figure>
+      <p>The highest decile falls below the fitted line, indicating mild non-linearity at the extreme of the covariate distribution. This does not bias the adjusted estimator, since unbiasedness depends only on X being pre-assignment, but it does mean the variance reduction achieved is slightly below what a linear model would predict from the correlation alone.</p>
+      <h2>8. Discussion</h2>
+      <p>Three points bear emphasis. First, the day-4 result was not produced by any analytic impropriety. No metric was selected post hoc, no subgroup was excluded, no filter was varied. The inflation arises entirely from the multiplicity implicit in repeated inspection, which means procedural remedies rather than exhortations to analytical integrity are what is required.</p>
+      <p>Second, the sign reversal between the interim and terminal analyses is not anomalous. Under an exact null the cumulative test statistic is a random walk on the information scale, and conditional on having crossed a boundary early, the expected subsequent path returns toward zero. The magnitude of an effect estimated at the moment of crossing is therefore systematically exaggerated, a phenomenon common to all optional-stopping regimes and closely related to the winner's curse in underpowered testing.</p>
+      <p>Third, the value of pre-registration in this case is not that it prevented a false positive, which a fixed-duration test would also have done by accident. It is that it makes the null result interpretable. An experiment run for an arbitrary period yields an interval whose width is arbitrary, and the analyst cannot then say whether a non-significant result excludes a consequential effect. Fixing n against a stated MDE converts the absence of a finding into a bounded statement about effect magnitude.</p>
+      <p>A limitation is that the analysis addresses a single endpoint over a fixed window. Effects that emerge beyond 14 days, novelty and primacy effects within it, and heterogeneity across device or acquisition channel are all outside what this design can resolve. Subgroup analyses were not pre-specified and are not reported, since a design powered for an overall 10% relative effect has materially lower power within any subgroup and the multiplicity is unaddressed.</p>
+      <h2>9. Conclusion</h2>
+      <p>A pre-registered two-arm experiment on 79,704 visitors estimated the effect of a checkout redesign on conversion at &#8722;1.09% relative, 95% CI [&#8722;7.78%, +5.59%]. The interval excludes the pre-specified 10% minimum detectable effect, supporting a decision not to deploy. An unplanned interim analysis on day 4 would have reported +15.30% (p = 0.023); simulation places the probability of at least one such result, under an exact null and daily monitoring, at 18.7%. A calibrated constant boundary of 2.552 restores nominal error control and would not have stopped this test. CUPED on pre-assignment spend reduced the standard error of the secondary endpoint by 12.0%.</p>
+      <h2>References</h2>
+      <ul class="rpt-refs"><li>Deng, A., Xu, Y., Kohavi, R., &amp; Walker, T. (2013). Improving the sensitivity of online controlled experiments by utilizing pre-experiment data. <em>Proceedings of WSDM 2013</em>, 123&#8211;132.</li><li>Kohavi, R., Tang, D., &amp; Xu, Y. (2020). <em>Trustworthy Online Controlled Experiments</em>. Cambridge University Press.</li><li>Johari, R., Koomen, P., Pekelis, L., &amp; Walsh, D. (2017). Peeking at A/B tests: why it matters, and what to do about it. <em>Proceedings of KDD 2017</em>, 1517&#8211;1525.</li><li>Pocock, S. J. (1977). Group sequential methods in the design and analysis of clinical trials. <em>Biometrika</em>, 64(2), 191&#8211;199.</li><li>O'Brien, P. C., &amp; Fleming, T. R. (1979). A multiple testing procedure for clinical trials. <em>Biometrics</em>, 35(3), 549&#8211;556.</li><li>Lan, K. K. G., &amp; DeMets, D. L. (1983). Discrete sequential boundaries for clinical trials. <em>Biometrika</em>, 70(3), 659&#8211;663.</li><li>Fabijan, A., Gupchup, J., Gupta, S., et al. (2019). Diagnosing sample ratio mismatch in online controlled experiments. <em>Proceedings of KDD 2019</em>, 2156&#8211;2164.</li><li>Gelman, A., &amp; Carlin, J. (2014). Beyond power calculations: assessing type S and type M errors. <em>Perspectives on Psychological Science</em>, 9(6), 641&#8211;651.</li></ul>
+      <h2>Reproducibility</h2>
+      <p>The dataset (<code>capstone-designing-an-ab-test.xlsx</code>), containing the assignment log with its data-quality faults intact, the pre-registered analysis plan and the simulated true effect, accompanies the chapter together with an executable notebook reproducing every statistic, table and figure, including the 5,000-replicate simulation and the boundary calibration. Analyses use NumPy, pandas, SciPy, statsmodels and Matplotlib.</p>
+    </div>
+
+    <div class="rpt-foot"><a class="primary" href="../chapters/capstone-designing-an-ab-test.html">&#8592; Back to Chapter 181</a><a href="../chapters/notebooks/html/capstone-designing-an-ab-test.html" target="_blank" rel="noopener">&#128211; Companion notebook</a><a class="xls" href="../data/capstone-designing-an-ab-test.xlsx">&#128202; Download dataset</a></div>
+    <div class="rpt-colophon">
+      From <strong>Statistics, Data Science and AI: A Visual Handbook</strong> by John Fisher.
+      Every statistic, table, and figure in this report is reproduced by the companion notebook.
+    </div>
+  </article>
+</div>
+
+<script>
+(function(){
+  var bar=document.getElementById('rptSticky');
+  window.addEventListener('scroll',function(){
+    if(window.scrollY>320) bar.classList.add('on'); else bar.classList.remove('on');
+  });
+})();
+</script>
+</body>
+</html>

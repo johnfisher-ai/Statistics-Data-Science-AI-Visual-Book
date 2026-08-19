@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 181 · Designing an A/B Test Properly — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .yes { color:#047857; font-weight:700; }
+    .disp-table .no { color:#dc2626; font-weight:700; }
+    .disp-table tr.hi td { background:#fff1f2; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .embox { background:#fff1f2; border:1px solid #fecdd3; border-left:4px solid #9f1239; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .embox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#881337; }
+    .rw-card { background:#fff1f2; border:1px solid #fecdd3; border-left:4px solid #9f1239; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#881337; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#fff1f2; color:#9f1239; border-color:#fecdd3; }
+    .ex-file.doc { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#fff1f2; border:1px solid #fecdd3; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#881337; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #9f1239; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#881337; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+    .svg-wrap { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.9rem 0.6rem 0.3rem; background:var(--panel); }
+    .svg-wrap svg { width:100%; height:auto; display:block; }
+    .svg-wrap .cap { font-size:0.82rem; color:var(--ink-soft); padding:0.55rem 0.6rem 0.4rem; line-height:1.55; }
+    .svg-wrap .cap strong { color:var(--ink); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/capstone-designing-an-ab-test.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXIX &#183; Capstone Projects: Design &amp; Causal Inference</span><span class="sep">/</span>
+      <span>Chapter 181</span>
+    </div>
+    <h1>Designing an <span class="accent">A/B Test</span> Properly</h1>
+    <p class="dek">Capstone 21. On day 4 the new checkout was ahead by 15 percent, with a p-value of 0.02. It has no
+       effect whatsoever. The difference between those two sentences is a document written before any traffic
+       arrived.</p>
+    <div class="hero-meta">
+      <div class="m">&#9201;&#65039; <b>~20 min</b>&nbsp;read</div>
+      <div class="m">&#127919; <b>Experiment design</b></div>
+      <div class="m">&#128202; <b>Chapter 181</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Every capstone so far has analyzed data that already existed. This one starts a week earlier, at the
+       point where the decisions that determine whether the analysis can work at all are still
+       <span class="hl">available to be made</span>.</p>
+
+    <div class="brief-card">
+      <div class="bh">The brief</div>
+      <dl>
+        <dt>Setting</dt><dd>An online retailer rebuilt its checkout and ran the new version against the old one for 14 days, splitting visitors 50/50 and logging 80,236 assignment rows.</dd>
+        <dt>The question</dt><dd><strong>Does the redesigned checkout increase the rate at which visitors place an order?</strong></dd>
+        <dt>Why it matters</dt><dd>The redesign cost a quarter to build and the team wants to ship it everywhere. A lift below 10 percent does not pay that back, so the decision needs a number that can be compared against a threshold, not just a verdict.</dd>
+        <dt>What we do</dt><dd>Fix the sample size against a stated minimum detectable effect before collecting anything, check the randomization for sample ratio mismatch, look at what a day-4 dashboard would have shown, measure by simulation how often that happens when nothing is going on, calibrate a stopping rule that survives daily monitoring, and use pre-experiment behavior to buy precision back.</dd>
+      </dl>
+    </div>
+
+    <div class="def-card">
+      <div class="sigma">&#9878;</div>
+      <div class="def-body">
+        The <span class="def-kw">minimum detectable effect</span> is the smallest true difference a test is built to find,
+        and it is a business decision rather than a statistical one. Everything else follows from it: sample size scales
+        with the <span class="def-kw">inverse square</span> of the MDE, so halving the effect you want to catch
+        quadruples the traffic you need.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">&#11088;</div>
+      <div><div class="ctitle">The finding, up front</div>
+        <p>The true lift is <strong>zero</strong>. On day 4 the treatment led by <strong>15.3 percent</strong> at
+           p&nbsp;=&nbsp;0.023, and a team watching a dashboard would have shipped. At the pre-registered end the lift is
+           <strong>&#8722;1.1 percent</strong> at p&nbsp;=&nbsp;0.75. Simulation puts the chance of at least one
+           significant day, on a test where nothing is happening, at <strong>18.7 percent</strong>.</p></div>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section id="plan">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Plan, Written Before the Traffic</h2></div>
+
+    <p>Twelve decisions, all made on day 0 and all recorded on the <code>ExperimentPlan</code> sheet of the workbook.
+       They are the reason this test can be defended afterward, and several of them become impossible to make honestly
+       the moment a result is visible.</p>
+
+    <table class="disp-table">
+      <tr><th>Line</th><th>Decision</th><th>Why it has to be fixed in advance</th></tr>
+      <tr><td class="nm">P2 Primary metric</td><td>Conversion rate, orders per assigned visitor. One metric.</td><td>Choosing the metric after seeing which one moved is the oldest trick there is</td></tr>
+      <tr><td class="nm">P4 MDE</td><td>A 10 percent relative lift, 4.00 percent to 4.40 percent</td><td>Sets the sample size, and encodes what the business would actually act on</td></tr>
+      <tr><td class="nm">P5 Power</td><td>80 percent at &#945; = 0.05, two-sided</td><td>Two-sided because a drop must be detectable too</td></tr>
+      <tr class="hi"><td class="nm">P7 Stopping rule</td><td>One analysis, at the planned end</td><td>The single most important line on the sheet</td></tr>
+      <tr><td class="nm">P10 Exclusions</td><td>Duplicate rows, cross-arm visitors, refund sentinels</td><td>Named before anyone knows which direction dropping them moves the result</td></tr>
+      <tr><td class="nm">P11 Secondaries</td><td>Reported as intervals, never as tests</td><td>Stops a null primary being rescued by a hunt through the rest</td></tr>
+    </table>
+
+    <p>Read P4 and P7 together, because between them they turn this from a search into an experiment. P4 says that a
+       lift below 10 percent is not worth having, which is a judgment about build cost and margin that no statistician
+       can supply. P7 says there will be exactly one analysis. Neither line is difficult to write. Both are nearly
+       impossible to write after the fact.</p>
+
+    <div class="svg-wrap">
+      <svg viewBox="0 0 860 250" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="A timeline split by a vertical locked line. To the left, before any data, sit six decisions: primary metric, minimum detectable effect, power, sample size, stopping rule and exclusions. To the right, after data arrives, sit two activities: run the analysis and report it. An arrow attempting to cross from right to left is crossed out and labelled the only real threat.">
+        <rect x="0" y="0" width="860" height="250" fill="#ffffff"/>
+        <rect x="30" y="52" width="360" height="150" rx="12" fill="#fff1f2" stroke="#fecdd3" stroke-width="1.5"/>
+        <rect x="470" y="52" width="360" height="150" rx="12" fill="#f4f6fb" stroke="#e6e9f2" stroke-width="1.5"/>
+
+        <text x="210" y="38" text-anchor="middle" font-size="13" font-weight="800" fill="#9f1239">BEFORE ANY DATA EXISTS</text>
+        <text x="650" y="38" text-anchor="middle" font-size="13" font-weight="800" fill="#64748b">AFTER THE DATA ARRIVES</text>
+
+        <text x="52" y="80" font-size="12.5" font-weight="700" fill="#1a2138">Primary metric</text>
+        <text x="52" y="103" font-size="12.5" font-weight="700" fill="#1a2138">Minimum detectable effect</text>
+        <text x="52" y="126" font-size="12.5" font-weight="700" fill="#1a2138">Power and significance level</text>
+        <text x="52" y="149" font-size="12.5" font-weight="700" fill="#1a2138">Sample size and duration</text>
+        <text x="52" y="172" font-size="12.5" font-weight="800" fill="#9f1239">Stopping rule</text>
+        <text x="52" y="195" font-size="12.5" font-weight="700" fill="#1a2138">Exclusions</text>
+
+        <text x="492" y="90" font-size="12.5" font-weight="700" fill="#1a2138">Clean the log</text>
+        <text x="492" y="118" font-size="12.5" font-weight="700" fill="#1a2138">Run the one planned analysis</text>
+        <text x="492" y="146" font-size="12.5" font-weight="700" fill="#1a2138">Report the estimate and interval</text>
+        <text x="492" y="174" font-size="12.5" font-weight="700" fill="#1a2138">Publish the result either way</text>
+
+        <line x1="430" y1="30" x2="430" y2="222" stroke="#4c0519" stroke-width="3"/>
+        <rect x="411" y="112" width="38" height="30" rx="6" fill="#4c0519"/>
+        <rect x="419" y="103" width="22" height="16" rx="8" fill="none" stroke="#4c0519" stroke-width="3.5"/>
+        <circle cx="430" cy="127" r="4" fill="#ffffff"/>
+
+        <path d="M600 216 L392 216" stroke="#dc2626" stroke-width="2.5" fill="none" stroke-dasharray="7 5"/>
+        <path d="M392 216 L402 211 L402 221 Z" fill="#dc2626"/>
+        <line x1="416" y1="204" x2="446" y2="228" stroke="#dc2626" stroke-width="3.5"/>
+        <line x1="446" y1="204" x2="416" y2="228" stroke="#dc2626" stroke-width="3.5"/>
+        <text x="612" y="220" font-size="11.5" font-weight="800" fill="#dc2626">a decision made after seeing the result</text>
+      </svg>
+      <div class="cap"><strong>The line everything depends on.</strong> Nothing on the left is difficult, and nothing on
+        the left can be reconstructed later. Pre-registration is simply the act of putting the six decisions on the left
+        in writing, so that the arrow at the bottom cannot be drawn without somebody noticing.</div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section id="size">
+    <div class="section-eyebrow"><div class="num">2</div><h2>How Big, and How Long</h2></div>
+
+    <p>Four numbers determine the sample size, and none of them comes from the data: the baseline rate, the smallest
+       effect worth detecting, the power, and the significance level. At a 4.0 percent baseline and a 10 percent relative
+       MDE, with 80 percent power at &#945; = 0.05, the requirement is <strong>39,472 visitors per arm</strong>, or 78,944
+       in total. At roughly 5,700 visitors a day that is 13.8 days, so the plan says 14.</p>
+
+    <p>The interesting part is what happens if the business asks for more sensitivity. Because n scales with the inverse
+       square of the effect, the cost of caring about smaller lifts rises brutally.</p>
+
+    <table class="disp-table">
+      <tr><th>Relative MDE</th><th>Detects</th><th>n per arm</th><th>Days at 5,700 per day</th></tr>
+      <tr><td class="nm">20%</td><td>4.00% to 4.80%</td><td>10,313</td><td>4</td></tr>
+      <tr><td class="nm">15%</td><td>4.00% to 4.60%</td><td>17,940</td><td>6</td></tr>
+      <tr class="hi"><td class="nm">10% (used)</td><td>4.00% to 4.40%</td><td>39,472</td><td>14</td></tr>
+      <tr><td class="nm">7%</td><td>4.00% to 4.28%</td><td>79,458</td><td>28</td></tr>
+      <tr><td class="nm">5%</td><td>4.00% to 4.20%</td><td>154,301</td><td>54</td></tr>
+      <tr><td class="nm">3%</td><td>4.00% to 4.12%</td><td>424,617</td><td>149</td></tr>
+    </table>
+
+    <p>Chasing a 3 percent lift would take 149 days. By then the site, the season and the audience have all changed, so
+       the thing being measured is no longer the thing that was launched. A test that cannot finish inside a stable
+       period is not a cheaper test, it is an unanswerable one, and saying so is more useful to the business than
+       quietly running it anyway.</p>
+
+    <div class="callout">
+      <div class="cico">&#128161;</div>
+      <div><div class="ctitle">Underpowered tests are worse than no test</div>
+        <p>A test with 30 percent power does not merely fail to find real effects. When it does reach significance, the
+           estimate it reports is inflated, because only the largest random excursions clear the bar. That is the winner's
+           curse, and it is why a string of underpowered wins produces a roadmap of changes that never replicate.</p></div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section id="clean">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The Log, and What Comes Out of It</h2></div>
+
+    <p>A real assignment log is not a tidy table. Four faults here, and all four were named in P10 of the plan before
+       anyone knew which direction removing them would push the answer.</p>
+
+    <table class="disp-table">
+      <tr><th>Step</th><th>Rows</th><th>What happened</th></tr>
+      <tr><td class="nm">Raw log</td><td>80,236</td><td>One row per assignment event, not per visitor</td></tr>
+      <tr><td class="nm">Drop duplicate rows</td><td>79,896</td><td>340 removed: the logger retried on timeout</td></tr>
+      <tr class="hi"><td class="nm">Drop cross-arm visitors</td><td>79,704</td><td>192 rows from 96 visitors who saw both checkouts</td></tr>
+      <tr><td class="nm">One row per visitor</td><td>79,704</td><td>The analysis file</td></tr>
+      <tr><td class="nm">Void refund sentinels</td><td>120 values</td><td>A revenue of &#8722;1 means refunded, not a negative sale</td></tr>
+    </table>
+
+    <p>The cross-arm visitors are the exclusion worth dwelling on. Ninety-six people were bucketed into both arms by a
+       bug. The tempting repair is to keep whichever assignment came first, which sounds harmless and quietly converts a
+       randomized comparison into a comparison of whoever happened to get logged twice. They belong to neither arm, so
+       they leave both. Ninety-six out of eighty thousand costs nothing; the principle costs nothing either, and it is
+       the same principle that would matter if the bug had touched nine thousand.</p>
+  </section>
+
+  <!-- 4 -->
+  <section id="srm">
+    <div class="section-eyebrow"><div class="num">4</div><h2>The Health Check That Comes First</h2></div>
+
+    <p>Before a single outcome is examined, check that the randomization did what it claimed. Assignment was 50/50, so
+       the two arms should be the same size to within chance. If they are not, something in the bucketing or the logging
+       is broken, and every number downstream is suspect no matter how good it looks.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Control</div><div class="rv">39,755</div><div class="rd">visitors</div></div>
+      <div class="rchip"><div class="rk">Treatment</div><div class="rv">39,949</div><div class="rd">visitors</div></div>
+      <div class="rchip"><div class="rk">Split</div><div class="rv">49.88%</div><div class="rd">expected 50.00%</div></div>
+      <div class="rchip"><div class="rk">SRM test</div><div class="rv">p = 0.49</div><div class="rd">chi-square 0.472, passes</div></div>
+    </div>
+
+    <p>That is what a healthy randomization looks like. Note that the threshold for this particular test is deliberately
+       strict rather than loose: practitioners typically act only below p = 0.001 or so, because the sample is enormous
+       and you want the alarm to fire on genuine pipeline faults rather than on ordinary noise. Note also the order.
+       Running the SRM check after seeing the conversion numbers invites the analyst to decide how seriously to take it
+       based on whether they liked the result.</p>
+
+    <p>Both arms clear the 39,472 the plan required, so the test has the power it was designed with. That is worth
+       stating explicitly, because a test that ends short of its planned n is a different test from the one that was
+       specified, and its result should be reported as such.</p>
+  </section>
+
+  <!-- 5 -->
+  <section id="peek">
+    <div class="section-eyebrow"><div class="num">5</div><h2>The Day-4 Result That Would Have Shipped</h2></div>
+
+    <p>The team has a dashboard. On day 4 it shows a win, and not a marginal one.</p>
+
+    <table class="disp-table">
+      <tr><th>&nbsp;</th><th>Day 4, the peek</th><th>Day 14, the planned end</th></tr>
+      <tr><td class="nm">Visitors</td><td>22,773</td><td>79,704</td></tr>
+      <tr><td class="nm">Control</td><td>4.0056%</td><td>4.1102%</td></tr>
+      <tr><td class="nm">Treatment</td><td>4.6185%</td><td>4.0652%</td></tr>
+      <tr class="hi"><td class="nm">Relative lift</td><td>+15.30%</td><td>&#8722;1.09%</td></tr>
+      <tr><td class="nm">95% interval</td><td>[+2.13%, +28.47%]</td><td>[&#8722;7.78%, +5.59%]</td></tr>
+      <tr><td class="nm">Test</td><td>z = 2.277, p = 0.0228</td><td>z = &#8722;0.321, p = 0.7484</td></tr>
+    </table>
+
+    <p>Significant, and comfortably above the 10 percent bar that justified building the thing. Every instinct says ship
+       it and move on to the next project. The only thing standing in the way is a line in a document saying the test
+       runs for 14 days, written by people who had not yet seen this number.</p>
+
+    <p>Look at what happens to the effect over the following ten days. It does not shrink toward zero, which is what most
+       people expect. It <strong>changes sign</strong>. Two thirds of the eventual traffic arrived after the moment the
+       team would have stopped, and it carried the estimate back to where the truth is, which is nowhere.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-abtest-peeking.png"
+           alt="Left: cumulative z-statistic by day. Sixty faint gray lines show simulated experiments with no true effect, wandering above and below the dashed 1.96 boundary. A dark line shows this experiment, rising above 1.96 on day 4, circled and annotated ship it, then falling back toward zero for the rest of the test. Solid lines mark the calibrated boundary at 2.55. Right: false-positive rate against the number of daily looks, rising from about 5 percent at one look to 18.7 percent at thirteen, against a dashed line at 5 percent.">
+      <figcaption><strong>Left:</strong> sixty simulated experiments with no true effect, in gray. Several cross the
+        dashed 1.96 line at some point, which is the whole problem. The dark line is our test, and the circled point is
+        day 4. <strong>Right:</strong> what watching costs, measured in the next section.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 6 -->
+  <section id="howoften">
+    <div class="section-eyebrow"><div class="num">6</div><h2>How Often Day 4 Happens by Accident</h2></div>
+
+    <p>One run proves nothing, and it would be dishonest to build a chapter on a single lucky draw. The question that
+       can be answered properly is this: <strong>if the treatment does nothing at all, how often does a team that checks
+       daily see at least one significant result?</strong> That is a simulation, not an argument.</p>
+
+    <p>Five thousand experiments were generated with a true lift of exactly zero, each accumulating 2,850 visitors per
+       arm per day for 14 days, and each tested at the end of every day from day 2 onward.</p>
+
+    <table class="disp-table">
+      <tr><th>How the test was run</th><th>Declared significant</th></tr>
+      <tr><td class="nm">One analysis, at the planned end</td><td class="yes">4.7%</td></tr>
+      <tr><td class="nm">Checking after 3 days</td><td>9.6%</td></tr>
+      <tr><td class="nm">Checking after 6 days</td><td>13.8%</td></tr>
+      <tr><td class="nm">Checking after 9 days</td><td>16.3%</td></tr>
+      <tr class="hi"><td class="nm">Checking every day, 13 looks</td><td class="no">18.7%</td></tr>
+    </table>
+
+    <p>Five percent becomes nearly nineteen. The significance level you chose applies to <em>one</em> comparison, and
+       thirteen looks at the same accumulating data is thirteen chances to cross the line. The looks are heavily
+       correlated, since each one contains all the data from the last, which is why the rate lands near 19 percent
+       rather than the 49 percent you would get from thirteen unrelated tests. Almost one flat test in five can be
+       declared a winner by a team doing nothing more sinister than watching a dashboard.</p>
+
+    <div class="callout warn">
+      <div class="cico">&#9888;&#65039;</div>
+      <div><div class="ctitle">This is not the same as p-hacking</div>
+        <p>Nobody in this story did anything dishonest. There was no fishing through metrics, no dropping of awkward
+           segments, no reruns with different filters. A team looked at its own dashboard and stopped when the answer
+           looked clear. That is the point: the failure is structural, so the remedy has to be structural too.</p></div>
+    </div>
+  </section>
+
+  <!-- 7 -->
+  <section id="boundary">
+    <div class="section-eyebrow"><div class="num">7</div><h2>A Stopping Rule That Survives Being Watched</h2></div>
+
+    <p>Monitoring is not the sin. Monitoring against a boundary built for a single look is. Teams have perfectly good
+       reasons to watch a running experiment, not least catching a change that is actively harming customers. The fix is
+       to decide in advance that you will look, and to widen the boundary so that the error rate across the whole
+       sequence is the one you wanted.</p>
+
+    <p>The same simulation that exposed the problem sets the threshold. Take the largest absolute z each simulated
+       experiment ever reaches across its 13 looks, and find the 95th percentile of that distribution.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Single-look boundary</div><div class="rv">1.96</div><div class="rd">gives 18.7% across 13 looks</div></div>
+      <div class="rchip"><div class="rk">Calibrated boundary</div><div class="rv">2.552</div><div class="rd">gives 5.0% across 13 looks</div></div>
+      <div class="rchip"><div class="rk">As a p-value</div><div class="rv">p &lt; 0.011</div><div class="rd">at any single look</div></div>
+      <div class="rchip"><div class="rk">The day-4 result</div><div class="rv">z = 2.277</div><div class="rd">does not cross it</div></div>
+    </div>
+
+    <p>The day-4 z of 2.28 clears 1.96 and does not clear 2.55. A team that had written this boundary into its plan
+       would have looked at the dashboard on day 4, seen a 15 percent lift, noted that it had not crossed the line, and
+       kept the test running. That is precisely the behavior the wider boundary is being paid for.</p>
+
+    <p>Note how much less severe the calibrated boundary is than a naive correction. Treating the 13 looks as
+       independent, a Sidak adjustment would demand p &lt; 0.0039 at each one. The looks are nested, not independent, so
+       simulating the actual correlation buys back most of that severity: 0.011 rather than 0.0039. Published
+       group-sequential designs such as Pocock and O'Brien-Fleming boundaries are the formal versions of the same idea,
+       and O'Brien-Fleming in particular spends its error unevenly, staying very strict early and relaxing toward the
+       planned end.</p>
+  </section>
+
+  <!-- 8 -->
+  <section id="cuped">
+    <div class="section-eyebrow"><div class="num">8</div><h2>CUPED: The Same Precision on Less Traffic</h2></div>
+
+    <p>Sample size is set by variance, so anything that removes variance without touching the treatment effect buys
+       traffic back. CUPED, controlled experiment using pre-experiment data, subtracts off the part of the outcome that
+       was predictable from behavior recorded <em>before</em> assignment. Because the covariate predates the treatment,
+       nothing the treatment did can have influenced it, which is what makes the subtraction safe.</p>
+
+    <p>Here the outcome is revenue per visitor and the covariate is spend in the 30 days before assignment. They
+       correlate at r = 0.475.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Correlation</div><div class="rv">r = 0.475</div><div class="rd">pre-spend and in-test revenue</div></div>
+      <div class="rchip"><div class="rk">Variance removed</div><div class="rv">22.5%</div><div class="rd">exactly r squared</div></div>
+      <div class="rchip"><div class="rk">SE of the difference</div><div class="rv">&#8722;12.0%</div><div class="rd">$0.3958 to $0.3483</div></div>
+      <div class="rchip"><div class="rk">Traffic saved</div><div class="rv">3.2 days</div><div class="rd">of the 14</div></div>
+    </div>
+
+    <p><strong>CUPED buys you exactly r squared, and not one point more.</strong> That single fact is worth carrying
+       around, because it tells you before you build anything whether the technique is worth the pipeline. A covariate
+       correlated 0.475 with the outcome removes 22.5 percent of the variance. A covariate correlated 0.15 removes 2
+       percent and is not worth a meeting. In this book's own data the same method applied to the conversion metric
+       rather than revenue would have been close to worthless, because a rare binary outcome is barely predictable from
+       anything.</p>
+
+    <p>Notice what CUPED does not do. It does not change the estimate, only its precision. The adjusted and unadjusted
+       differences agree; the adjusted one is measured more sharply. A variance-reduction method that moved the point
+       estimate would be a red flag, not a feature.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-abtest-cuped.png"
+           alt="Left: ten points, one per decile of pre-period spend, plotting mean pre-period spend against mean in-test revenue, with a straight fitted line of slope 0.31 running through them. Nine points sit close to the line and the highest decile falls below it. Right: two bars, required traffic at 100 percent and with CUPED at 77 percent, the second labelled 3.2 days saved.">
+      <figcaption><strong>Left:</strong> visitors grouped into deciles of prior spend, against mean in-test revenue,
+        with the linear adjustment CUPED applies. The top decile sits below the line, which is worth noticing: the
+        adjustment is least trustworthy exactly where the covariate is most extreme. <strong>Right:</strong> what that
+        relationship is worth, in traffic.</figcaption>
+    </figure>
+
+    <div class="svg-wrap">
+      <svg viewBox="0 0 860 200" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="A single horizontal bar representing the total variance of revenue per visitor, divided into two parts: a shaded 22.5 percent labelled predictable from pre-period spend and removable by CUPED, and a 77.5 percent labelled genuine noise which no covariate can remove. Below it, a shorter bar shows the traffic required after CUPED at 77.5 percent of the original.">
+        <rect x="0" y="0" width="860" height="200" fill="#ffffff"/>
+        <text x="40" y="34" font-size="12.5" font-weight="800" fill="#4c0519">VARIANCE OF REVENUE PER VISITOR</text>
+        <rect x="40" y="46" width="176" height="46" rx="5" fill="#9f1239"/>
+        <rect x="216" y="46" width="604" height="46" rx="5" fill="#e2e8f0"/>
+        <text x="128" y="75" text-anchor="middle" font-size="14" font-weight="800" fill="#ffffff">22.5%</text>
+        <text x="518" y="75" text-anchor="middle" font-size="14" font-weight="800" fill="#64748b">77.5%</text>
+        <text x="128" y="112" text-anchor="middle" font-size="11" font-weight="700" fill="#9f1239">predictable from</text>
+        <text x="128" y="126" text-anchor="middle" font-size="11" font-weight="700" fill="#9f1239">pre-period spend</text>
+        <text x="518" y="112" text-anchor="middle" font-size="11" font-weight="700" fill="#64748b">genuine noise: no covariate removes this</text>
+
+        <text x="40" y="164" font-size="12.5" font-weight="800" fill="#4c0519">TRAFFIC NEEDED FOR THE SAME PRECISION</text>
+        <rect x="40" y="172" width="780" height="18" rx="4" fill="#f1f5f9" stroke="#e2e8f0"/>
+        <rect x="40" y="172" width="605" height="18" rx="4" fill="#fb7185"/>
+        <text x="342" y="186" text-anchor="middle" font-size="11.5" font-weight="800" fill="#ffffff">77.5% of the original, or 3.2 days of 14</text>
+      </svg>
+      <div class="cap"><strong>The whole method in one picture.</strong> CUPED removes the shaded slice and nothing else,
+        and the shaded slice is r squared. Because precision improves with the square root of traffic, removing 22.5
+        percent of the variance saves 22.5 percent of the traffic, not more.</div>
+    </div>
+  </section>
+
+  <!-- 9 -->
+  <section id="result">
+    <div class="section-eyebrow"><div class="num">9</div><h2>The Result, Reported as an Estimate</h2></div>
+
+    <p>A p-value of 0.75 is not the finding. The finding is the interval, because the interval is what answers the
+       question the business actually asked, which was never "is the effect exactly zero" but "is it big enough to be
+       worth having".</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Difference</div><div class="rv">&#8722;0.045 pp</div><div class="rd">4.1102% to 4.0652%</div></div>
+      <div class="rchip"><div class="rk">95% interval</div><div class="rv">&#8722;0.320 to +0.230</div><div class="rd">percentage points</div></div>
+      <div class="rchip"><div class="rk">The MDE</div><div class="rv">+0.411 pp</div><div class="rd">a 10% relative lift</div></div>
+      <div class="rchip"><div class="rk">Verdict</div><div class="rv">Ruled out</div><div class="rd">the interval sits below it</div></div>
+    </div>
+
+    <p>This is a well-powered null, and it is worth as much as a win. The test was designed to detect a 10 percent lift.
+       The data are consistent with anything from a 7.8 percent drop to a 5.6 percent rise, and the entire interval sits
+       below the bar the business set. The honest conclusion is not "we failed to find an effect", which sounds like a
+       failure of the analysis. It is <strong>"we have ruled out an effect large enough to be worth having"</strong>,
+       which is a genuine answer to the question that was asked.</p>
+
+    <p>That conclusion is available only because the sample size was fixed in advance against a stated MDE. Had the test
+       been run to an arbitrary two weeks with no power calculation, the same interval would have been uninterpretable:
+       nobody could have said whether it was narrow enough to rule anything out. The pre-registration is what converts a
+       null result from an absence of news into information.</p>
+
+    <div class="embox">
+      <span class="gb-tag">The secondary metrics, reported the way P11 requires</span>
+      <p style="margin:0.45rem 0 0">Revenue per visitor came in at $6.51 in control and $7.09 in treatment. It is
+         tempting to reach for that as a consolation prize. P11 forbids it, for the reason Capstone 4 established: a
+         null primary followed by a search through secondaries is the multiple-comparisons problem wearing different
+         clothes. The right treatment is to report the number with its interval, note that it was not the metric the
+         test was powered for, and let it inform the <em>next</em> experiment's hypothesis rather than this one's
+         conclusion.</p>
+    </div>
+  </section>
+
+  <!-- 10 -->
+  <section id="watch">
+    <div class="section-eyebrow"><div class="num">10</div><h2>What to Watch</h2></div>
+
+    <ul class="checklist">
+      <li><span class="ck">&#10003;</span><span><strong>A stopping rule chosen after seeing data is not a stopping rule.</strong> "We will run it until it is significant" is not a plan, it is a guarantee of a false positive given enough patience.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Report the sequence, not just the moment you stopped.</strong> The same p = 0.023 means one thing at a planned analysis and something much weaker as the best of thirteen looks. A p-value without its stopping rule cannot be interpreted.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Publish nulls internally.</strong> Teams that only write up wins build a library in which every idea worked, which is how an organization comes to believe things that are not true.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Watch for novelty and primacy effects.</strong> A change can move behavior for a week simply by being new. A 14-day window is partly a defense against reporting that as a permanent lift.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Check the unit of randomization matches the unit of analysis.</strong> Randomizing by visitor and analyzing by session inflates n and shrinks every standard error, which is the design effect of Capstone 18 arriving through a different door.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Experiments are run on people.</strong> Nobody asked these visitors whether they wanted a redesigned checkout, which is normally uncontroversial and stops being so the moment the manipulation touches price, credit or safety. The threshold question is whether you would be comfortable describing the test to the people in it.</span></li>
+    </ul>
+  </section>
+
+  <!-- 11 -->
+  <section id="ml">
+    <div class="section-eyebrow"><div class="num">11</div><h2>Experiment Design in Data Science &amp; AI</h2></div>
+
+    <p>Online controlled experiments are the largest applied statistics operation in the world, and every large platform
+       has rediscovered the contents of this chapter the expensive way.</p>
+
+    <table class="disp-table">
+      <tr><th>Where it appears</th><th>The same problem, in a different costume</th></tr>
+      <tr><td class="nm">Recommender ranking tests</td><td>Metrics are heavily skewed by a few users, so variance reduction is the difference between a feasible test and an impossible one</td></tr>
+      <tr><td class="nm">Model rollouts</td><td>A new model is shipped behind a flag and monitored continuously, which is peeking unless a boundary was set</td></tr>
+      <tr><td class="nm">Bandits and adaptive allocation</td><td>Traffic is reallocated toward the winner as evidence accrues, which is deliberate peeking with the inference rebuilt to match</td></tr>
+      <tr><td class="nm">Interleaving experiments</td><td>Both rankings shown to the same user, which removes between-user variance the way pairing did in Capstone 3</td></tr>
+      <tr><td class="nm">LLM evaluation</td><td>Pairwise preference judgments on a shared prompt set, with the same MDE and power questions and usually none of the answers</td></tr>
+    </table>
+
+    <div class="research">
+      <span class="rtag">Where the research went</span>
+      <p style="margin:0.4rem 0 0">CUPED comes from Deng, Xu, Kohavi and Walker at Microsoft in 2013, and the variance
+         reduction it reports on real telemetry is broadly what this chapter reproduces. The sequential problem has two
+         modern answers worth knowing: <strong>always-valid inference</strong> based on confidence sequences, which lets
+         you look continuously with no boundary calculation at all, and <strong>group-sequential designs</strong>
+         borrowed from clinical trials, where the same logic has been standard since the 1970s. The clinical-trials
+         literature is where an experimenter should look first, because medicine had strong reasons to solve stopping
+         rules honestly long before anybody was testing checkout buttons.</p>
+    </div>
+  </section>
+
+  <!-- notebook -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">&#128013;</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook reads the pre-registered plan before touching the data, derives the sample size from
+             first principles and tabulates what a smaller MDE would have cost, cleans four faults out of the assignment
+             log, runs the sample ratio mismatch check, reproduces the day-4 result and the day-14 one, simulates five
+             thousand flat experiments to price peeking at 18.7 percent, calibrates the sequential boundary from that
+             same simulation, and implements CUPED from scratch.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-designing-an-ab-test.html">&#128211; View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-designing-an-ab-test.ipynb"
+           target="_blank" rel="noopener">&#9654; Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-designing-an-ab-test.ipynb"
+           target="_blank" rel="noopener">&#11015; View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Read the reports &amp; get the data</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong>
+         (<code>capstone-designing-an-ab-test.xlsx</code>) holds the 80,236-row assignment log with its duplicates,
+         cross-arm visitors and refund sentinels intact, the pre-registration written on day 0, and the true effect that
+         was simulated so you can check your work. Two written reports accompany it: a <strong>plain-language
+         brief</strong> for the product lead who wants to ship, and a <strong>technical report</strong> covering the
+         power calculation, the sequential boundary and the variance reduction.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-21-designing-an-ab-test.html" target="_blank" rel="noopener">&#128196; Plain-language brief <small>read online</small></a>
+        <a class="ex-file doc" href="../reports/capstone-21-designing-an-ab-test-technical.html" target="_blank" rel="noopener">&#128202; Technical report <small>read online</small></a>
+        <a class="ex-file xls" href="../data/capstone-designing-an-ab-test.xlsx">&#128202; Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>&#127891; Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">&#10003;</span><span><strong>The MDE sets everything, and it is a business decision.</strong> n scales with its inverse square: 10 percent needs 14 days, 3 percent needs 149.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Peeking turns 5 percent into 18.7 percent.</strong> Thirteen daily looks at a test with no effect declared a winner almost one time in five.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Look all you like, against the right boundary.</strong> Calibrating by simulation gave 2.55 rather than 1.96, and the day-4 result of 2.28 would not have stopped the test.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>CUPED buys exactly r squared.</strong> A covariate correlated 0.475 with the outcome removed 22.5 percent of the variance and 3.2 days of traffic.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>A well-powered null is a real answer.</strong> The interval of &#8722;7.8 to +5.6 percent excludes the 10 percent lift that justified the build, which settles the decision.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">&#10067;</div><h2>Quiz: Test Yourself</h2></div>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-repairing-an-online-panel.html">
+      <span style="font-size:1.3rem">&#8592;</span>
+      <span><span class="cn-dir">Chapter 180 &#183; Previous</span><br><span class="cn-title">When the Sample Is Not Random: Repairing a Panel</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">&#8594;</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;&#183;&nbsp;
+  Chapter 181 &nbsp;&#183;&nbsp; &#169; 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch181";
+  window.QUIZ_DATA = [
+    {
+      q: "The plan fixed a minimum detectable effect of a 10 percent relative lift. What kind of decision is that?",
+      options: ["A statistical one, derived from the baseline rate", "A business one: it says how large an effect would have to be before the company would act on it", "A technical constraint set by the traffic available", "A convention, like alpha = 0.05"],
+      answer: 1,
+      explain: "The MDE encodes what the organization would actually do something about, given build cost and margin. No statistical procedure can supply it, and once it is chosen the sample size follows mechanically."
+    },
+    {
+      q: "Moving the MDE from 10 percent to 5 percent changes the required sample per arm from 39,472 to 154,301. Why does it rise so steeply?",
+      options: ["Because the baseline rate changes", "Because sample size scales with the inverse square of the effect size, so halving the effect roughly quadruples n", "Because power has to be increased as well", "Because two-sided tests need twice the sample"],
+      answer: 1,
+      explain: "n is proportional to 1 divided by the square of the difference you want to detect. Halving the detectable effect multiplies the requirement by about four, which is why chasing small lifts becomes impractical so quickly."
+    },
+    {
+      q: "Ninety-six visitors were logged in both arms because of a bucketing bug. What is the right treatment?",
+      options: ["Keep the assignment that came first", "Assign them all to control, since that is the baseline", "Drop them from both arms entirely", "Split them evenly between the arms"],
+      answer: 2,
+      explain: "Keeping the first assignment sounds harmless and turns a randomized comparison into a comparison of whoever happened to be logged twice. They have no valid assignment, so they belong to neither arm."
+    },
+    {
+      q: "Why is the sample ratio mismatch check run before anyone looks at the conversion numbers?",
+      options: ["Because it is quicker to compute", "So the analyst cannot decide how seriously to take a failed check based on whether they liked the result", "Because it needs the raw log rather than the cleaned file", "Because it would otherwise inflate the false-positive rate of the main test"],
+      answer: 1,
+      explain: "The order is a safeguard against the analyst, not against the data. A health check whose verdict is weighed after the outcome is known has stopped being a health check."
+    },
+    {
+      q: "The simulation found that checking a truly flat test every day for 13 days produced a significant result 18.7 percent of the time. Why is that far below the roughly 49 percent you would get from 13 independent tests at 5 percent?",
+      options: ["Because the simulation used too few replicates", "Because the looks are heavily correlated: each one contains all the data from the one before", "Because the effect size was not exactly zero", "Because a two-sided test halves the rate at each look"],
+      answer: 1,
+      explain: "Successive looks share almost all their data, so they are nested rather than independent. That correlation is also why simulating the real boundary (2.55) is much less severe than a Sidak correction for 13 independent tests would demand (p < 0.0039)."
+    },
+    {
+      q: "On day 4 the treatment led by 15.3 percent with z = 2.277. Under the calibrated sequential boundary of 2.552, what should the team do?",
+      options: ["Stop and ship, since 2.277 exceeds 1.96", "Keep the test running, because the result did not cross the boundary that was agreed in advance", "Stop the test and rerun it from scratch", "Switch to a one-sided test to gain power"],
+      answer: 1,
+      explain: "That is exactly the behavior the wider boundary is paid for. The result looks convincing on a dashboard and has not met the pre-agreed evidence threshold, and by day 14 the effect has changed sign."
+    },
+    {
+      q: "CUPED used pre-period spend, correlated r = 0.475 with in-test revenue, and removed 22.5 percent of the variance. What determines that 22.5 percent?",
+      options: ["The sample size", "The size of the treatment effect", "r squared, and nothing else", "The number of days the pre-period covers"],
+      answer: 2,
+      explain: "The variance reduction is exactly r squared. That is what makes CUPED easy to appraise before building it: measure the correlation on historical data and you know in advance what the technique is worth."
+    },
+    {
+      q: "The final interval on the relative lift was minus 7.8 to plus 5.6 percent, and the MDE was 10 percent. What is the correct conclusion?",
+      options: ["The test was inconclusive and should be rerun for longer", "There is no effect at all", "An effect large enough to be worth having has been ruled out, which settles the decision", "The result is significant in the negative direction"],
+      answer: 2,
+      explain: "The whole interval sits below the 10 percent bar the business set, so the redesign cannot pay back its build cost. That is a real answer rather than an absence of one, and it is available only because n was fixed in advance against a stated MDE."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
