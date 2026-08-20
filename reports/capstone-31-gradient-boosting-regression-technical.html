@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Delivery Time Estimates (Technical) &#183; Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/report.css">
+  <style>
+    body.report { --rpt-accent:#6d28d9; --rpt-accent-dark:#4c1d95; --rpt-accent-bg:#f5f3ff; --rpt-accent-line:#ddd6fe; }
+  </style>
+</head>
+
+<body class="report">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="../chapters/capstone-gradient-boosting-regression.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">&#8592; Chapter 193</a>
+  </div>
+</nav>
+
+<div class="rpt-sticky" id="rptSticky">
+  <div class="inner">
+    <div class="st-title">Where the Accuracy Came From, and Why the Point Estimate Is the Wrong Output</div>
+    <a class="st-back" href="../chapters/capstone-gradient-boosting-regression.html">&#8592; Chapter 193</a>
+  </div>
+</div>
+
+<div class="rpt-wrap">
+  <article class="rpt-paper technical">
+    <header class="rpt-head">
+      <div class="rpt-topline">
+        <div class="rpt-kicker">Capstone 31 &#183; Technical Report</div>
+        <span class="rpt-badge technical">Technical Report</span>
+      </div>
+      <h1>Where the Accuracy Came From, and Why the Point Estimate Is the Wrong Output</h1>
+      <p class="rpt-sub">Features bought 101 seconds, model family 17, hyperparameter search 4. The learning curves then converged, and the remaining work was distributional rather than predictive.</p>
+      <div class="rpt-meta"><div><b>Data</b> &nbsp;41,410 orders over 84 days, 140 restaurants</div><div><b>Design</b> &nbsp;time-ordered split: days 0-69 train, 70-76 validate, 77-83 test</div><div><b>Headline</b> &nbsp;test RMSE 7.882 min against a 9.898 linear baseline</div></div>
+    </header>
+
+    <div class="rpt-prov">
+      <span class="pv-tag">Where this comes from</span>
+      <div class="pv-row"><div><span>Chapter</span> <a href="../chapters/capstone-gradient-boosting-regression.html">Chapter 193 &#183; Gradient Boosting for Tabular Regression</a></div><div><span>Part</span> Part XXXI &#183; Capstone Projects: Machine Learning</div><div><span>Dataset</span> <a href="../data/capstone-gradient-boosting-regression.xlsx">capstone-gradient-boosting-regression.xlsx</a></div><div><span>Notebook</span> <a href="../chapters/notebooks/html/capstone-gradient-boosting-regression.html" target="_blank" rel="noopener">View the analysis</a></div></div>
+    </div>
+
+    <div class="rpt-body">
+      <h2>1. Data, cleaning and design</h2>
+      <p>The export held 42,520 rows. A duplicated block of 520 was removed on <code>order_id</code>; 384 cancellations recorded with <code>delivery_minutes = 0</code> were excluded; 211 rows carrying <code>distance_km = 999</code> from a GPS failure were excluded. That leaves <strong>41,410</strong> orders, mean 51.0 minutes, standard deviation 17.9.</p>
+      <p>The split is time-ordered rather than random, because the deployed model always predicts orders that have not occurred: days 0 to 69 for training (34,462), 70 to 76 for model selection (3,425), 77 to 83 held back (3,523). The test window was scored once.</p>
+      <h2>2. Where the accuracy came from</h2>
+      <div class="rpt-cap"><span class="n">Table 1.</span> Test RMSE in minutes, both models at library defaults.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Feature set</th><th>Linear regression</th><th>Gradient boosting</th><th>Model family gain</th></tr></thead><tbody><tr><td>Raw export columns</td><td>9.898</td><td>9.622</td><td>0.277 min</td></tr><tr><td><span class='nm'>Plus four engineered features</span></td><td><span class='nm'>8.017</span></td><td><span class='nm'>7.946</span></td><td><span class='nm'>0.071 min</span></td></tr><tr><td>Feature engineering gain</td><td>1.881 min</td><td>1.676 min</td><td></td></tr></tbody></table></div>
+      <p>A random search over 20 hyperparameter configurations, selected on the validation window, then moved the test RMSE from 7.946 to <strong>7.882</strong>. The three decisions therefore bought 101 seconds, 17 seconds and 4 seconds respectively.</p>
+      <p>Two details about the search matter more than its size. The 20 configurations spanned 0.272 minutes on the validation window and the top ten spanned <strong>0.072 minutes</strong> on the test window, so among the leaders the ranking is noise; the configuration that placed tenth on validation produced the best test score (7.865). And the validation score is optimistic relative to the test score by however much the search exploited that window, so the validation figure should not be reported as model accuracy.</p>
+      <h2>3. Feature ablation</h2>
+      <div class="rpt-cap"><span class="n">Table 2.</span> Each engineered feature removed in turn, gradient boosting at defaults.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Feature removed</th><th>Test RMSE</th><th>Cost</th><th>Derivable from present columns?</th></tr></thead><tbody><tr><td>is_weekend</td><td>7.946</td><td>+0.000</td><td>Yes, from day_of_week</td></tr><tr><td>is_peak</td><td>7.955</td><td>+0.009</td><td>Yes, from hour_of_day</td></tr><tr><td>load (pending per courier)</td><td>7.958</td><td>+0.012</td><td>Yes, from its two components</td></tr><tr><td><span class='nm'>rest_hist (past-only expanding median)</span></td><td><span class='nm'>9.494</span></td><td><span class='nm'>+1.548</span></td><td><span class='nm'>No, it aggregates other rows</span></td></tr></tbody></table></div>
+      <p>The pattern is structural rather than incidental. A boosted tree can split on <code>orders_pending</code> and <code>couriers_available</code> independently and approximate their ratio, and can recover the lunch and dinner peaks from <code>hour_of_day</code>. It has no mechanism for computing a statistic across other rows. The operational rule is to engineer what the model cannot derive from what it already holds.</p>
+      <p><code>rest_hist</code> was constructed as a per-restaurant expanding median with <code>shift(1)</code>, so each order sees only that restaurant's earlier orders. A whole-file <code>groupby</code> median scores marginally better on this test set and is invalid, since it conditions on future outcomes.</p>
+      <h2>4. Learning curve</h2>
+      <div class="rpt-cap"><span class="n">Table 3.</span> Random subsets of the training window, evaluated on the fixed test window.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Training orders</th><th>Train RMSE</th><th>Test RMSE</th><th>Gap</th></tr></thead><tbody><tr><td>1,723</td><td>5.206</td><td>8.848</td><td>3.641</td></tr><tr><td>3,446</td><td>5.988</td><td>8.372</td><td>2.384</td></tr><tr><td>8,615</td><td>6.980</td><td>8.109</td><td>1.129</td></tr><tr><td>17,231</td><td>7.479</td><td>8.002</td><td>0.523</td></tr><tr><td><span class='nm'>34,462</span></td><td><span class='nm'>7.654</span></td><td><span class='nm'>7.882</span></td><td><span class='nm'>0.227</span></td></tr></tbody></table></div>
+      <p>The curves converge and the final doubling of the training data reduced test RMSE by 0.121 minutes. Neither additional data of the same kind nor additional model flexibility will move this materially. The residual error is process variance, which redirects the project from point accuracy to distributional output.</p>
+      <h2>5. Residual structure</h2>
+      <div class="rpt-cap"><span class="n">Table 4.</span> Residuals on the test window, by operating condition.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Segment</th><th>n</th><th>Bias</th><th>Residual SD</th></tr></thead><tbody><tr><td>Off peak</td><td>993</td><td>-0.13</td><td>4.65</td></tr><tr><td>Peak</td><td>2,530</td><td>-0.07</td><td>8.83</td></tr><tr><td>Load under 0.8</td><td>945</td><td>-0.09</td><td>4.66</td></tr><tr><td><span class='nm'>Load above 2.0</span></td><td>335</td><td>+0.67</td><td><span class='nm'>11.52</span></td></tr><tr><td>Under 2 km</td><td>1,107</td><td>-0.08</td><td>6.77</td></tr><tr><td>Over 6 km</td><td>394</td><td>-0.30</td><td>10.35</td></tr><tr><td>Dry</td><td>2,780</td><td>-0.11</td><td>7.47</td></tr><tr><td>Heavy rain</td><td>338</td><td>+0.03</td><td>10.41</td></tr></tbody></table></div>
+      <p>Bias is negligible throughout; the conditional standard deviation varies by a factor of about 2.5 and is predictable from features already in the model. This is the property that makes a conditional interval worth more than a constant one.</p>
+      <h2>6. The displayed value as a quantile</h2>
+      <p>The operations cost ratio is 3:1 for late against early. Under an asymmetric linear loss the minimizer is the quantile at &#964; = c<sub>late</sub>/(c<sub>late</sub> + c<sub>early</sub>) = 0.75. Quantile-loss gradient boosting was fitted at five levels on the same features and split.</p>
+      <div class="rpt-cap"><span class="n">Table 5.</span> Cost = 3 &#215; minutes late + 1 &#215; minutes early, averaged over test orders.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Displayed value</th><th>Late</th><th>Mean padding</th><th>Cost per order</th></tr></thead><tbody><tr><td>Point prediction</td><td>46.5%</td><td>0.00</td><td>11.271</td></tr><tr><td>Point prediction + 8 min (current)</td><td>11.8%</td><td>8.00</td><td>11.080</td></tr><tr><td>Conditional 70th percentile</td><td>31.3%</td><td>2.71</td><td>9.808</td></tr><tr><td><span class='nm'>Conditional 75th percentile</span></td><td><span class='nm'>25.5%</span></td><td><span class='nm'>3.93</span></td><td><span class='nm'>9.638</span></td></tr><tr><td>Conditional 80th percentile</td><td>20.4%</td><td>5.30</td><td>9.667</td></tr><tr><td>Conditional 85th percentile</td><td>15.4%</td><td>6.73</td><td>10.099</td></tr><tr><td>Conditional 90th percentile</td><td>10.5%</td><td>8.90</td><td>11.169</td></tr></tbody></table></div>
+      <p>The empirical minimum falls at the 75th percentile as the theory requires, 13.0 percent below the current policy. The 15 percent service target requires the 85th percentile, which costs 4.8 percent more than the cost-optimal choice. That trade is a business decision rather than a statistical one.</p>
+      <h2>7. Conditional against constant padding</h2>
+      <p>To isolate the value of conditioning, a constant buffer was set to the mean padding of the conditional 85th percentile (6.73 minutes), so both policies spend identical total padding.</p>
+      <div class="rpt-cap"><span class="n">Table 6.</span> Share of orders arriving after the displayed time.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Segment</th><th>n</th><th>Current +8</th><th>Matched flat 6.73</th><th>Conditional 85th</th></tr></thead><tbody><tr><td>Off peak, under 3 km</td><td>534</td><td>1.9%</td><td>3.0%</td><td>16.3%</td></tr><tr><td>Off peak, 3 km or more</td><td>459</td><td>6.8%</td><td>9.8%</td><td>17.6%</td></tr><tr><td>Peak, under 3 km</td><td>1,369</td><td>13.1%</td><td>17.1%</td><td>14.7%</td></tr><tr><td>Peak, 3 km or more</td><td>1,161</td><td>17.0%</td><td>20.0%</td><td>15.1%</td></tr><tr><td>Heavy rain</td><td>338</td><td>19.8%</td><td>23.4%</td><td>17.2%</td></tr><tr><td><span class='nm'>Load above 2.0</span></td><td>335</td><td><span class='nm'>21.8%</span></td><td><span class='nm'>25.1%</span></td><td><span class='nm'>16.4%</span></td></tr><tr><td><span class='nm'>All orders</span></td><td>3,523</td><td><span class='nm'>11.8%</span></td><td><span class='nm'>15.0%</span></td><td><span class='nm'>15.4%</span></td></tr></tbody></table></div>
+      <p>Marginal late rates are indistinguishable (15.0 against 15.4 percent). Conditional late rates differ sharply: the constant buffer spans <strong>22.1 percentage points</strong> across these segments against <strong>3.0</strong> for the conditional policy. Conditional padding runs from 2.4 minutes for the easiest decile of orders to 11.8 for the hardest.</p>
+      <p>No aggregate accuracy metric detects this difference. RMSE, MAE and the marginal late rate are all effectively equal between the two policies; the divergence is entirely in the conditional coverage, and it falls systematically on the same customers.</p>
+      <h2>8. Limitations</h2>
+      <p>The 3:1 cost ratio is a stated judgment rather than a measurement, and the optimal quantile moves with it: 0.67 at 2:1 and 0.83 at 5:1. A sensitivity table across that range should accompany any policy decision.</p>
+      <p>The model predicts under current dispatching. Displaying longer estimates on difficult orders will change customer behavior and therefore load, which changes the predictions. This feedback is not represented here, and detecting it requires a holdout that is maintained after deployment rather than a one-off evaluation.</p>
+      <p>The demand-side cost of a longer quoted time, that is, orders not placed, is absent from the dataset and from the cost function. It is the largest unmeasured quantity in the analysis and the clearest candidate for an experiment.</p>
+      <p>Eighty-four days covers a single season with no holiday peak and no restaurant turnover. The learning curve establishes that more orders of the same kind will not help; it says nothing about orders of a different kind.</p>
+    </div>
+
+    <div class="rpt-foot"><a class="primary" href="../chapters/capstone-gradient-boosting-regression.html">&#8592; Back to Chapter 193</a><a href="../chapters/notebooks/html/capstone-gradient-boosting-regression.html" target="_blank" rel="noopener">&#128211; Companion notebook</a><a class="xls" href="../data/capstone-gradient-boosting-regression.xlsx">&#128202; Download dataset</a></div>
+    <div class="rpt-colophon">
+      From <strong>Statistics, Data Science and AI: A Visual Handbook</strong> by John Fisher.
+      Every statistic, table, and figure in this report is reproduced by the companion notebook.
+    </div>
+  </article>
+</div>
+
+<script>
+(function(){
+  var bar=document.getElementById('rptSticky');
+  window.addEventListener('scroll',function(){
+    if(window.scrollY>320) bar.classList.add('on'); else bar.classList.remove('on');
+  });
+})();
+</script>
+</body>
+</html>

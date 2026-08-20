@@ -682,6 +682,8 @@ MAP = {
         ("../../capstone-credit-card-fraud.html#notebook", "Back to the book", "Chapter 191 · Imbalanced Classification: Credit Card Fraud"),
     "capstone-churn-prediction-explainability.html":
         ("../../capstone-churn-prediction-explainability.html#notebook", "Back to the book", "Chapter 192 · Churn Prediction and Who Is Worth Contacting"),
+    "capstone-gradient-boosting-regression.html":
+        ("../../capstone-gradient-boosting-regression.html#notebook", "Back to the book", "Chapter 193 · Gradient Boosting for Tabular Regression"),
 }
 
 def card(href, kicker, title):

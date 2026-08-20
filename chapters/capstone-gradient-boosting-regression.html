@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 193 · Gradient Boosting for Tabular Regression — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .yes { color:#047857; font-weight:700; }
+    .disp-table .no { color:#dc2626; font-weight:700; }
+    .disp-table tr.hi td { background:#f5f3ff; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .embox { background:#f5f3ff; border:1px solid #ddd6fe; border-left:4px solid #6d28d9; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .embox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#4c1d95; }
+    .rw-card { background:#f5f3ff; border:1px solid #ddd6fe; border-left:4px solid #6d28d9; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#4c1d95; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#f5f3ff; color:#6d28d9; border-color:#ddd6fe; }
+    .ex-file.doc { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#f5f3ff; border:1px solid #ddd6fe; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#4c1d95; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #6d28d9; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#4c1d95; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+    .svg-wrap { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.9rem 0.6rem 0.3rem; background:var(--panel); }
+    .svg-wrap svg { width:100%; height:auto; display:block; }
+    .svg-wrap .cap { font-size:0.82rem; color:var(--ink-soft); padding:0.55rem 0.6rem 0.4rem; line-height:1.55; }
+    .svg-wrap .cap strong { color:var(--ink); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/capstone-gradient-boosting-regression.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXXI &#183; Capstone Projects: Machine Learning</span><span class="sep">/</span>
+      <span>Chapter 193</span>
+    </div>
+    <h1>Gradient Boosting for <span class="accent">Tabular</span> Regression</h1>
+    <p class="dek">Capstone 31. Four engineered features were worth 101 seconds of accuracy. Changing model family was worth 17. Twenty configurations of hyperparameter search were worth four. And the number the customer should see is not the prediction.</p>
+    <div class="hero-meta">
+      <div class="m">&#9201;&#65039; <b>~23 min</b>&nbsp;read</div>
+      <div class="m">&#127919; <b>Tabular regression</b></div>
+      <div class="m">&#128202; <b>Chapter 193</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Most of the effort in a tabular modeling project goes into the model. This chapter measures what
+       each decision was actually worth, in seconds, and
+       <span class="hl">the ordering is close to the reverse of the usual one</span>.</p>
+
+    <div class="brief-card">
+      <div class="bh">The brief</div>
+      <dl>
+        <dt>Setting</dt><dd>Eighty-four days of food delivery orders from one city zone: 41,410 usable orders with distance, hour, items, weather, traffic, courier supply and the restaurant, plus the minutes from order placed to delivered.</dd>
+        <dt>The question</dt><dd><strong>What arrival time should the app display when the order is placed?</strong> Not what the delivery will take. What number to promise.</dd>
+        <dt>Why it matters</dt><dd>Arriving late is roughly three times as costly as arriving early, and the service target is that no more than 15 percent of orders arrive after the displayed time. The platform currently shows the prediction plus a flat 8 minutes, and nobody remembers who chose 8.</dd>
+        <dt>What we do</dt><dd>Split by time, beat a linear baseline, price feature engineering against model family against hyperparameter search, read the learning curve to decide whether more data would help, find where the model is wrong, and then work out what to display.</dd>
+      </dl>
+    </div>
+
+    <div class="def-card">
+      <div class="sigma">&#8721;</div>
+      <div class="def-body">
+        A conditional mean is the best guess at the <span class="def-kw">middle</span> of the distribution, so roughly
+        half of all orders arrive after it. With asymmetric costs the right quantity to display is a
+        <span class="def-kw">quantile</span>, and which quantile follows from the cost ratio.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">&#11088;</div>
+      <div><div class="ctitle">The finding, up front</div>
+        <p>Four engineered features removed <strong>101 seconds</strong> of error, switching from linear regression to
+           gradient boosting removed <strong>17</strong>, and twenty configurations of hyperparameter search removed
+           <strong>four</strong>. Then a conditional quantile and a flat buffer with the same average padding produced
+           the <strong>same overall late rate</strong> and late rates that ranged over
+           <strong>22 points against 3</strong> across ordinary operating conditions.</p></div>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section id="setup">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Baseline, and a Split That Respects Time</h2></div>
+
+    <p>After removing a duplicated export block, 384 cancellations recorded as a delivery time of zero and 211 orders
+       with a GPS distance of 999 kilometers, 41,410 orders remain. Mean delivery time is 51.0 minutes with a standard
+       deviation of 17.9.</p>
+
+    <p>Three windows, in time order rather than sampled at random, because the model will always be predicting orders
+       that have not happened yet: <strong>days 0 to 69</strong> to train (34,462 orders), <strong>70 to 76</strong> to
+       choose (3,425), <strong>77 to 83</strong> to report (3,523). The middle window does the choosing. The last one
+       is opened once.</p>
+
+    <p>The baseline is not an aspiration, it is a hurdle: <strong>a linear regression on the raw columns of the
+       export</strong>. Every number below is measured against it.</p>
+  </section>
+
+  <!-- 2 -->
+  <section id="hierarchy">
+    <div class="section-eyebrow"><div class="num">2</div><h2>What Each Decision Was Worth</h2></div>
+
+    <table class="disp-table">
+      <tr><th>Features</th><th>Linear regression</th><th>Gradient boosting</th><th>What the model bought</th></tr>
+      <tr><td class="nm">Raw columns</td><td>9.898</td><td>9.622</td><td>0.277 min (17 s)</td></tr>
+      <tr class="hi"><td class="nm">Plus four engineered</td><td>8.017</td><td class="yes">7.946</td><td>0.071 min (4 s)</td></tr>
+      <tr><td class="nm">What the features bought</td><td>1.881 min</td><td>1.676 min</td><td></td></tr>
+    </table>
+
+    <p style="font-size:0.92rem;color:#64748b">Test RMSE in minutes. Both models use default settings.</p>
+
+    <p>Read the bottom row against the right column. <strong>The features are worth roughly twenty-four times what the
+       model family is worth</strong>, and a linear regression with good features beats a gradient boosting machine
+       with poor ones by more than a minute and a half.</p>
+
+    <p>Then a random search over twenty hyperparameter configurations, each fitted on the training window and scored
+       on the validation window, with the winner scored once on the test window.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Search moved validation</div><div class="rv">0.272 min</div><div class="rd">worst config to best</div></div>
+      <div class="rchip"><div class="rk">Top 10 on the test set</div><div class="rv">0.072 min</div><div class="rd">four seconds apart</div></div>
+      <div class="rchip"><div class="rk">Winner vs defaults</div><div class="rv">7.882 / 7.946</div><div class="rd">four seconds better</div></div>
+      <div class="rchip"><div class="rk">Best of the ten on test</div><div class="rv">7.865</div><div class="rd">it ranked 10th on validation</div></div>
+    </div>
+
+    <p>Four seconds is real and it is not nothing. Set it beside the 101 seconds the fourth engineered feature was
+       worth and the hierarchy is settled. It is also worth noticing that the configuration ranked tenth on the
+       validation window did best on the test window: <strong>among the leaders, the search is ranking noise</strong>.</p>
+
+    <div class="embox">
+      <span class="gb-tag">The reporting point</span>
+      <p style="margin:0.45rem 0 0">The score you selected on and the score you did not select on are different
+         numbers. The validation figure is optimistic by however much the search exploited that window, and quoting it
+         as the model's accuracy overstates it. The honest procedure also means <strong>deploying the validation
+         winner</strong> rather than the configuration that happens to do best on the test set, which would be using
+         the test set to choose.</p>
+    </div>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-eta-hierarchy.png"
+           alt="Left: horizontal bars showing how many minutes of test RMSE each decision removed. Four engineered features remove 1.676 minutes or 101 seconds; switching from linear regression to gradient boosting on raw columns removes 0.277 minutes or 17 seconds; the same switch on engineered columns removes 0.071 minutes or 4 seconds; twenty configurations of hyperparameter search remove 0.064 minutes or 4 seconds. Right: a learning curve on a log x-axis. The test error falls from 8.85 minutes at 1,700 orders to 7.88 at 34,000, while the training error rises from 5.2 to 7.65, and the two curves converge.">
+      <figcaption><strong>Left:</strong> the same four decisions every tabular project makes, priced.
+        <strong>Right:</strong> the training and test curves meeting, which is what convergence looks like.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 3 -->
+  <section id="features">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Engineer What the Model Cannot Derive</h2></div>
+
+    <p>Four features were added: a <strong>load ratio</strong> (pending orders per available courier), a
+       <strong>peak-hour flag</strong>, a <strong>weekend flag</strong>, and the restaurant's own
+       <strong>recent median delivery time</strong> built from its past orders only. Drop them one at a time and
+       refit.</p>
+
+    <table class="disp-table">
+      <tr><th>Removed</th><th>Test RMSE</th><th>Cost of removing it</th><th>Could the model have derived it?</th></tr>
+      <tr><td class="nm">is_weekend</td><td>7.946</td><td>+0.000 min</td><td>Yes, from day_of_week</td></tr>
+      <tr><td class="nm">is_peak</td><td>7.955</td><td>+0.009 min</td><td>Yes, from hour_of_day</td></tr>
+      <tr><td class="nm">load</td><td>7.958</td><td>+0.012 min</td><td>Yes, from its two components</td></tr>
+      <tr class="hi"><td class="nm">rest_hist</td><td class="no">9.494</td><td class="no">+1.548 min</td><td class="yes">No, it aggregates other rows</td></tr>
+    </table>
+
+    <p>One feature carried essentially all of it, and the pattern is not an accident. A boosted tree can split on
+       <code>orders_pending</code> and <code>couriers_available</code> separately and approximate their ratio; it can
+       split on <code>hour_of_day</code> and find the lunch and dinner peaks by itself. Writing those out helps
+       readability and almost nothing else.</p>
+
+    <div class="callout key">
+      <div class="cico">&#128161;</div>
+      <div><div class="ctitle">The rule</div>
+        <p><strong>Engineer what the model cannot derive from what it already has.</strong> Ratios, flags and
+           thresholds of existing columns are convenience. Aggregates across rows, histories, and anything joined in
+           from outside the table are information.</p></div>
+    </div>
+
+    <p>A note on how that feature was built. The expanding median uses each restaurant's previous orders and stops
+       there. Taking a plain <code>groupby(...).median()</code> over the whole file would have been shorter, slightly
+       more accurate on this test set, and wrong, because it would use next month's orders to predict this month's.
+       That is the trap <a href="capstone-credit-card-fraud.html">Chapter 191</a> is about, and it is easiest to fall
+       into exactly here, in the most valuable feature in the project.</p>
+  </section>
+
+  <!-- 4 -->
+  <section id="curve">
+    <div class="section-eyebrow"><div class="num">4</div><h2>More Data, or a Better Model?</h2></div>
+
+    <p>Both cost money and they are different purchases, so it is worth answering rather than guessing. Fit on growing
+       subsets of the training window and watch the two errors converge.</p>
+
+    <table class="disp-table">
+      <tr><th>Training orders</th><th>Error on the training data</th><th>Error on the test window</th><th>Gap</th></tr>
+      <tr><td class="nm">1,723</td><td>5.206</td><td>8.848</td><td>3.641</td></tr>
+      <tr><td class="nm">3,446</td><td>5.988</td><td>8.372</td><td>2.384</td></tr>
+      <tr><td class="nm">8,615</td><td>6.980</td><td>8.109</td><td>1.129</td></tr>
+      <tr><td class="nm">17,231</td><td>7.479</td><td>8.002</td><td>0.523</td></tr>
+      <tr class="hi"><td class="nm">34,462</td><td>7.654</td><td>7.882</td><td class="yes">0.227</td></tr>
+    </table>
+
+    <p>The curves have met. The training error has risen and the test error has fallen until the gap is a quarter of a
+       minute, and the last doubling of the data bought <strong>0.12 minutes</strong>, about seven seconds.</p>
+
+    <p><strong>More data will not help, and neither will a more flexible model.</strong> What is left is not error a
+       model could remove with better use of these features. It is variation in the world: two identical orders from
+       the same restaurant, the same distance, the same minute, genuinely arrive at different times.</p>
+
+    <p>Which changes the question the project is answering. If the uncertainty cannot be removed, it has to be
+       <strong>communicated</strong>, and that is a different piece of work from making the model better.</p>
+  </section>
+
+  <!-- 5 -->
+  <section id="errors">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Where the Model Is Wrong</h2></div>
+
+    <p>An average error of 7.9 minutes is a summary. The question is whether it is the same 7.9 minutes everywhere.</p>
+
+    <table class="disp-table">
+      <tr><th>Segment</th><th>n</th><th>Average error (bias)</th><th>Spread of the error</th></tr>
+      <tr><td class="nm">Off peak</td><td>993</td><td>&#8722;0.13</td><td class="yes">4.65</td></tr>
+      <tr><td class="nm">Peak hours</td><td>2,530</td><td>&#8722;0.07</td><td>8.83</td></tr>
+      <tr><td class="nm">Load under 0.8</td><td>945</td><td>&#8722;0.09</td><td class="yes">4.66</td></tr>
+      <tr class="hi"><td class="nm">Load above 2.0</td><td>335</td><td>+0.67</td><td class="no">11.52</td></tr>
+      <tr><td class="nm">Under 2 km</td><td>1,107</td><td>&#8722;0.08</td><td>6.77</td></tr>
+      <tr><td class="nm">Over 6 km</td><td>394</td><td>&#8722;0.30</td><td>10.35</td></tr>
+      <tr><td class="nm">Dry</td><td>2,780</td><td>&#8722;0.11</td><td>7.47</td></tr>
+      <tr><td class="nm">Heavy rain</td><td>338</td><td>+0.03</td><td>10.41</td></tr>
+    </table>
+
+    <p><strong>The bias is near zero everywhere and the spread is nowhere near constant.</strong> Off peak the model is
+       good to about five minutes. When the zone has more than two pending orders per courier it is good to about
+       twelve. A factor of two and a half, and predictable from features already in the model.</p>
+
+    <p>A model with this property is not broken. It is reporting something true: some orders are inherently harder to
+       forecast than others. What would be broken is a system that shows the same kind of number for both.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-eta-quantile.png"
+           alt="Left: a scatter of prediction errors against pending orders per available courier, with a two-standard-deviation envelope drawn on top. The envelope widens from about 4.8 minutes at the lowest load to about 11.3 at the highest, while the errors stay centered on zero throughout. Right: grouped bars of the share of orders arriving late under a flat 6.7-minute buffer and under the conditional 85th percentile, across six segments, against a dashed 15 percent service target. The flat buffer ranges from 3 percent on easy orders to 25 percent on high-load orders; the conditional version ranges from 15 to 18.">
+      <figcaption><strong>Left:</strong> unbiased everywhere, precise only sometimes.
+        <strong>Right:</strong> two policies with the same average padding, and completely different service.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 6 -->
+  <section id="display">
+    <div class="section-eyebrow"><div class="num">6</div><h2>What Number to Display</h2></div>
+
+    <p>The point prediction is the best guess at the middle of the distribution, so <strong>46.5 percent of orders
+       arrive after it</strong>. That is not a defect. It is what a conditional mean is.</p>
+
+    <p>With late costing three times as much as early, the quantity that minimizes expected cost is not the mean but
+       the quantile at <strong>&#964; = 3 &#247; (3 + 1) = 0.75</strong>, which is the newsvendor result, and gradient
+       boosting can be fitted directly to that loss.</p>
+
+    <table class="disp-table">
+      <tr><th>What is displayed</th><th>Arrive late</th><th>Average padding</th><th>Cost per order</th></tr>
+      <tr><td class="nm">The point prediction</td><td class="no">46.5%</td><td>0.00 min</td><td>11.271</td></tr>
+      <tr><td class="nm">Point prediction + the current 8 min</td><td>11.8%</td><td>8.00 min</td><td>11.080</td></tr>
+      <tr><td class="nm">Conditional 70th percentile</td><td>31.3%</td><td>2.71 min</td><td>9.808</td></tr>
+      <tr class="hi"><td class="nm">Conditional 75th percentile</td><td>25.5%</td><td>3.93 min</td><td class="yes">9.638</td></tr>
+      <tr><td class="nm">Conditional 80th percentile</td><td>20.4%</td><td>5.30 min</td><td>9.667</td></tr>
+      <tr><td class="nm">Conditional 85th percentile</td><td class="yes">15.4%</td><td>6.73 min</td><td>10.099</td></tr>
+      <tr><td class="nm">Conditional 90th percentile</td><td>10.5%</td><td>8.90 min</td><td>11.169</td></tr>
+    </table>
+
+    <p style="font-size:0.92rem;color:#64748b">Cost is three times the minutes late plus one times the minutes early,
+       averaged over orders.</p>
+
+    <p>The sweep finds its minimum exactly where the theory says it should, at the <strong>75th percentile</strong>,
+       and costs about 13 percent less than the current flat 8-minute policy.</p>
+
+    <p>There is a genuine tension here to hand back rather than resolve. The 75th percentile is cost-optimal and leaves
+       25 percent of orders late, against a service target of 15. The 85th hits the target and costs a little more.
+       Which one is right depends on what the service promise is worth, which is a question for the business. What an
+       analysis can do is make sure whichever they choose is delivered well.</p>
+  </section>
+
+  <!-- 7 -->
+  <section id="matched">
+    <div class="section-eyebrow"><div class="num">7</div><h2>The Same Padding, Spent Differently</h2></div>
+
+    <p>The conditional 85th percentile pads by 6.73 minutes on average. Give a flat buffer the <strong>same</strong>
+       average padding and compare. If the model's uncertainty estimates are worth anything, the two will differ in
+       who ends up late.</p>
+
+    <table class="disp-table">
+      <tr><th>Segment</th><th>n</th><th>Current +8 flat</th><th>Matched 6.73 flat</th><th>Conditional 85th</th></tr>
+      <tr><td class="nm">Off peak, under 3 km</td><td>534</td><td>1.9%</td><td class="yes">3.0%</td><td>16.3%</td></tr>
+      <tr><td class="nm">Off peak, 3 km or more</td><td>459</td><td>6.8%</td><td>9.8%</td><td>17.6%</td></tr>
+      <tr><td class="nm">Peak, under 3 km</td><td>1,369</td><td>13.1%</td><td>17.1%</td><td>14.7%</td></tr>
+      <tr><td class="nm">Peak, 3 km or more</td><td>1,161</td><td>17.0%</td><td>20.0%</td><td>15.1%</td></tr>
+      <tr><td class="nm">Heavy rain</td><td>338</td><td>19.8%</td><td>23.4%</td><td>17.2%</td></tr>
+      <tr><td class="nm">Load above 2.0</td><td>335</td><td>21.8%</td><td class="no">25.1%</td><td>16.4%</td></tr>
+      <tr class="hi"><td class="nm">All orders</td><td>3,523</td><td>11.8%</td><td>15.0%</td><td>15.4%</td></tr>
+    </table>
+
+    <p>Read the bottom row first. The two policies have almost the same overall late rate, <strong>15.0 percent
+       against 15.4</strong>. On the headline number they are the same product.</p>
+
+    <p>Now read the column above it. <strong>The flat buffer keeps its promise to 97 percent of easy orders and breaks
+       it for a quarter of the hard ones.</strong> Its late rate ranges over <strong>22 percentage points</strong>
+       across these six segments; the conditional version ranges over <strong>three</strong>.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Padding, easiest 10%</div><div class="rv">2.4 min</div><div class="rd">flat policy gives 6.7</div></div>
+      <div class="rchip"><div class="rk">Padding, median order</div><div class="rv">6.7 min</div><div class="rd">flat policy gives 6.7</div></div>
+      <div class="rchip"><div class="rk">Padding, hardest 10%</div><div class="rv">11.8 min</div><div class="rd">flat policy gives 6.7</div></div>
+      <div class="rchip"><div class="rk">Segment spread</div><div class="rv">22 pp &#8594; 3 pp</div><div class="rd">in the late rate</div></div>
+    </div>
+
+    <p>That difference is invisible in RMSE, invisible in MAE, and invisible in the overall late rate. It is the
+       difference between a service level and an average of service levels, and it falls on the same customers every
+       time: the ones who live further out, order at dinner time, or order when it is raining.</p>
+
+    <p>The current +8 policy has the same shape. Its overall figure of 11.8 percent is comfortably inside the target,
+       and it is failing that target for <strong>21.8 percent</strong> of the highest-load orders. The headline number
+       is hiding it.</p>
+  </section>
+
+  <!-- 8 -->
+  <section id="watch">
+    <div class="section-eyebrow"><div class="num">8</div><h2>What to Watch</h2></div>
+
+    <ul class="checklist">
+      <li><span class="ck">&#10003;</span><span><strong>Spend the effort in proportion to what it buys.</strong> Here that was 101 seconds, 17 seconds, and 4 seconds, and the usual order of attention is close to the reverse.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Engineer what the model cannot derive.</strong> A ratio of two present columns is convenience; an aggregate over other rows is information.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Quote the test score, not the validation score.</strong> The one you selected on is optimistic by however much the search exploited it, and among the leaders the ranking is noise.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Draw the learning curve before buying more data.</strong> It answers a question people usually argue about instead.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Check the residual spread by segment, not just the residual mean.</strong> Unbiased everywhere is compatible with useless somewhere.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>An average service level is not a service level.</strong> A policy can hit 15 percent overall while failing a quarter of the customers who need it most.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>When the error is irreducible, communicate it.</strong> The remaining work is not a better point estimate, it is the right interval around it.</span></li>
+    </ul>
+  </section>
+
+  <!-- 9 -->
+  <section id="ml">
+    <div class="section-eyebrow"><div class="num">9</div><h2>Quantiles and Cost in Data Science &amp; AI</h2></div>
+
+    <table class="disp-table">
+      <tr><th>Where it appears</th><th>The same question, in a different costume</th></tr>
+      <tr><td class="nm">Inventory and supply chain</td><td>The original newsvendor problem: stock the quantile set by the ratio of stockout cost to holding cost, not the forecast</td></tr>
+      <tr><td class="nm">Capacity and staffing</td><td>Rostering to the mean guarantees being short half the time; the target is a service level, which is a quantile</td></tr>
+      <tr><td class="nm">Project estimation</td><td>The reason a schedule slips is that every task was estimated at its mode and summed as if it were a maximum</td></tr>
+      <tr><td class="nm">Energy and load forecasting</td><td>Grid operators buy reserve against a high quantile, because the cost of being short is not the cost of being long</td></tr>
+      <tr><td class="nm">Any user-facing estimate</td><td>Arrival times, wait times, download times: the displayed number is a promise, and a promise is a quantile</td></tr>
+    </table>
+
+    <div class="research">
+      <span class="rtag">Where the research went</span>
+      <p style="margin:0.4rem 0 0"><strong>Koenker and Bassett</strong> introduced quantile regression in 1978 and the
+         pinball loss used here is theirs. <strong>Friedman</strong> gave gradient boosting its modern form in 2001,
+         and <strong>Meinshausen</strong>'s quantile regression forests showed how to get a full conditional
+         distribution out of an ensemble rather than a single number. The distribution-free alternative is
+         <strong>conformal prediction</strong>, developed by <strong>Vovk, Gammerman and Shafer</strong> and extended
+         to conditional coverage by <strong>Romano, Patterson and Cand&#232;s</strong>, which produces intervals with
+         a guaranteed marginal coverage rate without assuming anything about the error distribution. On the
+         model-comparison question, <strong>Grinsztajn and colleagues</strong> assembled the evidence that tree
+         ensembles still lead on tabular data, and <strong>Kadra and colleagues</strong> made the complementary point
+         that most of the reported gains in this literature are smaller than the tuning budgets that produced them.</p>
+    </div>
+  </section>
+
+  <!-- notebook -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">&#128013;</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook cleans three faults out of the export, splits by time, fits the linear baseline,
+             builds and prices the four engineered features, runs the twenty-configuration search and scores it
+             honestly, draws the learning curve, breaks the residuals down by segment, fits the quantile models, and
+             compares a conditional quantile against a flat buffer at matched padding.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-gradient-boosting-regression.html">&#128211; View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-gradient-boosting-regression.ipynb"
+           target="_blank" rel="noopener">&#9654; Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-gradient-boosting-regression.ipynb"
+           target="_blank" rel="noopener">&#11015; View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Read the reports &amp; get the data</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong>
+         (<code>capstone-gradient-boosting-regression.xlsx</code>) holds 42,520 orders across 84 days and 140
+         restaurants, with a duplicated export block, cancellations recorded as zero minutes, GPS failures recorded as
+         999 kilometers, and the agreed cost of being late. Two written reports accompany it: a
+         <strong>plain-language brief</strong> for the operations lead, and a <strong>technical report</strong>
+         covering the comparison, the search and the quantile policy.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-31-gradient-boosting-regression.html" target="_blank" rel="noopener">&#128196; Plain-language brief <small>read online</small></a>
+        <a class="ex-file doc" href="../reports/capstone-31-gradient-boosting-regression-technical.html" target="_blank" rel="noopener">&#128202; Technical report <small>read online</small></a>
+        <a class="ex-file xls" href="../data/capstone-gradient-boosting-regression.xlsx">&#128202; Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>&#127891; Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">&#10003;</span><span><strong>Features 101 seconds, model family 17, hyperparameters 4.</strong> The effort usually runs in the other order.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>One feature did all of it.</strong> The three the model could have derived were worth 0.02 minutes between them; the cross-row history was worth 1.55.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>The learning curves met</strong>, so the remaining error is in the world rather than in the model.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>The residual spread varies by a factor of two and a half</strong> across ordinary conditions, and it is predictable in advance.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Same padding, same overall late rate, 22 points of spread against 3.</strong> An average service level is not a service level.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">&#10067;</div><h2>Quiz: Test Yourself</h2></div>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-churn-prediction-explainability.html">
+      <span style="font-size:1.3rem">&#8592;</span>
+      <span><span class="cn-dir">Chapter 192 &#183; Previous</span><br><span class="cn-title">Churn Prediction and Who Is Worth Contacting</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">&#8594;</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;&#183;&nbsp;
+  Chapter 193 &nbsp;&#183;&nbsp; &#169; 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch193";
+  window.QUIZ_DATA = [
+    {
+      q: "Four engineered features removed 1.676 minutes of test RMSE; switching from linear regression to gradient boosting removed 0.071. What follows for how a project should be run?",
+      options: ["Gradient boosting is not suited to this problem", "The features should be chosen after the model", "Time spent understanding the data and building features returns far more than time spent choosing among model families", "The linear model should be used because it is simpler"],
+      answer: 2,
+      explain: "The gradient boosting machine with poor features is beaten by a linear regression with good ones by more than a minute and a half. Both models improved by roughly the same amount when the features improved."
+    },
+    {
+      q: "Removing is_weekend, is_peak and load cost 0.000, 0.009 and 0.012 minutes. Removing rest_hist cost 1.548. What distinguishes the last one?",
+      options: ["It is a continuous variable rather than a flag", "It is built by aggregating other rows, which the model cannot do for itself; the other three are functions of columns the model already had", "It has more distinct values", "It is more strongly correlated with the outcome"],
+      answer: 1,
+      explain: "A tree can split on orders_pending and couriers_available separately and approximate their ratio, and can find the lunch and dinner peaks from hour_of_day. It cannot compute a restaurant's history across other rows."
+    },
+    {
+      q: "The restaurant history feature was built with an expanding median over past orders only. Why not a plain groupby median over the whole file?",
+      options: ["It would be slower to compute", "It would produce missing values for new restaurants", "It would use orders that had not happened yet to predict earlier ones, which inflates the score and cannot be reproduced in production", "It would give the same answer, so it does not matter"],
+      answer: 2,
+      explain: "It is the leakage trap from Chapter 191, and it appears here in the single most valuable feature in the project, which is exactly where it is easiest to miss."
+    },
+    {
+      q: "The hyperparameter search moved validation RMSE by 0.272 minutes, but the top ten configurations span 0.072 minutes on the test set and the tenth-ranked one did best. What does that show?",
+      options: ["The search space was too small", "Hyperparameter tuning is worthless", "Among the leading configurations the search is ranking noise, and the validation score is optimistic relative to the test score", "The validation window was too large"],
+      answer: 2,
+      explain: "Tuning bought a real four seconds over the defaults. The point is that the differences among the leaders are smaller than the noise, so the validation figure should not be quoted as the model's accuracy."
+    },
+    {
+      q: "Between 17,231 and 34,462 training orders, test RMSE fell from 8.002 to 7.882 and the train-test gap closed to 0.227. What should the team do?",
+      options: ["Collect more orders", "Fit a more flexible model", "Stop trying to reduce the error and start communicating it, because the remaining variation is in the process rather than in the model", "Add regularization"],
+      answer: 2,
+      explain: "Converged curves with a small gap mean neither more data nor more flexibility will help. Two identical orders genuinely arrive at different times, and that is a fact about deliveries."
+    },
+    {
+      q: "Residual bias is near zero in every segment while the residual spread runs from 4.65 minutes off peak to 11.52 at high load. How should that be read?",
+      options: ["The model is biased at high load", "The model is broken and needs refitting", "The model is correct on average everywhere and much less certain in some conditions than others, which is a true property of the problem", "High-load orders should be excluded"],
+      answer: 2,
+      explain: "Unbiased everywhere, precise only sometimes. What would be wrong is a system that displays the same kind of number regardless."
+    },
+    {
+      q: "With late costing three times as much as early, the cost sweep found its minimum at the 75th percentile. Where does that number come from?",
+      options: ["It was found by trial and error", "It is the newsvendor result: the optimal quantile is the cost of being late divided by the sum of both costs, 3/(3+1)", "It is a convention for delivery estimates", "It is the point where precision equals recall"],
+      answer: 1,
+      explain: "The sweep confirms empirically what the asymmetric loss implies analytically. Fitting gradient boosting to the pinball loss at that quantile estimates the quantity directly."
+    },
+    {
+      q: "A flat 6.73-minute buffer and the conditional 85th percentile give overall late rates of 15.0 and 15.4 percent. Why prefer the conditional one?",
+      options: ["It has a lower RMSE", "It uses less padding on average", "Its late rate ranges over 3 percentage points across segments against 22 for the flat buffer, so it keeps the same promise to every customer rather than only on average", "It is easier to explain to customers"],
+      answer: 2,
+      explain: "The flat buffer keeps its promise to 97 percent of easy orders and breaks it for a quarter of the hard ones, and the customers it fails are systematically the same ones: further out, at dinner time, in the rain."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
