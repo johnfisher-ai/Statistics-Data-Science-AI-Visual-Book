@@ -676,6 +676,8 @@ MAP = {
         ("../../capstone-regression-diagnostics-and-remedies.html#notebook", "Back to the book", "Chapter 186 · When the Assumptions Fail: Diagnostics and Remedies"),
     "capstone-clinical-risk-scoring.html":
         ("../../capstone-clinical-risk-scoring.html#notebook", "Back to the book", "Chapter 187 · Logistic Regression for Decisions: Clinical Risk Scoring"),
+    "capstone-emergency-department-visits.html":
+        ("../../capstone-emergency-department-visits.html#notebook", "Back to the book", "Chapter 188 · Counts and Rates: Emergency Department Visits"),
 }
 
 def card(href, kicker, title):

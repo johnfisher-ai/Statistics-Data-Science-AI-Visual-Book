@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Counts and Rates (Technical Report) &#183; Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/report.css">
+  <style>
+    body.report { --rpt-accent:#c2410c; --rpt-accent-dark:#7c2d12; --rpt-accent-bg:#fff7ed; --rpt-accent-line:#fed7aa; }
+  </style>
+</head>
+
+<body class="report">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="../chapters/capstone-emergency-department-visits.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">&#8592; Chapter 188</a>
+  </div>
+</nav>
+
+<div class="rpt-sticky" id="rptSticky">
+  <div class="inner">
+    <div class="st-title">Count Regression for District-Level Emergency Demand: Exposure, Overdispersion and Interval Coverage</div>
+    <a class="st-back" href="../chapters/capstone-emergency-department-visits.html">&#8592; Chapter 188</a>
+  </div>
+</div>
+
+<div class="rpt-wrap">
+  <article class="rpt-paper tech">
+    <header class="rpt-head">
+      <div class="rpt-topline">
+        <div class="rpt-kicker">Capstone 28 &#183; Technical Report</div>
+        <span class="rpt-badge tech">Technical Report</span>
+      </div>
+      <h1>Count Regression for District-Level Emergency Demand: Exposure, Overdispersion and Interval Coverage</h1>
+      <p class="rpt-sub">A Poisson GLM with a population offset, three treatments for overdispersion, and an assessment of which produces intervals that cover the generating values.</p>
+      <div class="rpt-meta"><div><b>Analysis</b> &nbsp;Public Health Analytics</div><div><b>Design</b> &nbsp;Panel, 40 districts x 48 months</div><div><b>Sample</b> &nbsp;1,884 district-months</div><div><b>Date</b> &nbsp;2026</div></div>
+    </header>
+
+    <div class="rpt-prov">
+      <span class="pv-tag">Where this comes from</span>
+      <div class="pv-row"><div><span>Chapter</span> <a href="../chapters/capstone-emergency-department-visits.html">Chapter 188 &#183; Counts and Rates: Emergency Department Visits</a></div><div><span>Part</span> Part XXX &#183; Capstone Projects: Regression</div><div><span>Dataset</span> <a href="../data/capstone-emergency-department-visits.xlsx">capstone-emergency-department-visits.xlsx</a></div><div><span>Notebook</span> <a href="../chapters/notebooks/html/capstone-emergency-department-visits.html" target="_blank" rel="noopener">View the analysis</a></div></div>
+    </div>
+
+    <div class="rpt-body">
+      <div class="rpt-abstract"><span class="ab-tag">Abstract</span><p><b>Objective.</b> To estimate associations between district characteristics and the rate of emergency department attendance, and to establish which variance treatment yields valid inference. <b>Methods.</b> Poisson generalized linear models were fitted to monthly visit counts for 40 districts over 48 months (1,884 usable district-months) with log population as an offset. Overdispersion was assessed by the Pearson chi-square and deviance statistics relative to residual degrees of freedom. Three treatments were compared: quasi-Poisson scaling, a negative binomial GLM, and cluster-robust covariance with districts as clusters. Because the data are simulated with known parameters, the criterion was whether each 95% interval contained the generating value. <b>Results.</b> Omission of the offset reversed the sign of the family-doctor coefficient, from a rate ratio of 1.012 to 0.909. Pearson chi-square per degree of freedom was 42.1 (deviance 40.7), indicating severe overdispersion. Negative binomial standard errors exceeded Poisson's by factors of 3.9 to 4.7; cluster-robust standard errors by factors of 4.7 to 39.5. Interval coverage of the five generating values was 1/5 for Poisson, 3/5 for negative binomial and 5/5 for cluster-robust. The urban coefficient was significant under Poisson (RR 1.050, [1.045, 1.055]) and not under cluster-robust inference (RR 1.050, [0.878, 1.256]). <b>Conclusion.</b> The excess variation is between districts rather than simple overdispersion, and only a treatment addressing the clustering produced valid intervals.</p></div>
+      <div class="rpt-keywords"><b>Keywords:</b> ['Poisson regression', 'offset', 'exposure', 'rate ratio', 'overdispersion', 'negative binomial', 'quasi-Poisson', 'cluster-robust standard errors', 'generalized linear model', 'interval coverage']</div>
+      <h2>1. Data and exclusions</h2>
+      <div class="rpt-cap"><span class="n">Table 1.</span> Panel construction. District populations range from 7,000 to 134,600.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Stage</th><th>n</th><th>Note</th></tr></thead><tbody><tr><td><span class='nm'>Warehouse export</span></td><td>1,950</td><td>Executed twice</td></tr><tr><td><span class='nm'>Deduplicated</span></td><td>1,920</td><td>40 districts x 48 months</td></tr><tr><td><span class='nm'>Count filed</span></td><td>1,898</td><td>24 district-months lost to a feed outage</td></tr><tr><td><span class='nm'>Denominator loaded</span></td><td>1,884</td><td>15 rows carried a population of 0, a load failure</td></tr></tbody></table></div>
+      <h2>2. Specification and the exposure term</h2>
+      <p>The response is a count of visits per district-month. The linear predictor includes deprivation, family doctors per 10,000 centered at the mean, an urban indicator, a winter indicator and a linear month index, with log population entered as an offset so that coefficients are interpretable as log rate ratios.</p>
+      <div class="rpt-cap"><span class="n">Table 2.</span> Effect of omitting the exposure term. Poisson fits, coefficients exponentiated.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Rate ratio</th><th>Without offset</th><th>With offset</th><th>Generating value</th></tr></thead><tbody><tr><td><span class='nm'>Deprivation, per SD</span></td><td>1.3774</td><td>1.2620</td><td>1.2032</td></tr><tr><td><span class='nm'>GPs per 10,000</span></td><td>1.0120</td><td>0.9088</td><td>0.9493</td></tr><tr><td><span class='nm'>Urban</span></td><td>1.0869</td><td>1.0499</td><td>1.1008</td></tr><tr><td><span class='nm'>Winter</span></td><td>1.1659</td><td>1.1710</td><td>1.1526</td></tr></tbody></table></div>
+      <p>The family-doctor coefficient changes sign. With population varying by a factor of 19.2 across districts, a model without the offset estimates associations with the count rather than the rate, and every coefficient absorbs whatever correlates with district size. The offset is not a refinement to the specification; it determines which estimand is being reported.</p>
+      <h2>3. Overdispersion</h2>
+      <p>The Poisson family imposes Var(Y) = E(Y). The fitted model returns a Pearson chi-square of 42.1 per residual degree of freedom and a scaled deviance of 40.7, against an expectation of approximately 1 under correct specification. The raw variance-to-mean ratio of the response is 302.</p>
+      <p>The consequence is well characterized: the quasi-likelihood score equations for the mean parameters remain unbiased, so the coefficient estimates are approximately correct, while the model-based covariance matrix is understated by approximately the dispersion factor.</p>
+      <h2>4. Three treatments compared on coverage</h2>
+      <div class="rpt-cap"><span class="n">Table 3.</span> Nominal 95% intervals and whether each contains the generating value. Quasi-Poisson scale 42.1, multiplying Poisson standard errors by 6.49.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Term</th><th>Generating RR</th><th>Poisson</th><th>Negative binomial</th><th>Cluster-robust</th></tr></thead><tbody><tr><td><span class='nm'>Deprivation</span></td><td>1.2032</td><td>[1.259, 1.265] miss</td><td>[1.230, 1.251] miss</td><td>[1.156, 1.378]</td></tr><tr><td><span class='nm'>GPs per 10,000</span></td><td>0.9493</td><td>[0.907, 0.910] miss</td><td>[0.924, 0.937] miss</td><td>[0.863, 0.957]</td></tr><tr><td><span class='nm'>Urban</span></td><td>1.1008</td><td>[1.045, 1.055] miss</td><td>[1.084, 1.131]</td><td>[0.878, 1.256]</td></tr><tr><td><span class='nm'>Winter</span></td><td>1.1526</td><td>[1.165, 1.177] miss</td><td>[1.132, 1.186]</td><td>[1.145, 1.198]</td></tr><tr><td><span class='nm'>Trend per month</span></td><td>1.0021</td><td>[1.002, 1.002]</td><td>[1.001, 1.003]</td><td>[1.001, 1.003]</td></tr><tr><td><span class='nm'>Coverage</span></td><td>&#8212;</td><td>1 of 5</td><td>3 of 5</td><td>5 of 5</td></tr></tbody></table></div>
+      <div class="rpt-key"><span class="k-tag">Why the negative binomial is insufficient here</span><p>The negative binomial accommodates a variance function of the form &#956; + &#945;&#956;&#178; while retaining the assumption of independent observations. The excess variation in this panel arises from district-level heterogeneity, with a standard deviation of 0.21 on the log scale, and each district contributes 48 correlated observations. The model therefore widens intervals for dispersion while continuing to treat those 48 months as 48 independent units, and it under-covers on the two coefficients most strongly associated with time-invariant district characteristics.</p></div>
+      <p>Cluster-robust covariance estimation, treating the district as the clustering unit, addresses the dependence directly and attains nominal coverage on all five parameters. Standard error inflation relative to Poisson is 39.5-fold for deprivation and 4.7-fold for the winter indicator, and the contrast between those two figures is itself informative: deprivation is time-invariant within a district and winter varies within it, so only the former is affected by between-district dependence.</p>
+      <figure class="rpt-fig"><img src="../assets/img/capstone-counts-dispersion.png" alt="A log-log mean-variance plot and a grouped interval comparison."><figcaption><span class="n">Figure 1.</span> District-level variance against mean on logarithmic scales with the Poisson identity and fitted negative binomial variance functions, and rate ratios with intervals under three treatments against the generating values.</figcaption></figure>
+      <h2>5. Reported estimates</h2>
+      <p>The overall observed rate is 11.88 visits per 1,000 residents per month. Estimates below use cluster-robust inference.</p>
+      <div class="rpt-cap"><span class="n">Table 4.</span> Associations on the rate scale.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Factor</th><th>Rate ratio</th><th>95% CI</th><th>Visits per 1,000 per month</th></tr></thead><tbody><tr><td><span class='nm'>Deprivation, per SD</span></td><td>1.262</td><td>[1.156, 1.378]</td><td>+3.11</td></tr><tr><td><span class='nm'>GPs per 10,000, per unit</span></td><td>0.909</td><td>[0.863, 0.957]</td><td>&#8722;1.08</td></tr><tr><td><span class='nm'>Urban</span></td><td>1.050</td><td>[0.878, 1.256]</td><td>+0.59, not established</td></tr><tr><td><span class='nm'>Winter month</span></td><td>1.171</td><td>[1.145, 1.198]</td><td>+2.03</td></tr></tbody></table></div>
+      <h2>6. Discussion</h2>
+      <p>Two independent specification decisions determine whether this analysis answers the intended question. The offset determines the estimand; the variance treatment determines whether the reported uncertainty is credible. Neither is a matter of model fit, and neither is signalled by any diagnostic that appears in default output.</p>
+      <p>The practical consequence is visible in the urban coefficient, which is unambiguously significant under Poisson and not established under valid inference, with an identical point estimate. Where such an estimate enters a resource allocation formula, the distinction is not academic.</p>
+      <p>Limitations. The design is observational and the estimates are associations across districts; no causal claim is advanced, and the family-doctor association in particular is subject to confounding by district characteristics not recorded here. The denominator is the recorded population, and registered, resident and catchment definitions differ materially in some districts. The deprivation index is a composite whose construction embeds weighting decisions that the coefficient inherits. Finally, a random-effects or GEE specification would model the district-level heterogeneity explicitly rather than accommodating it in the covariance, and would be the natural next step where district-specific predictions are required.</p>
+      <h2>7. Conclusion</h2>
+      <p>Emergency attendance rates are associated with deprivation (RR 1.262, 95% CI 1.156 to 1.378) and inversely with family doctor supply (RR 0.909, 95% CI 0.863 to 0.957). The urban-rural difference is not established (RR 1.050, 95% CI 0.878 to 1.256). Omission of the population offset reverses the sign of the family-doctor association. Poisson inference is invalid at a dispersion of 42.1, and only cluster-robust covariance estimation attained nominal interval coverage.</p>
+      <h2>References</h2>
+      <ul class="rpt-refs"><li>Nelder, J. A., &amp; Wedderburn, R. W. M. (1972). Generalized linear models. <em>Journal of the Royal Statistical Society, Series A</em>, 135(3), 370&#8211;384.</li><li>Wedderburn, R. W. M. (1974). Quasi-likelihood functions, generalized linear models, and the Gauss-Newton method. <em>Biometrika</em>, 61(3), 439&#8211;447.</li><li>Cameron, A. C., &amp; Trivedi, P. K. (2013). <em>Regression Analysis of Count Data</em> (2nd ed.). Cambridge University Press.</li><li>McCullagh, P., &amp; Nelder, J. A. (1989). <em>Generalized Linear Models</em> (2nd ed.). Chapman &amp; Hall.</li><li>Liang, K.-Y., &amp; Zeger, S. L. (1986). Longitudinal data analysis using generalized linear models. <em>Biometrika</em>, 73(1), 13&#8211;22.</li><li>Lambert, D. (1992). Zero-inflated Poisson regression, with an application to defects in manufacturing. <em>Technometrics</em>, 34(1), 1&#8211;14.</li><li>Ver Hoef, J. M., &amp; Boveng, P. L. (2007). Quasi-Poisson vs. negative binomial regression: how should we model overdispersed count data? <em>Ecology</em>, 88(11), 2766&#8211;2772.</li><li>Cameron, A. C., &amp; Miller, D. L. (2015). A practitioner's guide to cluster-robust inference. <em>Journal of Human Resources</em>, 50(2), 317&#8211;372.</li></ul>
+      <h2>Reproducibility</h2>
+      <p>The dataset (<code>capstone-emergency-department-visits.xlsx</code>) contains the district-month panel with its data-quality faults intact, the analysis plan as agreed before fitting, and the generating parameters on the log-rate scale. An executable notebook accompanies the chapter and reproduces every estimate, table and figure, including the offset comparison and the coverage assessment. Analyses use NumPy, pandas, statsmodels and Matplotlib.</p>
+    </div>
+
+    <div class="rpt-foot"><a class="primary" href="../chapters/capstone-emergency-department-visits.html">&#8592; Back to Chapter 188</a><a href="../chapters/notebooks/html/capstone-emergency-department-visits.html" target="_blank" rel="noopener">&#128211; Companion notebook</a><a class="xls" href="../data/capstone-emergency-department-visits.xlsx">&#128202; Download dataset</a></div>
+    <div class="rpt-colophon">
+      From <strong>Statistics, Data Science and AI: A Visual Handbook</strong> by John Fisher.
+      Every statistic, table, and figure in this report is reproduced by the companion notebook.
+    </div>
+  </article>
+</div>
+
+<script>
+(function(){
+  var bar=document.getElementById('rptSticky');
+  window.addEventListener('scroll',function(){
+    if(window.scrollY>320) bar.classList.add('on'); else bar.classList.remove('on');
+  });
+})();
+</script>
+</body>
+</html>
