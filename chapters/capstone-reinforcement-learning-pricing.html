@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 197 · Reinforcement Learning: Dynamic Pricing — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .yes { color:#047857; font-weight:700; }
+    .disp-table .no { color:#dc2626; font-weight:700; }
+    .disp-table tr.hi td { background:#f5f3ff; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .embox { background:#f5f3ff; border:1px solid #ddd6fe; border-left:4px solid #6d28d9; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .embox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#4c1d95; }
+    .rw-card { background:#f5f3ff; border:1px solid #ddd6fe; border-left:4px solid #6d28d9; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#4c1d95; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#f5f3ff; color:#6d28d9; border-color:#ddd6fe; }
+    .ex-file.doc { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#f5f3ff; border:1px solid #ddd6fe; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#4c1d95; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #6d28d9; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#4c1d95; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+    .svg-wrap { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.9rem 0.6rem 0.3rem; background:var(--panel); }
+    .svg-wrap svg { width:100%; height:auto; display:block; }
+    .svg-wrap .cap { font-size:0.82rem; color:var(--ink-soft); padding:0.55rem 0.6rem 0.4rem; line-height:1.55; }
+    .svg-wrap .cap strong { color:var(--ink); }
+    .partclose { background:linear-gradient(135deg,#f5f3ff,#faf5ff); border:1px solid #ddd6fe;
+                 border-radius:14px; padding:1.3rem 1.5rem; margin:1.6rem 0; }
+    .partclose h4 { font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:0.07em;
+                    color:#4c1d95; margin:0 0 0.75rem; }
+    .partclose ol { margin:0 0 0 1.1rem; padding:0; }
+    .partclose li { font-size:0.9rem; color:var(--ink-soft); line-height:1.62; margin-bottom:0.45rem; }
+    .partclose li a { color:#6d28d9; font-weight:700; text-decoration:none; }
+    .partclose li a:hover { text-decoration:underline; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/capstone-reinforcement-learning-pricing.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXXI &#183; Capstone Projects: Machine Learning</span><span class="sep">/</span>
+      <span>Chapter 197</span>
+    </div>
+    <h1>Reinforcement Learning: <span class="accent">Dynamic</span> Pricing</h1>
+    <p class="dek">Capstone 35. Twenty weeks of history says that raising prices raises demand. Six weeks of randomization says otherwise. And the reinforcement learning agent, trained on a correct simulator, loses to a grid search over four hundred and eighty combinations.</p>
+    <div class="hero-meta">
+      <div class="m">&#9201;&#65039; <b>~25 min</b>&nbsp;read</div>
+      <div class="m">&#127919; <b>Reinforcement learning</b></div>
+      <div class="m">&#128202; <b>Chapter 197</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">The trading team has twenty weeks of prices and sales and would like to know what a pricing agent
+       would have earned on it. The answer is that <span class="hl">twenty weeks of history cannot say</span>, and
+       finding out why is most of the work.</p>
+
+    <div class="brief-card">
+      <div class="bh">The brief</div>
+      <dl>
+        <dt>Setting</dt><dd>An online retailer with 40 products. Two logs: 140 days of business as usual, where price was a cost-plus markup by category with a sitewide sale every fifth week, and 84 days of a randomized price experiment run afterwards with the assignment probabilities recorded.</dd>
+        <dt>The question</dt><dd><strong>Should the site replace its cost-plus rule with an agent that sets prices day by day, and what would that agent be worth?</strong></dd>
+        <dt>Why it matters</dt><dd>A pricing agent acts on every customer, every day, and it will exploit any error in the model it was trained on. Getting this wrong is not a bad forecast, it is a wrong price on the whole catalogue.</dd>
+        <dt>What we do</dt><dd>Show that the historical log cannot identify the price effect, show what the experiment bought and why its design mattered, build a simulator, compare a myopic agent against a far-sighted one against a Q-learner, price exploration, and measure how much the simulator's errors cost.</dd>
+      </dl>
+    </div>
+
+    <div class="def-card">
+      <div class="sigma">&#8721;</div>
+      <div class="def-body">
+        Offline policy evaluation needs <span class="def-kw">every action to have been possible</span>. Under a
+        deterministic pricing rule, five of the seven candidate prices have probability zero, and no method recovers
+        <span class="def-kw">what would have happened at a price nobody charged</span>.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">&#11088;</div>
+      <div><div class="ctitle">The finding, up front</div>
+        <p>The obvious regression on twenty weeks of history says the price coefficient is <strong>+0.77</strong>:
+           raising prices raises demand. Product fixed effects fix the sign and put it at <strong>&#8722;4.72</strong>
+           against a truth of <strong>&#8722;1.60</strong>. Only the randomized experiment gets close. And when the
+           agents are compared, the Q-learner loses to a grid search over 480 combinations, for a reason visible in
+           the policy it learned.</p></div>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section id="identification">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Regression the Team Already Ran</h2></div>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Naive, across products</div><div class="rv">+0.77</div><div class="rd">se 0.005, the wrong sign</div></div>
+      <div class="rchip"><div class="rk">Price and quality</div><div class="rv">r = 0.72</div><div class="rd">expensive products are the good ones</div></div>
+      <div class="rchip"><div class="rk">With product fixed effects</div><div class="rv">&#8722;4.72</div><div class="rd">95% CI [&#8722;5.13, &#8722;4.30]</div></div>
+      <div class="rchip"><div class="rk">The truth</div><div class="rv">&#8722;1.60</div><div class="rd">nowhere near that interval</div></div>
+    </div>
+
+    <p>The first number is not a small effect or a marginal result. It is firmly estimated, tightly bounded and
+       completely wrong, and the reason is in the product table: the dearer products cost more to make, and they are
+       better. Price was never an experiment run on customers, it was a markup applied to a catalogue, so a comparison
+       across products is a comparison between different products rather than between different prices for the same
+       one.</p>
+
+    <p>The repair looks obvious. Compare a product against itself, with product fixed effects. That fixes the sign and
+       does not fix the number.</p>
+
+    <div class="embox">
+      <span class="gb-tag">Why the fixed effects were not enough</span>
+      <p style="margin:0.45rem 0 0">After the fixed effects there is almost no price variation left. The only time a
+         product's price moves is the sitewide sale every fifth week, and <strong>the sale never arrives on its
+         own</strong>: it comes with the email blast and the homepage banner. The one price change in the dataset is
+         perfectly confounded with a demand shock, so the model attributes the whole of the promotional lift to the
+         price cut and reports an elasticity nearly three times too large.</p>
+      <p style="margin:0.6rem 0 0"><strong>A fixed effect removes a confounder between units. It cannot manufacture
+         variation that was never there.</strong></p>
+    </div>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-pricing-identification.png"
+           alt="Left: three estimates of the long-run price elasticity with confidence intervals, against a dashed line at the true value of minus 1.60. The naive cross-product estimate is plus 0.77, the product fixed effects estimate on the historical log is minus 4.72, and the estimate from the randomized experiment is minus 1.80. Right: bars of margin over 180 simulated days for four policies. The cost-plus rule earns 2.67 million dollars charging 1.00 times list, greedy earns 3.27 million charging 0.89, Q-learning earns 3.38 million charging 0.95, and a grid search over 480 combinations earns 3.52 million charging 1.15.">
+      <figcaption><strong>Left:</strong> the same data, three specifications, and only one of them near the truth.
+        <strong>Right:</strong> the four policies, with what each of them charges.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 2 -->
+  <section id="experiment">
+    <div class="section-eyebrow"><div class="num">2</div><h2>What the Experiment Bought</h2></div>
+
+    <p>Six weeks of randomization changes both things that were wrong.</p>
+
+    <table class="disp-table">
+      <tr><th></th><th>Log A, business as usual</th><th>Log B, randomized</th></tr>
+      <tr><td class="nm">Price multipliers ever shown</td><td class="no">2 of 7</td><td class="yes">7 of 7</td></tr>
+      <tr><td class="nm">Assignment probability recorded</td><td class="no">no</td><td class="yes">yes</td></tr>
+      <tr><td class="nm">Spread of reference price around list</td><td>0.024</td><td>0.049</td></tr>
+      <tr class="hi"><td class="nm">Long-run elasticity</td><td class="no">&#8722;4.72</td><td class="yes">&#8722;1.80 [&#8722;2.12, &#8722;1.47]</td></tr>
+      <tr><td class="nm">Short-run elasticity</td><td>&#8722;2.06</td><td>&#8722;2.10 [&#8722;2.47, &#8722;1.74]</td></tr>
+    </table>
+
+    <p style="font-size:0.92rem;color:#64748b">Truth: long run &#8722;1.60, short run &#8722;2.46. Both estimates are
+       mildly attenuated because the logs aggregate sessions to product-days, and averaging inside a logit shrinks a
+       coefficient toward zero.</p>
+
+    <p>Two design choices in that experiment did the work, and both are easy to get wrong.</p>
+
+    <p><strong>The prices were held for a week at a time.</strong> Daily re-randomization would have identified the
+       total price response and would not have separated the short-run effect from the long-run one, because the
+       reference price never moves if the price bounces around a constant average. Separating them requires the thing
+       customers anchor on to actually drift, and that takes weeks.</p>
+
+    <p><strong>The assignment probability was written down.</strong> That column is what makes offline evaluation
+       possible at all, and it is the one most often thrown away as an implementation detail.</p>
+  </section>
+
+  <!-- 3 -->
+  <section id="ope">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Estimating a Policy Before Deploying It</h2></div>
+
+    <p>To estimate what a new policy would have earned from data generated by an old one, reweight each logged outcome
+       by how likely the new policy was to take the action that was taken, divided by how likely the old one was.
+       Under the cost-plus rule that denominator is zero for five of the seven prices, so the estimate does not
+       exist. On the randomized log it does.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Candidate policy</div><div class="rv">1.10 &#215; list</div><div class="rd">on everything</div></div>
+      <div class="rchip"><div class="rk">Estimated margin</div><div class="rv">$5.08</div><div class="rd">per session, CI [3.86, 6.30]</div></div>
+      <div class="rchip"><div class="rk">Logged policy earned</div><div class="rv">$5.05</div><div class="rd">per session</div></div>
+      <div class="rchip"><div class="rk">Effective sample size</div><div class="rv">465</div><div class="rd">of 3,360 rows</div></div>
+    </div>
+
+    <p>The estimate is unbiased and the interval is wide, and both come from the same place. A policy that always
+       charges 1.10 only learns from the tenth of the log where 1.10 was assigned, so evaluating a
+       <strong>deterministic</strong> policy offline discards most of the data by construction. That is the honest
+       price of not deploying it, and it is a good argument for keeping a slice of randomization running
+       permanently.</p>
+  </section>
+
+  <!-- 4 -->
+  <section id="trap">
+    <div class="section-eyebrow"><div class="num">4</div><h2>The Promotion Trap</h2></div>
+
+    <p>The estimated demand model has two price terms, and the difference between them is the whole reason this is a
+       sequential problem rather than a bandit. A cut buys the <strong>short-run</strong> response of about
+       <strong>&#8722;2.1</strong>, because customers compare today's price with what they expected. Hold the cut and
+       the expectation follows it down over a few weeks, leaving only the <strong>long-run</strong> response of about
+       <strong>&#8722;1.8</strong> against a permanently lower price.</p>
+
+    <table class="disp-table">
+      <tr><th>Policy</th><th>Margin, 180 days</th><th>Against the rule</th><th>Charges</th></tr>
+      <tr><td class="nm">The cost-plus rule in use today</td><td>$2,670,341</td><td>&#8212;</td><td>1.00&#215; list</td></tr>
+      <tr><td class="nm">Greedy, best price for today</td><td>$3,266,629</td><td>+22.3%</td><td class="no">0.89&#215; list</td></tr>
+      <tr class="hi"><td class="nm">One fixed price, best over the horizon</td><td class="yes">$3,516,368</td><td class="yes">+31.7%</td><td>1.15&#215; list</td></tr>
+    </table>
+
+    <p><strong>The greedy agent cuts prices about ten percent and the far-sighted one raises them about fifteen</strong>,
+       and the far-sighted one earns 7.6 percent more. A myopic optimiser sees only the larger of the two elasticities,
+       so it discounts. The mistake is not in the optimisation. It is in the horizon.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-pricing-simulator.png"
+           alt="Left: expected margin per day over 120 days under three constant policies, as seven-day means. Cutting to 0.90 times list starts around 41 dollars and decays to about 35.4 by day 60. Holding at list is flat at 38.4. Raising to 1.10 times list starts near 32.5 and climbs to about 40.1, crossing the discount line around day 12. Right: bars of margin against the honestly trained policy for four training simulators, showing 0.0 percent for the fitted model, 0.0 for elasticities 30 percent smaller, minus 0.6 for elasticities 30 percent larger, and minus 6.4 for the version that ignores the reference-price effect.">
+      <figcaption><strong>Left:</strong> the price cut is ahead for about twelve days and behind for the rest of the
+        window. <strong>Right:</strong> the price of getting the simulator wrong, by what kind of wrong it is.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 5 -->
+  <section id="rl">
+    <div class="section-eyebrow"><div class="num">5</div><h2>The Reinforcement Learner, and Why It Lost</h2></div>
+
+    <p>A fixed price cannot respond to circumstances. A Q-learner can: state is where the reference price sits
+       relative to list, action is one of seven multipliers, reward is the day's margin.</p>
+
+    <table class="disp-table">
+      <tr><th>Discount factor</th><th>Effective horizon</th><th>Margin</th><th>Against the rule</th><th>Charges</th></tr>
+      <tr class="hi"><td class="nm">0.90</td><td>10 days</td><td>$3,380,090</td><td>+26.6%</td><td>0.95&#215; list</td></tr>
+      <tr><td class="nm">0.97</td><td>33 days</td><td>$3,068,521</td><td>+14.9%</td><td>0.96&#215; list</td></tr>
+      <tr><td class="nm">0.995</td><td>200 days</td><td>$3,045,479</td><td>+14.0%</td><td>0.96&#215; list</td></tr>
+      <tr><td class="nm">0.999</td><td>1000 days</td><td>$2,960,571</td><td>+10.9%</td><td>0.92&#215; list</td></tr>
+    </table>
+
+    <p>Every one of them loses to the grid search, and a longer horizon makes it worse rather than better. That is
+       worth diagnosing rather than tuning away, so look at what the agent learned.</p>
+
+    <table class="disp-table">
+      <tr><th>Where the reference price sits</th><th>What the agent charges</th></tr>
+      <tr><td class="nm">Below 0.90 &#215; list</td><td>1.015 &#215; list</td></tr>
+      <tr><td class="nm">0.90 to 0.96</td><td>0.974</td></tr>
+      <tr><td class="nm">0.96 to 1.02</td><td>0.965</td></tr>
+      <tr><td class="nm">1.02 to 1.08</td><td>0.906</td></tr>
+      <tr><td class="nm">Above 1.08</td><td>0.896</td></tr>
+    </table>
+
+    <p><strong>The agent has learned to chase the reference price.</strong> When customers expect a high price it
+       discounts; when they expect a low one it raises. Every one of those moves is locally sensible: if the reference
+       sits above list, a cut is unusually effective today, and the agent has correctly noticed.</p>
+
+    <p>The result is a policy that oscillates, and an oscillating price keeps the reference in the middle instead of
+       walking it upward to a level a constant high price would sustain. Longer horizons make it worse because a
+       five-state discretisation of a slowly drifting continuous variable propagates its own approximation error every
+       time a value is bootstrapped.</p>
+
+    <div class="callout key">
+      <div class="cico">&#128161;</div>
+      <div><div class="ctitle">The useful reading</div>
+        <p>Not that reinforcement learning does not work. That a method with a state space, a discount factor, a
+           learning rate and an exploration schedule has <strong>four ways to be wrong that a grid search does
+           not</strong>, and has to earn its place against the simplest thing that represents the same dynamics.
+           Here that simplest thing was 480 combinations evaluated by direct simulation, and it approximates
+           nothing.</p></div>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section id="exploration">
+    <div class="section-eyebrow"><div class="num">6</div><h2>What Exploration Costs</h2></div>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Explore 5%</div><div class="rv">&#8722;0.8%</div><div class="rd">of margin</div></div>
+      <div class="rchip"><div class="rk">Explore 10%</div><div class="rv">&#8722;2.4%</div><div class="rd">of margin</div></div>
+      <div class="rchip"><div class="rk">Explore 20%</div><div class="rv">&#8722;4.1%</div><div class="rd">of margin</div></div>
+      <div class="rchip"><div class="rk">Roughly</div><div class="rv">0.2% per point</div><div class="rd">close to linear</div></div>
+    </div>
+
+    <p>That number is a property of the <strong>action set</strong> rather than of the algorithm. The cost of
+       exploring is the gap between the best action and the average random one, and here the actions run only from
+       0.85 to 1.15 times list, so the worst thing exploration can do is charge fifteen percent too little for a
+       day.</p>
+
+    <p>Widen the action set and the calculation changes completely. An agent allowed to try half price would pay a
+       great deal more for the same information, which is an argument for
+       <strong>constraining the action set rather than for exploring less</strong>, and it is the lever to reach for
+       first when exploration looks too expensive to justify.</p>
+  </section>
+
+  <!-- 7 -->
+  <section id="simulator">
+    <div class="section-eyebrow"><div class="num">7</div><h2>The Simulator Is the Model</h2></div>
+
+    <p>Every policy number above is produced by a demand model estimated from six weeks of data, which means every one
+       of them is a statement about that model rather than about customers. Retrain the agent on deliberately wrong
+       versions and evaluate each resulting policy in the same fixed correct simulator.</p>
+
+    <table class="disp-table">
+      <tr><th>Trained on</th><th>Against the honest policy</th><th>Charges</th></tr>
+      <tr class="hi"><td class="nm">The fitted demand model</td><td class="yes">&#8212;</td><td>1.15&#215; list</td></tr>
+      <tr><td class="nm">Elasticities 30 percent smaller</td><td>+0.0%</td><td>1.15&#215; list</td></tr>
+      <tr><td class="nm">Elasticities 30 percent larger</td><td>&#8722;0.6%</td><td>1.04&#215; list</td></tr>
+      <tr><td class="nm">The reference-price effect ignored</td><td class="no">&#8722;6.4%</td><td class="no">0.90&#215; list</td></tr>
+    </table>
+
+    <p><strong>Getting the size of the elasticities wrong by thirty percent in either direction costs almost
+       nothing.</strong> The policy shifts by at most one price point, and the margin surface is flat enough near its
+       optimum that it barely registers.</p>
+
+    <p><strong>Getting the structure wrong costs six percent.</strong> The last row folds the short-run and long-run
+       responses into a single number, which is exactly what an analyst does by default if nobody tells them customers
+       anchor on recent prices. That policy discounts, because it believes the whole of the promotional lift is
+       permanent.</p>
+
+    <p>The lesson generalises well beyond pricing. Parameter values can be some way off and the policy survives. If a
+       state variable is missing, the policy is optimising the wrong problem, and no amount of data on the parameters
+       will find that out.</p>
+  </section>
+
+  <!-- 8 -->
+  <section id="limits">
+    <div class="section-eyebrow"><div class="num">8</div><h2>What None of This Settles</h2></div>
+
+    <p><strong>The simulator has no competitors in it.</strong> Raise prices fifteen percent across a catalogue and
+       somebody else does not. Every number in sections 4 to 7 assumes the rest of the market holds still, which is
+       the assumption most likely to be false and the one this data cannot test.</p>
+
+    <p><strong>Six weeks of randomization estimated two parameters.</strong> It did not establish that the
+       reference-price mechanism is the right model of customer memory, only what its coefficients are if it is. A
+       model where customers remember the lowest price they have seen would give a different optimal policy from the
+       same data.</p>
+
+    <p><strong>Charging different prices over time is not the same problem as charging different customers different
+       prices.</strong> Everything here sets one price per product per day for everybody. Personalised pricing raises
+       questions of fairness and disclosure that are not statistical and are not answered by a higher expected
+       margin.</p>
+
+    <p><strong>And the right output of this project is a proposed experiment, not a deployed agent.</strong> A fifteen
+       percent increase across forty products is a business decision with consequences for customer trust that a
+       180-day margin simulation is not equipped to see.</p>
+  </section>
+
+  <!-- 9 -->
+  <section id="watch">
+    <div class="section-eyebrow"><div class="num">9</div><h2>What to Watch</h2></div>
+
+    <ul class="checklist">
+      <li><span class="ck">&#10003;</span><span><strong>Ask where the variation came from before fitting anything.</strong> A price set by a rule is not an experiment, and a firmly estimated wrong number is the usual result.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Fixed effects cannot create variation.</strong> They fixed the sign here and left the magnitude nearly three times too large.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Log the assignment probability.</strong> It is the column that makes offline policy evaluation possible, and it is the one most often discarded as an implementation detail.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Hold the treatment long enough for the state to move.</strong> Daily re-randomization cannot separate a short-run effect from a long-run one.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Check whether the problem is sequential at all.</strong> If today's action does not change tomorrow's state, a contextual bandit is the right object and reinforcement learning is overhead.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Beat the grid search before shipping the agent.</strong> A method with four extra tuning surfaces has to earn them.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Constrain the action set.</strong> The cost of exploration is set by how bad the worst allowed action is, not by the exploration rate.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Stress the simulator's structure, not just its parameters.</strong> Thirty percent parameter errors cost nothing here; one missing state variable cost six percent.</span></li>
+    </ul>
+  </section>
+
+  <!-- 10 -->
+  <section id="ml">
+    <div class="section-eyebrow"><div class="num">10</div><h2>Sequential Decisions in Data Science &amp; AI</h2></div>
+
+    <table class="disp-table">
+      <tr><th>Where it appears</th><th>The same question, in a different costume</th></tr>
+      <tr><td class="nm">Pricing and revenue management</td><td>This chapter. Airlines and hotels have been doing it for forty years, with reference effects under the name of fare fences</td></tr>
+      <tr><td class="nm">Recommendation and ranking</td><td>What is shown today changes what the user engages with tomorrow, which is why bandit formulations are usually a simplification rather than the truth</td></tr>
+      <tr><td class="nm">Marketing budget allocation</td><td>Spend today builds brand awareness that lifts response later, which is a reference effect wearing a different hat</td></tr>
+      <tr><td class="nm">Clinical treatment sequences</td><td>Dynamic treatment regimes, where the offline evaluation problem is identical and the cost of deploying an untested policy is not measured in margin</td></tr>
+      <tr><td class="nm">Inventory and replenishment</td><td>The classic textbook home of sequential decisions under uncertainty, and the one where the simulator is usually most trusted</td></tr>
+    </table>
+
+    <div class="research">
+      <span class="rtag">Where the research went</span>
+      <p style="margin:0.4rem 0 0"><strong>Sutton and Barto</strong>'s textbook is the standard reference for
+         everything in section 5, and <strong>Watkins and Dayan</strong>'s 1992 convergence proof for Q-learning is
+         the result that section's failure does not contradict: convergence is guaranteed for a tabular
+         representation of the true state, and a five-bin discretisation is not one.
+         <strong>Lattimore and Szepesv&#225;ri</strong> cover the bandit case, which is what most problems posed as
+         reinforcement learning actually are. On offline evaluation, <strong>Horvitz and Thompson</strong>'s 1952
+         estimator is the machinery in section 3, <strong>Dud&#237;k, Langford and Li</strong> introduced the doubly
+         robust version in 2011, and <strong>Thomas and Brunskill</strong> made the high-confidence guarantees
+         practical. The reference-price effect in section 4 comes from the behavioural pricing literature, where
+         <strong>Kalyanaram and Winer</strong>'s 1995 review collects the empirical evidence and
+         <strong>Fibich, Gavious and Lowengart</strong> work out the optimal dynamic pricing under it.
+         <strong>Cooper, Homem-de-Mello and Kleywegt</strong> give the cautionary result closest to section 7: a
+         pricing policy optimised against a misspecified demand model can be worse than not optimising at all.</p>
+    </div>
+  </section>
+
+  <!-- notebook -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">&#128013;</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook fits the regression the trading team ran and diagnoses it, shows what product
+             fixed effects can and cannot repair, compares the coverage of the two logs, computes an inverse
+             propensity estimate with its effective sample size, builds the simulator, compares greedy against
+             far-sighted against four Q-learning horizons, inspects the policy the agent learned, prices exploration,
+             and retrains the agent on four deliberately wrong simulators.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-reinforcement-learning-pricing.html">&#128211; View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-reinforcement-learning-pricing.ipynb"
+           target="_blank" rel="noopener">&#9654; Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-reinforcement-learning-pricing.ipynb"
+           target="_blank" rel="noopener">&#11015; View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Read the reports &amp; get the data</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong>
+         (<code>capstone-reinforcement-learning-pricing.xlsx</code>) holds two logs: 5,600 product-days of cost-plus
+         pricing and 3,360 product-days of a randomized experiment with assignment probabilities recorded, plus the
+         product table and a sealed answer key giving both true elasticities. Two written reports accompany it: a
+         <strong>plain-language brief</strong> for the trading director, and a <strong>technical report</strong>
+         covering identification, offline evaluation, the policy comparison and the simulator sensitivity.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-35-reinforcement-learning-pricing.html" target="_blank" rel="noopener">&#128196; Plain-language brief <small>read online</small></a>
+        <a class="ex-file doc" href="../reports/capstone-35-reinforcement-learning-pricing-technical.html" target="_blank" rel="noopener">&#128202; Technical report <small>read online</small></a>
+        <a class="ex-file xls" href="../data/capstone-reinforcement-learning-pricing.xlsx">&#128202; Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways + part close -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>&#127891; Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">&#10003;</span><span><strong>Twenty weeks of history said raising prices raises demand.</strong> Price was a markup on a catalogue where better products cost more, so the comparison was between products.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Fixed effects fixed the sign and not the number</strong>, because the only price movement left was the sale weeks, and those came with a marketing push.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>The experiment had to hold each price for a week</strong> for the reference to move, and had to log its assignment probabilities for offline evaluation to be possible.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>A myopic agent discounts.</strong> It sees the short-run &#8722;2.1 and not the long-run &#8722;1.8 left once expectations catch up, and earns 7.6 percent less.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>The Q-learner lost to a grid search</strong>, and the policy it learned explains why: it chases the reference price, which is locally right everywhere and globally a loss.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Thirty percent parameter errors cost under one percent; a missing state variable cost six.</strong> Simulators tolerate wrong numbers and not wrong structure.</span></li>
+      </ul>
+    </div>
+
+    <div class="partclose">
+      <h4>Part XXXI in seven capstones</h4>
+      <ol>
+        <li><a href="capstone-credit-card-fraud.html">Imbalanced Classification</a> found that three standard answers
+          to class imbalance rank identically and differ thirty-six-fold on the level, and that the review team's
+          capacity was not the constraint anyone thought it was.</li>
+        <li><a href="capstone-churn-prediction-explainability.html">Churn Prediction and Who Is Worth Contacting</a>
+          separated who will leave from whose behavior you can change, and found the two correlate at 0.34.</li>
+        <li><a href="capstone-gradient-boosting-regression.html">Gradient Boosting for Tabular Regression</a> priced
+          the three decisions every tabular project makes at 101 seconds, 17 and 4, in that order.</li>
+        <li><a href="capstone-pca-survey-battery.html">Principal Component Analysis</a> showed the commonest
+          retention rule finding ten components in twenty variables that had none, and then that plain averages did
+          the job the component scores were built for.</li>
+        <li><a href="capstone-clustering-choosing-k.html">Clustering: Choosing k Honestly</a> found both internal
+          criteria choosing the wrong number, and a held-out variable choosing the right one.</li>
+        <li><a href="capstone-anomaly-detection-unlabeled.html">Anomaly Detection Without Labels</a> spent its first
+          month of alerts on a firmware update, and got precision from under 2 percent to 85 without changing the
+          algorithm.</li>
+        <li><strong>This chapter</strong> asked what happens when the model is not predicting but acting, and found
+          that the data had to be created before it could be learned from.</li>
+      </ol>
+      <p style="margin:0.9rem 0 0;font-size:0.9rem;color:var(--ink-soft);line-height:1.62">One thread runs through
+        all seven. <strong>In every case the decision that moved the result was upstream of the model:</strong> what
+        the outcome variable should be, which rows count as normal, where the variation came from, what the number
+        will be multiplied by. The algorithm was the part that had already been solved.</p>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">&#10067;</div><h2>Quiz: Test Yourself</h2></div>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-anomaly-detection-unlabeled.html">
+      <span style="font-size:1.3rem">&#8592;</span>
+      <span><span class="cn-dir">Chapter 196 &#183; Previous</span><br><span class="cn-title">Anomaly Detection Without Labels</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">&#8594;</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;&#183;&nbsp;
+  Chapter 197 &nbsp;&#183;&nbsp; &#169; 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch197";
+  window.QUIZ_DATA = [
+    {
+      q: "A regression of conversion on log price across all products, using twenty weeks of history, gave a coefficient of +0.77 with a standard error of 0.005. What is wrong?",
+      options: ["The sample is too small", "Price was set by a cost-plus markup on a catalogue where better products cost more, so the comparison is between products rather than between prices", "The model needs a quadratic term", "Conversion should have been logged"],
+      answer: 1,
+      explain: "List price and the quality index correlate at 0.72. The estimate is firmly bounded and completely wrong, which is the usual result of fitting to variation that was never an experiment."
+    },
+    {
+      q: "Adding product fixed effects moved the estimate to -4.72 [-5.13, -4.30] against a truth of -1.60. Why did it not fix the problem?",
+      options: ["Fixed effects are inappropriate for this data", "The remaining price variation is the sitewide sale weeks, which also carried a marketing push, so the price cut absorbs the whole promotional lift", "Too many parameters were estimated", "The confidence interval is wrong"],
+      answer: 1,
+      explain: "A fixed effect removes a confounder between units. It cannot manufacture within-unit variation that was never there, and the only within-unit variation here is perfectly confounded with a demand shock."
+    },
+    {
+      q: "The randomized experiment held each product's price for a whole week rather than re-randomizing daily. Why does that matter?",
+      options: ["It reduces the variance of the estimate", "It is easier to implement", "It lets the reference price drift away from the list price, without which the short-run and long-run effects are collinear and cannot be separated", "It avoids customer confusion"],
+      answer: 2,
+      explain: "If the price bounces around a constant average, the reference converges to that average and log(price/list) becomes nearly identical to log(price/reference). Separating them requires the state variable to actually move."
+    },
+    {
+      q: "Under the cost-plus rule, five of the seven candidate price points had probability zero. What does that rule out?",
+      options: ["Fitting a demand model at all", "Any offline estimate of what a new policy would have earned, because inverse propensity weighting divides by a probability that is zero", "Using the log for anything", "Estimating the weekend effect"],
+      answer: 1,
+      explain: "No method recovers what would have happened at a price nobody ever charged. This is why the assignment probability column in the experimental log is not decoration."
+    },
+    {
+      q: "The greedy agent charged 0.89 times list and the far-sighted one 1.15, and the far-sighted one earned 7.6 percent more. What is the mechanism?",
+      options: ["The greedy agent was badly optimised", "A price cut buys the short-run response of -2.1 immediately and loses it as expectations adjust, leaving the long-run -1.8 against a permanently lower price", "The far-sighted agent had more data", "Customers prefer higher prices"],
+      answer: 1,
+      explain: "The greedy agent optimises correctly for a horizon of one day. The larger elasticity is the temporary one, so a myopic optimiser discounts and keeps discounting."
+    },
+    {
+      q: "Q-learning lost to a grid search at every discount factor tried, and got worse as the horizon lengthened. What did the learned policy actually do?",
+      options: ["It converged to the cost-plus rule", "It chased the reference price, discounting when customers expected a high price and raising when they expected a low one, which oscillates instead of walking prices up", "It failed to converge", "It always chose the cheapest action"],
+      answer: 1,
+      explain: "Every move it makes is locally right. A five-bin discretisation of a slowly drifting continuous state propagates approximation error every time a value is bootstrapped, which is why longer horizons made it worse."
+    },
+    {
+      q: "Exploring 20 percent of the time cost 4.1 percent of margin. What determines that price?",
+      options: ["The learning rate", "The discount factor", "How bad the worst allowed action is; here the action set only spans 0.85 to 1.15 times list", "The number of products"],
+      answer: 2,
+      explain: "The cost of exploring is the gap between the best action and the average random one. An agent allowed to try half price would pay far more for the same information, which argues for constraining the action set rather than exploring less."
+    },
+    {
+      q: "Training the agent on elasticities 30 percent wrong cost under 1 percent, but ignoring the reference-price effect cost 6.4 percent. What generalises?",
+      options: ["Elasticities do not need to be estimated carefully", "Simulators tolerate wrong parameter values much better than a missing state variable, and no amount of data on the parameters will reveal a missing one", "The reference-price effect is the only thing that matters", "Six weeks of data is insufficient"],
+      answer: 1,
+      explain: "The margin surface is flat near its optimum, so parameter errors shift the policy by at most one price point. Omitting the state variable makes the agent optimise a different problem, and it discounts because it believes the promotional lift is permanent."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

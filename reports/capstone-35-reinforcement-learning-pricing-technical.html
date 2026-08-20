@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Automated Pricing (Technical) &#183; Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/report.css">
+  <style>
+    body.report { --rpt-accent:#6d28d9; --rpt-accent-dark:#4c1d95; --rpt-accent-bg:#f5f3ff; --rpt-accent-line:#ddd6fe; }
+  </style>
+</head>
+
+<body class="report">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="../chapters/capstone-reinforcement-learning-pricing.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">&#8592; Chapter 197</a>
+  </div>
+</nav>
+
+<div class="rpt-sticky" id="rptSticky">
+  <div class="inner">
+    <div class="st-title">Identification, Offline Evaluation, and a Policy That Beat the Agent</div>
+    <a class="st-back" href="../chapters/capstone-reinforcement-learning-pricing.html">&#8592; Chapter 197</a>
+  </div>
+</div>
+
+<div class="rpt-wrap">
+  <article class="rpt-paper technical">
+    <header class="rpt-head">
+      <div class="rpt-topline">
+        <div class="rpt-kicker">Capstone 35 &#183; Technical Report</div>
+        <span class="rpt-badge technical">Technical Report</span>
+      </div>
+      <h1>Identification, Offline Evaluation, and a Policy That Beat the Agent</h1>
+      <p class="rpt-sub">The observational log gives +0.77; product fixed effects give -4.72; the randomized log gives -1.80 against a truth of -1.60. A tabular Q-learner then loses to a 480-point grid search.</p>
+      <div class="rpt-meta"><div><b>Data</b> &nbsp;5,600 observational product-days; 3,360 randomized product-days; 40 products</div><div><b>Methods</b> &nbsp;binomial GLM, inverse propensity weighting, direct policy search, tabular Q-learning</div><div><b>Headline</b> &nbsp;far-sighted fixed price +31.7% over the incumbent rule</div></div>
+    </header>
+
+    <div class="rpt-prov">
+      <span class="pv-tag">Where this comes from</span>
+      <div class="pv-row"><div><span>Chapter</span> <a href="../chapters/capstone-reinforcement-learning-pricing.html">Chapter 197 &#183; Reinforcement Learning: Dynamic Pricing</a></div><div><span>Part</span> Part XXXI &#183; Capstone Projects: Machine Learning</div><div><span>Dataset</span> <a href="../data/capstone-reinforcement-learning-pricing.xlsx">capstone-reinforcement-learning-pricing.xlsx</a></div><div><span>Notebook</span> <a href="../chapters/notebooks/html/capstone-reinforcement-learning-pricing.html" target="_blank" rel="noopener">View the analysis</a></div></div>
+    </div>
+
+    <div class="rpt-body">
+      <h2>1. Identification</h2>
+      <p>Demand is modelled as a binomial GLM on sessions, with conversion depending on price. Three specifications on the same catalogue:</p>
+      <div class="rpt-cap"><span class="n">Table 1.</span> Long-run price elasticity under three specifications.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Specification</th><th>Estimate</th><th>95% CI</th><th>Truth</th></tr></thead><tbody><tr><td><span class='nm'>log price, pooled across products (observational log)</span></td><td><span class='nm'>+0.766</span></td><td>[+0.756, +0.776]</td><td>-1.605</td></tr><tr><td>log price vs list, product fixed effects (observational log)</td><td>-4.717</td><td>[-5.13, -4.30]</td><td>-1.605</td></tr><tr><td><span class='nm'>log price vs list, product fixed effects (randomized log)</span></td><td><span class='nm'>-1.796</span></td><td>[-2.12, -1.47]</td><td>-1.605</td></tr></tbody></table></div>
+      <p>The pooled estimate has the wrong sign because list price is a cost-plus markup and unit cost correlates with product quality (r = 0.72 between list price and the quality index). The cross-sectional comparison is between products.</p>
+      <p>The fixed-effects estimate on the observational log is biased by a factor of about three. After absorbing product means, the only remaining price variation is the sitewide sale in every fifth week, and that sale is accompanied by a promotional demand shifter. The price coefficient absorbs the entire promotional lift. This is the standard warning that a within estimator is only as good as the within variation, and that variation here is a single confounded event repeated four times.</p>
+      <p>The randomized estimate is mildly attenuated (-1.80 against -1.60) because the logs aggregate sessions to product-days and the session-level traffic-source variation is averaged away; averaging inside a logit shrinks coefficients toward zero. The short-run coefficient is -2.10 [-2.47, -1.74] against a truth of -2.46, attenuated for the same reason.</p>
+      <h2>2. Experimental design requirements</h2>
+      <p>Two properties of the experimental log are load-bearing and neither is automatic.</p>
+      <p><strong>Assignment probabilities were logged.</strong> Inverse propensity weighting requires a known, non-zero propensity for every action the evaluated policy may take. Under the cost-plus rule only 2 of 7 candidate multipliers ever occurred, so five have propensity zero and no importance-weighted estimator is defined.</p>
+      <p><strong>Prices were held for a full week.</strong> The reference price is an exponential moving average with weight 0.10, giving a half-life of about 6.6 days. Daily re-randomization drives the reference to the mean assigned multiplier for every product, making log(price/list) and log(price/reference) near-collinear. The standard deviation of reference/list is 0.024 in the observational log and 0.049 in the experiment; an earlier daily-randomization design produced coefficients whose confidence intervals overlapped each other and reversed their ordering relative to the truth.</p>
+      <h2>3. Offline policy evaluation</h2>
+      <p>For the candidate policy 'charge 1.10 x list on everything', the inverse propensity estimate of margin per session is <strong>5.0799</strong> with a 95 percent interval of [3.8625, 6.2973], against 5.0460 realised under the logging policy.</p>
+      <p>The effective sample size is <strong>465</strong> of 3,360 rows. A deterministic target policy retains only the logged rows where the assigned action coincides with the policy's action, so the variance penalty is structural rather than a consequence of this particular design. Doubly robust estimation would recover some of it by borrowing strength from a fitted outcome model, at the cost of depending on that model.</p>
+      <h2>4. Simulator and policy comparison</h2>
+      <p>The simulator applies the fitted demand model to 40 products over 180 days, updating each product's reference price as a 0.90/0.10 exponential average. All figures are means over eight seeds.</p>
+      <div class="rpt-cap"><span class="n">Table 2.</span> Policy comparison in the fitted simulator.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Policy</th><th>Margin, 180 days</th><th>Against the rule</th><th>Mean multiplier</th></tr></thead><tbody><tr><td>Cost-plus rule (incumbent)</td><td>$2,670,341</td><td>&#8212;</td><td>1.00</td></tr><tr><td>Greedy, one-step margin optimum</td><td>$3,266,629</td><td>+22.3%</td><td><span class='nm'>0.89</span></td></tr><tr><td>Tabular Q-learning, best of four horizons</td><td>$3,380,090</td><td>+26.6%</td><td>0.95</td></tr><tr><td><span class='nm'>Direct search over 480 fixed-price combinations</span></td><td><span class='nm'>$3,516,368</span></td><td><span class='nm'>+31.7%</span></td><td><span class='nm'>1.15</span></td></tr></tbody></table></div>
+      <p>The greedy policy discounts because the short-run elasticity (-2.10) exceeds the long-run one (-1.80) and a one-step objective sees only the former. Holding a discount lets the reference decay to the new price over roughly three weeks, after which the lift is gone and the price reduction is not. A constant 0.90 multiplier is ahead of list price for about twelve days and behind it thereafter.</p>
+      <h2>5. Why the reinforcement learner underperformed</h2>
+      <div class="rpt-cap"><span class="n">Table 3.</span> Tabular Q-learning, state = reference/list in five bins, action = seven multipliers.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Discount factor</th><th>Effective horizon</th><th>Margin</th><th>Mean multiplier</th></tr></thead><tbody><tr><td><span class='nm'>0.90</span></td><td>10 days</td><td><span class='nm'>$3,380,090</span></td><td>0.951</td></tr><tr><td>0.97</td><td>33 days</td><td>$3,068,521</td><td>0.961</td></tr><tr><td>0.995</td><td>200 days</td><td>$3,045,479</td><td>0.962</td></tr><tr><td>0.999</td><td>1000 days</td><td>$2,960,571</td><td>0.917</td></tr></tbody></table></div>
+      <div class="rpt-cap"><span class="n">Table 4.</span> The policy learned at the best-performing discount factor.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Reference / list</th><th>Learned multiplier</th></tr></thead><tbody><tr><td>below 0.90</td><td>1.015</td></tr><tr><td>0.90 to 0.96</td><td>0.974</td></tr><tr><td>0.96 to 1.02</td><td>0.965</td></tr><tr><td>1.02 to 1.08</td><td>0.906</td></tr><tr><td><span class='nm'>above 1.08</span></td><td><span class='nm'>0.896</span></td></tr></tbody></table></div>
+      <p>The learned policy is monotonically decreasing in the reference price: it discounts when the reference is high and raises when it is low. Each action is locally optimal, and the resulting trajectory oscillates around a reference level below what a constant high price sustains.</p>
+      <p>Longer horizons degrade performance rather than improving it. Watkins and Dayan's convergence guarantee applies to a tabular representation of the true state; a five-bin discretisation of a continuous slowly-drifting variable is not one, and bootstrapping propagates the discretisation error at every step, with more propagation at higher discount factors.</p>
+      <p>The direct search evaluates 40 x 7 = 280 product-price combinations plus the horizon simulation, approximates nothing, and has no learning rate, exploration schedule, discount factor or state representation to get wrong. It is the appropriate baseline and it should be run before any agent is considered.</p>
+      <h2>6. Exploration cost</h2>
+      <div class="rpt-cap"><span class="n">Table 5.</span> Epsilon-greedy exploration on top of the learned policy, 180 days, mean of six seeds.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Exploration rate</th><th>Margin</th><th>Against pure exploitation</th></tr></thead><tbody><tr><td>0%</td><td>$3,390,623</td><td>&#8212;</td></tr><tr><td>5%</td><td>$3,362,474</td><td>-0.8%</td></tr><tr><td>10%</td><td>$3,309,230</td><td>-2.4%</td></tr><tr><td>20%</td><td>$3,250,799</td><td>-4.1%</td></tr></tbody></table></div>
+      <p>Cost is approximately linear at 0.2 percent of margin per percentage point of exploration. The magnitude is a function of the action set: with multipliers confined to [0.85, 1.15], the expected regret of a uniformly random action is bounded by the margin difference across a 30 percent price band. Widening the action set raises the cost of exploration proportionally, which makes action-set design, not the exploration rate, the primary lever.</p>
+      <h2>7. Sensitivity to simulator misspecification</h2>
+      <div class="rpt-cap"><span class="n">Table 6.</span> Policies trained on perturbed demand models, all evaluated in the same fixed simulator.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Training simulator</th><th>Margin in the true simulator</th><th>Difference</th><th>Mean multiplier</th></tr></thead><tbody><tr><td><span class='nm'>Fitted demand model</span></td><td>$3,516,368</td><td>&#8212;</td><td>1.146</td></tr><tr><td>Both elasticities x 0.7</td><td>$3,516,377</td><td>+0.0%</td><td>1.150</td></tr><tr><td>Both elasticities x 1.3</td><td>$3,494,613</td><td>-0.6%</td><td>1.040</td></tr><tr><td><span class='nm'>Reference effect folded into the level</span></td><td><span class='nm'>$3,291,650</span></td><td><span class='nm'>-6.4%</span></td><td><span class='nm'>0.897</span></td></tr></tbody></table></div>
+      <p>Parameter perturbations of 30 percent in either direction cost at most 0.6 percent, because the margin surface is flat near its optimum and the policy shifts by at most one grid point. Removing the reference-price term and folding its coefficient into the level term costs 6.4 percent and reverses the policy from a 15 percent increase to a 10 percent discount.</p>
+      <p>The practical implication is that simulator validation effort should be directed at structural questions, which state variables exist and how they evolve, rather than at parameter precision. A misspecified structure produces a policy optimising a different problem, and no amount of additional data on the parameters detects it.</p>
+      <h2>8. Limitations</h2>
+      <p>Competitor response is absent from the model and from the data. A 15 percent unilateral increase across a range changes relative prices in a market this analysis cannot observe, and it is the largest unquantified risk.</p>
+      <p>The reference-price mechanism is assumed, not tested. The experiment estimates coefficients conditional on that functional form; an alternative anchoring model, for example a minimum-price-seen rule, would fit the same data and imply a different optimal policy.</p>
+      <p>Six weeks of randomization yields a confidence interval of [-2.12, -1.47] on the long-run elasticity. The recommended multiplier is stable across that interval in the current simulator, but the interval is wide enough that a staged rollout with a maintained control arm is the appropriate next step rather than a full deployment.</p>
+      <p>All results are per-product-per-day uniform pricing. Personalised or segment-level pricing raises fairness and disclosure questions that are outside the scope of this analysis and are not resolved by a higher expected margin.</p>
+    </div>
+
+    <div class="rpt-foot"><a class="primary" href="../chapters/capstone-reinforcement-learning-pricing.html">&#8592; Back to Chapter 197</a><a href="../chapters/notebooks/html/capstone-reinforcement-learning-pricing.html" target="_blank" rel="noopener">&#128211; Companion notebook</a><a class="xls" href="../data/capstone-reinforcement-learning-pricing.xlsx">&#128202; Download dataset</a></div>
+    <div class="rpt-colophon">
+      From <strong>Statistics, Data Science and AI: A Visual Handbook</strong> by John Fisher.
+      Every statistic, table, and figure in this report is reproduced by the companion notebook.
+    </div>
+  </article>
+</div>
+
+<script>
+(function(){
+  var bar=document.getElementById('rptSticky');
+  window.addEventListener('scroll',function(){
+    if(window.scrollY>320) bar.classList.add('on'); else bar.classList.remove('on');
+  });
+})();
+</script>
+</body>
+</html>
