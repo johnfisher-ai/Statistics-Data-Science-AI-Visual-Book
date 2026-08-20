@@ -672,6 +672,8 @@ MAP = {
         ("../../capstone-regression-discontinuity-and-iv.html#notebook", "Back to the book", "Chapter 184 · Regression Discontinuity and Instrumental Variables"),
     "capstone-pay-equity-review.html":
         ("../../capstone-pay-equity-review.html#notebook", "Back to the book", "Chapter 185 · Multiple Regression Done Properly: A Pay Equity Review"),
+    "capstone-regression-diagnostics-and-remedies.html":
+        ("../../capstone-regression-diagnostics-and-remedies.html#notebook", "Back to the book", "Chapter 186 · When the Assumptions Fail: Diagnostics and Remedies"),
 }
 
 def card(href, kicker, title):

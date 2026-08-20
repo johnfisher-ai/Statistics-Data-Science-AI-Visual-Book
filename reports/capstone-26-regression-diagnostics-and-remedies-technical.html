@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diagnostics and Remedies (Technical Report) &#183; Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/report.css">
+  <style>
+    body.report { --rpt-accent:#c2410c; --rpt-accent-dark:#7c2d12; --rpt-accent-bg:#fff7ed; --rpt-accent-line:#fed7aa; }
+  </style>
+</head>
+
+<body class="report">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="../chapters/capstone-regression-diagnostics-and-remedies.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">&#8592; Chapter 186</a>
+  </div>
+</nav>
+
+<div class="rpt-sticky" id="rptSticky">
+  <div class="inner">
+    <div class="st-title">Sequential Diagnosis and Remediation of Four Regression Assumption Failures</div>
+    <a class="st-back" href="../chapters/capstone-regression-diagnostics-and-remedies.html">&#8592; Chapter 186</a>
+  </div>
+</div>
+
+<div class="rpt-wrap">
+  <article class="rpt-paper tech">
+    <header class="rpt-head">
+      <div class="rpt-topline">
+        <div class="rpt-kicker">Capstone 26 &#183; Technical Report</div>
+        <span class="rpt-badge tech">Technical Report</span>
+      </div>
+      <h1>Sequential Diagnosis and Remediation of Four Regression Assumption Failures</h1>
+      <p class="rpt-sub">Functional form, influence, error variance and serial correlation in a daily trading series, with a demonstration that each failure conceals the next.</p>
+      <div class="rpt-meta"><div><b>Analysis</b> &nbsp;Analysis</div><div><b>Design</b> &nbsp;Time series regression, n = 1,079</div><div><b>Software</b> &nbsp;statsmodels</div><div><b>Date</b> &nbsp;2026</div></div>
+    </header>
+
+    <div class="rpt-prov">
+      <span class="pv-tag">Where this comes from</span>
+      <div class="pv-row"><div><span>Chapter</span> <a href="../chapters/capstone-regression-diagnostics-and-remedies.html">Chapter 186 &#183; When the Assumptions Fail: Diagnostics and Remedies</a></div><div><span>Part</span> Part XXX &#183; Capstone Projects: Regression</div><div><span>Dataset</span> <a href="../data/capstone-regression-diagnostics-and-remedies.xlsx">capstone-regression-diagnostics-and-remedies.xlsx</a></div><div><span>Notebook</span> <a href="../chapters/notebooks/html/capstone-regression-diagnostics-and-remedies.html" target="_blank" rel="noopener">View the analysis</a></div></div>
+    </div>
+
+    <div class="rpt-body">
+      <div class="rpt-abstract"><span class="ab-tag">Abstract</span><p><b>Objective.</b> To estimate the revenue effect of a daily promotion against a known cost of $200, and to demonstrate the dependence of standard regression diagnostics on the order in which they are applied. <b>Methods.</b> An initial specification regressed daily revenue on day of week, temperature entered linearly, promotion, public holiday and a linear trend over 1,079 trading days. Breusch-Pagan, RESET, Cook's distance and Durbin-Watson were computed on this model and re-computed after each remediation. Remedies applied in sequence were a B-spline basis on temperature, an indicator for local festival days, and Newey-West heteroskedasticity and autocorrelation consistent standard errors. <b>Results.</b> On the initial specification RESET returned p = 4 &#215; 10&#8315;&#8312;, Durbin-Watson 1.265, and Breusch-Pagan p = 0.334. After the spline, RESET p = 0.69 and Durbin-Watson improved to 1.496 without modification of the error structure. Breusch-Pagan remained non-significant at p = 0.117 with all observations and returned p = 1.3 &#215; 10&#8315;&#8312; on removal of six festival days, and p = 7.1 &#215; 10&#8315;&#185;&#8312; once those days were modeled. The promotion estimate was +$295.4 (95% CI $235 to $356) initially and +$288.0 (HAC 95% CI $243 to $333) finally. The linear temperature coefficient of +$16.96 per degree (p = 7 &#215; 10&#8315;&#185;&#8304;&#8309;) was replaced by a curve peaking at 67.3&#176;F with a slope of approximately &#8722;$14.6 per degree above it. <b>Conclusion.</b> Applied in parallel to the initial model, the four diagnostics identify one of three present violations. The promotion inference was robust throughout; the temperature inference was sign-reversed over the upper half of the covariate range.</p></div>
+      <div class="rpt-keywords"><b>Keywords:</b> ['regression diagnostics', 'RESET', 'Breusch-Pagan', "Cook's distance", 'Durbin-Watson', 'heteroskedasticity', 'serial correlation', 'B-spline', 'Newey-West', 'HAC']</div>
+      <h2>1. Data</h2>
+      <p>Three years of daily observations. Fourteen duplicate rows arising from a repeated point-of-sale export were removed, five days without a till close-out were dropped, and eleven temperature values of &#8722;99 were voided as sensor sentinels, leaving 1,079 days. Revenue ranges from $183 to $6,310 and temperature from 12.6&#176;F to 93.2&#176;F.</p>
+      <h2>2. Initial specification and parallel diagnosis</h2>
+      <div class="rpt-cap"><span class="n">Table 1.</span> Diagnostics on the initial specification. Promotion estimate +$295.4 (SE 30.7), R&#178; = 0.602, residual SD $372.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Assumption</th><th>Test</th><th>Statistic</th><th>Conclusion</th></tr></thead><tbody><tr><td><span class='nm'>Homoskedasticity</span></td><td>Breusch-Pagan</td><td>p = 0.334</td><td>Not rejected</td></tr><tr><td><span class='nm'>Functional form</span></td><td>RESET (power 2)</td><td>p = 4.1 &#215; 10&#8315;&#8312;</td><td>Rejected</td></tr><tr><td><span class='nm'>Influence</span></td><td>Cook's distance</td><td>max 0.056</td><td>No single dominant point</td></tr><tr><td><span class='nm'>Independence</span></td><td>Durbin-Watson</td><td>1.265</td><td>Positive serial correlation</td></tr></tbody></table></div>
+      <p>The failure of the homoskedasticity test to reject is the substantive result of this table. The residual vector at this stage is dominated by systematic misfit rather than by stochastic variation, and an auxiliary regression of squared residuals on the regressors has correspondingly little power to detect the variance structure.</p>
+      <h2>3. Remediation in sequence</h2>
+      <div class="rpt-cap"><span class="n">Table 2.</span> Diagnostics recomputed after each remediation.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Stage</th><th>Remedy</th><th>RESET</th><th>Breusch-Pagan</th><th>Durbin-Watson</th><th>R&#178;</th><th>Residual SD</th></tr></thead><tbody><tr><td><span class='nm'>0</span></td><td>None</td><td>4.1e-08</td><td>0.334</td><td>1.265</td><td>0.602</td><td>$372</td></tr><tr><td><span class='nm'>1</span></td><td>B-spline on temperature, df = 5</td><td>0.69</td><td>0.117</td><td>1.496</td><td>0.723</td><td>$311</td></tr><tr><td><span class='nm'>2</span></td><td>+ festival indicator</td><td>0.041</td><td>7.1e-18</td><td>1.131</td><td>0.810</td><td>$258</td></tr></tbody></table></div>
+      <p>Two features of this table warrant comment. First, Durbin-Watson improves from 1.265 to 1.496 at stage 1 with no change to the assumed error structure. A smooth misspecification generates runs of same-signed residuals that are indistinguishable from positive serial correlation, so a portion of the apparent dependence was attributable to functional form. Diagnosing serial correlation before correcting the mean would have prompted an unnecessary dynamic specification.</p>
+      <p>Second, the Breusch-Pagan statistic changes from non-significant to overwhelmingly significant between stages 1 and 2 without any change to the variance structure of the data. The mechanism is direct: six festival observations with residuals of several thousand dollars raise the pooled residual standard deviation from $253 to $309, a 22% inflation applied uniformly across the auxiliary regression. Fitting the same stage-1 model with those six observations excluded returns p = 1.3 &#215; 10&#8315;&#8312;, confirming that the pattern was present throughout and masked.</p>
+      <div class="rpt-key"><span class="k-tag">The general principle</span><p>Diagnostic tests are computed on residuals, and residuals are a function of the fitted model. A test therefore measures the assumption it names only to the extent that the remaining assumptions hold. This makes the order of application material, and a parallel checklist applied once to an initial specification will systematically under-detect.</p></div>
+      <p>The stage-2 RESET of p = 0.041 is not treated as evidence of remaining misspecification. At n = 1,079 the test has power against departures of no practical magnitude, and the binned residual means against temperature are flat to within a few dollars across the range. The stage-2 maximum Cook's distance of 0.332 likewise reflects the festival indicator being identified from six observations rather than a defect.</p>
+      <figure class="rpt-fig"><img src="../assets/img/capstone-diagnostics-four.png" alt="Four diagnostic panels covering variance, functional form, influence and serial correlation."><figcaption><span class="n">Figure 1.</span> Residual variance envelope against fitted values, binned residual means against temperature before and after the spline, Cook's distance by observation, and the residual autocorrelation function.</figcaption></figure>
+      <h2>4. Covariance estimation</h2>
+      <div class="rpt-cap"><span class="n">Table 3.</span> Promotion coefficient under three covariance estimators.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Estimator</th><th>Assumes</th><th>Estimate</th><th>SE</th><th>95% CI</th></tr></thead><tbody><tr><td><span class='nm'>Classical OLS</span></td><td>Homoskedastic, independent</td><td>+288.0</td><td>21.3</td><td>[246, 330]</td></tr><tr><td><span class='nm'>HC3</span></td><td>Independent</td><td>+288.0</td><td>24.2</td><td>[241, 335]</td></tr><tr><td><span class='nm'>Newey-West, 14 lags</span></td><td>Neither</td><td>+288.0</td><td>23.1</td><td>[243, 333]</td></tr></tbody></table></div>
+      <p>The point estimate is invariant to the choice, as expected: neither violation biases the coefficient vector. Only the estimated sampling variability changes. The HAC estimator is preferred as the two violations are present jointly, and the lag truncation of 14 was selected to exceed twice the observed dependence horizon.</p>
+      <p>It should be stated explicitly that robust covariance estimation is not a substitute for correct specification. Applying HAC standard errors to the initial model would have produced a well-calibrated interval around a temperature coefficient of the wrong sign over half the covariate range.</p>
+      <h2>5. Substantive conclusions</h2>
+      <div class="rpt-cap"><span class="n">Table 4.</span> The promotion inference across specifications. Data-generating value: $250.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Specification</th><th>Promotion estimate</th><th>95% CI</th><th>Exceeds $200 cost</th></tr></thead><tbody><tr><td><span class='nm'>Initial</span></td><td>+295.4</td><td>[235, 356]</td><td>Yes</td></tr><tr><td><span class='nm'>+ spline</span></td><td>+291.1</td><td>[241, 341]</td><td>Yes</td></tr><tr><td><span class='nm'>+ festival</span></td><td>+288.0</td><td>[246, 330]</td><td>Yes</td></tr><tr><td><span class='nm'>+ HAC</span></td><td>+288.0</td><td>[243, 333]</td><td>Yes</td></tr></tbody></table></div>
+      <p>The promotion inference is invariant to remediation. The remedies reduced the residual standard deviation from $372 to $258 and narrowed the interval accordingly, but at no stage was the decision in doubt.</p>
+      <p>The temperature inference is not invariant. The initial linear coefficient of +$16.96 per degree describes the relationship adequately only near the center of the covariate distribution. The spline specification identifies a maximum at 67.3&#176;F, with predicted revenue rising approximately $2,400 from the lower extreme to the peak and falling approximately $380 from the peak to the upper extreme, an average slope above the peak of &#8722;$14.6 per degree. The initial specification is therefore sign-reversed across the upper half of the observed range, notwithstanding a coefficient significant at p = 7 &#215; 10&#8315;&#185;&#8304;&#8309; and an R&#178; of 0.602.</p>
+      <h2>6. Discussion</h2>
+      <p>The asymmetry between the two conclusions is the practical lesson. Assumption failures predominantly affect inferential precision rather than point estimates, and in this analysis three of the four did exactly that. Functional-form misspecification is the exception: it biases the estimate of the affected term, and it does so without any accompanying reduction in fit or significance that would draw attention to it.</p>
+      <p>It follows that reporting should identify which conclusions were sensitive to remediation. A statement that diagnostics were performed conveys nothing about whether any finding depended on them, and in a report containing both a robust and a reversed conclusion it is actively misleading.</p>
+      <p>Limitations. The analysis is observational: promotion days were not randomized, and while the estimate is stable across specifications it is not protected against confounding by scheduling. The festival coefficient is identified from six observations and its interval is correspondingly wide. The spline basis and its degrees of freedom were selected by inspection rather than by cross-validation; a generalized additive model with automatic smoothness selection would be the contemporary approach and would not alter the qualitative finding.</p>
+      <h2>7. Conclusion</h2>
+      <p>Four assumption violations were present in a single specification and a parallel application of the standard diagnostics detected one of them. Sequential remediation of functional form, influence, error variance and serial correlation raised R&#178; from 0.602 to 0.810 and reduced the residual standard deviation from $372 to $258. The promotion effect is estimated at +$288.0 per day (HAC 95% CI $243 to $333) against a cost of $200. The initial model's temperature coefficient is sign-reversed above 67.3&#176;F.</p>
+      <h2>References</h2>
+      <ul class="rpt-refs"><li>Ramsey, J. B. (1969). Tests for specification errors in classical linear least-squares regression analysis. <em>Journal of the Royal Statistical Society, Series B</em>, 31(2), 350&#8211;371.</li><li>Breusch, T. S., &amp; Pagan, A. R. (1979). A simple test for heteroscedasticity and random coefficient variation. <em>Econometrica</em>, 47(5), 1287&#8211;1294.</li><li>Cook, R. D. (1977). Detection of influential observation in linear regression. <em>Technometrics</em>, 19(1), 15&#8211;18.</li><li>White, H. (1980). A heteroskedasticity-consistent covariance matrix estimator and a direct test for heteroskedasticity. <em>Econometrica</em>, 48(4), 817&#8211;838.</li><li>Newey, W. K., &amp; West, K. D. (1987). A simple, positive semi-definite, heteroskedasticity and autocorrelation consistent covariance matrix. <em>Econometrica</em>, 55(3), 703&#8211;708.</li><li>MacKinnon, J. G., &amp; White, H. (1985). Some heteroskedasticity-consistent covariance matrix estimators with improved finite sample properties. <em>Journal of Econometrics</em>, 29(3), 305&#8211;325.</li><li>Hastie, T., &amp; Tibshirani, R. (1990). <em>Generalized Additive Models</em>. Chapman &amp; Hall.</li><li>Belsley, D. A., Kuh, E., &amp; Welsch, R. E. (1980). <em>Regression Diagnostics</em>. Wiley.</li></ul>
+      <h2>Reproducibility</h2>
+      <p>The dataset (<code>capstone-regression-diagnostics-and-remedies.xlsx</code>) contains the trading series with its data-quality faults intact, the analysis plan as written before modeling, and the generating parameters. An executable notebook accompanies the chapter and reproduces every diagnostic, estimate and figure, including the demonstration that excluding six observations changes the Breusch-Pagan result by ten orders of magnitude. Analyses use NumPy, pandas, statsmodels and Matplotlib.</p>
+    </div>
+
+    <div class="rpt-foot"><a class="primary" href="../chapters/capstone-regression-diagnostics-and-remedies.html">&#8592; Back to Chapter 186</a><a href="../chapters/notebooks/html/capstone-regression-diagnostics-and-remedies.html" target="_blank" rel="noopener">&#128211; Companion notebook</a><a class="xls" href="../data/capstone-regression-diagnostics-and-remedies.xlsx">&#128202; Download dataset</a></div>
+    <div class="rpt-colophon">
+      From <strong>Statistics, Data Science and AI: A Visual Handbook</strong> by John Fisher.
+      Every statistic, table, and figure in this report is reproduced by the companion notebook.
+    </div>
+  </article>
+</div>
+
+<script>
+(function(){
+  var bar=document.getElementById('rptSticky');
+  window.addEventListener('scroll',function(){
+    if(window.scrollY>320) bar.classList.add('on'); else bar.classList.remove('on');
+  });
+})();
+</script>
+</body>
+</html>

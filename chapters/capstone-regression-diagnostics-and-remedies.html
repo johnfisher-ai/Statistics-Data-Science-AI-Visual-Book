@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 186 · When the Assumptions Fail: Diagnostics and Remedies — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .yes { color:#047857; font-weight:700; }
+    .disp-table .no { color:#dc2626; font-weight:700; }
+    .disp-table tr.hi td { background:#fff7ed; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .embox { background:#fff7ed; border:1px solid #fed7aa; border-left:4px solid #c2410c; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .embox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#7c2d12; }
+    .rw-card { background:#fff7ed; border:1px solid #fed7aa; border-left:4px solid #c2410c; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#7c2d12; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#fff7ed; color:#c2410c; border-color:#fed7aa; }
+    .ex-file.doc { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#fff7ed; border:1px solid #fed7aa; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#7c2d12; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #c2410c; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#7c2d12; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+    .svg-wrap { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.9rem 0.6rem 0.3rem; background:var(--panel); }
+    .svg-wrap svg { width:100%; height:auto; display:block; }
+    .svg-wrap .cap { font-size:0.82rem; color:var(--ink-soft); padding:0.55rem 0.6rem 0.4rem; line-height:1.55; }
+    .svg-wrap .cap strong { color:var(--ink); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/capstone-regression-diagnostics-and-remedies.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXX &#183; Capstone Projects: Regression</span><span class="sep">/</span>
+      <span>Chapter 186</span>
+    </div>
+    <h1>When the Assumptions Fail: <span class="accent">Diagnostics</span> and Remedies</h1>
+    <p class="dek">Capstone 26. Four assumptions fail in one dataset, and the order you check them in decides whether you find them at all. Each failure hides the next, and every diagnosis here gets a repair rather than a footnote.</p>
+    <div class="hero-meta">
+      <div class="m">&#9201;&#65039; <b>~22 min</b>&nbsp;read</div>
+      <div class="m">&#127919; <b>Model diagnostics</b></div>
+      <div class="m">&#128202; <b>Chapter 186</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">The previous chapter's diagnostics all passed, and that was worth four lines to verify. This one is
+       the other case: <span class="hl">four assumptions fail, and finding them depends entirely on the order you
+       look</span>.</p>
+
+    <div class="brief-card">
+      <div class="bh">The brief</div>
+      <dl>
+        <dt>Setting</dt><dd>Three years of daily trading at one cafe: 1,079 usable days with revenue, outdoor temperature, day of week, a discount promotion, public holidays and the six days of the local street festival.</dd>
+        <dt>The question</dt><dd><strong>The promotion costs 200 dollars a day to run. Does it bring in more than that?</strong></dd>
+        <dt>Why it matters</dt><dd>The answer is an interval, and the decision turns on whether that interval clears 200. A model that is confidently wrong about its own precision will answer this question with more certainty than the data support.</dd>
+        <dt>What we do</dt><dd>Fit the model anyone would fit first, run the four standard checks and find that three of them fire, repair each failure in the order that makes the next one visible, and finish by stating which of the model's two conclusions the repairs actually changed.</dd>
+      </dl>
+    </div>
+
+    <div class="def-card">
+      <div class="sigma">&#949;</div>
+      <div class="def-body">
+        Regression diagnostics are usually taught as a <span class="def-kw">checklist</span>, four boxes ticked in any
+        order. They are better understood as a <span class="def-kw">sequence</span>: a badly specified mean produces
+        residuals that swamp every other test, and a handful of enormous residuals
+        <span class="def-kw">conceals the pattern in the rest</span>.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">&#11088;</div>
+      <div><div class="ctitle">The finding, up front</div>
+        <p>Run all four checks on the naive model and the variance test <strong>passes</strong> at p&nbsp;=&nbsp;0.33.
+           It is wrong. After the mean structure is repaired and six festival days are modeled, the same test returns
+           <strong>p&nbsp;=&nbsp;7&#215;10&#8315;&#185;&#8312;</strong>. Nothing about the variance changed in between.
+           And of the model's two conclusions, one survived the repairs untouched and the other had
+           <strong>the wrong sign</strong> across half the temperature range.</p></div>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section id="first">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Model Everyone Fits First</h2></div>
+
+    <p>Daily revenue on day of week, temperature, the promotion, public holidays and a linear time trend. After removing
+       a duplicated export, five days with no till close-out and eleven temperature sentinels of &#8722;99, there are
+       1,079 days.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Promotion</div><div class="rv">+$295</div><div class="rd">per day</div></div>
+      <div class="rchip"><div class="rk">95% interval</div><div class="rv">[$235, $356]</div><div class="rd">clears the $200 cost</div></div>
+      <div class="rchip"><div class="rk">R&#178;</div><div class="rv">0.602</div><div class="rd">residual SD $372</div></div>
+      <div class="rchip"><div class="rk">Verdict</div><div class="rv">Ship it</div><div class="rd">and roughly right</div></div>
+    </div>
+
+    <p>If the analysis stopped here, marketing would get its answer and the answer would even be approximately correct.
+       Everything that follows is about whether we are entitled to that interval, and about a second conclusion sitting
+       in the same output that is not approximately correct at all.</p>
+  </section>
+
+  <!-- 2 -->
+  <section id="parallel">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Four Checks at Once, Which Is the Wrong Way</h2></div>
+
+    <table class="disp-table">
+      <tr><th>Assumption</th><th>Test</th><th>Result</th><th>Verdict</th></tr>
+      <tr><td class="nm">Constant error variance</td><td>Breusch-Pagan</td><td>p = 0.334</td><td class="yes">Passes</td></tr>
+      <tr class="hi"><td class="nm">Correct functional form</td><td>RESET</td><td>p = 4 &#215; 10&#8315;&#8312;</td><td class="no">Fails badly</td></tr>
+      <tr><td class="nm">No dominant observation</td><td>Cook's distance</td><td>max 0.056</td><td>Nothing decisive yet</td></tr>
+      <tr><td class="nm">Independent errors</td><td>Durbin-Watson</td><td>1.265</td><td class="no">Fails</td></tr>
+    </table>
+
+    <p><strong>The one that passes is the one that is lying.</strong> The variance test sees nothing because the
+       residuals are dominated by a much larger fault sitting on top of it: a predictor that bends, fitted with a
+       straight line. Until that is repaired, the residuals are mostly systematic error rather than noise, and no test
+       about the noise can work.</p>
+
+    <p>This is the chapter's argument. The four checks are not four independent boxes. They form a sequence, and running
+       them in parallel on a broken model finds one fault out of the three that are present.</p>
+
+    <div class="svg-wrap">
+      <svg viewBox="0 0 880 250" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="A four-stage sequence read left to right. Stage one, fix the mean structure, is labeled RESET fails at four times ten to the minus eight. Stage two, find the influential points, is labeled Cook's distance now fingers six festival days. Stage three, model the events rather than delete them, is labeled and now Breusch-Pagan fires at seven times ten to the minus eighteen. Stage four, correct the standard errors, is labeled heteroskedasticity and autocorrelation together. Beneath each of the first three stages an arrow points forward with the words this was hiding the next one.">
+        <rect x="0" y="0" width="880" height="250" fill="#ffffff"/>
+        <text x="440" y="26" text-anchor="middle" font-size="12.5" font-weight="800" fill="#7c2d12">DIAGNOSTICS ARE A SEQUENCE, NOT A CHECKLIST</text>
+
+        <rect x="20" y="46" width="192" height="82" rx="11" fill="#c2410c"/>
+        <text x="116" y="70" text-anchor="middle" font-size="12" font-weight="800" fill="#ffffff">1. FIX THE MEAN</text>
+        <text x="116" y="90" text-anchor="middle" font-size="10.5" fill="#fed7aa">temperature is curved,</text>
+        <text x="116" y="105" text-anchor="middle" font-size="10.5" fill="#fed7aa">fitted with a ruler</text>
+        <text x="116" y="120" text-anchor="middle" font-size="10.5" font-weight="800" fill="#ffffff">RESET p = 4e-8</text>
+
+        <rect x="232" y="46" width="192" height="82" rx="11" fill="#c2410c"/>
+        <text x="328" y="70" text-anchor="middle" font-size="12" font-weight="800" fill="#ffffff">2. FIND THE OUTLIERS</text>
+        <text x="328" y="90" text-anchor="middle" font-size="10.5" fill="#fed7aa">Cook's distance now</text>
+        <text x="328" y="105" text-anchor="middle" font-size="10.5" fill="#fed7aa">fingers six specific days</text>
+        <text x="328" y="120" text-anchor="middle" font-size="10.5" font-weight="800" fill="#ffffff">all of them festivals</text>
+
+        <rect x="444" y="46" width="192" height="82" rx="11" fill="#c2410c"/>
+        <text x="540" y="70" text-anchor="middle" font-size="12" font-weight="800" fill="#ffffff">3. MODEL THE EVENTS</text>
+        <text x="540" y="90" text-anchor="middle" font-size="10.5" fill="#fed7aa">do not delete them, and</text>
+        <text x="540" y="105" text-anchor="middle" font-size="10.5" fill="#fed7aa">the variance test wakes up</text>
+        <text x="540" y="120" text-anchor="middle" font-size="10.5" font-weight="800" fill="#ffffff">BP p = 7e-18</text>
+
+        <rect x="656" y="46" width="204" height="82" rx="11" fill="#7c2d12"/>
+        <text x="758" y="70" text-anchor="middle" font-size="12" font-weight="800" fill="#ffffff">4. FIX THE SE</text>
+        <text x="758" y="90" text-anchor="middle" font-size="10.5" fill="#fed7aa">heteroskedasticity and</text>
+        <text x="758" y="105" text-anchor="middle" font-size="10.5" fill="#fed7aa">autocorrelation together</text>
+        <text x="758" y="120" text-anchor="middle" font-size="10.5" font-weight="800" fill="#ffffff">Newey-West HAC</text>
+
+        <path d="M212 87 L228 87" stroke="#7c2d12" stroke-width="3"/><path d="M232 87 L221 82 L221 92 Z" fill="#7c2d12"/>
+        <path d="M424 87 L440 87" stroke="#7c2d12" stroke-width="3"/><path d="M444 87 L433 82 L433 92 Z" fill="#7c2d12"/>
+        <path d="M636 87 L652 87" stroke="#7c2d12" stroke-width="3"/><path d="M656 87 L645 82 L645 92 Z" fill="#7c2d12"/>
+
+        <path d="M116 140 Q222 178 328 140" stroke="#dc2626" stroke-width="2.4" fill="none" stroke-dasharray="6 4"/>
+        <path d="M328 140 L317 147 L326 152 Z" fill="#dc2626"/>
+        <path d="M328 158 Q434 196 540 158" stroke="#dc2626" stroke-width="2.4" fill="none" stroke-dasharray="6 4"/>
+        <path d="M540 158 L529 165 L538 170 Z" fill="#dc2626"/>
+        <text x="222" y="196" text-anchor="middle" font-size="11" font-weight="800" fill="#dc2626">this fault was hiding the next one</text>
+        <text x="434" y="214" text-anchor="middle" font-size="11" font-weight="800" fill="#dc2626">and so was this one</text>
+        <text x="440" y="240" text-anchor="middle" font-size="11.5" font-weight="800" fill="#7c2d12">Run the four in parallel on the naive model and you find one fault out of three.</text>
+      </svg>
+      <div class="cap"><strong>Why the order decides the outcome.</strong> Each repair is what makes the next diagnosis
+        possible. Nothing about the data changes between these stages; only what the residuals are able to show.</div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section id="mean">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Repair One: the Curve Fitted With a Ruler</h2></div>
+
+    <p>RESET is the loudest failure, so start there. Plotting residuals against each predictor in turn locates it
+       immediately: against temperature the residuals arch, running roughly 900 dollars low at both ends of the range
+       and 250 dollars high through the middle. A cafe sells less when it is freezing and less when it is sweltering,
+       and one straight coefficient cannot say both.</p>
+
+    <p>Replacing the linear term with a five-degree-of-freedom spline repairs it.</p>
+
+    <table class="disp-table">
+      <tr><th>&nbsp;</th><th>Naive</th><th>After the spline</th></tr>
+      <tr><td class="nm">RESET</td><td class="no">p = 4 &#215; 10&#8315;&#8312;</td><td class="yes">p = 0.69</td></tr>
+      <tr><td class="nm">R&#178;</td><td>0.602</td><td>0.723</td></tr>
+      <tr><td class="nm">Residual SD</td><td>$372</td><td>$311</td></tr>
+      <tr class="hi"><td class="nm">Durbin-Watson</td><td>1.265</td><td>1.496</td></tr>
+      <tr><td class="nm">Breusch-Pagan</td><td>p = 0.334</td><td>p = 0.117, still silent</td></tr>
+    </table>
+
+    <p>Note the Durbin-Watson row. It improved substantially without being touched, and the reason is worth
+       internalizing: <strong>a smooth misfit produces long runs of same-signed residuals, which is exactly what
+       autocorrelation looks like</strong>. Some of what appeared to be correlated errors was the curve. Diagnosing
+       autocorrelation on a misspecified model would have led to fitting a time-series error structure to repair a
+       problem that was really about temperature.</p>
+  </section>
+
+  <!-- 4 -->
+  <section id="six">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Repair Two: Six Days, and Why Deleting Them Is the Wrong Instinct</h2></div>
+
+    <p>With the mean structure fixed, Cook's distance sharpens into something specific. Five of the six most influential
+       days in three years are the local street festival.</p>
+
+    <p>The plan said in advance that influential points would not be deleted, and this is the case that shows why.
+       These are not data errors. They are the six most commercially interesting days in the entire record.
+       <strong>An influential observation is an instruction to model something.</strong> Deleting it is a decision to
+       report a model of a world that did not happen.</p>
+
+    <div class="embox">
+      <span class="gb-tag">What those six days were doing to the variance test</span>
+      <p style="margin:0.45rem 0 0">Breusch-Pagan on the spline model, all days: <strong>p = 0.117</strong>. The same
+         test on the same model with the six festival days removed: <strong>p = 1.3 &#215; 10&#8315;&#8312;</strong>.
+         The residual standard deviation is $309 across all days and $253 excluding those six.
+         <strong>Six days out of 1,079 inflate the spread by 22 percent, and that is enough to bury a variance pattern
+         that is otherwise overwhelming.</strong></p>
+    </div>
+
+    <p>The repair is an indicator for festival days, and it pays for itself immediately: a festival day is worth
+       <strong>$2,340</strong> more than an ordinary one. That is a number the business did not have, and deleting the
+       rows would have discarded it in exchange for a tidier residual plot.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">R&#178;</div><div class="rv">0.723 &#8594; 0.810</div><div class="rd">after the indicator</div></div>
+      <div class="rchip"><div class="rk">Residual SD</div><div class="rv">$311 &#8594; $258</div><div class="rd">&nbsp;</div></div>
+      <div class="rchip"><div class="rk">Festival effect</div><div class="rv">+$2,340</div><div class="rd">per day, truth $2,600</div></div>
+      <div class="rchip"><div class="rk">Breusch-Pagan</div><div class="rv">p = 7 &#215; 10&#8315;&#185;&#8312;</div><div class="rd">now unmissable</div></div>
+    </div>
+
+    <p>Two lines in that output look like they got worse and neither did. <strong>Cook's distance rose from 0.06 to
+       0.33</strong>, because the festival coefficient is estimated from six observations and each is by construction
+       decisive for it. That is what fitting an indicator to a rare event means, and the response is to report the
+       coefficient with its six-day sample size attached, not to remove the term. <strong>RESET now returns p =
+       0.04</strong>, which on 1,079 observations detects departures far too small to matter; the residual curve in the
+       figure below is flat to within a few dollars across the whole range.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-diagnostics-four.png"
+           alt="Four diagnostic panels. (a) Residuals against fitted revenue for the repaired model, with an envelope of the residual standard deviation in each band widening from about 100 dollars at the quiet end to over 300 at the busy end. (b) Mean residual against temperature: the naive model's line arches from minus 1400 dollars at cold temperatures up to plus 250 in the middle and back down to minus 900 at hot temperatures, while the repaired line is flat near zero. (c) Cook's distance by day, with six festival days marked in red far above every other point and a dashed 4 over n reference line near zero. (d) Residual autocorrelation by lag, the naive model staying above 0.12 out to lag 21 and the repaired model falling into a shaded band by lag 4.">
+      <figcaption><strong>(a)</strong> the funnel, drawn as the residual standard deviation in each band of fitted
+        revenue. <strong>(b)</strong> the arch, before and after the spline. <strong>(c)</strong> six days standing far
+        above a thousand others, and the 4/n line showing why that rule flags too much to use alone.
+        <strong>(d)</strong> autocorrelation, reduced by the repairs and not eliminated, which is why the final model
+        needs the standard errors of the next section.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 5 -->
+  <section id="ses">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Repair Three: Standard Errors for What Is Left</h2></div>
+
+    <p>Two faults remain and they are different in kind from the first two. Heteroskedasticity and autocorrelation do
+       not bias the coefficients. They make the <em>standard errors</em> wrong, so the repair is not to change the model
+       but to change how its uncertainty is computed.</p>
+
+    <table class="disp-table">
+      <tr><th>Standard error</th><th>Assumes</th><th>Promotion effect</th><th>95% interval</th></tr>
+      <tr><td class="nm">Classical</td><td>Neither fault</td><td>+$288.0 (SE 21.3)</td><td>[$246, $330]</td></tr>
+      <tr><td class="nm">HC3 robust</td><td>Independence only</td><td>+$288.0 (SE 24.2)</td><td>[$241, $335]</td></tr>
+      <tr class="hi"><td class="nm">Newey-West HAC, 14 lags</td><td>Neither. Handles both</td><td>+$288.0 (SE 23.1)</td><td>[$243, $333]</td></tr>
+    </table>
+
+    <p>The point estimate does not move by a cent across all three, which is precisely what these two violations
+       predict. Only the width changes.</p>
+
+    <div class="callout warn">
+      <div class="cico">&#9888;&#65039;</div>
+      <div><div class="ctitle">Robust standard errors are not a substitute for a model</div>
+        <p>HC3 and HAC repair the uncertainty around a coefficient. They do nothing whatever about a curve fitted with a
+           ruler. Applying them to the naive model would have produced a carefully calibrated interval around an
+           estimate whose temperature conclusion was still backwards, which is a more dangerous output than an
+           uncalibrated one.</p></div>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section id="changed">
+    <div class="section-eyebrow"><div class="num">6</div><h2>What the Repairs Actually Changed</h2></div>
+
+    <p>Two conclusions came out of this model, and the repairs treated them very differently. Reporting that
+       "diagnostics were performed" would tell a reader nothing about which.</p>
+
+    <table class="disp-table">
+      <tr><th>Specification</th><th>Promotion effect</th><th>95% interval</th><th>Clears the $200 cost?</th></tr>
+      <tr><td class="nm">Naive OLS</td><td>+$295.4</td><td>[$235, $356]</td><td class="yes">Yes</td></tr>
+      <tr><td class="nm">+ spline</td><td>+$291.1</td><td>[$241, $341]</td><td class="yes">Yes</td></tr>
+      <tr><td class="nm">+ festival indicator</td><td>+$288.0</td><td>[$246, $330]</td><td class="yes">Yes</td></tr>
+      <tr class="hi"><td class="nm">+ HAC standard errors</td><td>+$288.0</td><td>[$243, $333]</td><td class="yes">Yes</td></tr>
+    </table>
+
+    <p><strong>Conclusion one survived intact.</strong> Every specification reaches the same decision, and the true
+       effect is $250. The repairs did not rescue this answer; they sharpened it, taking the residual standard
+       deviation from $372 to $258. That is worth having and it is not a reversal.</p>
+
+    <p><strong>Conclusion two was wrong.</strong> The naive model reports that every degree of warmth is worth $16.96,
+       at p = 7 &#215; 10&#8315;&#185;&#8304;&#8309;. The repaired model says revenue peaks at 67.3&#176;F and falls
+       away on both sides, at roughly &#8722;$14.6 per degree above the peak. <strong>The naive coefficient has the
+       wrong sign across the entire upper half of the temperature range.</strong> A manager using it to plan staffing
+       for a heatwave would staff up for a rush that does not arrive.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-diagnostics-changed.png"
+           alt="Left: daily revenue against temperature with the naive straight line rising steadily across the whole range and the repaired spline rising to a peak near 67 degrees Fahrenheit and then falling. Right: the promotion effect estimated under four specifications with 95 percent intervals, all four clearly above a dashed line at 200 dollars marking the cost and close to a dotted line at 250 marking the truth.">
+      <figcaption><strong>Left:</strong> the straight line and the spline through the same data. They agree in the
+        middle and disagree completely at both ends, which is where the operational decisions get made.
+        <strong>Right:</strong> the promotion estimate at each stage against its cost and against the truth. Every
+        interval clears $200, and the repairs narrowed it rather than rescuing it.</figcaption>
+    </figure>
+
+    <p>That asymmetry is the honest summary of diagnostics work. Most of the time the repairs change how sure you are
+       entitled to be. Occasionally they change the answer, and <strong>you cannot tell which case you are in without
+       doing them</strong>.</p>
+  </section>
+
+  <!-- 7 -->
+  <section id="watch">
+    <div class="section-eyebrow"><div class="num">7</div><h2>What to Watch</h2></div>
+
+    <ul class="checklist">
+      <li><span class="ck">&#10003;</span><span><strong>Run the checks in order and re-run them after every repair.</strong> A misspecified mean makes the variance test useless and imitates correlated errors. Six extreme residuals hide a variance pattern in a thousand ordinary ones.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Never delete an influential point to improve a fit.</strong> Those six days were the festival. Deleting them tidies the residual plot, moves the promotion estimate by eight dollars, and discards a $2,340-a-day finding.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Report the diagnostics that passed, not just the ones that failed.</strong> A reader cannot distinguish "we checked and it was fine" from "we did not check", and only one of those deserves their trust.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Robust standard errors do not fix a wrong model.</strong> They calibrate the uncertainty around whatever the model says, including when what it says is backwards.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Say which conclusion the repairs changed.</strong> Here one survived and one reversed. "Diagnostics were performed" conveys neither.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Fit and significance do not detect shape.</strong> The naive model had R&#178; = 0.60 and a temperature coefficient at p = 7 &#215; 10&#8315;&#185;&#8304;&#8309;. Both were real, and neither noticed that the relationship bends.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Watch a rare-event indicator's sample size.</strong> The festival coefficient rests on six observations, which is why its Cook's distances are large by construction and why the number belongs in the report next to the estimate.</span></li>
+    </ul>
+  </section>
+
+  <!-- 8 -->
+  <section id="ml">
+    <div class="section-eyebrow"><div class="num">8</div><h2>Diagnostics in Data Science &amp; AI</h2></div>
+
+    <table class="disp-table">
+      <tr><th>Where it appears</th><th>The same failure, in a different costume</th></tr>
+      <tr><td class="nm">Residual analysis of any predictive model</td><td>Plotting residuals against each feature is the fastest way to find the feature that needs a transform, and it survives whatever algorithm produced them</td></tr>
+      <tr><td class="nm">Gradient boosting and random forests</td><td>Tree ensembles fit curvature automatically, which removes this failure mode and replaces it with the difficulty of noticing what shape they learned</td></tr>
+      <tr><td class="nm">Time-series cross-validation</td><td>Autocorrelation is exactly why a random train-test split leaks, and why forecasting needs rolling-origin validation</td></tr>
+      <tr><td class="nm">Anomaly detection</td><td>An influential point and an anomaly are the same observation seen from two directions; one asks what it does to the model and the other asks what it is</td></tr>
+      <tr><td class="nm">Uncertainty quantification</td><td>Prediction intervals of constant width are the machine-learning version of assuming constant variance, and they are wrong in the same place</td></tr>
+    </table>
+
+    <div class="research">
+      <span class="rtag">Where the research went</span>
+      <p style="margin:0.4rem 0 0">The repairs used here are each named after somebody. <strong>White's</strong> 1980
+         heteroskedasticity-consistent covariance matrix is the ancestor of HC3, and
+         <strong>Newey and West's</strong> 1987 estimator extends it to serial correlation, which is why one line of
+         code handles both faults at once. <strong>Ramsey's</strong> RESET dates from 1969 and remains the standard
+         omnibus test for functional form. <strong>Cook's</strong> distance is from 1977. The modern direction is
+         toward methods that avoid the choice entirely: <strong>generalized additive models</strong> fit the smooth
+         term rather than requiring you to specify a spline basis, and <strong>quantile regression</strong> sidesteps
+         the constant-variance assumption by modeling the whole conditional distribution instead of its mean.</p>
+    </div>
+  </section>
+
+  <!-- notebook -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">&#128013;</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook fits the naive model, runs all four checks in parallel and finds one fault out of
+             three, locates the curve by plotting residuals against each predictor, repairs it with a spline,
+             identifies the six festival days, demonstrates that removing them changes Breusch-Pagan from p = 0.12 to
+             p = 1.3 &#215; 10&#8315;&#8312;, models them rather than deleting them, applies HAC standard errors to
+             what remains, and closes by separating the conclusion that survived from the one that reversed.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-regression-diagnostics-and-remedies.html">&#128211; View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-regression-diagnostics-and-remedies.ipynb"
+           target="_blank" rel="noopener">&#9654; Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-regression-diagnostics-and-remedies.ipynb"
+           target="_blank" rel="noopener">&#11015; View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Read the reports &amp; get the data</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong>
+         (<code>capstone-regression-diagnostics-and-remedies.xlsx</code>) holds three years of daily trading with a
+         duplicated export, eleven temperature sentinels and five days with no till close-out left in, the analysis
+         plan written before the modeling, and the generating parameters so every repair can be scored. Two written
+         reports accompany it: a <strong>plain-language brief</strong> for the owner, and a <strong>technical
+         report</strong> covering each diagnosis and its remedy.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-26-regression-diagnostics-and-remedies.html" target="_blank" rel="noopener">&#128196; Plain-language brief <small>read online</small></a>
+        <a class="ex-file doc" href="../reports/capstone-26-regression-diagnostics-and-remedies-technical.html" target="_blank" rel="noopener">&#128202; Technical report <small>read online</small></a>
+        <a class="ex-file xls" href="../data/capstone-regression-diagnostics-and-remedies.xlsx">&#128202; Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>&#127891; Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">&#10003;</span><span><strong>The checks are a sequence, not a checklist.</strong> Run in parallel on the naive model they find one fault out of three, because each failure hides the next.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Six days in 1,079 hid the heteroskedasticity.</strong> Breusch-Pagan went from p = 0.12 to p = 1.3 &#215; 10&#8315;&#8312; when the festival days came out, and to 7 &#215; 10&#8315;&#185;&#8312; once they were modeled.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Model influential points, do not delete them.</strong> The festival indicator was worth $2,340 a day, and deleting the rows would have bought a tidier plot and less knowledge.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Heteroskedasticity and autocorrelation damage intervals, not estimates.</strong> The promotion effect was +$288.0 under all three standard errors; only the width moved.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>One conclusion survived and one reversed.</strong> The promotion answer was merely overconfident; the temperature answer had the wrong sign above 67&#176;F.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">&#10067;</div><h2>Quiz: Test Yourself</h2></div>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-pay-equity-review.html">
+      <span style="font-size:1.3rem">&#8592;</span>
+      <span><span class="cn-dir">Chapter 185 &#183; Previous</span><br><span class="cn-title">Multiple Regression Done Properly: A Pay Equity Review</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">&#8594;</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;&#183;&nbsp;
+  Chapter 186 &nbsp;&#183;&nbsp; &#169; 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch186";
+  window.QUIZ_DATA = [
+    {
+      q: "On the naive model, Breusch-Pagan returned p = 0.33 while RESET returned p = 4 × 10⁻⁸. Why should the variance test not be believed?",
+      options: ["Because Breusch-Pagan is unreliable at this sample size", "Because the residuals are dominated by systematic error from the misspecified mean, so a test about the noise has nothing clean to work with", "Because the errors are autocorrelated", "Because the outcome is not normally distributed"],
+      answer: 1,
+      explain: "Until the mean structure is right, the residuals are mostly the misfit rather than the noise. That is why the four checks form a sequence: repair the mean first, then judge the variance."
+    },
+    {
+      q: "Adding the spline improved Durbin-Watson from 1.265 to 1.496 without touching the error structure. Why?",
+      options: ["The spline used up degrees of freedom", "A smooth misfit produces long runs of same-signed residuals, which look exactly like autocorrelation", "The spline removed the influential points", "Durbin-Watson is not valid with splines"],
+      answer: 1,
+      explain: "Part of the apparent serial correlation was the curve. Diagnosing autocorrelation on a misspecified model can lead to fitting a time-series error structure to repair a problem that was really about a predictor's shape."
+    },
+    {
+      q: "Breusch-Pagan on the spline model gave p = 0.117 with all days, and p = 1.3 × 10⁻⁸ with the six festival days removed. What does this show?",
+      options: ["The festival days are measurement errors", "The heteroskedasticity only exists on festival days", "Six extreme residuals inflated the spread by 22 percent, which was enough to conceal a strong variance pattern in the other 1,073", "The test is invalid with outliers present"],
+      answer: 2,
+      explain: "The variance pattern was always there. Six enormous residuals raised the overall spread enough to mask it, which is why influential points have to be dealt with before the variance can be judged."
+    },
+    {
+      q: "The six festival days were modeled with an indicator rather than deleted. What did that decision buy?",
+      options: ["A better R-squared only", "An estimate that a festival day is worth $2,340, which deleting the rows would have discarded", "A smaller promotion coefficient", "Protection against autocorrelation"],
+      answer: 1,
+      explain: "An influential observation is an instruction to model something. Deleting these six would have tidied the residual plot, moved the promotion estimate by about eight dollars, and thrown away the most commercially useful number in the analysis."
+    },
+    {
+      q: "After the festival indicator was added, the largest Cook's distance rose from 0.06 to 0.33. Is that a problem?",
+      options: ["Yes, the model is now unstable", "No: the festival coefficient is estimated from six observations, so each is decisive for it by construction", "Yes, the indicator should be removed", "No, because Cook's distance is not meaningful for indicators"],
+      answer: 1,
+      explain: "Fitting an indicator to a rare event guarantees that those observations dominate that one coefficient. The response is to report the estimate with its six-day sample size attached, not to drop the term."
+    },
+    {
+      q: "The promotion effect was +$288.0 under classical, HC3 and HAC standard errors. Why did only the interval change?",
+      options: ["Because the sample is large", "Because heteroskedasticity and autocorrelation do not bias the coefficients; they make the standard errors wrong", "Because the promotion is a binary variable", "Because HAC and HC3 are equivalent here"],
+      answer: 1,
+      explain: "These two violations attack the uncertainty rather than the estimate. That is why the remedy is a different variance estimator rather than a different model."
+    },
+    {
+      q: "The naive model reported +$16.96 per degree of temperature at p = 7 × 10⁻¹⁰⁵. What was wrong with it?",
+      options: ["The coefficient was too small to matter", "Nothing: it was significant and correctly computed", "The relationship peaks near 67°F and falls above it, so the single slope has the wrong sign across the whole upper half of the range", "The standard error was underestimated"],
+      answer: 2,
+      explain: "Fit and significance say nothing about shape. Above the peak the true slope is about −$14.6 per degree, so a manager planning for a heatwave from the naive model would staff up for a rush that never comes."
+    },
+    {
+      q: "Which summary of this analysis is honest?",
+      options: ["Diagnostics were performed and the model was corrected", "The repairs reversed the study's conclusion", "The repairs left the promotion decision unchanged while sharpening it, and reversed the temperature conclusion above 67°F", "The naive model was adequate for the business question"],
+      answer: 2,
+      explain: "Saying only that diagnostics were performed tells a reader nothing about which findings depended on them. Here one conclusion was merely overconfident and the other was backwards, and you cannot know which case you are in without doing the work."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
