@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clinical Risk Scoring (Technical Report) &#183; Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/report.css">
+  <style>
+    body.report { --rpt-accent:#c2410c; --rpt-accent-dark:#7c2d12; --rpt-accent-bg:#fff7ed; --rpt-accent-line:#fed7aa; }
+  </style>
+</head>
+
+<body class="report">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="../chapters/capstone-clinical-risk-scoring.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">&#8592; Chapter 187</a>
+  </div>
+</nav>
+
+<div class="rpt-sticky" id="rptSticky">
+  <div class="inner">
+    <div class="st-title">Development and Evaluation of a 30-Day Cardiac Risk Score: Discrimination, Calibration and Net Benefit</div>
+    <a class="st-back" href="../chapters/capstone-clinical-risk-scoring.html">&#8592; Chapter 187</a>
+  </div>
+</div>
+
+<div class="rpt-wrap">
+  <article class="rpt-paper tech">
+    <header class="rpt-head">
+      <div class="rpt-topline">
+        <div class="rpt-kicker">Capstone 27 &#183; Technical Report</div>
+        <span class="rpt-badge tech">Technical Report</span>
+      </div>
+      <h1>Development and Evaluation of a 30-Day Cardiac Risk Score: Discrimination, Calibration and Net Benefit</h1>
+      <p class="rpt-sub">A demonstration that discrimination metrics are insufficient for threshold-based decisions, with two models of identical AUC and materially different clinical consequences.</p>
+      <div class="rpt-meta"><div><b>Analysis</b> &nbsp;Clinical Analytics</div><div><b>Design</b> &nbsp;Retrospective cohort, held-out validation</div><div><b>Sample</b> &nbsp;8,938 presentations; 3,129 held out</div><div><b>Date</b> &nbsp;2026</div></div>
+    </header>
+
+    <div class="rpt-prov">
+      <span class="pv-tag">Where this comes from</span>
+      <div class="pv-row"><div><span>Chapter</span> <a href="../chapters/capstone-clinical-risk-scoring.html">Chapter 187 &#183; Logistic Regression for Decisions: Clinical Risk Scoring</a></div><div><span>Part</span> Part XXX &#183; Capstone Projects: Regression</div><div><span>Dataset</span> <a href="../data/capstone-clinical-risk-scoring.xlsx">capstone-clinical-risk-scoring.xlsx</a></div><div><span>Notebook</span> <a href="../chapters/notebooks/html/capstone-clinical-risk-scoring.html" target="_blank" rel="noopener">View the analysis</a></div></div>
+    </div>
+
+    <div class="rpt-body">
+      <div class="rpt-abstract"><span class="ab-tag">Abstract</span><p><b>Objective.</b> To develop a logistic risk score for major cardiac events within 30 days of emergency presentation with chest pain, and to demonstrate the insufficiency of discrimination metrics for evaluating a score intended to support a threshold-based decision. <b>Methods.</b> Logistic regression on ten pre-decision covariates in 5,809 presentations, validated on 3,129 held out at random with stratification. A second model was constructed by adding a constant to the fitted log-odds, preserving the ordering exactly. Discrimination was assessed by AUC, calibration by the Brier score, the calibration slope and intercept, and a decile plot. The decision threshold was derived from a clinician-specified cost ratio. Net benefit was computed across thresholds against treat-all and treat-none. <b>Results.</b> Event rate 3.94%. Both models attained AUC 0.8097. The calibrated model returned a Brier score of 0.03448, mean predicted risk 3.93% against 3.93% observed, calibration intercept &#8722;0.053 and slope 0.980. The shifted model returned Brier 0.03944, mean predicted risk 8.64%, intercept &#8722;0.983 and slope 0.980. At the derived threshold of 2.44% the calibrated model admitted 1,305 patients (105 events captured, 18 missed) and the shifted model 2,256 (123 captured, 0 missed), a ratio of 53 additional admissions per additional event against a specified tolerance of 40. Net benefit favored the calibrated model at every threshold examined. <b>Conclusion.</b> AUC is invariant to monotone transformation of predicted risk and cannot detect calibration error. Calibration intercept, threshold derivation and net benefit should be reported as standard.</p></div>
+      <div class="rpt-keywords"><b>Keywords:</b> ['logistic regression', 'clinical prediction model', 'calibration', 'Brier score', 'calibration slope and intercept', 'decision curve analysis', 'net benefit', 'class imbalance', 'discrimination', 'AUC']</div>
+      <h2>1. Cohort and data preparation</h2>
+      <div class="rpt-cap"><span class="n">Table 1.</span> Cohort construction. Stratified random split.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Stage</th><th>n</th><th>Note</th></tr></thead><tbody><tr><td><span class='nm'>Extract</span></td><td>9,060</td><td>Executed twice</td></tr><tr><td><span class='nm'>Deduplicated</span></td><td>9,000</td><td>One record per presentation</td></tr><tr><td><span class='nm'>Valid vital signs</span></td><td>8,938</td><td>35 systolic values of 0 and 28 heart rates of 999 voided as device sentinels</td></tr><tr><td><span class='nm'>Training</span></td><td>5,809</td><td>3.94% events</td></tr><tr><td><span class='nm'>Held out</span></td><td>3,129</td><td>3.93% events, 123 in total</td></tr></tbody></table></div>
+      <p>One hundred and thirty-eight presentations had no troponin assay. These were retained with a missingness indicator and median substitution rather than excluded. The decision to order a high-sensitivity troponin is itself clinically informative, and listwise deletion would restrict the model's applicability to patients already judged to warrant testing, which is not the population the score is intended for.</p>
+      <h2>2. Discrimination is invariant to the level</h2>
+      <p>A second model was constructed as logit(p&#8322;) = logit(p&#8321;) + 0.95. This transformation is strictly monotone and therefore preserves the rank order of predicted risk exactly, with a Spearman correlation of 1.</p>
+      <div class="rpt-cap"><span class="n">Table 2.</span> Discrimination and calibration on the held-out set.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Model</th><th>AUC</th><th>Brier</th><th>Mean predicted</th><th>Observed</th><th>Calibration intercept</th><th>Slope</th></tr></thead><tbody><tr><td><span class='nm'>A, as fitted</span></td><td>0.8097</td><td>0.03448</td><td>3.93%</td><td>3.93%</td><td>&#8722;0.053</td><td>0.980</td></tr><tr><td><span class='nm'>B, shifted</span></td><td>0.8097</td><td>0.03944</td><td>8.64%</td><td>3.93%</td><td>&#8722;0.983</td><td>0.980</td></tr></tbody></table></div>
+      <p>The identity of the AUCs is not an artifact of rounding: the statistic is a function of the ordering alone and is mathematically invariant to any strictly increasing transformation of the predicted probabilities. Any evaluation restricted to discrimination is therefore incapable in principle of detecting a calibration error of arbitrary magnitude.</p>
+      <div class="rpt-key"><span class="k-tag">The slope does not catch it either</span><p>Both models return a calibration slope of 0.980, since the shift preserves the dispersion of the linear predictor. Only the intercept distinguishes them. A model report presenting AUC together with the calibration slope, which is a frequent pairing, would pass model B without remark.</p></div>
+      <h2>3. Threshold derivation</h2>
+      <p>Under an expected-utility formulation, the threshold probability at which admitting and discharging are indifferent equals the ratio of the cost of a false positive to the sum of the costs of a false positive and a false negative. A clinician-specified ratio of 40 gives a threshold of 1/41 = 0.0244.</p>
+      <div class="rpt-cap"><span class="n">Table 3.</span> Consequences at a threshold of 2.44% on 3,129 held-out presentations.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Model</th><th>Admitted</th><th>Events captured</th><th>Events missed</th><th>Admission rate</th></tr></thead><tbody><tr><td><span class='nm'>A, calibrated</span></td><td>1,305</td><td>105</td><td>18</td><td>41.7%</td></tr><tr><td><span class='nm'>B, shifted</span></td><td>2,256</td><td>123</td><td>0</td><td>72.1%</td></tr></tbody></table></div>
+      <p>Model B captures 18 additional events at a cost of 951 additional admissions, a marginal exchange rate of 53:1 against a specified tolerance of 40:1. It is not operating more conservatively in a way the clinical team chose; it is operating at a different threshold from the one specified, without that substitution being visible in any reported metric.</p>
+      <p>It should also be noted that a policy of admitting no patients attains an accuracy of 96.07% on this cohort. Accuracy is not reported elsewhere in this document and should not be reported for outcomes at this prevalence.</p>
+      <h2>4. Net benefit</h2>
+      <div class="rpt-cap"><span class="n">Table 4.</span> Net benefit by threshold probability.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Threshold</th><th>Model A</th><th>Model B</th><th>Treat all</th><th>Treat none</th></tr></thead><tbody><tr><td>1.00%</td><td>0.0319</td><td>0.0305</td><td>0.0296</td><td>0</td></tr><tr><td>2.44%</td><td>0.0240</td><td>0.0223</td><td>0.0153</td><td>0</td></tr><tr><td>4.00%</td><td>0.0174</td><td>0.0148</td><td>&#8722;0.0007</td><td>0</td></tr><tr><td>7.00%</td><td>0.0116</td><td>0.0052</td><td>&#8722;0.0330</td><td>0</td></tr><tr><td>10.00%</td><td>0.0069</td><td>0.0003</td><td>&#8722;0.0674</td><td>0</td></tr><tr><td>15.00%</td><td>0.0053</td><td>&#8722;0.0037</td><td>&#8722;0.1302</td><td>0</td></tr></tbody></table></div>
+      <p>Model A dominates model B throughout, and the separation widens with the threshold. Model B attains negative net benefit at 15%, indicating that a decision maker holding that cost ratio would obtain a better expected outcome by disregarding the model entirely. No discrimination metric would disclose this.</p>
+      <figure class="rpt-fig"><img src="../assets/img/capstone-risk-decision.png" alt="A decision curve and a grouped bar chart of admissions, events captured and events missed."><figcaption><span class="n">Figure 1.</span> Net benefit across thresholds for both models against treat-all and treat-none, and the admission consequences at the derived threshold.</figcaption></figure>
+      <h2>5. Specification check</h2>
+      <p>A variable with no relationship to the outcome, month of arrival, was included as a negative control. Held-out AUC changed from 0.8097 to 0.8091 and its fitted coefficient was +0.046 against a true value of zero. In-sample performance necessarily improves with any additional parameter, which is the operative argument for the held-out design specified before fitting.</p>
+      <h2>6. Discussion</h2>
+      <p>The central claim of this report is narrow and, in the applied literature, frequently disregarded. AUC is a rank statistic. A model intended to support a threshold decision is consumed as a probability. The two requirements are distinct, and a model may satisfy the first arbitrarily well while failing the second by an arbitrary margin. The demonstration constructed here is extreme by design, but calibration drift of comparable magnitude arises routinely in practice: from case-mix shift between development and deployment settings, from class rebalancing during training, and from algorithms such as gradient boosting and random forests that are systematically miscalibrated by default while reporting excellent discrimination.</p>
+      <p>The corresponding recommendation is that calibration intercept and slope, the threshold with the cost ratio from which it was derived, and net benefit against the trivial strategies should appear alongside discrimination in any report on a model intended to support a decision.</p>
+      <p>Limitations. Performance is reported for the cohort as a whole. A model adequately calibrated in aggregate may be poorly calibrated within subgroups defined by age, sex or ethnicity, and subgroup calibration should be assessed prior to deployment. Validation is internal, using a random split of a single-center cohort; temporal and external validation are required before generalization is claimed. Calibration should be re-assessed at fixed intervals following deployment, since drift is expected rather than exceptional.</p>
+      <h2>7. Conclusion</h2>
+      <p>A logistic risk score attained an AUC of 0.8097 with calibration intercept &#8722;0.053 and slope 0.980 on 3,129 held-out presentations. A model with identical AUC and a calibration intercept of &#8722;0.983 would, at the same clinician-derived threshold of 2.44%, admit 951 additional patients per 3,129 presentations at a marginal cost of 53 admissions per additional event captured. Discrimination metrics cannot distinguish the two.</p>
+      <h2>References</h2>
+      <ul class="rpt-refs"><li>Brier, G. W. (1950). Verification of forecasts expressed in terms of probability. <em>Monthly Weather Review</em>, 78(1), 1&#8211;3.</li><li>Cox, D. R. (1958). Two further applications of a model for binary regression. <em>Biometrika</em>, 45(3/4), 562&#8211;565.</li><li>Vickers, A. J., &amp; Elkin, E. B. (2006). Decision curve analysis: a novel method for evaluating prediction models. <em>Medical Decision Making</em>, 26(6), 565&#8211;574.</li><li>Steyerberg, E. W., Vickers, A. J., Cook, N. R., et al. (2010). Assessing the performance of prediction models: a framework for traditional and novel measures. <em>Epidemiology</em>, 21(1), 128&#8211;138.</li><li>Van Calster, B., McLernon, D. J., van Smeden, M., et al. (2019). Calibration: the Achilles heel of predictive analytics. <em>BMC Medicine</em>, 17, 230.</li><li>Collins, G. S., Reitsma, J. B., Altman, D. G., &amp; Moons, K. G. M. (2015). Transparent reporting of a multivariable prediction model for individual prognosis or diagnosis (TRIPOD). <em>BMJ</em>, 350, g7594.</li><li>Guo, C., Pleiss, G., Sun, Y., &amp; Weinberger, K. Q. (2017). On calibration of modern neural networks. <em>Proceedings of ICML 2017</em>.</li><li>Platt, J. (1999). Probabilistic outputs for support vector machines and comparisons to regularized likelihood methods. <em>Advances in Large Margin Classifiers</em>.</li></ul>
+      <h2>Reproducibility</h2>
+      <p>The dataset (<code>capstone-clinical-risk-scoring.xlsx</code>) contains the presentation records with their data-quality faults and a negative-control variable intact, the analysis plan as agreed before modeling, and the generating coefficients. An executable notebook accompanies the chapter and reproduces every estimate, table and figure, including the construction of the shifted model and the net benefit calculation. Analyses use NumPy, pandas, scikit-learn, statsmodels and Matplotlib.</p>
+    </div>
+
+    <div class="rpt-foot"><a class="primary" href="../chapters/capstone-clinical-risk-scoring.html">&#8592; Back to Chapter 187</a><a href="../chapters/notebooks/html/capstone-clinical-risk-scoring.html" target="_blank" rel="noopener">&#128211; Companion notebook</a><a class="xls" href="../data/capstone-clinical-risk-scoring.xlsx">&#128202; Download dataset</a></div>
+    <div class="rpt-colophon">
+      From <strong>Statistics, Data Science and AI: A Visual Handbook</strong> by John Fisher.
+      Every statistic, table, and figure in this report is reproduced by the companion notebook.
+    </div>
+  </article>
+</div>
+
+<script>
+(function(){
+  var bar=document.getElementById('rptSticky');
+  window.addEventListener('scroll',function(){
+    if(window.scrollY>320) bar.classList.add('on'); else bar.classList.remove('on');
+  });
+})();
+</script>
+</body>
+</html>

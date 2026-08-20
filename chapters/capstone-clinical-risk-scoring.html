@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 187 · Logistic Regression for Decisions: Clinical Risk Scoring — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .yes { color:#047857; font-weight:700; }
+    .disp-table .no { color:#dc2626; font-weight:700; }
+    .disp-table tr.hi td { background:#fff7ed; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .embox { background:#fff7ed; border:1px solid #fed7aa; border-left:4px solid #c2410c; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .embox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#7c2d12; }
+    .rw-card { background:#fff7ed; border:1px solid #fed7aa; border-left:4px solid #c2410c; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#7c2d12; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#fff7ed; color:#c2410c; border-color:#fed7aa; }
+    .ex-file.doc { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#fff7ed; border:1px solid #fed7aa; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#7c2d12; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #c2410c; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#7c2d12; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+    .svg-wrap { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.9rem 0.6rem 0.3rem; background:var(--panel); }
+    .svg-wrap svg { width:100%; height:auto; display:block; }
+    .svg-wrap .cap { font-size:0.82rem; color:var(--ink-soft); padding:0.55rem 0.6rem 0.4rem; line-height:1.55; }
+    .svg-wrap .cap strong { color:var(--ink); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/capstone-clinical-risk-scoring.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXX &#183; Capstone Projects: Regression</span><span class="sep">/</span>
+      <span>Chapter 187</span>
+    </div>
+    <h1>Logistic Regression for Decisions: <span class="accent">Clinical Risk</span> Scoring</h1>
+    <p class="dek">Capstone 27. Two models with the same AUC to four decimal places. One says four percent of these patients are in danger and the other says nine. A score that sends people home has to be right about the level, and AUC cannot see the level at all.</p>
+    <div class="hero-meta">
+      <div class="m">&#9201;&#65039; <b>~21 min</b>&nbsp;read</div>
+      <div class="m">&#127919; <b>Risk prediction</b></div>
+      <div class="m">&#128202; <b>Chapter 187</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">A logistic regression that ranks patients well is not the same thing as one that can be trusted to
+       set a threshold. This chapter is about the gap between those two claims, and about
+       <span class="hl">the metric that cannot tell them apart</span>.</p>
+
+    <div class="brief-card">
+      <div class="bh">The brief</div>
+      <dl>
+        <dt>Setting</dt><dd>An emergency department: 8,938 presentations with chest pain, each with age, sex, vital signs, troponin, comorbidities and ECG findings, and whether a major cardiac event followed within 30 days.</dd>
+        <dt>The question</dt><dd><strong>Which patients can safely be discharged, and which should be admitted for observation?</strong></dd>
+        <dt>Why it matters</dt><dd>The score is not a research output. It is a rule that sends people home, so it has to be right about how much risk a patient carries and not merely about which patient carries more.</dd>
+        <dt>What we do</dt><dd>Fit the model on a training set and evaluate only on held-out data, report AUC because everyone asks for it, then build a second model with the same AUC and half the accuracy about risk, measure calibration properly, derive the threshold from a stated cost ratio rather than from the data, and check the whole thing with decision curve analysis.</dd>
+      </dl>
+    </div>
+
+    <div class="def-card">
+      <div class="sigma">&#8776;</div>
+      <div class="def-body">
+        <span class="def-kw">Discrimination</span> asks whether the model puts patients in the right order.
+        <span class="def-kw">Calibration</span> asks whether the numbers it attaches to them are right. A threshold
+        rule reads the numbers, so a model can discriminate perfectly and still be
+        <span class="def-kw">unusable for the decision it was built for</span>.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">&#11088;</div>
+      <div><div class="ctitle">The finding, up front</div>
+        <p>Two models, <strong>AUC 0.8097 both</strong>, identical to four decimals. One predicts a mean risk of
+           <strong>3.93 percent</strong> against an observed <strong>3.93 percent</strong>. The other predicts
+           <strong>8.64 percent</strong>. At the clinicians' own threshold the second admits <strong>951 more
+           patients</strong> to catch 18 more events, which is 53 admissions each against a stated tolerance of
+           40.</p></div>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section id="decision">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Decision the Score Is For</h2></div>
+
+    <p>A patient scoring above the threshold is admitted for observation. Below it they go home with advice. Everything
+       about how this model should be built and judged follows from that sentence, and almost none of it follows from
+       the usual machine-learning defaults.</p>
+
+    <table class="disp-table">
+      <tr><th>The default</th><th>Why it fails here</th></tr>
+      <tr><td class="nm">Report accuracy</td><td>The event rate is 3.9 percent. Sending everybody home scores 96.1 percent</td></tr>
+      <tr class="hi"><td class="nm">Report AUC</td><td>Answers a question about ranking. The decision needs the level</td></tr>
+      <tr><td class="nm">Pick the threshold from the ROC curve</td><td>Youden's index encodes a cost ratio of 1:1, silently, and nobody agreed to that</td></tr>
+      <tr><td class="nm">Drop rows with missing predictors</td><td>A troponin assay that was not ordered is informative about how the patient presented</td></tr>
+      <tr><td class="nm">Evaluate on the training set</td><td>A variable with no real effect improves training performance every single time</td></tr>
+    </table>
+
+    <p>After removing a duplicated extract, 35 blood pressures of zero from a cuff fault and 28 heart rates of 999 from
+       a monitor sentinel, 8,938 presentations remain. The 138 patients with no troponin result are kept, with an
+       indicator, because dropping them would quietly restrict the score to patients somebody already thought were
+       worth testing.</p>
+  </section>
+
+  <!-- 2 -->
+  <section id="auc">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Two Models, One AUC</h2></div>
+
+    <p>Fit the model on 5,809 patients and hold back 3,129. Then build a second model that ranks every patient in
+       exactly the same order and is wrong about the level, by adding a constant to the log-odds. That operation cannot
+       change any patient's position in the queue.</p>
+
+    <table class="disp-table">
+      <tr><th>Model</th><th>AUC</th><th>Brier</th><th>Mean predicted risk</th><th>Observed</th></tr>
+      <tr><td class="nm">A, calibrated</td><td>0.8097</td><td>0.03448</td><td>3.93%</td><td>3.93%</td></tr>
+      <tr class="hi"><td class="nm">B, same ranking, inflated</td><td>0.8097</td><td>0.03944</td><td class="no">8.64%</td><td>3.93%</td></tr>
+    </table>
+
+    <p>The AUCs are identical to four decimal places, and they should be. AUC asks exactly one question: given a patient
+       who had an event and one who did not, how often does the model score the first one higher? That is a question
+       about <em>order</em>. Model B is wrong about the level by more than a factor of two, and
+       <strong>the metric quoted in every paper and every model card cannot detect it</strong>.</p>
+
+    <p>The Brier score does notice, because it scores the probabilities rather than the ranking. It does not say where
+       the problem is, which is what the next section is for.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-risk-calibration.png"
+           alt="Left: two ROC curves, one drawn solid and one dashed, lying exactly on top of each other, both labeled AUC 0.8097. Right: a calibration plot of observed against predicted risk by decile. Model A's points follow the diagonal closely from 0 to 18 percent; model B's points lie far below it, reaching only about 14 percent observed at 30 percent predicted.">
+      <figcaption><strong>Left:</strong> the two ROC curves are the same curve, drawn solid and dashed so both are
+        visible. Any evaluation stopping at discrimination has no way to prefer one of these models.
+        <strong>Right:</strong> the calibration plot, where model B sits below the diagonal at every decile.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 3 -->
+  <section id="calibration">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Calibration, Measured Rather Than Eyeballed</h2></div>
+
+    <p>Regressing the outcome on the predicted log-odds gives two numbers. The <strong>slope</strong> says whether the
+       spread of predicted risks is right. The <strong>intercept</strong> says whether the level is.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">A, intercept</div><div class="rv">&#8722;0.053</div><div class="rd">ideal 0</div></div>
+      <div class="rchip"><div class="rk">A, slope</div><div class="rv">0.980</div><div class="rd">ideal 1</div></div>
+      <div class="rchip"><div class="rk">B, intercept</div><div class="rv">&#8722;0.983</div><div class="rd">the level is wrong</div></div>
+      <div class="rchip"><div class="rk">B, slope</div><div class="rv">0.980</div><div class="rd">identical to A</div></div>
+    </div>
+
+    <p><strong>Both models have a slope of 0.98, and that is the point.</strong> Model B inherited model A's spread
+       exactly, so the slope cannot distinguish them either. Only the intercept notices. A model card reporting AUC and
+       calibration slope, which is a common pairing, would pass model B without comment.</p>
+
+    <p>Model A's decile table is what a well-calibrated score looks like: 0.88 percent predicted against 0.96 observed,
+       3.08 against 4.15, 7.01 against 7.03, 17.99 against 16.93. The numbers mean what they say.</p>
+  </section>
+
+  <!-- 4 -->
+  <section id="threshold">
+    <div class="section-eyebrow"><div class="num">4</div><h2>The Threshold Comes From Costs</h2></div>
+
+    <p>A threshold is a statement about how much worse one error is than the other, and that ratio belongs to the
+       clinicians. Here they judge a missed event <strong>40 times</strong> worse than an unnecessary night of
+       observation, which fixes the threshold at 1/(1+40) = <strong>2.4 percent</strong>. The arithmetic is one line;
+       the judgment behind it is not a statistical question at all.</p>
+
+    <table class="disp-table">
+      <tr><th>At a 2.4% threshold</th><th>Admitted</th><th>Events caught</th><th>Events missed</th><th>Admit rate</th></tr>
+      <tr><td class="nm">Model A, calibrated</td><td>1,305</td><td>105</td><td>18</td><td>41.7%</td></tr>
+      <tr class="hi"><td class="nm">Model B, inflated</td><td>2,256</td><td>123</td><td class="yes">0</td><td>72.1%</td></tr>
+    </table>
+
+    <p>Model B misses nothing, and <strong>that is not the good news it appears to be</strong>. It buys those eighteen
+       events at 951 extra admissions, or 53 each. The clinicians said 40. A miscalibrated model does not become more
+       cautious; it <strong>silently applies a different threshold than the one the clinical team chose</strong>, and
+       nobody in the room knows the trade-off has been changed.</p>
+
+    <div class="embox">
+      <span class="gb-tag">What calibration error actually looks like in practice</span>
+      <p style="margin:0.45rem 0 0">It does not look like error. It does not produce worse rankings, worse AUC, or a
+         model that obviously fails. It produces a rule that quietly implements a different decision from the one it
+         was asked to implement, while every metric on the dashboard stays green. That is why calibration belongs next
+         to discrimination in every report, and not in an appendix.</p>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section id="dca">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Decision Curve Analysis</h2></div>
+
+    <p>The threshold above rests on one cost ratio, and reasonable clinicians will disagree about it. Net benefit
+       evaluates across the whole range, putting true and false positives on one scale using the threshold itself as
+       the exchange rate, and comparing any rule against the two strategies it must beat: admit everyone, and admit
+       nobody.</p>
+
+    <table class="disp-table">
+      <tr><th>Threshold</th><th>Model A</th><th>Model B</th><th>Admit everyone</th><th>Admit nobody</th></tr>
+      <tr><td class="nm">1.0%</td><td>0.0319</td><td>0.0305</td><td>0.0296</td><td>0</td></tr>
+      <tr class="hi"><td class="nm">2.4% (chosen)</td><td>0.0240</td><td>0.0223</td><td>0.0153</td><td>0</td></tr>
+      <tr><td class="nm">4.0%</td><td>0.0174</td><td>0.0148</td><td class="no">&#8722;0.0007</td><td>0</td></tr>
+      <tr><td class="nm">10.0%</td><td>0.0069</td><td>0.0003</td><td class="no">&#8722;0.0674</td><td>0</td></tr>
+      <tr><td class="nm">15.0%</td><td>0.0053</td><td class="no">&#8722;0.0037</td><td class="no">&#8722;0.1302</td><td>0</td></tr>
+    </table>
+
+    <p>Model A is better at every threshold anybody would choose, and the gap widens as the threshold rises. Two other
+       things are worth reading off this table. Admitting everyone becomes worse than doing nothing above about a 4
+       percent threshold. And model B goes <em>negative</em> at 15 percent, meaning that at that cost ratio a clinician
+       would do better ignoring it entirely.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-risk-decision.png"
+           alt="Left: net benefit against threshold risk from 0.5 to 20 percent. Model A's curve is highest throughout, model B's is below it and crosses zero near 15 percent, the admit-everyone line falls steeply and crosses zero near 4 percent, and a vertical line marks the clinicians' 2.4 percent threshold. Right: grouped bars on a log scale comparing the two models at that threshold, showing 1,305 versus 2,256 admitted, 105 versus 123 events caught, and 18 versus 0 events missed.">
+      <figcaption><strong>Left:</strong> net benefit across every threshold a clinician might hold. A score earns its
+        place by beating both trivial strategies across the range of costs people actually hold.
+        <strong>Right:</strong> the same threshold applied to both models.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 6 -->
+  <section id="decoy">
+    <div class="section-eyebrow"><div class="num">6</div><h2>The Decoy, and Why Held-Out Data Is Not Optional</h2></div>
+
+    <p>The dataset carries a variable with no effect whatsoever: the month the patient arrived. Adding it to the model
+       is a test of the evaluation rather than of the model.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">AUC without it</div><div class="rv">0.8097</div><div class="rd">held-out</div></div>
+      <div class="rchip"><div class="rk">AUC with it</div><div class="rv">0.8091</div><div class="rd">very slightly worse</div></div>
+      <div class="rchip"><div class="rk">Its coefficient</div><div class="rv">+0.046</div><div class="rd">the truth is 0</div></div>
+      <div class="rchip"><div class="rk">On training data</div><div class="rv">Always helps</div><div class="rd">by construction</div></div>
+    </div>
+
+    <p>On held-out data a useless variable contributes nothing, and here it costs a little. On the training set it would
+       have looked like a small improvement, every time, because a model with one more free parameter always fits the
+       data it was fitted to slightly better. That is the whole argument for a test set, and it is why C3 of the
+       analysis plan was written before anything was fitted.</p>
+  </section>
+
+  <!-- 7 -->
+  <section id="watch">
+    <div class="section-eyebrow"><div class="num">7</div><h2>What to Watch</h2></div>
+
+    <ul class="checklist">
+      <li><span class="ck">&#10003;</span><span><strong>Report calibration next to discrimination, always.</strong> AUC answers a question about ranking and gets quoted as though it answered a question about risk. Two models here differ by a factor of two in predicted risk and by nothing at all in AUC.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>The calibration slope is not enough either.</strong> Both models scored 0.98. Only the intercept caught it, and a report giving AUC and slope would have passed the broken model.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>A threshold is a clinical decision.</strong> Youden's index and the elbow of the ROC curve both encode a cost ratio, silently, and neither asked anyone what it should be.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>A miscalibrated model overrides the clinical team without telling them.</strong> Model B does not look reckless or broken. It looks careful, and it is applying a threshold nobody chose.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Never quote accuracy on an imbalanced outcome.</strong> Sending everybody home scores 96.1 percent here and misses all 123 events.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>A risk score is not a diagnosis.</strong> It estimates a rate among similar patients. No individual has a 4 percent event, and the score belongs alongside clinical judgment rather than in place of it.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Check who the model works for.</strong> One AUC and one calibration curve describe the whole cohort. A score well calibrated on average can be badly calibrated for a subgroup the average conceals, which Capstone 33 takes up directly.</span></li>
+    </ul>
+  </section>
+
+  <!-- 8 -->
+  <section id="ml">
+    <div class="section-eyebrow"><div class="num">8</div><h2>Calibration in Data Science &amp; AI</h2></div>
+
+    <table class="disp-table">
+      <tr><th>Where it appears</th><th>The same failure, in a different costume</th></tr>
+      <tr><td class="nm">Gradient boosting and random forests</td><td>Both are systematically miscalibrated out of the box, and both report excellent AUC while doing it</td></tr>
+      <tr><td class="nm">Any model trained with class weights or resampling</td><td>Rebalancing fixes the ranking and destroys the level, which is fine until somebody reads the probability</td></tr>
+      <tr><td class="nm">Credit scoring and pricing</td><td>The predicted probability is multiplied by an amount of money, so a calibration error becomes a pricing error directly</td></tr>
+      <tr><td class="nm">Neural network confidence</td><td>Modern deep networks are famously overconfident, which is why temperature scaling exists</td></tr>
+      <tr><td class="nm">Language model probabilities</td><td>A stated confidence that does not match the observed rate of being right is the same defect, in a setting where it is much harder to measure</td></tr>
+    </table>
+
+    <div class="research">
+      <span class="rtag">Where the research went</span>
+      <p style="margin:0.4rem 0 0">The <strong>Brier score</strong> dates from 1950 and weather forecasting, which is
+         the field that took calibration seriously first and for the obvious reason: a forecast of rain is consumed as
+         a number. <strong>Cox's</strong> 1958 calibration regression is the slope-and-intercept decomposition used
+         here. <strong>Vickers and Elkin</strong> introduced decision curve analysis in 2006 precisely because
+         discrimination metrics could not answer whether a model was worth using. On the repair side,
+         <strong>Platt scaling</strong> and <strong>isotonic regression</strong> recalibrate an existing model's
+         outputs, and <strong>temperature scaling</strong> is the one-parameter version now standard for neural
+         networks. All three fix the level while leaving the ranking, and therefore the AUC, exactly where it was.</p>
+    </div>
+  </section>
+
+  <!-- notebook -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">&#128013;</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook reads the plan before fitting anything, cleans the extract and keeps the patients
+             with no troponin result, holds out 3,129 presentations, constructs the second model with identical
+             ordering, measures calibration by slope and intercept and by decile, shows what accuracy would have said,
+             derives the threshold from a stated cost ratio, computes net benefit across the range clinicians disagree
+             over, and finishes with a decoy variable that earns nothing on held-out data.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-clinical-risk-scoring.html">&#128211; View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-clinical-risk-scoring.ipynb"
+           target="_blank" rel="noopener">&#9654; Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-clinical-risk-scoring.ipynb"
+           target="_blank" rel="noopener">&#11015; View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Read the reports &amp; get the data</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong>
+         (<code>capstone-clinical-risk-scoring.xlsx</code>) holds 9,060 emergency presentations with a duplicated
+         extract, cuff faults, monitor sentinels and missing assays left in, a decoy variable that predicts nothing,
+         the analysis plan agreed with the clinical lead before modeling, and the generating coefficients. Two written
+         reports accompany it: a <strong>plain-language brief</strong> for the clinical lead, and a
+         <strong>technical report</strong> covering discrimination, calibration and net benefit.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-27-clinical-risk-scoring.html" target="_blank" rel="noopener">&#128196; Plain-language brief <small>read online</small></a>
+        <a class="ex-file doc" href="../reports/capstone-27-clinical-risk-scoring-technical.html" target="_blank" rel="noopener">&#128202; Technical report <small>read online</small></a>
+        <a class="ex-file xls" href="../data/capstone-clinical-risk-scoring.xlsx">&#128202; Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>&#127891; Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">&#10003;</span><span><strong>AUC reads order, decisions read level.</strong> Two models with AUC 0.8097 differed by a factor of two in predicted risk.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>The calibration slope missed it too.</strong> Both scored 0.980; only the intercept, &#8722;0.983 against 0, caught the fault.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Thresholds come from costs.</strong> A 40:1 cost ratio fixes the threshold at 2.4 percent, and no statistical criterion can supply that ratio.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Miscalibration looks like caution.</strong> Model B missed zero events by admitting 951 extra patients, 53 per event against a stated tolerance of 40.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Accuracy is meaningless at a 3.9 percent event rate.</strong> Sending everybody home scores 96.1 percent.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">&#10067;</div><h2>Quiz: Test Yourself</h2></div>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-regression-diagnostics-and-remedies.html">
+      <span style="font-size:1.3rem">&#8592;</span>
+      <span><span class="cn-dir">Chapter 186 &#183; Previous</span><br><span class="cn-title">When the Assumptions Fail: Diagnostics and Remedies</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">&#8594;</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;&#183;&nbsp;
+  Chapter 187 &nbsp;&#183;&nbsp; &#169; 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch187";
+  window.QUIZ_DATA = [
+    {
+      q: "Model B was built by adding a constant to model A's log-odds. Why is its AUC identical to A's?",
+      options: ["Because the constant was small", "Because AUC depends only on the ordering of predictions, and adding a constant to every log-odds cannot change any patient's rank", "Because both models used the same features", "Because the test set is large"],
+      answer: 1,
+      explain: "AUC asks how often a patient who had an event scores above one who did not. That is a question about order alone, which is precisely why it cannot detect an error in the level."
+    },
+    {
+      q: "Both models had a calibration slope of 0.980. What does that tell you?",
+      options: ["Both are well calibrated", "The slope measures whether the spread of predicted risks is right, and B inherited A's spread exactly; only the intercept detects the level error", "The slope is unreliable at this sample size", "Model B's predictions are too narrowly spread"],
+      answer: 1,
+      explain: "Slope and intercept measure different things. A model card reporting AUC and calibration slope, a common pairing, would have passed model B without comment."
+    },
+    {
+      q: "The clinicians judge a missed event 40 times worse than an unnecessary admission. What threshold does that imply?",
+      options: ["40 percent", "2.4 percent, from 1/(1+40)", "The value that maximizes Youden's index", "5 percent, by convention"],
+      answer: 1,
+      explain: "The threshold is a statement about the relative cost of the two errors. Youden's index and the elbow of the ROC curve both encode a 1:1 ratio silently, which is almost never the ratio anybody holds."
+    },
+    {
+      q: "At the 2.4 percent threshold model B missed zero events while model A missed 18. Why is model A still preferred?",
+      options: ["Because model A has a higher AUC", "Because model B admitted 951 extra patients for those 18 events, or 53 each, against a stated tolerance of 40", "Because model B is overfitted", "Because missing events is acceptable"],
+      answer: 1,
+      explain: "Miscalibration does not look like error, it looks like caution. Model B is silently applying a stricter threshold than the clinical team chose, and the decision curve confirms A is better at every threshold."
+    },
+    {
+      q: "A rule that admits nobody achieves 96.07 percent accuracy on this data. What does that show?",
+      options: ["The model is not much better than nothing", "Accuracy is a useless summary when the outcome is rare and the two errors differ in cost", "The event rate was measured incorrectly", "The test set is too small"],
+      answer: 1,
+      explain: "With a 3.9 percent event rate, accuracy rewards a model for saying no. It cannot distinguish a useful rule from a refusal to make one."
+    },
+    {
+      q: "Adding arrival month, a variable with no real effect, changed held-out AUC from 0.8097 to 0.8091. What would it have done on the training set?",
+      options: ["Reduced performance there too", "Left it unchanged", "Improved it, because a model with one more free parameter always fits the data it was fitted to slightly better", "Made the model unidentifiable"],
+      answer: 2,
+      explain: "That asymmetry is the entire argument for a held-out test set, and it is why the analysis plan committed to one before anything was fitted."
+    },
+    {
+      q: "Decision curve analysis showed model B's net benefit turning negative at a 15 percent threshold. What does a negative net benefit mean?",
+      options: ["The model has no discriminative ability", "A clinician holding that cost ratio would do better ignoring the model entirely and admitting nobody", "The threshold is impossible", "The calibration slope is below 1"],
+      answer: 1,
+      explain: "Net benefit is measured against the trivial strategies. Falling below zero means the rule is worse than the do-nothing baseline at that cost ratio, which no discrimination metric would ever reveal."
+    },
+    {
+      q: "What is the minimum a report on this score should contain?",
+      options: ["AUC and accuracy", "AUC alone, since it summarizes performance", "Discrimination, calibration including the intercept, the threshold with the cost ratio it came from, and net benefit against the trivial strategies", "The confusion matrix at the chosen threshold"],
+      answer: 2,
+      explain: "Each answers a different question the decision depends on. Reporting discrimination alone leaves a reader unable to tell whether the numbers driving the threshold mean anything at all."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

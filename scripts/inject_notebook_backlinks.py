@@ -674,6 +674,8 @@ MAP = {
         ("../../capstone-pay-equity-review.html#notebook", "Back to the book", "Chapter 185 · Multiple Regression Done Properly: A Pay Equity Review"),
     "capstone-regression-diagnostics-and-remedies.html":
         ("../../capstone-regression-diagnostics-and-remedies.html#notebook", "Back to the book", "Chapter 186 · When the Assumptions Fail: Diagnostics and Remedies"),
+    "capstone-clinical-risk-scoring.html":
+        ("../../capstone-clinical-risk-scoring.html#notebook", "Back to the book", "Chapter 187 · Logistic Regression for Decisions: Clinical Risk Scoring"),
 }
 
 def card(href, kicker, title):
