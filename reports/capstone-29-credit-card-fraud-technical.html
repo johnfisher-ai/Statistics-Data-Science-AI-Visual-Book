@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Credit Card Fraud (Technical) &#183; Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/report.css">
+  <style>
+    body.report { --rpt-accent:#6d28d9; --rpt-accent-dark:#4c1d95; --rpt-accent-bg:#f5f3ff; --rpt-accent-line:#ddd6fe; }
+  </style>
+</head>
+
+<body class="report">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="../chapters/capstone-credit-card-fraud.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">&#8592; Chapter 191</a>
+  </div>
+</nav>
+
+<div class="rpt-sticky" id="rptSticky">
+  <div class="inner">
+    <div class="st-title">Imbalanced Classification: Leakage, Ranking, Calibration and Cost</div>
+    <a class="st-back" href="../chapters/capstone-credit-card-fraud.html">&#8592; Chapter 191</a>
+  </div>
+</div>
+
+<div class="rpt-wrap">
+  <article class="rpt-paper technical">
+    <header class="rpt-head">
+      <div class="rpt-topline">
+        <div class="rpt-kicker">Capstone 29 &#183; Technical Report</div>
+        <span class="rpt-badge technical">Technical Report</span>
+      </div>
+      <h1>Imbalanced Classification: Leakage, Ranking, Calibration and Cost</h1>
+      <p class="rpt-sub">Three standard answers to a 0.32 percent positive rate rank identically to three decimal places and differ 36-fold on the level. Only one of them can be multiplied by a dollar amount.</p>
+      <div class="rpt-meta"><div><b>Data</b> &nbsp;119,556 purchases after cleaning, 318 frauds (0.266%)</div><div><b>Design</b> &nbsp;temporal split, days 1-90 train / 91-120 test</div><div><b>Headline</b> &nbsp;PR-AUC 0.2984, cost-optimal threshold 0.0883</div></div>
+    </header>
+
+    <div class="rpt-prov">
+      <span class="pv-tag">Where this comes from</span>
+      <div class="pv-row"><div><span>Chapter</span> <a href="../chapters/capstone-credit-card-fraud.html">Chapter 191 &#183; Imbalanced Classification: Credit Card Fraud</a></div><div><span>Part</span> Part XXXI &#183; Capstone Projects: Machine Learning</div><div><span>Dataset</span> <a href="../data/capstone-credit-card-fraud.xlsx">capstone-credit-card-fraud.xlsx</a></div><div><span>Notebook</span> <a href="../chapters/notebooks/html/capstone-credit-card-fraud.html" target="_blank" rel="noopener">View the analysis</a></div></div>
+    </div>
+
+    <div class="rpt-body">
+      <h2>1. Data and cleaning</h2>
+      <p>The export contained 120,400 rows. Three faults were removed before any modeling: a duplicated export block (400 rows), 306 rows carrying a distance sentinel of -1 where geolocation had failed, and 138 zero-amount rows that are authorization holds rather than purchases. That leaves <strong>119,556</strong> transactions with <strong>318</strong> confirmed frauds, a rate of <strong>0.266 percent</strong>.</p>
+      <p>Flagging nothing is 99.734 percent accurate. Accuracy is not reported again in this analysis.</p>
+      <h2>2. Split and leakage</h2>
+      <p>The split is temporal: days 1 to 90 for training (89,973 transactions, 223 frauds) and days 91 to 120 for testing (29,583 transactions, 95 frauds, 0.3211 percent). A random split would allow the model to learn from transactions that had not yet occurred.</p>
+      <div class="rpt-cap"><span class="n">Table 1.</span> Honest features against the same model with the chargeback column added.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Feature set</th><th>ROC-AUC</th><th>PR-AUC</th><th>Reading</th></tr></thead><tbody><tr><td>Honest features only</td><td>0.9604</td><td>0.2984</td><td>93&#215; the base rate</td></tr><tr><td>Plus <code>chargeback_code_filed</code></td><td>0.9997</td><td>0.9818</td><td>not available at decision time</td></tr></tbody></table></div>
+      <p>The chargeback column is populated weeks after the transaction, once a case has been worked. It is a leak. The operational test applied throughout is whether a value would have existed, with that value, at the moment the prediction is required. Leakage does not present as an error; it presents as an implausibly good result, and a PR-AUC of 0.98 on a fraud problem is a symptom rather than a finding.</p>
+      <h2>3. Model comparison</h2>
+      <div class="rpt-cap"><span class="n">Table 2.</span> Four models on the same temporal split. Lift is PR-AUC divided by the base rate.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Model</th><th>ROC-AUC</th><th>PR-AUC</th><th>Lift</th><th>Brier</th></tr></thead><tbody><tr><td>Logistic, additive</td><td>0.9554</td><td>0.2752</td><td>86&#215;</td><td>0.00269</td></tr><tr><td><span class='nm'>Logistic + two interactions</span></td><td><span class='nm'>0.9604</span></td><td><span class='nm'>0.2984</span></td><td><span class='nm'>93&#215;</span></td><td><span class='nm'>0.00264</span></td></tr><tr><td>Gradient boosting</td><td>0.9565</td><td>0.2584</td><td>80&#215;</td><td>0.00272</td></tr><tr><td>Random forest</td><td>0.9364</td><td>0.2496</td><td>78&#215;</td><td>0.00285</td></tr></tbody></table></div>
+      <p>The linear model wins, and the ensembles were not handicapped: two genuine interactions exist in the data-generating process, a new device on a card-not-present sale and a foreign merchant overnight, so there is real non-additive structure available. The ensembles cannot recover it from 223 positives. Sample size for a flexible model is counted in positives, not rows.</p>
+      <p>ROC-AUC separates the four models by 0.024 and PR-AUC by 0.049. With a false positive rate whose denominator is nearly 30,000, ROC-AUC is close to insensitive here and should not be the headline.</p>
+      <h2>4. Imbalance remedies, judged on calibration</h2>
+      <div class="rpt-cap"><span class="n">Table 3.</span> Three imbalance remedies on the same model, split and features.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Approach</th><th>PR-AUC</th><th>Brier</th><th>Mean predicted</th><th>Observed</th><th>Ratio</th></tr></thead><tbody><tr><td>(a) Random oversampling to 1:1</td><td>0.2985</td><td>0.05136</td><td>11.571%</td><td>0.3211%</td><td>36.0&#215;</td></tr><tr><td>(b) Class weights</td><td>0.2981</td><td>0.05109</td><td>11.531%</td><td>0.3211%</td><td>35.9&#215;</td></tr><tr><td><span class='nm'>(c) Untouched, tuned threshold</span></td><td><span class='nm'>0.2984</span></td><td><span class='nm'>0.00264</span></td><td><span class='nm'>0.233%</span></td><td><span class='nm'>0.3211%</span></td><td><span class='nm'>0.7&#215;</span></td></tr></tbody></table></div>
+      <p>The three PR-AUCs agree to three decimal places because all three fit the same model to the same information. Resampling and class weighting do not change the ordering; they change the prior the fitted model encodes, which no ranking metric can detect. The Brier scores differ by a factor of twenty, and the mean predicted probability by a factor of thirty-six.</p>
+      <p>That is decisive here because the downstream step multiplies the predicted probability by a transaction amount to form an expected loss. An inflated probability makes that product meaningless. Where a decision needs only an ordering, resampling is harmless; where it needs a probability, the remedy has removed the thing being used. Recalibration (Platt or isotonic) restores it and is a second step that is easy to forget.</p>
+      <h2>5. Threshold from the cost matrix</h2>
+      <p>Costs supplied by operations before modeling: a false positive is $16 ($4 analyst time, $12 estimated customer cost); a false negative is the transaction amount written off plus $25 of handling. The per-transaction component of the miss cost means no fixed exchange rate between the two errors exists, which rules out Youden's index, the F1 peak and any other curve-derived rule.</p>
+      <div class="rpt-cap"><span class="n">Table 4.</span> Total cost across the threshold range. The optimum is the shallow bottom of a bowl.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Threshold</th><th>Flagged</th><th>Caught</th><th>Missed</th><th>Cost, 30 days</th></tr></thead><tbody><tr><td>0.0020</td><td>2,196</td><td>85</td><td>10</td><td>$35,011</td></tr><tr><td>0.0100</td><td>887</td><td>67</td><td>28</td><td>$16,976</td></tr><tr><td>0.0500</td><td>251</td><td>44</td><td>51</td><td>$10,402</td></tr><tr><td><span class='nm'>0.0883</span></td><td><span class='nm'>146</span></td><td><span class='nm'>37</span></td><td><span class='nm'>58</span></td><td><span class='nm'>$9,975</span></td></tr><tr><td>0.2000</td><td>58</td><td>24</td><td>71</td><td>$11,195</td></tr><tr><td>0.4000</td><td>26</td><td>17</td><td>78</td><td>$11,609</td></tr></tbody></table></div>
+      <p>A finer sweep locates the minimum at <strong>0.0883</strong> with 145 flags and a cost of <strong>$9,959</strong>, against <strong>$14,476</strong> for flagging nothing, a 31 percent reduction. The curve is shallow: the interval from roughly 0.04 to 0.15 is within a few hundred dollars of the optimum, so the policy is not sensitive to the exact threshold.</p>
+      <p>The optimal policy misses 58 of 95 frauds. This is the correct solution to the stated objective and will be read as a failure by any process measured on detection rate.</p>
+      <h2>6. The capacity constraint, tested</h2>
+      <p>The review team's stated capacity is 400 cases a day, 12,000 over the test window. Setting the threshold to fill it (0.00012) catches 93 of 95 frauds at a cost of <strong>$190,667</strong>, which is <strong>13 times</strong> the cost of having no model at all. Approximately 11,900 of the 12,000 reviews are of legitimate transactions at $16 each.</p>
+      <p>Capacity is therefore not the binding constraint; the unit cost of a false positive is. The cost-optimal policy uses about one percent of available capacity, which inverts the usual framing of the operational question.</p>
+      <h2>7. Limitations</h2>
+      <p>The evaluation is a single temporal split, so the test estimate is one draw rather than a distribution; repeating it across rolling windows would put an interval on the 31 percent saving. The $12 customer-annoyance figure is an estimate rather than a measurement, and the threshold moves with it, though the shallowness of the curve limits how far. Fraud is adversarial and the patterns learned from days 1 to 90 will decay, so both the model and the threshold need re-measurement on a schedule.</p>
+      <p>Finally, the distribution of false positives is not uniform across customers. Travel, late-night purchases and a recently changed device all raise the predicted probability, and all three are ordinary behavior. The $16 in the cost matrix treats every false positive as equivalent, which is a modeling convenience rather than a fact.</p>
+    </div>
+
+    <div class="rpt-foot"><a class="primary" href="../chapters/capstone-credit-card-fraud.html">&#8592; Back to Chapter 191</a><a href="../chapters/notebooks/html/capstone-credit-card-fraud.html" target="_blank" rel="noopener">&#128211; Companion notebook</a><a class="xls" href="../data/capstone-credit-card-fraud.xlsx">&#128202; Download dataset</a></div>
+    <div class="rpt-colophon">
+      From <strong>Statistics, Data Science and AI: A Visual Handbook</strong> by John Fisher.
+      Every statistic, table, and figure in this report is reproduced by the companion notebook.
+    </div>
+  </article>
+</div>
+
+<script>
+(function(){
+  var bar=document.getElementById('rptSticky');
+  window.addEventListener('scroll',function(){
+    if(window.scrollY>320) bar.classList.add('on'); else bar.classList.remove('on');
+  });
+})();
+</script>
+</body>
+</html>

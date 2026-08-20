@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 191 · Imbalanced Classification: Credit Card Fraud — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .yes { color:#047857; font-weight:700; }
+    .disp-table .no { color:#dc2626; font-weight:700; }
+    .disp-table tr.hi td { background:#f5f3ff; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .embox { background:#f5f3ff; border:1px solid #ddd6fe; border-left:4px solid #6d28d9; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .embox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#4c1d95; }
+    .rw-card { background:#f5f3ff; border:1px solid #ddd6fe; border-left:4px solid #6d28d9; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#4c1d95; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#f5f3ff; color:#6d28d9; border-color:#ddd6fe; }
+    .ex-file.doc { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#f5f3ff; border:1px solid #ddd6fe; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#4c1d95; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #6d28d9; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#4c1d95; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+    .svg-wrap { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.9rem 0.6rem 0.3rem; background:var(--panel); }
+    .svg-wrap svg { width:100%; height:auto; display:block; }
+    .svg-wrap .cap { font-size:0.82rem; color:var(--ink-soft); padding:0.55rem 0.6rem 0.4rem; line-height:1.55; }
+    .svg-wrap .cap strong { color:var(--ink); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/capstone-credit-card-fraud.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXXI &#183; Capstone Projects: Machine Learning</span><span class="sep">/</span>
+      <span>Chapter 191</span>
+    </div>
+    <h1>Imbalanced Classification: <span class="accent">Credit Card</span> Fraud</h1>
+    <p class="dek">Capstone 29. Three standard answers to class imbalance produce the same ranking to three decimal places. Two of them multiply the predicted fraud rate by thirty-six, which makes them useless for the only calculation anybody wanted.</p>
+    <div class="hero-meta">
+      <div class="m">&#9201;&#65039; <b>~22 min</b>&nbsp;read</div>
+      <div class="m">&#127919; <b>Imbalanced classification</b></div>
+      <div class="m">&#128202; <b>Chapter 191</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Fraud is the standard first machine-learning project, and the standard version of it teaches three
+       habits that are wrong. This one keeps the setting and
+       <span class="hl">judges everything on what being wrong actually costs</span>.</p>
+
+    <div class="brief-card">
+      <div class="bh">The brief</div>
+      <dl>
+        <dt>Setting</dt><dd>Four months of card transactions from one issuer: 119,556 usable purchases with amount, hour, tenure, recent activity, merchant risk and device signals, of which 318 were confirmed fraudulent.</dd>
+        <dt>The question</dt><dd><strong>Which transactions should be held for an analyst to review, and which should settle?</strong></dd>
+        <dt>Why it matters</dt><dd>A held transaction is a customer declined at a checkout. A missed one is money written off. The two errors cost different amounts, and the cost of a miss depends on the transaction, which rules out any threshold chosen from a curve.</dd>
+        <dt>What we do</dt><dd>Split by time, find the leak before fitting anything, run a bake-off the linear baseline wins, compare three answers to class imbalance on calibration rather than ranking, derive the threshold from the cost matrix, and check whether the review team's capacity is the constraint everyone assumes it is.</dd>
+      </dl>
+    </div>
+
+    <div class="def-card">
+      <div class="sigma">&#8721;</div>
+      <div class="def-body">
+        With a <span class="def-kw">0.32 percent</span> positive rate, almost every default is wrong. Accuracy rewards
+        silence, ROC-AUC flatters because the false positive rate has a denominator of thirty thousand, and rebalancing
+        the classes fixes the ranking by <span class="def-kw">destroying the probability</span>.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">&#11088;</div>
+      <div><div class="ctitle">The finding, up front</div>
+        <p>Oversampling, class weights and doing nothing produce PR-AUCs of <strong>0.2985, 0.2981 and 0.2984</strong>.
+           The first two predict an average fraud rate of <strong>11.5 percent</strong> against an observed
+           <strong>0.32</strong>. And working every case the review team physically could costs
+           <strong>thirteen times more</strong> than having no model at all.</p></div>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section id="costs">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Costs, Before the Model</h2></div>
+
+    <p>Operations supplied the numbers first, which is the only order that works. A false positive costs
+       <strong>$4</strong> of analyst time and an estimated <strong>$12</strong> of customer annoyance. A missed fraud
+       costs <strong>the transaction amount</strong>, written off, plus <strong>$25</strong> of handling.</p>
+
+    <div class="embox">
+      <span class="gb-tag">Why that last clause changes everything</span>
+      <p style="margin:0.45rem 0 0">The cost of a miss <strong>depends on the transaction</strong>. A missed $8 coffee
+         and a missed $2,000 laptop are not the same mistake. Every rule that picks a threshold from a curve, Youden's
+         index, the F1 peak, the elbow, assumes the two errors have fixed prices. None of them can represent this, and
+         the correct threshold has to be found by computing the actual bill.</p>
+    </div>
+
+    <p>After removing a duplicated export, 306 transactions with no geolocation and 138 zero-amount authorization
+       holds, 119,556 purchases remain. The fraud rate is <strong>0.27 percent</strong>, which makes accuracy
+       meaningless: <strong>flagging nothing scores 99.73 percent</strong> and misses every fraud there is. Accuracy is
+       not mentioned again.</p>
+  </section>
+
+  <!-- 2 -->
+  <section id="split">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Split by Time, and Find the Leak</h2></div>
+
+    <p>The model will score transactions that have not happened yet, so it is validated on days 91 to 120 after
+       training on days 1 to 90. A random split would let it learn from the future.</p>
+
+    <p>The warehouse table carries a column named <code>chargeback_code_filed</code>. It sits alongside the others,
+       it is populated, and it is 96 percent accurate about fraud. Fit with it and see what happens.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Honest features</div><div class="rv">0.2984</div><div class="rd">PR-AUC, ROC-AUC 0.9604</div></div>
+      <div class="rchip"><div class="rk">Plus the chargeback column</div><div class="rv">0.9818</div><div class="rd">PR-AUC, ROC-AUC 0.9997</div></div>
+      <div class="rchip"><div class="rk">Random ranking</div><div class="rv">0.0032</div><div class="rd">the base rate</div></div>
+      <div class="rchip"><div class="rk">Verdict</div><div class="rv">Leak</div><div class="rd">filed weeks later</div></div>
+    </div>
+
+    <p>A chargeback code is filed <em>weeks after</em> the transaction, once a human has worked the case. At the moment
+       the model must decide whether to hold the payment, it does not exist. <strong>Leakage does not look like an
+       error. It looks like a triumph</strong>, and a PR-AUC of 0.98 on a fraud problem is not a result, it is a
+       symptom.</p>
+
+    <div class="svg-wrap">
+      <svg viewBox="0 0 880 236" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="A timeline. On the left, a green band of information available at the moment of authorization: amount, device, merchant, distance. A vertical line marks the moment of the decision, labelled hold or settle, in milliseconds. On the right, a red band covering the days and weeks afterwards, containing the chargeback investigation and the chargeback code. A dashed red arrow curves from the chargeback code back across the decision line into the training data, labelled leakage.">
+        <rect x="0" y="0" width="880" height="236" fill="#ffffff"/>
+        <rect x="34" y="104" width="366" height="38" rx="8" fill="#047857"/>
+        <text x="217" y="128" text-anchor="middle" font-size="12" font-weight="800" fill="#ffffff">amount &#183; device &#183; merchant &#183; distance</text>
+        <text x="217" y="162" text-anchor="middle" font-size="10.5" fill="#64748b">known at authorization</text>
+
+        <line x1="424" y1="72" x2="424" y2="178" stroke="#4c1d95" stroke-width="3.5"/>
+        <text x="424" y="64" text-anchor="middle" font-size="11.5" font-weight="800" fill="#4c1d95">hold or settle</text>
+        <text x="424" y="194" text-anchor="middle" font-size="10.5" font-weight="700" fill="#4c1d95">decided in milliseconds</text>
+
+        <rect x="448" y="104" width="398" height="38" rx="8" fill="#dc2626"/>
+        <text x="647" y="128" text-anchor="middle" font-size="12" font-weight="800" fill="#ffffff">investigation &#183; chargeback code filed</text>
+        <text x="647" y="162" text-anchor="middle" font-size="10.5" font-weight="700" fill="#7f1d1d">days to weeks later</text>
+
+        <path d="M600 100 Q470 26 250 96" stroke="#dc2626" stroke-width="3" fill="none" stroke-dasharray="7 5"/>
+        <path d="M244 100 L256 86 L258 99 Z" fill="#dc2626"/>
+        <text x="424" y="22" text-anchor="middle" font-size="12.5" font-weight="800" fill="#dc2626">PR-AUC 0.98, and unusable</text>
+      </svg>
+      <div class="cap"><strong>The question that catches it.</strong> Would this value have been available, with this
+        value, at the moment the prediction is needed? A field populated only once the outcome is known answers no,
+        whatever its name suggests.</div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section id="bakeoff">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The Bake-Off the Baseline Wins</h2></div>
+
+    <table class="disp-table">
+      <tr><th>Model</th><th>ROC-AUC</th><th>PR-AUC</th><th>Lift over random</th><th>Brier</th></tr>
+      <tr><td class="nm">Logistic, additive</td><td>0.9554</td><td>0.2752</td><td>86&#215;</td><td>0.00269</td></tr>
+      <tr class="hi"><td class="nm">Logistic + two interactions</td><td>0.9604</td><td class="yes">0.2984</td><td>93&#215;</td><td>0.00264</td></tr>
+      <tr><td class="nm">Gradient boosting</td><td>0.9565</td><td>0.2584</td><td>80&#215;</td><td>0.00272</td></tr>
+      <tr><td class="nm">Random forest</td><td>0.9364</td><td>0.2496</td><td>78&#215;</td><td>0.00285</td></tr>
+    </table>
+
+    <p><strong>The linear model wins, and the ensembles were not handicapped.</strong> Two genuine interactions sit in
+       the data-generating process, a new device on a card-not-present sale and a foreign merchant at three in the
+       morning, so there is real non-additive structure for a tree to find. It cannot find it from
+       <strong>223 fraudulent transactions</strong>.</p>
+
+    <p>An analyst who suspects that a new device on an online purchase is worse than either signal alone can write that
+       down in one line, and beats both ensembles by doing so. <strong>Flexible models need positives, not rows.</strong>
+       Ninety thousand transactions containing 223 frauds is a small dataset wearing a large one's clothes, and the
+       opener's rule about baselines is doing real work here rather than ceremonial work.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-fraud-pr-calib.png"
+           alt="Left: precision-recall curves for the logistic model with interactions, gradient boosting and random forest, with a dotted line at 0.003 marking what a random ranking achieves. The logistic curve is above the others across most of the range. Right: a log-log calibration plot. The untouched model's points follow the diagonal from 0.03 to 3 percent, while the oversampled and class-weighted models sit far to the right of it, predicting between 1 and 60 percent where the observed rate is under a tenth of one percent.">
+      <figcaption><strong>Left:</strong> precision against recall, with the base rate visible as a floor. Any model has
+        to be read against that dotted line. <strong>Right:</strong> the calibration of the three imbalance remedies,
+        on log axes because otherwise the untouched model is a dot at the origin.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 4 -->
+  <section id="imbalance">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Three Answers to Imbalance, and Only One Survives</h2></div>
+
+    <p>Oversample the minority to parity, weight the classes, or leave the data alone and move the threshold. Same
+       model, same split, same features.</p>
+
+    <table class="disp-table">
+      <tr><th>Approach</th><th>PR-AUC</th><th>Brier</th><th>Mean predicted</th><th>Observed</th><th>Ratio</th></tr>
+      <tr><td class="nm">(a) Oversample to 1:1</td><td>0.2985</td><td class="no">0.05136</td><td class="no">11.57%</td><td>0.32%</td><td class="no">36.0&#215;</td></tr>
+      <tr><td class="nm">(b) Class weights</td><td>0.2981</td><td class="no">0.05109</td><td class="no">11.53%</td><td>0.32%</td><td class="no">35.9&#215;</td></tr>
+      <tr class="hi"><td class="nm">(c) Untouched, tune the threshold</td><td>0.2984</td><td class="yes">0.00264</td><td class="yes">0.23%</td><td>0.32%</td><td class="yes">0.7&#215;</td></tr>
+    </table>
+
+    <p><strong>The three PR-AUCs agree to three decimal places.</strong> They rank the transactions the same way,
+       because all three fit the same model to the same information. What resampling and class weights change is not
+       the ordering but <em>the base rate the model believes in</em>.</p>
+
+    <p>That is fatal here. Both put the average predicted fraud rate at about 11.5 percent when the truth is 0.32, a
+       factor of thirty-six. A number like that cannot be multiplied by a transaction amount to produce an expected
+       loss, and an expected loss is the only thing operations asked for.
+       <strong>The remedy that does nothing is the one that leaves a probability behind.</strong></p>
+
+    <div class="embox">
+      <span class="gb-tag">When rebalancing is fine</span>
+      <p style="margin:0.45rem 0 0">If the downstream step only needs an ordering, a shortlist of the top 200 cases for
+         instance, then resampling costs nothing and can help an optimizer that is struggling. The rule is not
+         "never rebalance". It is: <strong>if anything downstream multiplies the output by a number, you need a
+         probability, and rebalancing has taken it away.</strong> Recalibrating afterwards is possible and is a second
+         step people rarely remember to do.</p>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section id="threshold">
+    <div class="section-eyebrow"><div class="num">5</div><h2>The Threshold Is an Accounting Question</h2></div>
+
+    <p>With a calibrated probability and the cost matrix, the threshold is not chosen, it is computed. For every
+       candidate, add up the analyst time, the customer annoyance and the money written off, and read off the bottom of
+       the curve.</p>
+
+    <table class="disp-table">
+      <tr><th>Threshold</th><th>Flagged</th><th>Frauds caught</th><th>Missed</th><th>Total cost, 30 days</th></tr>
+      <tr><td class="nm">0.2%</td><td>2,196</td><td>85</td><td>10</td><td>$35,011</td></tr>
+      <tr><td class="nm">1%</td><td>887</td><td>67</td><td>28</td><td>$16,976</td></tr>
+      <tr><td class="nm">5%</td><td>251</td><td>44</td><td>51</td><td>$10,402</td></tr>
+      <tr class="hi"><td class="nm">8.83% (optimal)</td><td>146</td><td>37</td><td>58</td><td class="yes">$9,975</td></tr>
+      <tr><td class="nm">20%</td><td>58</td><td>24</td><td>71</td><td>$11,195</td></tr>
+      <tr><td class="nm">40%</td><td>26</td><td>17</td><td>78</td><td>$11,609</td></tr>
+    </table>
+
+    <p style="font-size:0.92rem;color:#64748b">The six rows above are a coarse grid; a finer sweep puts the minimum at
+       a threshold of 0.0883 flagging 145 transactions for <strong>$9,959</strong>, which is the figure quoted below.
+       The difference is a single borderline transaction, and it is worth noticing that it barely matters.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Flag nothing</div><div class="rv">$14,476</div><div class="rd">the do-nothing baseline</div></div>
+      <div class="rchip"><div class="rk">Cost-optimal</div><div class="rv">$9,959</div><div class="rd">threshold 0.0883</div></div>
+      <div class="rchip"><div class="rk">Saved</div><div class="rv">31%</div><div class="rd">against doing nothing</div></div>
+      <div class="rchip"><div class="rk">Volume</div><div class="rv">5 a day</div><div class="rd">145 flags in 30 days</div></div>
+    </div>
+
+    <p>Notice that the optimal policy <strong>misses 58 of the 95 frauds</strong> and is still the best available. That
+       sentence is uncomfortable and it is correct: catching those 58 would require flagging thousands of legitimate
+       transactions, and at $16 each that costs more than the fraud does. A fraud team measured on catch rate will
+       reject this answer; a fraud team measured on cost will not.</p>
+  </section>
+
+  <!-- 6 -->
+  <section id="capacity">
+    <div class="section-eyebrow"><div class="num">6</div><h2>The Capacity That Is Not the Constraint</h2></div>
+
+    <p>The review team can work about 400 cases a day, which is 12,000 over the test window. That figure is usually
+       stated as though it were the binding constraint. Test it.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Capacity used</div><div class="rv">12,000</div><div class="rd">every case they could</div></div>
+      <div class="rchip"><div class="rk">Frauds caught</div><div class="rv">93 of 95</div><div class="rd">nearly all of them</div></div>
+      <div class="rchip"><div class="rk">Cost</div><div class="rv">$190,667</div><div class="rd">against $14,476 for nothing</div></div>
+      <div class="rchip"><div class="rk">Verdict</div><div class="rv">13&#215; worse</div><div class="rd">than having no model</div></div>
+    </div>
+
+    <p><strong>Filling the queue is the worst of the three policies.</strong> It catches 93 of the 95 frauds, and 11,900
+       of those 12,000 reviews are of legitimate transactions at $16 each. The cost-optimal policy uses about
+       <strong>one percent</strong> of the available capacity.</p>
+
+    <p>That is worth carrying into the operations meeting, because it inverts the usual conversation. The question is
+       not "how do we use the capacity we have", it is "what is the cheapest number of reviews", and the answer here is
+       far smaller than the team expected. The spare capacity is real and should be spent on something else.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-fraud-cost.png"
+           alt="Left: total cost over 30 days against the flagging threshold, forming a shallow bowl with a minimum near 8.8 percent at about 9,959 dollars, against a dashed line at 14,476 dollars marking the cost of flagging nothing. Right: three bars on a log scale comparing the cost-optimal threshold at 9,959 dollars, flagging nothing at 14,476, and filling the review capacity at 190,667.">
+      <figcaption><strong>Left:</strong> a shallow bowl, which is good news: anything between roughly 4 and 15 percent
+        is close to optimal, so the policy does not depend on getting the threshold exactly right.
+        <strong>Right:</strong> the three candidate policies, on a log scale because otherwise the third one flattens
+        the other two.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 7 -->
+  <section id="prior">
+    <div class="section-eyebrow"><div class="num">7</div><h2>What This Adds to the Earlier Fraud Case Study</h2></div>
+
+    <p>Chapter 129 already built a fraud detector. That case study was an end-to-end walkthrough: load, explore,
+       engineer features, fit several classifiers, compare them, explain the winner. This capstone assumes all of that
+       and spends its whole length on the four decisions it did not interrogate.</p>
+
+    <table class="disp-table">
+      <tr><th>The earlier case study</th><th>This capstone</th></tr>
+      <tr><td class="nm">Reported ROC-AUC</td><td>Shows why ROC flatters at a 0.3% base rate and reports PR-AUC against it</td></tr>
+      <tr><td class="nm">Used SMOTE, as most tutorials do</td><td>Compares three remedies and finds they rank identically and differ 36-fold on the level</td></tr>
+      <tr><td class="nm">Chose a threshold of 0.5</td><td>Derives it from a cost matrix in which one error's price varies per transaction</td></tr>
+      <tr class="hi"><td class="nm">Used every available column</td><td>Finds the column that could not have existed yet</td></tr>
+    </table>
+
+    <p>Neither treatment is wrong. They answer different questions, and this one is the question a fraud operations
+       lead actually asks.</p>
+  </section>
+
+  <!-- 8 -->
+  <section id="watch">
+    <div class="section-eyebrow"><div class="num">8</div><h2>What to Watch</h2></div>
+
+    <ul class="checklist">
+      <li><span class="ck">&#10003;</span><span><strong>Never report accuracy on a 0.3 percent outcome.</strong> Flagging nothing scores 99.73 percent, and a model that beats it by a decimal has said nothing.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Quote the base rate beside any PR-AUC.</strong> A PR-AUC of 0.30 is a 93-fold lift here and would be a disaster on a balanced problem. The number means nothing alone.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Rebalancing buys ranking and sells calibration.</strong> If anything downstream multiplies the output by a number, you needed the probability that rebalancing threw away.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Suspect performance that is too good.</strong> A PR-AUC of 0.98 on fraud is a symptom, not a result, and the first thing to check is whether a feature knows the answer.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Count the positives, not the rows.</strong> Ninety thousand transactions with 223 frauds is a small dataset, and flexible models lose to a linear one with two hand-written interactions.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>A flag is a person declined at a checkout.</strong> The $12 in the cost matrix stands for a real harm, and it is not evenly spread: customers who travel, shop late or have just replaced a phone get flagged more, and none of that is wrongdoing.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Fraud is adversarial, so the model ages.</strong> These patterns were learned from days 1 to 90 and the people producing them adapt. Re-measure on a schedule rather than when somebody wonders.</span></li>
+    </ul>
+  </section>
+
+  <!-- 9 -->
+  <section id="ml">
+    <div class="section-eyebrow"><div class="num">9</div><h2>Imbalance in Data Science &amp; AI</h2></div>
+
+    <table class="disp-table">
+      <tr><th>Where it appears</th><th>The same problem, in a different costume</th></tr>
+      <tr><td class="nm">Medical screening</td><td>A rare disease, a costly miss and a cheap-but-not-free false alarm, which is this chapter with different units</td></tr>
+      <tr><td class="nm">Content moderation</td><td>Rare violations, an enormous denominator, and a review queue whose capacity is mistaken for the constraint</td></tr>
+      <tr><td class="nm">Predictive maintenance</td><td>Failures are rare, and the cost of a miss is the machine rather than a fixed penalty</td></tr>
+      <tr><td class="nm">Ad and recommendation ranking</td><td>Click rates of a fraction of a percent, where calibration matters because the probability is multiplied by a bid</td></tr>
+      <tr><td class="nm">Any alerting system</td><td>Alert fatigue is the human cost of a threshold set by a metric rather than by what a person can read</td></tr>
+    </table>
+
+    <div class="research">
+      <span class="rtag">Where the research went</span>
+      <p style="margin:0.4rem 0 0"><strong>SMOTE</strong>, from Chawla and colleagues in 2002, is the resampling
+         method most tutorials reach for, and the caution in this chapter applies to it in full: it changes the base
+         rate and therefore the calibration. <strong>Davis and Goadrich</strong> showed in 2006 why precision-recall
+         curves are the right instrument when negatives dominate, and <strong>Saito and Rehmsmeier</strong> made the
+         same case again in 2015 because the field had not listened. On the repair side, <strong>Platt scaling</strong>
+         and <strong>isotonic regression</strong> restore a probability after rebalancing, and
+         <strong>King and Zeng</strong> give the prior-correction formula for the specific case of a rare-event
+         logistic regression. The broader modern point is made by <strong>Grinsztajn and colleagues</strong>: on
+         tabular data, tree ensembles usually win, but the sample sizes at which they start winning are larger than
+         people assume.</p>
+    </div>
+  </section>
+
+  <!-- notebook -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">&#128013;</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook reads the cost matrix before fitting anything, cleans three faults out of the
+             warehouse export, splits by time, catches the leak, runs the four-model bake-off, compares the three
+             imbalance remedies on calibration rather than ranking, computes total cost across the threshold range, and
+             tests whether the review team's capacity is the binding constraint.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-credit-card-fraud.html">&#128211; View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-credit-card-fraud.ipynb"
+           target="_blank" rel="noopener">&#9654; Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-credit-card-fraud.ipynb"
+           target="_blank" rel="noopener">&#11015; View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Read the reports &amp; get the data</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong>
+         (<code>capstone-credit-card-fraud.xlsx</code>) holds 120,400 transactions with a duplicated export,
+         geolocation sentinels and authorization holds left in, a leaking column left in deliberately, the analysis
+         plan agreed with operations before modeling, and the generating coefficients. Two written reports accompany
+         it: a <strong>plain-language brief</strong> for the fraud operations lead, and a
+         <strong>technical report</strong> covering the leak, the bake-off and the cost analysis.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-29-credit-card-fraud.html" target="_blank" rel="noopener">&#128196; Plain-language brief <small>read online</small></a>
+        <a class="ex-file doc" href="../reports/capstone-29-credit-card-fraud-technical.html" target="_blank" rel="noopener">&#128202; Technical report <small>read online</small></a>
+        <a class="ex-file xls" href="../data/capstone-credit-card-fraud.xlsx">&#128202; Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>&#127891; Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">&#10003;</span><span><strong>The three imbalance remedies rank identically.</strong> PR-AUC 0.2985, 0.2981, 0.2984, and two of them predict 11.5 percent where the truth is 0.32.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Leakage looks like a triumph.</strong> One warehouse column took PR-AUC from 0.30 to 0.98, and it is filed weeks after the decision.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>The linear baseline won.</strong> Two hand-written interactions beat both ensembles, because 223 positives is not enough for a flexible model.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>The optimal policy misses 58 of 95 frauds.</strong> Catching them costs more than they are worth, which is uncomfortable and correct.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Review capacity is not the constraint.</strong> Filling it costs 13 times more than having no model; the best policy uses one percent of it.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">&#10067;</div><h2>Quiz: Test Yourself</h2></div>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="the-modeling-workflow.html">
+      <span style="font-size:1.3rem">&#8592;</span>
+      <span><span class="cn-dir">Chapter 190 &#183; Previous</span><br><span class="cn-title">The Modeling Workflow</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">&#8594;</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;&#183;&nbsp;
+  Chapter 191 &nbsp;&#183;&nbsp; &#169; 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch191";
+  window.QUIZ_DATA = [
+    {
+      q: "Adding chargeback_code_filed took PR-AUC from 0.30 to 0.98. What is wrong with that feature?",
+      options: ["It is too strongly correlated with the outcome to be useful", "It is filed weeks after the transaction, so it does not exist at the moment the hold-or-settle decision is made", "It has missing values", "It is a categorical variable treated as numeric"],
+      answer: 1,
+      explain: "Correlation with the outcome is not the problem; availability is. The test is whether the value would have existed, with that value, at the moment the prediction is needed, and a field populated once a human has worked the case fails it."
+    },
+    {
+      q: "The three imbalance remedies produced PR-AUCs of 0.2985, 0.2981 and 0.2984. What does that agreement show?",
+      options: ["All three are equally good", "They rank the transactions the same way; what resampling and class weights change is the base rate the model believes in, not the ordering", "The model is underfitted", "PR-AUC is insensitive to imbalance"],
+      answer: 1,
+      explain: "All three fit the same model to the same information. Rebalancing shifts the level rather than the order, which no ranking metric can detect and which the calibration plot shows immediately."
+    },
+    {
+      q: "Oversampling and class weights both gave a mean predicted fraud rate of about 11.5 percent against an observed 0.32. Why does that matter here?",
+      options: ["It makes the model less accurate", "It makes the ranking unreliable", "The cost calculation multiplies the probability by a transaction amount, and a probability inflated 36-fold produces a meaningless expected loss", "It causes the model to flag too few transactions"],
+      answer: 2,
+      explain: "If the downstream step only needed an ordering, rebalancing would cost nothing. Here operations asked for an expected loss, which requires a probability, and rebalancing has taken it away."
+    },
+    {
+      q: "A linear model with two hand-added interactions beat both tree ensembles. Why?",
+      options: ["Trees cannot represent interactions", "The interactions were not really in the data", "With only 223 fraudulent transactions in the training set, flexible models cannot recover structure that a human can name and add directly", "The ensembles were not tuned"],
+      answer: 2,
+      explain: "The interactions are genuinely in the data-generating process, so the trees were not handicapped. Flexible models need positives rather than rows, and 90,000 transactions containing 223 frauds is a small dataset."
+    },
+    {
+      q: "Why can the threshold not be chosen from an ROC or F1 curve here?",
+      options: ["Because the classes are imbalanced", "Because the cost of a missed fraud depends on the transaction amount, so the two errors do not have fixed prices", "Because the model is not calibrated", "Because the test set is too small"],
+      answer: 1,
+      explain: "Every curve-based rule encodes a fixed exchange rate between the two errors. A missed $8 coffee and a missed $2,000 laptop are different mistakes, so the threshold has to be found by computing the actual bill."
+    },
+    {
+      q: "The cost-optimal policy misses 58 of the 95 frauds. Is that a failure?",
+      options: ["Yes, the model should be retrained", "Yes, the threshold should be lowered", "No: catching those 58 would require flagging thousands of legitimate transactions at $16 each, which costs more than the fraud", "No, because the missed frauds are all small amounts"],
+      answer: 2,
+      explain: "It is the correct answer to the question that was asked. A team measured on catch rate will reject it and a team measured on cost will not, which is a conversation to have before the model ships."
+    },
+    {
+      q: "Working every case the 400-a-day review team could handle catches 93 of 95 frauds and costs $190,667, against $14,476 for having no model. What follows?",
+      options: ["The review team is too small", "Review capacity is not the binding constraint; the price of a false positive is, and the best policy uses about one percent of the capacity", "The model is miscalibrated", "The cost of a false positive was estimated too high"],
+      answer: 1,
+      explain: "Eleven thousand nine hundred of those twelve thousand reviews are of legitimate transactions at $16 each. The usual framing, how do we use the capacity we have, is the wrong question."
+    },
+    {
+      q: "A colleague reports a fraud model with a PR-AUC of 0.98. What is the first thing to check?",
+      options: ["Whether the test set is large enough", "Whether the model is calibrated", "Whether a feature knows the answer, because performance that good on fraud is a symptom rather than a result", "Whether they used the right cross-validation scheme"],
+      answer: 2,
+      explain: "Leakage does not announce itself as an error. Implausibly good performance, and an unexpected feature at the top of an importance ranking, are the two most reliable signs there is."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
