@@ -680,6 +680,8 @@ MAP = {
         ("../../capstone-emergency-department-visits.html#notebook", "Back to the book", "Chapter 189 · Counts and Rates: Emergency Department Visits"),
     "capstone-credit-card-fraud.html":
         ("../../capstone-credit-card-fraud.html#notebook", "Back to the book", "Chapter 191 · Imbalanced Classification: Credit Card Fraud"),
+    "capstone-churn-prediction-explainability.html":
+        ("../../capstone-churn-prediction-explainability.html#notebook", "Back to the book", "Chapter 192 · Churn Prediction and Who Is Worth Contacting"),
 }
 
 def card(href, kicker, title):

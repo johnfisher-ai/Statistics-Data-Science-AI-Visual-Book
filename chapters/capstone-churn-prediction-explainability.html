@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 192 · Churn Prediction and Explainability — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .yes { color:#047857; font-weight:700; }
+    .disp-table .no { color:#dc2626; font-weight:700; }
+    .disp-table tr.hi td { background:#f5f3ff; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .embox { background:#f5f3ff; border:1px solid #ddd6fe; border-left:4px solid #6d28d9; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .embox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#4c1d95; }
+    .rw-card { background:#f5f3ff; border:1px solid #ddd6fe; border-left:4px solid #6d28d9; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#4c1d95; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#f5f3ff; color:#6d28d9; border-color:#ddd6fe; }
+    .ex-file.doc { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#f5f3ff; border:1px solid #ddd6fe; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#4c1d95; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #6d28d9; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#4c1d95; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+    .svg-wrap { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.9rem 0.6rem 0.3rem; background:var(--panel); }
+    .svg-wrap svg { width:100%; height:auto; display:block; }
+    .svg-wrap .cap { font-size:0.82rem; color:var(--ink-soft); padding:0.55rem 0.6rem 0.4rem; line-height:1.55; }
+    .svg-wrap .cap strong { color:var(--ink); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/capstone-churn-prediction-explainability.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXXI &#183; Capstone Projects: Machine Learning</span><span class="sep">/</span>
+      <span>Chapter 192</span>
+    </div>
+    <h1>Churn Prediction and <span class="accent">Who Is Worth</span> Contacting</h1>
+    <p class="dek">Capstone 30. Three model families land within a thousandth of each other on AUC. Changing which model wins is worth almost nothing. Changing what the list is sorted by is worth 376,000 dollars a year.</p>
+    <div class="hero-meta">
+      <div class="m">&#9201;&#65039; <b>~24 min</b>&nbsp;read</div>
+      <div class="m">&#127919; <b>Explainability &amp; uplift</b></div>
+      <div class="m">&#128202; <b>Chapter 192</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">A retention campaign reduced churn by a genuine, well-measured 5.7 percentage points and
+       <span class="hl">lost 159,000 dollars doing it</span>. Nothing was wrong with the model. The list was sorted
+       by the wrong thing.</p>
+
+    <div class="brief-card">
+      <div class="bh">The brief</div>
+      <dl>
+        <dt>Setting</dt><dd>One quarter of subscriber records from a meal-kit company: 23,641 accounts with tenure, order behavior, delivery quality, support contacts, ratings and app activity, plus the outcome of a randomized retention campaign.</dd>
+        <dt>The question</dt><dd><strong>Who should be sent the offer next quarter?</strong> Not who is likely to cancel. Who will do something different because we contacted them.</dd>
+        <dt>Why it matters</dt><dd>A retained subscriber is worth 290 dollars of margin. The offer costs 30 dollars per account it is sent to, whether or not that subscriber was ever going to leave. Divide the two and the offer only pays for itself on somebody whose chance of cancelling it lowers by more than 10.3 points.</dd>
+        <dt>What we do</dt><dd>Check the randomization, price the campaign as it was run, hold a three-model bake-off that turns out not to matter, use SHAP and LIME carefully enough to see what they do and do not claim, then fit an uplift model and compare two targeting rules on money rather than on accuracy.</dd>
+      </dl>
+    </div>
+
+    <div class="def-card">
+      <div class="sigma">&#8721;</div>
+      <div class="def-body">
+        A churn model answers <span class="def-kw">who will cancel</span>. A retention budget needs the answer to
+        <span class="def-kw">whose behavior we can change</span>. Those are different orderings, and in this dataset
+        they correlate at <span class="def-kw">0.34</span>.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">&#11088;</div>
+      <div><div class="ctitle">The finding, up front</div>
+        <p>Three model families land within <strong>0.0009</strong> of each other on AUC. Switching between them is
+           worth almost nothing. Switching from a risk-ranked list to an uplift-ranked list is worth
+           <strong>376,000 dollars a year</strong>, and the highest-risk segment in the whole dataset, which cancels
+           at 49 percent, <strong>loses money when you contact it</strong>.</p></div>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section id="economics">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Two Numbers Decide Everything</h2></div>
+
+    <p>The retention team supplied both before any modeling started. A subscriber who stays is worth
+       <strong>$290</strong> of gross margin over the following year. The offer, 20 percent off the next three boxes,
+       costs <strong>$30</strong> per account it is sent to.</p>
+
+    <div class="embox">
+      <span class="gb-tag">The clause that does the work</span>
+      <p style="margin:0.45rem 0 0">The credit lands on the account <strong>whether or not the subscriber was ever
+         going to leave</strong>. So the $30 is a cost of <em>targeting</em>, not a cost of <em>saving</em>. Divide it
+         by the $290 and you get the number the entire project turns on:</p>
+      <p style="margin:0.7rem 0 0;text-align:center;font-size:1.15rem"><strong>break-even uplift = 30 &#247; 290 = 10.3 percentage points</strong></p>
+      <p style="margin:0.6rem 0 0">Contacting somebody is worth doing only if it lowers <strong>their</strong> chance of
+         cancelling by more than 10.3 points. Not if they are likely to cancel. If it <em>changes</em> whether they
+         cancel.</p>
+    </div>
+
+    <p>That sentence quietly rules out the standard approach. A churn model estimates the first quantity and says
+       nothing at all about the second.</p>
+  </section>
+
+  <!-- 2 -->
+  <section id="asrun">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Price What Already Happened</h2></div>
+
+    <p>The campaign was randomized: half of all active subscribers, chosen by a coin flip on the account number, were
+       sent the offer. Balance across the two arms is clean, with a largest standardized difference of
+       <strong>0.018</strong> against a conventional threshold of 0.10. So the difference in churn between the arms is
+       the causal effect of the offer, and no model is needed to read it.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Churn, offered</div><div class="rv">16.81%</div><div class="rd">n = 11,917</div></div>
+      <div class="rchip"><div class="rk">Churn, not offered</div><div class="rv">22.55%</div><div class="rd">n = 11,724</div></div>
+      <div class="rchip"><div class="rk">Effect of the offer</div><div class="rv">&#8722;5.74 pp</div><div class="rd">95% CI [&#8722;6.76, &#8722;4.73]</div></div>
+      <div class="rchip"><div class="rk">Net per account</div><div class="rv">&#8722;$13.34</div><div class="rd">&#8722;$158,998 in total</div></div>
+    </div>
+
+    <p><strong>The campaign worked and lost money.</strong> Both halves of that sentence are true and neither is a
+       criticism of the offer. It really did reduce churn, by an amount whose confidence interval is nowhere near zero.
+       It is simply that 5.7 points of avoided churn buys $16.66 of margin, and the offer costs $30.</p>
+
+    <p>So the campaign does not need a better model or a better discount. <strong>It needs to be sent to fewer
+       people</strong>, and the entire question is which ones.</p>
+  </section>
+
+  <!-- 3 -->
+  <section id="bakeoff">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The Bake-Off That Does Not Matter</h2></div>
+
+    <p>The risk model answers "what is the chance this subscriber cancels if we do nothing", so it is fitted on the
+       control arm only. Three families, same features, same split.</p>
+
+    <table class="disp-table">
+      <tr><th>Model</th><th>ROC-AUC</th><th>PR-AUC</th><th>Brier</th></tr>
+      <tr><td class="nm">Logistic regression</td><td>0.8137</td><td>0.6130</td><td>0.13132</td></tr>
+      <tr class="hi"><td class="nm">Random forest</td><td>0.8146</td><td>0.6189</td><td>0.13390</td></tr>
+      <tr><td class="nm">Gradient boosting</td><td>0.8145</td><td>0.6169</td><td class="yes">0.13056</td></tr>
+    </table>
+
+    <p>A spread of <strong>0.0009</strong> in ROC-AUC across three quite different model families. There is nothing to
+       choose between them, and a reasonable person would take the logistic regression for its transparency and stop.</p>
+
+    <p>Hold that thought. Model selection is where a great deal of project time goes, and by the end of this chapter a
+       different decision will be worth a six-figure sum. It is not this one.</p>
+  </section>
+
+  <!-- 4 -->
+  <section id="shap">
+    <div class="section-eyebrow"><div class="num">4</div><h2>What a SHAP Importance Actually Measures</h2></div>
+
+    <p>SHAP on the winning model gives a clean global ranking: tenure first, last rating second, skipped weeks third,
+       delivery issues fourth. Support contacts sit near the bottom, tenth of nineteen.</p>
+
+    <p>Now remove one column, <code>delivery_issues_90d</code>, and refit.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Support contacts, full model</div><div class="rv">0.0311</div><div class="rd">mean |SHAP|, rank 10 of 19</div></div>
+      <div class="rchip"><div class="rk">With delivery issues removed</div><div class="rv">0.1784</div><div class="rd">rank 6 of 18, a 5.7&#215; jump</div></div>
+      <div class="rchip"><div class="rk">ROC-AUC</div><div class="rv">0.8145 &#8594; 0.8073</div><div class="rd">the model barely noticed</div></div>
+      <div class="rchip"><div class="rk">Correlation between them</div><div class="rv">0.614</div><div class="rd">support calls follow bad deliveries</div></div>
+    </div>
+
+    <p>Nothing changed about how much support contacts matter to a subscriber. What changed is what they
+       <strong>add</strong>, and that is what a SHAP importance measures. Support calls are largely caused by delivery
+       failures; with the delivery column present there is little left for them to explain, and with it gone they stand
+       in for it.</p>
+
+    <div class="callout warn">
+      <div class="cico">&#9888;</div>
+      <div><div class="ctitle">Two consequences, and the second is the expensive one</div>
+        <p><strong>An importance ranking is a statement about this model with these columns.</strong> Add one, drop
+           one, and it moves.</p>
+        <p style="margin-top:0.5rem"><strong>A high-ranking feature is not a lever.</strong> Read the second ranking
+           and decide to reduce support contacts, and the cheapest way to do that is to make support harder to reach.
+           The feature moves. The delivery failures stay exactly where they are.</p></div>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section id="lime">
+    <div class="section-eyebrow"><div class="num">5</div><h2>SHAP and LIME, on the Same Subscriber</h2></div>
+
+    <p>Both methods explain one prediction by assigning a contribution to each feature, and they are built on different
+       ideas. SHAP allocates the prediction with a rule borrowed from cooperative game theory. LIME fits a simple local
+       model to points sampled around the one you asked about. Nothing guarantees they agree, and on sixty mid-risk
+       subscribers they <strong>name a different single most important driver 52 percent of the time</strong>.</p>
+
+    <table class="disp-table">
+      <tr><th colspan="2">One subscriber: 7 months, 2 delivery issues, 3 skipped weeks, rated 4, signed up on a discount</th></tr>
+      <tr><th>SHAP says</th><th>LIME says</th></tr>
+      <tr><td class="nm">delivery issues &nbsp;<span style="color:#dc2626">+0.617</span></td><td class="nm">tenure months &nbsp;<span style="color:#dc2626">+0.144</span></td></tr>
+      <tr><td>autopay &nbsp;+0.359</td><td>delivery issues &nbsp;+0.135</td></tr>
+      <tr><td>app logins &nbsp;&#8722;0.291</td><td>signup discount &nbsp;+0.064</td></tr>
+      <tr><td>skipped weeks &nbsp;+0.267</td><td>autopay &nbsp;+0.063</td></tr>
+    </table>
+
+    <p>They agree this subscriber is at risk and they disagree about what to put at the top of the retention agent's
+       screen. Neither is wrong. They answer slightly different questions, and both are descriptions of
+       <strong>the model</strong> rather than of the subscriber.</p>
+
+    <p>That is the honest framing for a business audience: <em>this is what the model responds to</em>, not
+       <em>this is why the customer is leaving</em>. The distance between those two sentences is the rest of this
+       chapter.</p>
+  </section>
+
+  <!-- 6 -->
+  <section id="uplift">
+    <div class="section-eyebrow"><div class="num">6</div><h2>The Question Nobody Asked the Model</h2></div>
+
+    <p>Every number so far has been about who cancels. The offer only earns its $30 from people whose behavior it
+       changes. Because the campaign was randomized we can estimate that directly: fit one model on the control arm and
+       one on the offered arm, and the gap between their predictions is the estimated effect of the offer on that
+       subscriber. This is the two-model, or T-learner, approach.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Risk and uplift</div><div class="rv">r = 0.34</div><div class="rd">Spearman 0.40</div></div>
+      <div class="rchip"><div class="rk">Negative uplift</div><div class="rv">18.6%</div><div class="rd">contact makes them likelier to leave</div></div>
+      <div class="rchip"><div class="rk">Delivery issues</div><div class="rv">+0.54 / &#8722;0.19</div><div class="rd">with risk / with uplift</div></div>
+      <div class="rchip"><div class="rk">Signup discount</div><div class="rv">+0.24 / +0.42</div><div class="rd">with risk / with uplift</div></div>
+    </div>
+
+    <p>Read the last two chips together. <strong><code>delivery_issues_90d</code> is the clearest signal in the dataset
+       for who cancels, and it points the other way for who to contact.</strong> That is not a quirk of the model. A
+       subscriber whose boxes keep arriving late has a service problem, and 20 percent off the next three does not fix
+       a service problem. Meanwhile <code>signup_discount</code>, sixth in the risk ranking, is the strongest single
+       predictor of who responds.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-churn-shap-segments.png"
+           alt="Left: paired horizontal bars showing each feature's correlation with churn risk and with uplift. Delivery issues is plus 0.54 with risk and minus 0.19 with uplift; support contacts plus 0.37 and minus 0.18; last rating minus 0.59 and plus 0.10; signup discount plus 0.24 and plus 0.42. Right: four named segments as paired bars in percentage points, showing the churn rate if left alone against the churn the offer removes, with a dashed break-even line at 10.3 points. The dormant segment's second bar is negative at minus 8.4, the discount signups reach plus 13.2 above the line, the delivery-issues segment cancels at 49 percent but only plus 8.1 is removed, and the happy engaged segment is plus 7.0.">
+      <figcaption><strong>Left:</strong> four of these features change magnitude between the two columns and two of
+        them change sign. <strong>Right:</strong> the tallest gray bar, the highest-risk segment in the dataset, sits
+        above a red bar that does not reach the break-even line.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 7 -->
+  <section id="targeting">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Two Targeting Rules, Priced</h2></div>
+
+    <p>A targeting rule picks a set of accounts using features only. Because assignment was random, the offered and
+       control accounts <em>inside</em> any such set are still comparable, so the value of a rule can be
+       <strong>measured</strong> rather than modeled.</p>
+
+    <table class="disp-table">
+      <tr><th rowspan="2">Contact the top</th><th colspan="2">Ranked by churn risk</th><th colspan="2">Ranked by uplift</th></tr>
+      <tr><th>churn avoided</th><th>value</th><th>churn avoided</th><th>value</th></tr>
+      <tr><td class="nm">10%</td><td>12.53 pp</td><td>$5,244</td><td>25.55 pp</td><td>$36,499</td></tr>
+      <tr><td class="nm">20%</td><td>11.75 pp</td><td>$6,735</td><td>19.57 pp</td><td>$44,261</td></tr>
+      <tr class="hi"><td class="nm">30%</td><td>12.26 pp</td><td>$13,788</td><td>16.59 pp</td><td class="yes">$44,990</td></tr>
+      <tr><td class="nm">40%</td><td>12.59 pp</td><td>$21,519</td><td>14.28 pp</td><td>$37,794</td></tr>
+      <tr><td class="nm">50%</td><td>11.29 pp</td><td>$11,320</td><td>12.09 pp</td><td>$20,989</td></tr>
+      <tr><td class="nm">70%</td><td>9.17 pp</td><td>&#8722;$19,679</td><td>9.68 pp</td><td>&#8722;$11,138</td></tr>
+      <tr><td class="nm">everybody</td><td>6.73 pp</td><td class="no">&#8722;$86,636</td><td>6.73 pp</td><td class="no">&#8722;$86,636</td></tr>
+    </table>
+
+    <p>Read the bottom row first: contacting everybody, which is what the campaign did, loses money on the test set,
+       exactly as section 2 said it would. Then read across. <strong>At every depth the uplift ranking is worth more,
+       and at the top of the list it is worth seven times more.</strong></p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Best risk-ranked rule</div><div class="rv">$21,519</div><div class="rd">top 40%, 3,310 accounts</div></div>
+      <div class="rchip"><div class="rk">Best uplift-ranked rule</div><div class="rv">$44,990</div><div class="rd">top 30%, 2,483 accounts</div></div>
+      <div class="rchip"><div class="rk">Against the campaign as run</div><div class="rv">+$131,626</div><div class="rd">on 8,275 test accounts</div></div>
+      <div class="rchip"><div class="rk">Scaled to the base</div><div class="rv">$376,046</div><div class="rd">23,641 eligible accounts</div></div>
+    </div>
+
+    <p>Same data, same features, same model family, same three-model bake-off that made no difference. The only thing
+       that changed is what the list is sorted by.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-churn-risk-uplift.png"
+           alt="Left: a scatter of each subscriber's chance of cancelling against the percentage points of churn the offer removes, with a dashed break-even line at 10.3 points. Points above the line are colored as worth contacting. A large cloud of high-risk subscribers sits well below zero, annotated as the delivery-problem group. The correlation is plus 0.34. Right: value against the share of subscribers contacted, with two curves. The uplift curve peaks near 45,000 dollars at 30 percent contacted; the risk curve peaks near 21,500 dollars at 40 percent; both fall to minus 86,636 dollars when everybody is contacted.">
+      <figcaption><strong>Left:</strong> if risk and response were the same thing this would be a diagonal band. It is
+        not. <strong>Right:</strong> both curves are humped, both go negative, and the uplift curve is above the risk
+        curve everywhere.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 8 -->
+  <section id="segments">
+    <div class="section-eyebrow"><div class="num">8</div><h2>Four Segments, Four Different Answers</h2></div>
+
+    <p>Quartiles of a model score are hard to hand to an operations team. These four groups can be written down in a
+       spreadsheet, and each one is still a randomized comparison, so each number below is measured against its own
+       control.</p>
+
+    <table class="disp-table">
+      <tr><th>Segment</th><th>n</th><th>Cancel if left alone</th><th>Churn the offer removes</th><th>Value per account</th></tr>
+      <tr><td class="nm">Dormant: long tenure, autopay, rarely logs in</td><td>537</td><td>13.2%</td><td class="no">&#8722;8.40 pp [&#8722;14.80, &#8722;2.01]</td><td class="no">&#8722;$54.37</td></tr>
+      <tr class="hi"><td class="nm">Signed up on a discount</td><td>3,409</td><td>29.8%</td><td class="yes">+13.16 pp [+10.36, +15.97]</td><td class="yes">+$8.17</td></tr>
+      <tr><td class="nm">Two or more delivery issues</td><td>1,321</td><td>48.6%</td><td>+8.09 pp [+2.73, +13.45]</td><td class="no">&#8722;$6.54</td></tr>
+      <tr><td class="nm">Rated 5, logs in regularly</td><td>1,509</td><td>9.7%</td><td>+6.97 pp [+4.54, +9.39]</td><td class="no">&#8722;$9.80</td></tr>
+    </table>
+
+    <p><strong>The dormant group is the one to look at twice.</strong> Long tenure, on autopay, barely opens the app.
+       They cancel less than anybody in the table, and sending them the offer made them <em>more</em> likely to leave,
+       by 8.4 points, with an interval that does not include zero. The most likely explanation is the least
+       sophisticated one: an email about a subscription is a reminder that the subscription exists. Every dormant
+       account that was sent the offer cost about $54.</p>
+
+    <p><strong>The delivery-issues group is the trap.</strong> They cancel at nearly 49 percent, which puts them at the
+       very top of any risk-ranked list, and targeting them still loses about $6.50 an account. The offer does move
+       them, by 8.1 points, and 8.1 is below 10.3.</p>
+
+    <p><strong>The discount signups are the business case.</strong> They came in on a promotion, they skip weeks, they
+       respond to a price. Nearly all of the recoverable value in this campaign is in this one group.</p>
+  </section>
+
+  <!-- 9 -->
+  <section id="watch">
+    <div class="section-eyebrow"><div class="num">9</div><h2>What to Watch</h2></div>
+
+    <ul class="checklist">
+      <li><span class="ck">&#10003;</span><span><strong>Ask what the decision is before choosing the target variable.</strong> "Who will cancel" and "who should we contact" produce different models, and only one of them answers the question that has a budget attached.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Price the intervention first.</strong> The break-even of 10.3 points was computable before any data was loaded, and it turns the whole project from a modeling exercise into an arithmetic one.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Feature importance is a property of the model.</strong> Drop a correlated column and a feature can move five places while the model gets no worse.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Explanations describe the model, not the world.</strong> SHAP and LIME disagreed on the top driver for half the subscribers, and neither was making a causal claim.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Uplift needs an experiment.</strong> None of this was available without a randomized holdout. A retention team that offers to everybody has no way to learn who was worth offering to.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Keep the holdout permanently.</strong> Not as a one-off study. It is the only instrument that measures whether the program still works.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Some contact does harm.</strong> The dormant finding is a subgroup result with a wide interval, and it is exactly the kind of result to confirm with a small test rather than to build into a permanent exclusion rule.</span></li>
+    </ul>
+  </section>
+
+  <!-- 10 -->
+  <section id="ml">
+    <div class="section-eyebrow"><div class="num">10</div><h2>Uplift and Explainability in Data Science &amp; AI</h2></div>
+
+    <table class="disp-table">
+      <tr><th>Where it appears</th><th>The same distinction, in a different costume</th></tr>
+      <tr><td class="nm">Marketing and CRM</td><td>Who buys against who buys <em>because</em> of the ad. The whole field of incrementality testing exists because the two get confused</td></tr>
+      <tr><td class="nm">Medicine</td><td>Prognosis against treatment effect. A patient at high risk of a bad outcome is not automatically the patient a drug helps most</td></tr>
+      <tr><td class="nm">Credit and collections</td><td>Who defaults against who responds to a payment plan, and the same trap: the highest-risk accounts often respond least</td></tr>
+      <tr><td class="nm">Public programs</td><td>Who is most in need against who is most helped, which is a values question as much as a statistical one</td></tr>
+      <tr><td class="nm">Recommendation systems</td><td>What a user would have watched anyway against what the recommendation changed, the difference between a score and a lift</td></tr>
+    </table>
+
+    <div class="research">
+      <span class="rtag">Where the research went</span>
+      <p style="margin:0.4rem 0 0">The four-way split used in section 8, persuadables, lost causes, sure things and
+         sleeping dogs, comes from <strong>Radcliffe and Surry</strong>, who built the practical uplift literature out
+         of direct-mail work in the 1990s and named the Qini curve. <strong>Rzepakowski and Jaroszewicz</strong> gave
+         uplift decision trees their splitting criteria, and <strong>K&#252;nzel and colleagues</strong> set out the
+         S-, T- and X-learner meta-learner family, of which the two-model approach used here is the simplest member.
+         <strong>Athey and Imbens</strong> connected all of this to causal inference proper with causal forests and
+         honest estimation. On the explanation side, <strong>Ribeiro and colleagues</strong> introduced LIME in 2016
+         and <strong>Lundberg and Lee</strong> introduced SHAP in 2017; <strong>Rudin</strong> argues that for
+         high-stakes decisions the right response to both is to fit an interpretable model in the first place, which
+         given the bake-off in section 3 is not an unreasonable position here.</p>
+    </div>
+  </section>
+
+  <!-- notebook -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">&#128013;</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook computes the break-even before loading anything, cleans three faults out of the
+             export, checks the randomization, prices the campaign as run, holds the bake-off, runs SHAP with and
+             without a correlated column, puts SHAP and LIME side by side on the same subscriber, fits the T-learner,
+             prices both targeting rules across every depth, and measures the four segments against their own
+             controls.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-churn-prediction-explainability.html">&#128211; View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-churn-prediction-explainability.ipynb"
+           target="_blank" rel="noopener">&#9654; Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-churn-prediction-explainability.ipynb"
+           target="_blank" rel="noopener">&#11015; View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Read the reports &amp; get the data</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong>
+         (<code>capstone-churn-prediction-explainability.xlsx</code>) holds 24,380 subscriber records with a duplicated
+         export block, a rating column that codes "never rated" as &#8722;1, accounts too new to have churned, the
+         randomized campaign flag, and the agreed economics. Two written reports accompany it: a
+         <strong>plain-language brief</strong> for the retention lead, and a <strong>technical report</strong> covering
+         the bake-off, the explanation methods and the uplift evaluation.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-30-churn-prediction-explainability.html" target="_blank" rel="noopener">&#128196; Plain-language brief <small>read online</small></a>
+        <a class="ex-file doc" href="../reports/capstone-30-churn-prediction-explainability-technical.html" target="_blank" rel="noopener">&#128202; Technical report <small>read online</small></a>
+        <a class="ex-file xls" href="../data/capstone-churn-prediction-explainability.xlsx">&#128202; Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>&#127891; Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">&#10003;</span><span><strong>The campaign worked and lost money.</strong> A real 5.7-point reduction in churn, against a break-even of 10.3, is $158,998 gone.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Three model families, 0.0009 of AUC between them.</strong> The bake-off was the least consequential decision in the project.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>A feature moved five places when a correlated column was dropped</strong>, and the model got no worse. Importance is a property of the model.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Risk and uplift correlate at 0.34.</strong> Sorting by the second was worth $376,046 a year over sorting by the first.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>The 49-percent-churn segment loses money when contacted,</strong> and one segment is made worse by being contacted at all.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">&#10067;</div><h2>Quiz: Test Yourself</h2></div>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-credit-card-fraud.html">
+      <span style="font-size:1.3rem">&#8592;</span>
+      <span><span class="cn-dir">Chapter 191 &#183; Previous</span><br><span class="cn-title">Imbalanced Classification: Credit Card Fraud</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">&#8594;</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;&#183;&nbsp;
+  Chapter 192 &nbsp;&#183;&nbsp; &#169; 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch192";
+  window.QUIZ_DATA = [
+    {
+      q: "The offer costs $30 per account and a retained subscriber is worth $290. What does 30 divided by 290 tell you?",
+      options: ["The expected return on the campaign", "The share of subscribers worth contacting", "The minimum reduction in one subscriber's chance of cancelling that makes contacting them worthwhile", "The break-even churn rate"],
+      answer: 2,
+      explain: "Because the credit lands on the account whether or not the subscriber was going to leave, the $30 is a cost of targeting. It is repaid only by a change in behavior of at least 10.3 percentage points."
+    },
+    {
+      q: "The campaign reduced churn by 5.74 points with a confidence interval of [-6.76, -4.73], and lost $158,998. How should that be described?",
+      options: ["The effect was not statistically significant", "The offer failed to change behavior", "The offer genuinely worked; it was sent to too many people for whom 5.7 points of avoided churn does not cover the $30", "The margin figure must be wrong"],
+      answer: 2,
+      explain: "Both halves are true. The causal effect is real and well estimated. It is simply smaller than the 10.3-point break-even, so the campaign needs a shorter list rather than a better offer."
+    },
+    {
+      q: "Three model families produced ROC-AUCs of 0.8137, 0.8146 and 0.8145. What follows?",
+      options: ["The features are not informative", "Model selection is not where the value in this project is, and a simpler model is a reasonable choice", "The models are overfitted", "More feature engineering is needed before choosing"],
+      answer: 1,
+      explain: "A spread of 0.0009 across three quite different families means the choice barely matters. The decision that did matter, later in the chapter, was worth a six-figure sum."
+    },
+    {
+      q: "Dropping delivery_issues_90d made support_contacts_90d jump from tenth to sixth in the SHAP ranking while ROC-AUC fell only from 0.8145 to 0.8073. What does that show?",
+      options: ["Support contacts are more important than the first model suggested", "SHAP is unreliable", "A SHAP importance measures what a feature adds given the others present, so with a correlated column removed it stands in for that column", "The second model is better specified"],
+      answer: 2,
+      explain: "The two columns correlate at 0.614 because support calls follow bad deliveries. Nothing changed in the world; what changed is what was left for support contacts to explain."
+    },
+    {
+      q: "SHAP and LIME named a different top driver for 52 percent of mid-risk subscribers. What is the right conclusion?",
+      options: ["One of the methods is implemented incorrectly", "They answer slightly different questions, and both describe the model rather than the customer", "The model is unstable and should be refitted", "LIME should be preferred because it is simpler"],
+      answer: 1,
+      explain: "SHAP allocates the prediction by a game-theoretic rule; LIME fits a local surrogate. Neither makes a causal claim about why the subscriber is leaving."
+    },
+    {
+      q: "delivery_issues_90d correlates +0.54 with churn risk and -0.19 with uplift. Why?",
+      options: ["The uplift model is noisy", "Delivery problems are the strongest reason people leave, and a discount does not fix a delivery problem, so those subscribers respond least to the offer", "Delivery issues are measured with error", "The correlation should be interpreted as causal in the first case only"],
+      answer: 1,
+      explain: "The feature that best identifies who is leaving points the wrong way for who to contact. This is the central mechanism behind the risk-versus-uplift gap."
+    },
+    {
+      q: "Contacting the top 30 percent by uplift was worth $44,990 against $13,788 for the top 30 percent by risk. What changed between the two?",
+      options: ["A better model family", "More training data", "More features", "Only the score the list was sorted by; the data, features and model family were identical"],
+      answer: 3,
+      explain: "That is the point of the comparison. The three-model bake-off moved the numbers by almost nothing; changing what the list is sorted by was worth $376,046 a year at book scale."
+    },
+    {
+      q: "The dormant segment cancels at 13.2 percent, the lowest in the table, and the offer raised their churn by 8.40 points [-14.80, -2.01]. What should the retention team do?",
+      options: ["Exclude them permanently from all contact", "Send them a larger discount", "Stop sending them this offer, and confirm the result with a small test before writing a permanent rule", "Ignore it, since the interval is wide"],
+      answer: 2,
+      explain: "The finding is credible enough to stop the current practice and too uncertain to harden into policy. It is a subgroup analysis with a wide interval, and the plausible mechanism, that an email reminds a dormant subscriber the subscription exists, is worth confirming."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

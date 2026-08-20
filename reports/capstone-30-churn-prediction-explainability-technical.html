@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Churn and Retention Targeting (Technical) &#183; Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/report.css">
+  <style>
+    body.report { --rpt-accent:#6d28d9; --rpt-accent-dark:#4c1d95; --rpt-accent-bg:#f5f3ff; --rpt-accent-line:#ddd6fe; }
+  </style>
+</head>
+
+<body class="report">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="../chapters/capstone-churn-prediction-explainability.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">&#8592; Chapter 192</a>
+  </div>
+</nav>
+
+<div class="rpt-sticky" id="rptSticky">
+  <div class="inner">
+    <div class="st-title">Risk, Uplift and What an Explanation Method Is Claiming</div>
+    <a class="st-back" href="../chapters/capstone-churn-prediction-explainability.html">&#8592; Chapter 192</a>
+  </div>
+</div>
+
+<div class="rpt-wrap">
+  <article class="rpt-paper technical">
+    <header class="rpt-head">
+      <div class="rpt-topline">
+        <div class="rpt-kicker">Capstone 30 &#183; Technical Report</div>
+        <span class="rpt-badge technical">Technical Report</span>
+      </div>
+      <h1>Risk, Uplift and What an Explanation Method Is Claiming</h1>
+      <p class="rpt-sub">Three model families separated by 0.0009 of AUC. A feature that moves five places when a correlated column is dropped. Two explanation methods that disagree half the time. And a targeting rule worth twice the money.</p>
+      <div class="rpt-meta"><div><b>Data</b> &nbsp;23,641 subscribers after cleaning, 19.7% churn, randomized 50/50 offer</div><div><b>Design</b> &nbsp;randomized retention campaign, 65/35 train-test split</div><div><b>Headline</b> &nbsp;risk-uplift correlation 0.34; targeting by uplift worth $376,046 a year</div></div>
+    </header>
+
+    <div class="rpt-prov">
+      <span class="pv-tag">Where this comes from</span>
+      <div class="pv-row"><div><span>Chapter</span> <a href="../chapters/capstone-churn-prediction-explainability.html">Chapter 192 &#183; Churn Prediction and Who Is Worth Contacting</a></div><div><span>Part</span> Part XXXI &#183; Capstone Projects: Machine Learning</div><div><span>Dataset</span> <a href="../data/capstone-churn-prediction-explainability.xlsx">capstone-churn-prediction-explainability.xlsx</a></div><div><span>Notebook</span> <a href="../chapters/notebooks/html/capstone-churn-prediction-explainability.html" target="_blank" rel="noopener">View the analysis</a></div></div>
+    </div>
+
+    <div class="rpt-body">
+      <h2>1. Data, cleaning and eligibility</h2>
+      <p>The export held 24,380 rows. A duplicated block of 380 was removed on <code>subscriber_id</code>. <code>last_rating</code> codes never-rated as <code>-1</code>, which is not a marker pandas recognizes and which would otherwise enter the model as a rating below the scale; those 412 accounts were flagged and the rating imputed at the median. A further 359 accounts have <code>tenure_months = 0</code>, having opened inside the window, so a 90-day churn was impossible and their outcome is zero by construction; they were excluded because retaining them would teach the model that very short tenure predicts staying.</p>
+      <p>That leaves <strong>23,641</strong> eligible accounts, 19.7 percent of which cancelled.</p>
+      <h2>2. Randomization check</h2>
+      <p>Standardized differences across the two arms were computed for all thirteen numeric covariates. The largest absolute value is <strong>0.018</strong>, against a conventional balance threshold of 0.10. The assignment behaves as described, so the arm difference is an unbiased estimate of the average treatment effect and no adjustment is required.</p>
+      <h2>3. The campaign as run</h2>
+      <div class="rpt-cap"><span class="n">Table 1.</span> The unconditional effect and its economics.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Quantity</th><th>Value</th></tr></thead><tbody><tr><td>Churn, offered arm</td><td>0.1681 (n = 11,917)</td></tr><tr><td>Churn, control arm</td><td>0.2255 (n = 11,724)</td></tr><tr><td><span class='nm'>Average treatment effect</span></td><td><span class='nm'>-5.74 pp, 95% CI [-6.76, -4.73]</span></td></tr><tr><td>Margin recovered per targeted account</td><td>0.0574 &#215; $290 = $16.66</td></tr><tr><td>Offer cost per targeted account</td><td>$30.00</td></tr><tr><td><span class='nm'>Net per targeted account</span></td><td><span class='nm'>-$13.34</span></td></tr><tr><td>Total over the offered arm</td><td>-$158,998</td></tr></tbody></table></div>
+      <p>Break-even uplift is <strong>30/290 = 0.1034</strong>. The unconditional effect is 0.0574, so blanket targeting is unprofitable by construction, and this was determinable from two numbers before any model was fitted.</p>
+      <h2>4. Risk model bake-off</h2>
+      <p>The risk model estimates the probability of churn under no treatment, so it is fitted on the control arm only and evaluated on control test rows. Nineteen features after one-hot encoding of region and signup channel.</p>
+      <div class="rpt-cap"><span class="n">Table 2.</span> Three families on the same control-arm split. The AUC spread is 0.0009.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Model</th><th>ROC-AUC</th><th>PR-AUC</th><th>Brier</th></tr></thead><tbody><tr><td>Logistic regression</td><td>0.8137</td><td>0.6130</td><td>0.13132</td></tr><tr><td>Random forest (400 trees, min leaf 25)</td><td>0.8146</td><td>0.6189</td><td>0.13390</td></tr><tr><td><span class='nm'>HistGradientBoosting (300 iters, lr 0.02, 8 leaves)</span></td><td><span class='nm'>0.8145</span></td><td><span class='nm'>0.6169</span></td><td><span class='nm'>0.13056</span></td></tr></tbody></table></div>
+      <p>The data-generating process contains genuine non-additive structure (an early-life churn spike in tenure, an interaction between delivery failures and short tenure, and a threshold effect at a rating of 2), which is why the ensembles are not behind the linear model. They are also not meaningfully ahead. Gradient boosting was carried forward for the SHAP and uplift work.</p>
+      <h2>5. What the SHAP importances do and do not say</h2>
+      <p>Global mean absolute SHAP on the risk model ranks tenure, last rating, skipped weeks and delivery issues at the top, with <code>support_contacts_90d</code> tenth of nineteen at 0.0311. Refitting without <code>delivery_issues_90d</code> moves support contacts to <strong>0.1784</strong>, sixth of eighteen, a 5.7-fold increase, while ROC-AUC falls only from 0.8145 to 0.8073. The two columns correlate at 0.614 because support calls are generated by delivery failures.</p>
+      <p>The lesson is standard and routinely ignored in practice: a SHAP importance is a marginal contribution <em>given the other features in the model</em>, not a measure of how much the underlying quantity matters. It is not a ranking of levers, and the cheapest way to move a symptom feature is usually to stop measuring the symptom.</p>
+      <h2>6. SHAP against LIME</h2>
+      <p>On sixty test subscribers with predicted risk between 0.35 and 0.75, the two methods name a different single largest driver for <strong>31 of them, 52 percent</strong>. For the example carried in the chapter, SHAP ranks delivery issues first (+0.617) and LIME ranks tenure first (+0.144), with delivery issues second.</p>
+      <p>This is expected rather than anomalous. SHAP allocates the prediction by a Shapley-value rule over feature coalitions; LIME fits a weighted local surrogate to perturbed samples and is sensitive to the perturbation distribution and the discretization. Both describe the model's response surface. Neither licenses a causal statement about the subscriber, and presenting either to a business audience as a reason for cancellation is the error this section exists to prevent.</p>
+      <h2>7. Uplift estimation and evaluation</h2>
+      <p>A two-model (T-learner) approach was used: gradient boosting fitted separately on each arm of the training split, with uplift taken as the control-arm predicted probability minus the treated-arm predicted probability. Estimated uplift ranges from -0.454 to +0.540, and <strong>18.6 percent</strong> of subscribers have a negative estimate.</p>
+      <div class="rpt-cap"><span class="n">Table 3.</span> The two scores correlate at 0.337 (Spearman 0.403). Two features change sign between the columns.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Feature</th><th>Correlation with risk</th><th>Correlation with uplift</th></tr></thead><tbody><tr><td><span class='nm'>delivery_issues_90d</span></td><td><span class='nm'>+0.543</span></td><td><span class='nm'>-0.192</span></td></tr><tr><td>support_contacts_90d</td><td>+0.369</td><td>-0.179</td></tr><tr><td>last_rating</td><td>-0.586</td><td>+0.103</td></tr><tr><td><span class='nm'>signup_discount</span></td><td><span class='nm'>+0.238</span></td><td><span class='nm'>+0.418</span></td></tr><tr><td>skips_90d</td><td>+0.426</td><td>+0.515</td></tr><tr><td>tenure_months</td><td>-0.334</td><td>-0.210</td></tr></tbody></table></div>
+      <p>Evaluation is by direct measurement rather than by model. Because assignment is random and every targeting rule is a function of pre-treatment features only, the offered and control accounts inside any selected set remain comparable, so the incremental value of a rule is estimated as the within-set arm difference times the margin, less the offer cost times the number selected.</p>
+      <div class="rpt-cap"><span class="n">Table 4.</span> Value over the 8,275 test accounts. The uplift ranking dominates at every depth.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Contact the top</th><th>Risk-ranked value</th><th>Uplift-ranked value</th></tr></thead><tbody><tr><td>10%</td><td>$5,244</td><td>$36,499</td></tr><tr><td>20%</td><td>$6,735</td><td>$44,261</td></tr><tr><td><span class='nm'>30%</span></td><td><span class='nm'>$13,788</span></td><td><span class='nm'>$44,990</span></td></tr><tr><td>40%</td><td>$21,519</td><td>$37,794</td></tr><tr><td>50%</td><td>$11,320</td><td>$20,989</td></tr><tr><td>70%</td><td>-$19,679</td><td>-$11,138</td></tr><tr><td>100%</td><td>-$86,636</td><td>-$86,636</td></tr></tbody></table></div>
+      <p>Each rule at its own optimum: risk-ranked, top 40 percent, <strong>$21,519</strong>; uplift-ranked, top 30 percent, <strong>$44,990</strong>. Against the campaign as run the improvement is <strong>$131,626</strong> on the test set, or <strong>$376,046</strong> scaled to the 23,641 eligible accounts.</p>
+      <h2>8. Segment estimates</h2>
+      <div class="rpt-cap"><span class="n">Table 5.</span> Definable segments, each still a randomized comparison within itself.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Segment</th><th>n</th><th>Control churn</th><th>Effect [95% CI]</th><th>Value/account</th></tr></thead><tbody><tr><td><span class='nm'>Dormant: tenure &gt; 18m, &#8804; 3 logins, autopay</span></td><td>537</td><td>0.132</td><td><span class='nm'>+8.40 pp [+2.01, +14.80] worse</span></td><td><span class='nm'>-$54.37</span></td></tr><tr><td>Signed up on a discount</td><td>3,409</td><td>0.298</td><td>-13.16 pp [-15.97, -10.36]</td><td>+$8.17</td></tr><tr><td>Two or more delivery issues</td><td>1,321</td><td>0.486</td><td>-8.09 pp [-13.45, -2.73]</td><td>-$6.54</td></tr><tr><td>Rated 5, four or more logins</td><td>1,509</td><td>0.097</td><td>-6.97 pp [-9.39, -4.54]</td><td>-$9.80</td></tr></tbody></table></div>
+      <p>The dormant estimate is the one that changes behavior rather than confirming it. The interval excludes zero, and the mechanism is plausible and dull: a message about a subscription is a reminder that the subscription exists. It is nonetheless a subgroup analysis on 537 accounts, and the appropriate response is to stop sending to that group and to confirm with a designed test rather than to encode a permanent exclusion.</p>
+      <h2>9. Limitations</h2>
+      <p>Everything estimated here is specific to this offer. A different intervention, particularly a service remedy rather than a discount, could plausibly have a positive effect on the delivery-issues segment, where the current estimate falls just short of break-even.</p>
+      <p>The uplift score is a difference of two model predictions and inherits both models' error, which is why the quartile and segment tables are measured against randomized controls rather than read off the model. The model is used to sort; the measurement establishes the value.</p>
+      <p>The 290-dollar margin and 30-dollar offer cost are supplied figures rather than estimates with uncertainty attached. Break-even moves proportionally with their ratio, and a sensitivity analysis across a plausible range for both would be a reasonable addition before the policy is fixed.</p>
+      <p>Finally, the segments in section 8 were chosen partly because they are interpretable and partly after seeing the uplift model's tails. They should be treated as descriptions of a pattern the model found, with the confirmatory work still to do.</p>
+    </div>
+
+    <div class="rpt-foot"><a class="primary" href="../chapters/capstone-churn-prediction-explainability.html">&#8592; Back to Chapter 192</a><a href="../chapters/notebooks/html/capstone-churn-prediction-explainability.html" target="_blank" rel="noopener">&#128211; Companion notebook</a><a class="xls" href="../data/capstone-churn-prediction-explainability.xlsx">&#128202; Download dataset</a></div>
+    <div class="rpt-colophon">
+      From <strong>Statistics, Data Science and AI: A Visual Handbook</strong> by John Fisher.
+      Every statistic, table, and figure in this report is reproduced by the companion notebook.
+    </div>
+  </article>
+</div>
+
+<script>
+(function(){
+  var bar=document.getElementById('rptSticky');
+  window.addEventListener('scroll',function(){
+    if(window.scrollY>320) bar.classList.add('on'); else bar.classList.remove('on');
+  });
+})();
+</script>
+</body>
+</html>
