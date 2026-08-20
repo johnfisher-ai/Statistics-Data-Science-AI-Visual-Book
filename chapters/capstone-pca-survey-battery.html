@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 194 · Principal Component Analysis: A Survey Battery — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .yes { color:#047857; font-weight:700; }
+    .disp-table .no { color:#dc2626; font-weight:700; }
+    .disp-table tr.hi td { background:#f5f3ff; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .embox { background:#f5f3ff; border:1px solid #ddd6fe; border-left:4px solid #6d28d9; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .embox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#4c1d95; }
+    .rw-card { background:#f5f3ff; border:1px solid #ddd6fe; border-left:4px solid #6d28d9; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#4c1d95; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#f5f3ff; color:#6d28d9; border-color:#ddd6fe; }
+    .ex-file.doc { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#f5f3ff; border:1px solid #ddd6fe; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#4c1d95; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #6d28d9; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#4c1d95; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+    .svg-wrap { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.9rem 0.6rem 0.3rem; background:var(--panel); }
+    .svg-wrap svg { width:100%; height:auto; display:block; }
+    .svg-wrap .cap { font-size:0.82rem; color:var(--ink-soft); padding:0.55rem 0.6rem 0.4rem; line-height:1.55; }
+    .svg-wrap .cap strong { color:var(--ink); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/capstone-pca-survey-battery.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXXI &#183; Capstone Projects: Machine Learning</span><span class="sep">/</span>
+      <span>Chapter 194</span>
+    </div>
+    <h1>Principal Component Analysis: <span class="accent">A Survey</span> Battery</h1>
+    <p class="dek">Capstone 32. The most widely used rule for how many components to keep finds about ten of them in twenty variables that have no structure at all. And once the right number is found, the plain average of each block does the same job as the component score.</p>
+    <div class="hero-meta">
+      <div class="m">&#9201;&#65039; <b>~22 min</b>&nbsp;read</div>
+      <div class="m">&#127919; <b>Dimension reduction</b></div>
+      <div class="m">&#128202; <b>Chapter 194</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Marketing wants one satisfaction number for the dashboard. The research team thinks the battery
+       measures three separate things. <span class="hl">Both are testable claims</span>, and the test is the whole
+       chapter.</p>
+
+    <div class="brief-card">
+      <div class="bh">The brief</div>
+      <dl>
+        <dt>Setting</dt><dd>The customer survey from <a href="capstone-stratified-customer-survey.html">Chapter 177</a>, fielded again. This wave carried a twenty-item agreement battery about the app, the support experience and the price. 1,628 usable responses after cleaning.</dd>
+        <dt>The question</dt><dd><strong>How many distinct things does the battery measure, which items belong to which, and what should the dashboard compute every month?</strong></dd>
+        <dt>Why it matters</dt><dd>Averaging twenty items into a single number hides whichever one is moving. Reporting twenty separate trend lines is not a dashboard. The right answer is somewhere in between, and it has to be recomputable by someone who will not have the notebook.</dd>
+        <dt>What we do</dt><dd>Clean, reverse-score, compare three rules for how many components to keep, rotate, read the loadings honestly including the items that do not fit, check reliability, and then ask whether the estimated weights beat plain arithmetic.</dd>
+      </dl>
+    </div>
+
+    <div class="def-card">
+      <div class="sigma">&#8721;</div>
+      <div class="def-body">
+        A component is a <span class="def-kw">weighted sum of the items</span>, chosen to capture as much of their
+        shared variance as possible. Rotation does not change how much it captures; it changes
+        <span class="def-kw">which axes</span> you read it on.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">&#11088;</div>
+      <div><div class="ctitle">The finding, up front</div>
+        <p>Applied to twenty variables with <strong>no structure at all</strong>, the eigenvalue-greater-than-one rule
+           retains <strong>9.8 components on average</strong>. Parallel analysis gets the right answer here, which is
+           three. And once the three blocks are identified, the plain unweighted average of each block correlates
+           <strong>above 0.96</strong> with its component score and predicts both outcomes just as well.</p></div>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section id="cleaning">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Cleaning, and Why It Matters More Here</h2></div>
+
+    <p>1,896 responses arrive. A duplicated export block takes it to 1,850. "Prefer not to say" was coded as
+       <strong>99</strong> rather than left blank, which would otherwise enter every correlation as a value nineteen
+       points above the top of the scale; removing those leaves 1,677. Then <strong>49 straight-liners</strong>,
+       respondents who gave the identical answer to all twenty items, leaving <strong>1,628</strong>.</p>
+
+    <p>Straight-liners deserve a moment. A respondent who answered 4 to everything contributes a row of zero variance
+       that is perfectly consistent with every other straight-liner. In an analysis whose entire input is a correlation
+       matrix, that is not a rounding error.</p>
+
+    <p>Four items are <strong>negatively worded</strong> and stored as collected: agreeing with "I wait too long to
+       reach someone" is a bad outcome on the same 1-to-5 agreement scale where agreeing with "staff treat me
+       courteously" is a good one. They are reverse-scored, and section 5 is about what happens if they are not.</p>
+  </section>
+
+  <!-- 2 -->
+  <section id="howmany">
+    <div class="section-eyebrow"><div class="num">2</div><h2>How Many Things Is This Measuring?</h2></div>
+
+    <table class="disp-table">
+      <tr><th>Component</th><th>Eigenvalue</th><th>Share of variance</th><th>95th percentile from noise</th><th>Keep?</th></tr>
+      <tr class="hi"><td class="nm">1</td><td>6.174</td><td>30.9%</td><td>1.235</td><td class="yes">yes</td></tr>
+      <tr class="hi"><td class="nm">2</td><td>2.559</td><td>12.8%</td><td>1.189</td><td class="yes">yes</td></tr>
+      <tr class="hi"><td class="nm">3</td><td>2.178</td><td>10.9%</td><td>1.159</td><td class="yes">yes</td></tr>
+      <tr><td class="nm">4</td><td>0.952</td><td>4.8%</td><td>1.135</td><td class="no">no</td></tr>
+      <tr><td class="nm">5</td><td>0.659</td><td>3.3%</td><td>1.112</td><td class="no">no</td></tr>
+    </table>
+
+    <p>Three rules are in common use and they disagree about how confident to be.</p>
+
+    <p><strong>Kaiser</strong>, keep every eigenvalue above 1, retains three here. It also came within
+       <strong>0.048</strong> of retaining a fourth. <strong>Scree</strong>, look for the elbow, is genuinely ambiguous
+       on this sequence: 6.17, 2.56, 2.18, 0.95, 0.66. The drop from one to two is large and so is the drop from three
+       to four, so it can be read as two or as four. <strong>Parallel analysis</strong> asks what eigenvalues this
+       dataset would produce with no structure at all, simulates five hundred of them, and keeps only what beats the
+       noise. It retains three and rejects the fourth by <strong>0.183</strong>.</p>
+
+    <div class="callout warn">
+      <div class="cico">&#9888;</div>
+      <div><div class="ctitle">What the eigenvalue-greater-than-one rule does to pure noise</div>
+        <p>Twenty completely uncorrelated variables at this sample size, four hundred replications.
+           <strong>The rule retains 9.8 components on average</strong>, and never fewer than eight.</p>
+        <p style="margin-top:0.5rem">The reason is simple. Eigenvalues of a sample correlation matrix scatter around 1
+           even when the population matrix is the identity, so about half of them land above it. The threshold of 1 is
+           the <em>average</em> eigenvalue, not a test. Parallel analysis is the same idea done properly: compare
+           against what noise produces at this sample size and this number of items, rather than against a
+           constant.</p></div>
+    </div>
+
+    <p><strong>Three components</strong>, accounting for 54.6 percent of the variance in the twenty items.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-pca-scree-loadings.png"
+           alt="Left: a scree plot with the survey's eigenvalues falling from 6.17 to below 0.7 by the fifth component, against a dashed line showing the 95th percentile of eigenvalues from pure noise which declines gently from 1.24 to about 1.0, and a dotted line at Kaiser's cutoff of 1. The first three eigenvalues are well above the noise line and the fourth, at 0.95, is below it. Right: a heatmap of rotated loadings for twenty items on three components, showing items 1 to 6 loading on digital experience, 8 to 14 on support quality, and 15 to 18 on value for money, with q07 loading 0.55 and 0.53 on two, q19 loading 0.43 and 0.62, and q20 loading on nothing.">
+      <figcaption><strong>Left:</strong> the fourth component is below what noise alone produces, and Kaiser's line
+        runs through the middle of the noise. <strong>Right:</strong> three blocks and three items that do not
+        belong.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 3 -->
+  <section id="rotation">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Rotation Is a Choice of Axes</h2></div>
+
+    <p>The unrotated solution is mathematically optimal and unreadable. <strong>Nineteen of the twenty items load
+       above 0.30 on the first component</strong>, because the first component of a correlation matrix with
+       all-positive entries is always a general "how happy is this person overall" direction.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Unrotated, 3 components</div><div class="rv">54.6%</div><div class="rd">of the twenty items' variance</div></div>
+      <div class="rchip"><div class="rk">After varimax</div><div class="rv">54.6%</div><div class="rd">identical, necessarily</div></div>
+      <div class="rchip"><div class="rk">Items on PC1, unrotated</div><div class="rv">19 of 20</div><div class="rd">a general factor</div></div>
+      <div class="rchip"><div class="rk">Items on 2+ components, rotated</div><div class="rv">2 of 20</div><div class="rd">simple structure</div></div>
+    </div>
+
+    <p>Rotation cannot change how much variance three directions capture, because the three-dimensional subspace is
+       fixed by the data. Varimax picks the axes inside that subspace which put each item's weight mostly on one
+       axis.</p>
+
+    <div class="embox">
+      <span class="gb-tag">Say this carefully to an audience</span>
+      <p style="margin:0.45rem 0 0">"We rotated the factors" is often heard as "we found the real ones". Nothing was
+         found. <strong>Rotation is a choice of coordinates, not a discovery.</strong> Different criteria pick
+         different axes, all equally valid as summaries and differently readable, and none of them is the truth about
+         customers.</p>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section id="loadings">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Naming the Blocks, and the Items That Do Not Fit</h2></div>
+
+    <p>Three clean blocks emerge, and they have defensible names: items 1 to 6 are <strong>Digital experience</strong>,
+       items 8 to 14 are <strong>Support quality</strong>, items 15 to 18 are <strong>Value for money</strong>. Three
+       items need a decision instead of a name.</p>
+
+    <table class="disp-table">
+      <tr><th>Item</th><th>Loadings</th><th>What is going on</th><th>Decision</th></tr>
+      <tr><td class="nm">q07 "easy to reach a person from inside the app"</td><td>0.55 digital<br>0.53 support</td><td>It is about the app <em>and</em> about support. Not a measurement failure, the item doing what it says</td><td>Out of both indices, reported on its own</td></tr>
+      <tr><td class="nm">q19 "compared with alternatives, good value"</td><td>0.62 value<br>0.43 digital</td><td>Mostly value, not cleanly</td><td>Out of the index</td></tr>
+      <tr class="hi"><td class="nm">q20 "I enjoy the company's advertising"</td><td>communality 0.08</td><td>92 percent of its variance is unrelated to anything else in the battery</td><td>Drop from the index, and from the questionnaire</td></tr>
+    </table>
+
+    <p>The temptation with a cross-loading item is to assign it to whichever block it loads on slightly more and report
+       that block as a clean measure. With q07 at 0.55 and 0.53, that would be a small lie in a document a lot of
+       people will read.</p>
+
+    <p>And q20 is not measuring a fourth thing. It is measuring nothing this battery is about. Cutting an item because
+       it does not fit is a decision that should be made openly and written down, because it is also
+       <strong>how a battery gets quietly tuned until it says what somebody wanted</strong>.</p>
+  </section>
+
+  <!-- 5 -->
+  <section id="reverse">
+    <div class="section-eyebrow"><div class="num">5</div><h2>What Forgetting to Reverse-Score Actually Costs</h2></div>
+
+    <p>Run the whole component analysis on the raw responses, without reverse-scoring, and compare.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Eigenvalues, raw</div><div class="rv">6.174, 2.559, 2.178</div><div class="rd">and 0.952</div></div>
+      <div class="rchip"><div class="rk">Eigenvalues, reverse-scored</div><div class="rv">6.174, 2.559, 2.178</div><div class="rd">and 0.952</div></div>
+      <div class="rchip"><div class="rk">Difference</div><div class="rv">none</div><div class="rd">exactly identical</div></div>
+      <div class="rchip"><div class="rk">Alpha, support block</div><div class="rv">0.866 &#8594; 0.246</div><div class="rd">where the damage is</div></div>
+    </div>
+
+    <p>Identical, and necessarily so. Reversing an item multiplies that column by minus one, which flips the sign of
+       its correlations with everything and leaves the eigenvalues of the correlation matrix untouched.</p>
+
+    <p><strong>That is exactly what makes the mistake dangerous.</strong> It does not announce itself. The scree plot
+       looks fine, parallel analysis gives the same answer, and the rotated solution still has three blocks. The only
+       visible symptom is four items carrying negative loadings, which is easy to read past on a twenty-row table.</p>
+
+    <table class="disp-table">
+      <tr><th>Block</th><th>Alpha, reverse-scored</th><th>Alpha, raw</th><th>Index correlation with overall satisfaction</th></tr>
+      <tr><td class="nm">Digital experience</td><td>0.839</td><td class="no">0.555</td><td>+0.545 vs +0.488</td></tr>
+      <tr class="hi"><td class="nm">Support quality</td><td>0.866</td><td class="no">0.246</td><td>+0.587 vs +0.470</td></tr>
+      <tr><td class="nm">Value for money</td><td>0.828</td><td class="no">0.400</td><td>+0.532 vs +0.489</td></tr>
+    </table>
+
+    <p>Inside an index, an unreversed negatively worded item points the opposite way to its neighbours and cancels
+       them out. So the guidance is not "remember to reverse-score", which everybody already knows. It is:
+       <strong>compute alpha before you ship an index</strong>, because alpha catches this and the component analysis
+       does not.</p>
+
+    <div class="callout warn">
+      <div class="cico">&#9888;</div>
+      <div><div class="ctitle">And a high alpha is not evidence of one construct</div>
+        <p>All twenty items treated as a single scale give an alpha of <strong>0.877</strong>, higher than two of the
+           three blocks, on a battery we have just shown measures three distinguishable things. Alpha rises with the
+           number of items almost regardless of structure. It answers "do these hang together enough to average",
+           not "are these one thing".</p></div>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section id="weights">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Do the Weights Earn Their Keep?</h2></div>
+
+    <p>The dashboard needs something it can recompute every month in the reporting tool. Two candidates: the component
+       scores, which need the loadings and each item's mean and standard deviation, or the plain unweighted average of
+       the items in each block.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Digital experience</div><div class="rv">r = 0.972</div><div class="rd">score vs plain average</div></div>
+      <div class="rchip"><div class="rk">Support quality</div><div class="rv">r = 0.977</div><div class="rd">score vs plain average</div></div>
+      <div class="rchip"><div class="rk">Value for money</div><div class="rv">r = 0.961</div><div class="rd">score vs plain average</div></div>
+    </div>
+
+    <p>The weights the analysis worked to estimate produce almost the same ranking of respondents as adding the items
+       up and dividing. That is not specific to this dataset: when items are positively correlated and their loadings
+       are of similar size, almost any reasonable set of weights gives nearly the same composite. The result has a
+       long history in decision research under the heading <strong>unit weights</strong>.</p>
+
+    <p>The question that settles it is whether either version predicts anything better. Five-fold cross-validation
+       against the two separate outcomes the survey also collected.</p>
+
+    <table class="disp-table">
+      <tr><th>Predictors</th><th>Overall satisfaction, R&#178;</th><th>Would recommend, AUC</th></tr>
+      <tr><td class="nm">Three component scores</td><td>0.5696</td><td>0.7609</td></tr>
+      <tr class="hi"><td class="nm">Three unweighted averages</td><td class="yes">0.5610</td><td class="yes">0.7605</td></tr>
+      <tr><td class="nm">All twenty items separately</td><td>0.5656</td><td>0.7552</td></tr>
+    </table>
+
+    <p>Within 0.009 on R-squared and 0.006 on AUC. Notice the third row too: keeping all twenty items and letting a
+       model weight them freely does <strong>not</strong> beat three averages.</p>
+
+    <div class="callout key">
+      <div class="cico">&#128161;</div>
+      <div><div class="ctitle">Two conclusions, pointing opposite ways</div>
+        <p><strong>Ship the averages.</strong> Anyone can recompute them, they survive an item being added or dropped,
+           they need no re-estimation next quarter, and they cost nothing in predictive power. A component score that
+           a data scientist has to regenerate monthly is a worse product than a column of arithmetic.</p>
+        <p style="margin-top:0.5rem"><strong>The analysis was still necessary.</strong> It is what established that
+           there are three blocks and not one, which items belong to which, that q20 measures nothing relevant, and
+           that two items belong to two blocks at once. None of that was visible beforehand, and the single dashboard
+           number marketing asked for would have hidden exactly the movement they wanted to see.</p>
+        <p style="margin-top:0.5rem">The dimension reduction was worth doing. It was not worth deploying.</p></div>
+    </div>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-pca-unit-weights.png"
+           alt="Left: a histogram of how many components the eigenvalue-greater-than-one rule retains across 400 datasets of twenty uncorrelated variables. The distribution is centered near ten, ranging from eight to twelve, against a green line at zero marking the truth. Right: a scatter of component score against the plain unweighted average of the same items, for all three blocks, showing tight linear relationships with correlations of 0.972, 0.977 and 0.961.">
+      <figcaption><strong>Left:</strong> a rule that finds ten components in nothing.
+        <strong>Right:</strong> a weighting scheme that agrees with arithmetic.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 7 -->
+  <section id="limits">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Two Things This Does Not Settle</h2></div>
+
+    <p><strong>Principal components are not factors, and the difference matters when the goal changes.</strong> A
+       component is a weighted sum of the observed items, chosen to capture variance. A factor model runs the other
+       way: it treats each item as a noisy indicator of an unobserved construct plus item-specific error, and
+       estimates the construct. For building indices, which is the job here, PCA is the right tool and the two give
+       near-identical answers when communalities are high. For a claim like "trust drives retention", where trust is a
+       latent thing the items only indicate, the factor model is the object that means what you want it to mean.</p>
+
+    <p><strong>Pearson correlations on five-point items understate the association.</strong> Everything here treats a
+       Likert response as a number, which is standard and slightly wrong: the responses are ordered categories, and
+       discretising an underlying continuum attenuates correlations, more so as the items get more skewed. Polychoric
+       correlations estimate the correlation of the latent continuous variables behind the categories and would give
+       slightly larger loadings. With five points and mild skew this rarely changes which items group together, which
+       is why the shortcut is usually taken. With three-point items or heavy floor effects, it can.</p>
+  </section>
+
+  <!-- 8 -->
+  <section id="watch">
+    <div class="section-eyebrow"><div class="num">8</div><h2>What to Watch</h2></div>
+
+    <ul class="checklist">
+      <li><span class="ck">&#10003;</span><span><strong>Do not use the eigenvalue-greater-than-one rule.</strong> It retains about ten components from twenty variables with no structure. Use parallel analysis, which compares against noise at your sample size.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Rotation is a change of coordinates.</strong> It cannot change the variance explained, and it does not find anything. Say so before somebody quotes it as a discovery.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Report the items that do not fit.</strong> A cross-loading item belongs to two blocks and an item with a communality of 0.08 belongs to none, and forcing either one is how a battery gets tuned into saying what was wanted.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Compute alpha before shipping an index.</strong> It is what catches an unreversed negatively worded item, and the component analysis is not.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>A high alpha is not evidence of one construct.</strong> It rises with the number of items regardless of structure.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Test the estimated weights against plain averaging</strong> before committing to a pipeline that has to be re-run by a specialist every month.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>A dashboard number is a product, not an output.</strong> Recomputability by the person who will actually maintain it is a real design constraint and usually beats a fraction of a point of accuracy.</span></li>
+    </ul>
+  </section>
+
+  <!-- 9 -->
+  <section id="ml">
+    <div class="section-eyebrow"><div class="num">9</div><h2>Dimension Reduction in Data Science &amp; AI</h2></div>
+
+    <table class="disp-table">
+      <tr><th>Where it appears</th><th>The same question, in a different costume</th></tr>
+      <tr><td class="nm">Psychometrics and measurement</td><td>The original home of all of this: how many traits, which items load on which, and is the scale reliable</td></tr>
+      <tr><td class="nm">Feature preprocessing</td><td>PCA before a model to decorrelate and compress, where interpretability does not matter and the number of components is chosen by cross-validation instead</td></tr>
+      <tr><td class="nm">Embeddings and representation learning</td><td>The modern descendant: learned low-dimensional representations, with the same problem that individual axes are not meaningful unless you make them so</td></tr>
+      <tr><td class="nm">Genomics and imaging</td><td>Thousands of correlated measurements reduced to a handful of directions, where the noise-versus-signal question is exactly parallel analysis</td></tr>
+      <tr><td class="nm">Composite indices in policy</td><td>Development indices, deprivation indices, risk scores: almost all of them are unit-weighted sums, and this chapter is why that is defensible</td></tr>
+    </table>
+
+    <div class="research">
+      <span class="rtag">Where the research went</span>
+      <p style="margin:0.4rem 0 0"><strong>Horn</strong> proposed parallel analysis in 1965 and it has outperformed
+         the alternatives in essentially every simulation study since; <strong>Zwick and Velicer</strong>'s 1986
+         comparison is the one usually cited. <strong>Kaiser</strong>'s rule dates from 1960 and
+         <strong>Kaiser</strong> himself later described it as having been overused.
+         <strong>Kaiser</strong>'s varimax criterion, from 1958, remains the default orthogonal rotation.
+         <strong>Cronbach</strong>'s 1951 paper introducing alpha is among the most cited in the social sciences, and
+         <strong>Sijtsma</strong>'s 2009 rebuttal, on what alpha does and does not measure, is the necessary companion
+         to it. On unit weights, <strong>Wainer</strong> in 1976 and <strong>Dawes</strong> in 1979 established that
+         equal weights match or beat estimated ones across a wide range of prediction problems, which is the result
+         section 6 reproduces.</p>
+    </div>
+  </section>
+
+  <!-- notebook -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">&#128013;</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook cleans the export, reverse-scores the four negatively worded items, compares the
+             three retention rules including Kaiser's rule applied to pure noise, implements varimax from scratch,
+             prints the loading table with communalities, computes alpha with and without reverse-scoring, and
+             cross-validates the component scores against plain averages against all twenty items.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-pca-survey-battery.html">&#128211; View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-pca-survey-battery.ipynb"
+           target="_blank" rel="noopener">&#9654; Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-pca-survey-battery.ipynb"
+           target="_blank" rel="noopener">&#11015; View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Read the reports &amp; get the data</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong>
+         (<code>capstone-pca-survey-battery.xlsx</code>) holds 1,896 responses with the full twenty-item battery, the
+         questionnaire and item wordings, a duplicated export block, straight-liners, and "prefer not to say" coded as
+         99. Two written reports accompany it: a <strong>plain-language brief</strong> for the insight team, and a
+         <strong>technical report</strong> covering retention, rotation, reliability and the unit-weight
+         comparison.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-32-pca-survey-battery.html" target="_blank" rel="noopener">&#128196; Plain-language brief <small>read online</small></a>
+        <a class="ex-file doc" href="../reports/capstone-32-pca-survey-battery-technical.html" target="_blank" rel="noopener">&#128202; Technical report <small>read online</small></a>
+        <a class="ex-file xls" href="../data/capstone-pca-survey-battery.xlsx">&#128202; Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>&#127891; Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">&#10003;</span><span><strong>Kaiser's rule retains 9.8 components from twenty variables with no structure.</strong> The cutoff of 1 is the average eigenvalue, not a test.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Rotation does not change the fit and does not find anything.</strong> Same 54.6 percent, different axes, only one of them readable.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Three items did not belong.</strong> Two cross-load and one has a communality of 0.08; saying so is part of the job.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Reverse-scoring leaves the eigenvalues untouched</strong> and takes the support block's alpha from 0.866 to 0.246. Alpha is the diagnostic that catches it.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Plain averages match the component scores above r = 0.96</strong> and predict as well. Do the analysis; ship the arithmetic.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">&#10067;</div><h2>Quiz: Test Yourself</h2></div>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-gradient-boosting-regression.html">
+      <span style="font-size:1.3rem">&#8592;</span>
+      <span><span class="cn-dir">Chapter 193 &#183; Previous</span><br><span class="cn-title">Gradient Boosting for Tabular Regression</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">&#8594;</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;&#183;&nbsp;
+  Chapter 194 &nbsp;&#183;&nbsp; &#169; 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch194";
+  window.QUIZ_DATA = [
+    {
+      q: "Applied to twenty uncorrelated variables, the eigenvalue-greater-than-one rule retained 9.8 components on average. Why?",
+      options: ["The sample size was too small", "The simulation was set up incorrectly", "Eigenvalues of a sample correlation matrix scatter around 1 even when the population matrix is the identity, so about half land above the cutoff", "Twenty variables is too many for the rule"],
+      answer: 2,
+      explain: "The threshold of 1 is the average eigenvalue, not a test. Parallel analysis fixes this by comparing against what noise actually produces at the given sample size and number of items."
+    },
+    {
+      q: "Varimax rotation left the variance explained at exactly 54.6 percent. What did it change?",
+      options: ["Nothing, so it was pointless", "The amount of information retained", "Which axes the same three-dimensional subspace is read on, so that each item's weight falls mostly on one axis", "The number of components retained"],
+      answer: 2,
+      explain: "The subspace is fixed by the data. Rotation picks coordinates inside it. Saying 'we rotated the factors' is a statement about readability, not about having found something."
+    },
+    {
+      q: "Item q07 loads 0.55 on digital experience and 0.53 on support quality. What is the honest treatment?",
+      options: ["Assign it to digital experience since the loading is higher", "Drop it from the survey", "Leave it out of both indices and report it on its own, because it genuinely measures both", "Rotate again until it loads on one"],
+      answer: 2,
+      explain: "The item asks how easy it is to reach a person from inside the app, so loading on both is the item behaving correctly. Assigning it to one block and calling that block a clean measure would misdescribe it."
+    },
+    {
+      q: "Item q20 has a communality of 0.08. What does that mean?",
+      options: ["It is measuring a fourth construct the analysis missed", "It is unreliable and should be asked again", "Ninety-two percent of its variance is unrelated to anything else in the battery, so it belongs to none of the indices", "It has too little variance to analyze"],
+      answer: 2,
+      explain: "A low communality means the shared structure does not reach the item. It is not a hidden fourth factor; there is nothing there for this battery."
+    },
+    {
+      q: "The eigenvalues were identical with and without reverse-scoring the four negatively worded items. Why?",
+      options: ["The reverse-scoring was applied incorrectly", "Reversing an item multiplies its column by minus one, which flips the signs of its correlations and leaves the eigenvalues unchanged", "The items were not really negatively worded", "PCA ignores the direction of a variable"],
+      answer: 1,
+      explain: "That invariance is what makes the mistake dangerous: the scree plot, the retention decision and the block structure all look fine, and the only symptom is four negative loadings."
+    },
+    {
+      q: "Alpha for the support block was 0.866 reverse-scored and 0.246 raw. What is the practical guidance?",
+      options: ["Use alpha instead of PCA", "Compute alpha before shipping an index, because it catches an unreversed item and the component analysis does not", "Always drop negatively worded items", "Raise the alpha threshold to 0.90"],
+      answer: 1,
+      explain: "Inside an index an unreversed item points the opposite way to its neighbours and cancels them out. Alpha is the diagnostic that surfaces it."
+    },
+    {
+      q: "All twenty items treated as one scale gave an alpha of 0.877, higher than two of the three blocks. What does that tell you?",
+      options: ["The battery really measures one thing after all", "The blocks are unreliable", "Alpha rises with the number of items almost regardless of structure, so it is not evidence of unidimensionality", "The three-component solution should be revisited"],
+      answer: 2,
+      explain: "Alpha answers whether items hang together enough to average, not whether they measure one thing. On a long battery a high alpha is close to uninformative about dimensionality."
+    },
+    {
+      q: "Component scores and plain unweighted averages correlated above 0.96 and predicted both outcomes within 0.009. What should ship to the dashboard?",
+      options: ["The component scores, because they are optimal", "The averages, because they are recomputable by anyone, survive item changes, need no re-estimation, and cost nothing in accuracy", "All twenty items, since the model can weight them", "A single average of all twenty items"],
+      answer: 1,
+      explain: "The analysis was necessary to establish that there are three blocks and which items belong to which. It was not necessary to deploy. A score a specialist must regenerate monthly is a worse product than a column of arithmetic."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

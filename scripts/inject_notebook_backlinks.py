@@ -684,6 +684,8 @@ MAP = {
         ("../../capstone-churn-prediction-explainability.html#notebook", "Back to the book", "Chapter 192 · Churn Prediction and Who Is Worth Contacting"),
     "capstone-gradient-boosting-regression.html":
         ("../../capstone-gradient-boosting-regression.html#notebook", "Back to the book", "Chapter 193 · Gradient Boosting for Tabular Regression"),
+    "capstone-pca-survey-battery.html":
+        ("../../capstone-pca-survey-battery.html#notebook", "Back to the book", "Chapter 194 · Principal Component Analysis: A Survey Battery"),
 }
 
 def card(href, kicker, title):
