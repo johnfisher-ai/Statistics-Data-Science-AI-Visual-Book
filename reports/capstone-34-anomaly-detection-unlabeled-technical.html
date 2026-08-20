@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Line 3 Fault Detection (Technical) &#183; Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/report.css">
+  <style>
+    body.report { --rpt-accent:#6d28d9; --rpt-accent-dark:#4c1d95; --rpt-accent-bg:#f5f3ff; --rpt-accent-line:#ddd6fe; }
+  </style>
+</head>
+
+<body class="report">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="../chapters/capstone-anomaly-detection-unlabeled.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">&#8592; Chapter 196</a>
+  </div>
+</nav>
+
+<div class="rpt-sticky" id="rptSticky">
+  <div class="inner">
+    <div class="st-title">Unsupervised Detection: Preprocessing Dominates, and the Threshold Is a Constraint</div>
+    <a class="st-back" href="../chapters/capstone-anomaly-detection-unlabeled.html">&#8592; Chapter 196</a>
+  </div>
+</div>
+
+<div class="rpt-wrap">
+  <article class="rpt-paper technical">
+    <header class="rpt-head">
+      <div class="rpt-topline">
+        <div class="rpt-kicker">Capstone 34 &#183; Technical Report</div>
+        <span class="rpt-badge technical">Technical Report</span>
+      </div>
+      <h1>Unsupervised Detection: Preprocessing Dominates, and the Threshold Is a Constraint</h1>
+      <p class="rpt-sub">Three detectors shared 4 of 120 alerts. Repairing four data defects and scoping to one operating mode moved precision from under 2 percent to 85. The threshold is set by review capacity, and sensitivity is measured by injection.</p>
+      <div class="rpt-meta"><div><b>Data</b> &nbsp;8,640 five-minute readings, 12 sensors, 30 days</div><div><b>Methods</b> &nbsp;isolation forest, local outlier factor, robust Mahalanobis (MCD)</div><div><b>Headline</b> &nbsp;2-of-3 consensus: 90 alerts, 72.2% precision, 22/23 episodes</div></div>
+    </header>
+
+    <div class="rpt-prov">
+      <span class="pv-tag">Where this comes from</span>
+      <div class="pv-row"><div><span>Chapter</span> <a href="../chapters/capstone-anomaly-detection-unlabeled.html">Chapter 196 &#183; Anomaly Detection Without Labels</a></div><div><span>Part</span> Part XXXI &#183; Capstone Projects: Machine Learning</div><div><span>Dataset</span> <a href="../data/capstone-anomaly-detection-unlabeled.xlsx">capstone-anomaly-detection-unlabeled.xlsx</a></div><div><span>Notebook</span> <a href="../chapters/notebooks/html/capstone-anomaly-detection-unlabeled.html" target="_blank" rel="noopener">View the analysis</a></div></div>
+    </div>
+
+    <div class="rpt-body">
+      <h2>1. Data and the evaluation problem</h2>
+      <p>Thirty days of five-minute telemetry from one bottling line, twelve sensors. The export contained 8,736 rows; a clock resync on day 7 had written 96 readings twice, leaving <strong>8,640</strong> after deduplication on day and minute.</p>
+      <p>There are no historical fault labels, which is the reason the project exists. No ROC curve, no tuned threshold, no accuracy comparison between methods. The dataset used here carries a sealed answer key because it was generated for teaching; all method selection was completed before it was opened, and it is reported in sections 3 to 6 only to establish that the reasoning was sound.</p>
+      <p>Ground truth, once opened: <strong>934</strong> readings (10.8 percent) fall inside one of 24 fault episodes; <strong>2,388</strong> readings (27.6 percent) are touched by one of the four engineering-log events. The data defects outnumber the faults by more than two to one.</p>
+      <h2>2. Why univariate limits fail</h2>
+      <div class="rpt-cap"><span class="n">Table 1.</span> Univariate limit checks against a stated budget of 4 alerts a day.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Rule</th><th>Alerts</th><th>Per day</th><th>Fault readings caught</th><th>Precision</th></tr></thead><tbody><tr><td>Any sensor beyond 3 SD</td><td>913</td><td>30.4</td><td>67 of 934 (7.2%)</td><td>7.3%</td></tr><tr><td>Any sensor beyond 4 SD</td><td>11</td><td>0.4</td><td>4 of 934 (0.4%)</td><td>36.4%</td></tr></tbody></table></div>
+      <p>The three fault modes are constructed to be individually in-range: bearing wear raises vibration, motor temperature and conveyor current together; valve drift raises fill volume while the control loop lowers valve position; an air leak lowers supply pressure and cap torque while valve position rises to compensate. Each sensor stays within its normal operating band throughout, so the signal exists only in the joint distribution.</p>
+      <h2>3. Three detectors on the raw export</h2>
+      <div class="rpt-cap"><span class="n">Table 2.</span> Top 120 scores from each detector on standardized features, export as delivered.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Detector</th><th>Machine faults</th><th>Data defects</th><th>Neither</th></tr></thead><tbody><tr><td>Isolation forest (400 trees)</td><td><span class='nm'>2</span></td><td>102</td><td>16</td></tr><tr><td>Local outlier factor (k = 35)</td><td>46</td><td>32</td><td>49</td></tr><tr><td>Robust Mahalanobis (MCD)</td><td><span class='nm'>0</span></td><td>120</td><td>0</td></tr></tbody></table></div>
+      <p>Ninety of the isolation forest's alerts are the 576 readings where the pressure transmitter reported in psi. Both global methods spend essentially the whole budget on the unit change; LOF does not, because it evaluates density relative to a local neighbourhood and the psi block forms its own dense region of 576 mutually similar points. This is a property of the defect, not a general superiority of LOF, and section 5 shows the ordering reversing once the defect is removed.</p>
+      <h2>4. Inter-method agreement</h2>
+      <div class="rpt-cap"><span class="n">Table 3.</span> Overlap of the top-120 sets on the raw export.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Pair</th><th>Shared alerts out of 120</th><th>Jaccard</th></tr></thead><tbody><tr><td>Isolation forest / LOF</td><td><span class='nm'>10</span></td><td>0.043</td></tr><tr><td>Isolation forest / MCD</td><td>45</td><td>0.231</td></tr><tr><td>LOF / MCD</td><td><span class='nm'>4</span></td><td>0.017</td></tr><tr><td><span class='nm'>All three</span></td><td><span class='nm'>4</span></td><td></td></tr></tbody></table></div>
+      <p>In a supervised setting this disagreement would be resolved by held-out accuracy. Unsupervised, there is no such adjudication, and selecting a method on published benchmark performance is a weak substitute given that benchmark rankings are themselves sensitive to preprocessing. The disagreement is instead exploited directly in section 6.</p>
+      <h2>5. Repairs, scope, and the effect on precision</h2>
+      <p>Four defects, all corresponding to entries in the engineering log:</p>
+      <div class="rpt-cap"><span class="n">Table 4.</span> Each defect and its repair.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Defect</th><th>Evidence in the data</th><th>Treatment</th></tr></thead><tbody><tr><td>Clock resync, day 7</td><td>96 duplicated (day, minute) keys</td><td>Deduplicate</td></tr><tr><td>Firmware update, day 12</td><td>576 readings above 20 in a bar-denominated column; median 90.8 vs 6.20, ratio 14.63</td><td>Divide by 14.5038</td></tr><tr><td>Sensor not updating, day 19</td><td>79 readings with zero rolling standard deviation over six samples</td><td>Drop</td></tr><tr><td>Recalibration, day 24</td><td>Median labeler tension 11.75 N before, 14.09 N after</td><td>Subtract the 2.34 N step</td></tr></tbody></table></div>
+      <p>After repair, 100 percent of the isolation forest's alerts had line speed below 100 bottles per minute, against 12.1 percent of the file. An idle line is a distinct operating mode: speed near zero, motor temperature relaxing toward ambient, vibration at a background level. It is correctly identified as atypical and is not a fault. Analysis was restricted to the <strong>7,529</strong> readings with the line running, of which 907 (12.0 percent) are during a fault.</p>
+      <div class="rpt-cap"><span class="n">Table 5.</span> Precision at a fixed 120-alert budget, by stage.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Detector</th><th>As delivered</th><th>Data repaired</th><th>Repaired and scoped</th></tr></thead><tbody><tr><td>Isolation forest</td><td>1.7%</td><td>4.2%</td><td>42.5%</td></tr><tr><td>Local outlier factor</td><td>38.3%</td><td>51.7%</td><td>59.2%</td></tr><tr><td><span class='nm'>Robust Mahalanobis</span></td><td><span class='nm'>0.0%</span></td><td>15.0%</td><td><span class='nm'>85.0%</span></td></tr></tbody></table></div>
+      <p>Two observations. The between-stage movement is an order of magnitude larger than the between-method movement within any stage. And the method ranking inverts: MCD is worst as delivered and best once scoped, because the fault modes are violations of the covariance structure and MCD is the only one of the three that measures that directly. Its earlier failure was a contaminated covariance estimate, not an unsuitable statistic.</p>
+      <h2>6. Threshold selection and consensus</h2>
+      <p>Evaluation is at the episode level: 23 distinct episodes exist in the running data, and an episode is counted as caught if any of its readings is alerted. Reading-level recall is not the operational quantity, since repeated alerts on one drifting valve have no additional value.</p>
+      <div class="rpt-cap"><span class="n">Table 6.</span> Robust Mahalanobis at several budgets.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Budget</th><th>Alerts</th><th>Per day</th><th>Precision</th><th>Episodes caught</th></tr></thead><tbody><tr><td>Top 30</td><td>30</td><td>1.0</td><td>100.0%</td><td>16 of 23</td></tr><tr><td>Top 60</td><td>60</td><td>2.0</td><td>91.7%</td><td>19 of 23</td></tr><tr><td><span class='nm'>Top 120</span></td><td>120</td><td>4.0</td><td><span class='nm'>85.0%</span></td><td>20 of 23</td></tr><tr><td>Top 240</td><td>240</td><td>8.0</td><td>77.5%</td><td>23 of 23</td></tr><tr><td>Top 480</td><td>480</td><td>16.0</td><td>59.0%</td><td>23 of 23</td></tr></tbody></table></div>
+      <div class="rpt-cap"><span class="n">Table 7.</span> Requiring agreement between the top-120 sets of the three detectors.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Consensus policy</th><th>Alerts</th><th>Per day</th><th>Precision</th><th>Episodes caught</th></tr></thead><tbody><tr><td>Any one of three</td><td>238</td><td>7.9</td><td>55.0%</td><td>22 of 23</td></tr><tr><td><span class='nm'>At least two of three</span></td><td><span class='nm'>90</span></td><td><span class='nm'>3.0</span></td><td><span class='nm'>72.2%</span></td><td><span class='nm'>22 of 23</span></td></tr><tr><td>All three</td><td>32</td><td>1.1</td><td>87.5%</td><td>15 of 23</td></tr></tbody></table></div>
+      <p>The two-of-three rule is recommended: it sits inside the stated capacity at 3.0 alerts per day, achieves 72.2 percent precision, and matches the best episode recall available at any budget below 8 alerts a day. Unanimity is more precise per alert and loses a third of the episodes, since the three detectors respond to different notions of outlyingness and only severe faults are extreme under all three.</p>
+      <p>Detection is not uniform across fault modes. At 4 alerts a day the best single detector catches 9 of 9 bearing-wear episodes, 8 of 8 valve drifts and 3 of 6 air leaks. The air-leak signature is the weakest and is the natural target for a second iteration.</p>
+      <h2>7. Sensitivity without labels</h2>
+      <p>Injection provides a sensitivity estimate that requires no labelled history. A synthetic bearing-wear episode of known amplitude is added to the clean data at a random location and the detector is refitted.</p>
+      <div class="rpt-cap"><span class="n">Table 8.</span> Twelve injections per severity level, robust Mahalanobis at 4 alerts a day.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Injected severity</th><th>Detection rate</th></tr></thead><tbody><tr><td>40% of a full episode</td><td>42%</td></tr><tr><td>70%</td><td>75%</td></tr><tr><td><span class='nm'>100%</span></td><td><span class='nm'>100%</span></td></tr></tbody></table></div>
+      <p>This is the only sensitivity figure obtainable in production. Run on a schedule against live data it also functions as a drift monitor: a falling detection rate at fixed injected severity indicates that the reference distribution has moved and the detector requires refitting.</p>
+      <h2>8. Limitations</h2>
+      <p>The threshold has no statistical justification and does not require one; it is a constraint on a technician's day and moves with staffing rather than with the data.</p>
+      <p>Detection latency was not measured. Episodes are detected somewhere within their span, and whether that is early enough to prevent downstream scrap depends on the physics of each failure mode and on maintenance records this site does not keep.</p>
+      <p>The repairs assume the engineering log is complete. Three of four entries were independently recoverable from the data, but there is no way to bound how many undocumented changes remain and are being scored as anomalies. The recommended mitigation is procedural: log data-quality alerts as they are triaged.</p>
+      <p>Finally, all reported precision and recall depend on an answer key that exists only because the data were generated. In production the only available evidence is the triage outcome of each alert and the injection test in section 7, and the reporting should be built around those two from the start.</p>
+    </div>
+
+    <div class="rpt-foot"><a class="primary" href="../chapters/capstone-anomaly-detection-unlabeled.html">&#8592; Back to Chapter 196</a><a href="../chapters/notebooks/html/capstone-anomaly-detection-unlabeled.html" target="_blank" rel="noopener">&#128211; Companion notebook</a><a class="xls" href="../data/capstone-anomaly-detection-unlabeled.xlsx">&#128202; Download dataset</a></div>
+    <div class="rpt-colophon">
+      From <strong>Statistics, Data Science and AI: A Visual Handbook</strong> by John Fisher.
+      Every statistic, table, and figure in this report is reproduced by the companion notebook.
+    </div>
+  </article>
+</div>
+
+<script>
+(function(){
+  var bar=document.getElementById('rptSticky');
+  window.addEventListener('scroll',function(){
+    if(window.scrollY>320) bar.classList.add('on'); else bar.classList.remove('on');
+  });
+})();
+</script>
+</body>
+</html>

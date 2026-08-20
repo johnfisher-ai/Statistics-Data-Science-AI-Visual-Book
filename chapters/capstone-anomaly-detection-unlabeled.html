@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 196 · Anomaly Detection Without Labels — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .yes { color:#047857; font-weight:700; }
+    .disp-table .no { color:#dc2626; font-weight:700; }
+    .disp-table tr.hi td { background:#f5f3ff; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .embox { background:#f5f3ff; border:1px solid #ddd6fe; border-left:4px solid #6d28d9; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .embox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#4c1d95; }
+    .rw-card { background:#f5f3ff; border:1px solid #ddd6fe; border-left:4px solid #6d28d9; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#4c1d95; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#f5f3ff; color:#6d28d9; border-color:#ddd6fe; }
+    .ex-file.doc { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#f5f3ff; border:1px solid #ddd6fe; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#4c1d95; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #6d28d9; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#4c1d95; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+    .svg-wrap { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.9rem 0.6rem 0.3rem; background:var(--panel); }
+    .svg-wrap svg { width:100%; height:auto; display:block; }
+    .svg-wrap .cap { font-size:0.82rem; color:var(--ink-soft); padding:0.55rem 0.6rem 0.4rem; line-height:1.55; }
+    .svg-wrap .cap strong { color:var(--ink); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/capstone-anomaly-detection-unlabeled.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXXI &#183; Capstone Projects: Machine Learning</span><span class="sep">/</span>
+      <span>Chapter 196</span>
+    </div>
+    <h1>Anomaly Detection <span class="accent">Without Labels</span></h1>
+    <p class="dek">Capstone 34. The first month of alerts contained two machine faults and a hundred and two data problems. Fixing three columns and excluding one operating mode was worth more than every choice of algorithm put together.</p>
+    <div class="hero-meta">
+      <div class="m">&#9201;&#65039; <b>~23 min</b>&nbsp;read</div>
+      <div class="m">&#127919; <b>Anomaly detection</b></div>
+      <div class="m">&#128202; <b>Chapter 196</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">There are no labels. Nobody wrote down when the line was misbehaving, which is
+       <span class="hl">why they are asking for a detector in the first place</span>, and it means there is no ROC
+       curve to draw, no threshold to tune, and no way to score one method against another on accuracy.</p>
+
+    <div class="brief-card">
+      <div class="bh">The brief</div>
+      <dl>
+        <dt>Setting</dt><dd>Thirty days of five-minute telemetry from one bottling line: twelve sensors covering fill, capping, speed, motor condition, air supply, ambient conditions and downstream rejects. 8,640 readings after cleaning.</dd>
+        <dt>The question</dt><dd><strong>Which readings should be sent to a maintenance technician?</strong> Maintenance wants to hear that the line is going wrong before the quality team finds out downstream.</dd>
+        <dt>Why it matters</dt><dd>One technician can investigate about four alerts a day, and will stop reading them entirely if most turn out to be nothing. There is no second chance: a system that cries wolf for a fortnight gets switched off and does not come back.</dd>
+        <dt>What we do</dt><dd>Show why a limit check cannot work here, run three detectors on the export as delivered, find out what the alerts actually are, repair the data using the engineering log, define what normal operation means, set the threshold against capacity rather than statistics, and measure sensitivity by injecting faults rather than by using labels.</dd>
+      </dl>
+    </div>
+
+    <div class="def-card">
+      <div class="sigma">&#8721;</div>
+      <div class="def-body">
+        An anomaly detector answers <span class="def-kw">"is this unlike the rest of the data"</span>. What was
+        wanted is <span class="def-kw">"is this unlike normal operation"</span>. Those coincide only if the file
+        contains nothing but normal operation, which it never does.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">&#11088;</div>
+      <div><div class="ctitle">The finding, up front</div>
+        <p>An isolation forest given a month of the technician's capacity returned <strong>two machine faults and a
+           hundred and two data problems</strong>, ninety of them a single firmware update. Repairing three columns
+           and excluding one operating mode moved precision from <strong>under 2 percent to 85</strong>. No choice
+           among the three algorithms came close to that.</p></div>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section id="limits">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Why a Limit Check Cannot Work Here</h2></div>
+
+    <p>The obvious first system is a limit on each sensor: alert when anything moves more than three standard
+       deviations from its mean.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">&#177;3 SD on any sensor</div><div class="rv">30 a day</div><div class="rd">7% of fault readings, 7% precision</div></div>
+      <div class="rchip"><div class="rk">&#177;4 SD on any sensor</div><div class="rv">0.4 a day</div><div class="rd">0.4% of fault readings</div></div>
+      <div class="rchip"><div class="rk">The budget</div><div class="rv">4 a day</div><div class="rd">neither setting fits it</div></div>
+      <div class="rchip"><div class="rk">Faults in the file</div><div class="rv">10.8%</div><div class="rd">934 of 8,640 readings</div></div>
+    </div>
+
+    <p>The reason is in the brief. <strong>A worn bearing raises vibration and motor temperature and current
+       together</strong>, each by an amount that is unremarkable on its own. Nothing goes out of range. A filler valve
+       drifts while the control loop compensates, so fill volume rises as valve position falls and both stay inside
+       their limits. The information is entirely in the combination, which is what a multivariate detector is
+       for.</p>
+  </section>
+
+  <!-- 2 -->
+  <section id="alerts">
+    <div class="section-eyebrow"><div class="num">2</div><h2>A Month of Alerts, on the Export As Delivered</h2></div>
+
+    <p>Three standard methods with three different ideas about what "unusual" means. <strong>Isolation forest</strong>
+       scores a point by how few random splits isolate it. <strong>Local outlier factor</strong> compares a point's
+       local density with its neighbours', so it is relative. <strong>Robust Mahalanobis distance</strong> fits a
+       contamination-resistant covariance and measures distance in units of it, which is the one that directly
+       notices when correlated sensors stop agreeing.</p>
+
+    <p>Give each of them exactly 120 alerts, which is the technician's month.</p>
+
+    <table class="disp-table">
+      <tr><th>Detector</th><th>Machine faults</th><th>Data problems</th><th>Neither</th></tr>
+      <tr><td class="nm">Isolation forest</td><td class="no">2</td><td>102</td><td>16</td></tr>
+      <tr class="hi"><td class="nm">Local outlier factor</td><td class="yes">46</td><td>32</td><td>49</td></tr>
+      <tr><td class="nm">Robust Mahalanobis</td><td class="no">0</td><td>120</td><td>0</td></tr>
+    </table>
+
+    <p><strong>Two machine faults and a hundred and two data problems.</strong> Ninety of the isolation forest's
+       alerts are the air pressure transmitter reporting in psi after its firmware update, so the technician spends
+       the month confirming, ninety separate times, that a firmware update happened on day 12. The robust Mahalanobis
+       distance does worse still: zero faults out of 120.</p>
+
+    <div class="embox">
+      <span class="gb-tag">Why local outlier factor is the exception</span>
+      <p style="margin:0.45rem 0 0">The 576 psi readings are a long way from the bulk of the data, so a global method
+         sees 576 extreme points. LOF asks a local question, and each psi reading sits in a perfectly ordinary
+         neighbourhood of 575 other psi readings. <strong>It is not that LOF is smarter.</strong> It is asking a
+         different question, and on this particular defect the different question happens to be the better one.</p>
+    </div>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-anomaly-alerts.png"
+           alt="Left: stacked bars showing what each detector's 120 alerts contained on the raw export. Isolation forest: 2 machine faults, 102 data problems, 16 neither. Local outlier factor: 46 faults, 32 data problems, 49 neither. Robust Mahalanobis: 0 faults, 120 data problems. Right: grouped bars of the share of the 120 alerts that were real faults, across three stages. As delivered: 2, 38 and 0 percent. Data repaired: 4, 52 and 15. Repaired and scoped to running: 42, 59 and 85.">
+      <figcaption><strong>Left:</strong> the first month, before anything was repaired.
+        <strong>Right:</strong> the same three detectors after each of the two fixes. The biggest movement is
+        horizontal, not vertical.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 3 -->
+  <section id="agreement">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The Detectors Do Not Agree With Each Other</h2></div>
+
+    <table class="disp-table">
+      <tr><th>Pair</th><th>Alerts in common, out of 120</th></tr>
+      <tr><td class="nm">Isolation forest and local outlier factor</td><td class="no">10</td></tr>
+      <tr><td class="nm">Isolation forest and robust Mahalanobis</td><td>45</td></tr>
+      <tr><td class="nm">Local outlier factor and robust Mahalanobis</td><td class="no">4</td></tr>
+      <tr class="hi"><td class="nm">Flagged by all three</td><td class="no">4</td></tr>
+    </table>
+
+    <p>Three well-regarded detectors, the same data, the same budget, agreeing on four readings out of a hundred and
+       twenty.</p>
+
+    <p>With labels this would be easy to adjudicate. Without them there is no basis for preferring one list to
+       another, which is uncomfortable and is the honest position. It also suggests a use for the disagreement:
+       <strong>if they overlap this little, the readings all of them dislike are unusual in more than one sense</strong>,
+       and section 6 comes back to that.</p>
+  </section>
+
+  <!-- 4 -->
+  <section id="repair">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Repair the Data, Then Define Normal</h2></div>
+
+    <p>The engineering log lists four things that happened to the plant during the window and none of them were
+       faults. Every one is visible in the data.</p>
+
+    <table class="disp-table">
+      <tr><th>Log entry</th><th>What it looks like in the file</th><th>The repair</th></tr>
+      <tr><td class="nm">Day 7, clock resync</td><td>96 readings written twice</td><td>Deduplicate on day and time</td></tr>
+      <tr class="hi"><td class="nm">Day 12, firmware update</td><td>576 readings above 20 in a column whose unit is bar; median 90.8 against 6.20, a factor of 14.63</td><td>1 bar = 14.5038 psi. Convert</td></tr>
+      <tr><td class="nm">Day 19, sensor not updating</td><td>79 readings where vibration is identical for six consecutive samples</td><td>Drop: a stuck sensor carries no information</td></tr>
+      <tr><td class="nm">Day 24, labeler recalibrated</td><td>Median tension 11.75 N before, 14.09 N after</td><td>Re-level: a recalibration changes the scale, not the machine</td></tr>
+    </table>
+
+    <p>Refit the isolation forest on the repaired data and it finds five faults instead of two. Then look at what it
+       is flagging instead.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Median line speed, alerts</div><div class="rv">6.0 bpm</div><div class="rd">the line is stopped</div></div>
+      <div class="rchip"><div class="rk">Median line speed, everything else</div><div class="rv">447.4 bpm</div><div class="rd">running</div></div>
+      <div class="rchip"><div class="rk">Alerts with the line stopped</div><div class="rv">100%</div><div class="rd">every single one</div></div>
+      <div class="rchip"><div class="rk">Share of the file stopped</div><div class="rv">12.1%</div><div class="rd">weekend afternoons</div></div>
+    </div>
+
+    <p>The detector is not wrong. A stopped line genuinely is unusual: speed near zero, the motor cooling toward
+       ambient, vibration down to a background hum. It is a completely different operating mode from a line running
+       at 448 bottles a minute, and it is not a fault, and nobody needs to be told about it.</p>
+
+    <div class="callout key">
+      <div class="cico">&#128161;</div>
+      <div><div class="ctitle">The distinction that matters</div>
+        <p>An anomaly detector answers <strong>"is this unlike the rest of the data"</strong>. The question that was
+           wanted is <strong>"is this unlike normal operation"</strong>. Those coincide only if the dataset contains
+           nothing but normal operation. Saying what normal means is a modeling decision, and it has to be made by
+           somebody who knows the plant.</p></div>
+    </div>
+
+    <table class="disp-table">
+      <tr><th>Detector</th><th>Faults in the top 120</th><th>Precision</th><th>Lift over the 12% base rate</th></tr>
+      <tr><td class="nm">Isolation forest</td><td>51</td><td>42.5%</td><td>3.5&#215;</td></tr>
+      <tr><td class="nm">Local outlier factor</td><td>71</td><td>59.2%</td><td>4.9&#215;</td></tr>
+      <tr class="hi"><td class="nm">Robust Mahalanobis</td><td class="yes">102</td><td class="yes">85.0%</td><td class="yes">7.1&#215;</td></tr>
+    </table>
+
+    <p style="font-size:0.92rem;color:#64748b">Data repaired and restricted to the 7,529 readings with the line
+       running, of which 907 are during a fault.</p>
+
+    <p>From two useful alerts in a month to a hundred and two. The ordering of the three has also reversed: the robust
+       Mahalanobis distance was the worst on the raw export and is by a distance the best here. That is not luck. The
+       faults in this dataset are correlated sensors ceasing to agree, and a Mahalanobis distance measures exactly
+       that. Once the two things breaking the covariance estimate are gone, it has the right tool for the job.</p>
+  </section>
+
+  <!-- 5 -->
+  <section id="threshold">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Setting a Threshold With Nothing to Tune Against</h2></div>
+
+    <p>There is no validation set, so the threshold cannot be optimised. It can be chosen, and the thing to choose it
+       against is the technician's capacity. First the metric has to change: maintenance does not care about
+       individual five-minute readings, it cares about being told once that an episode is under way. There are
+       <strong>23 distinct fault episodes</strong> in the running data.</p>
+
+    <table class="disp-table">
+      <tr><th>Budget</th><th>Alerts per day</th><th>Precision</th><th>Episodes caught</th></tr>
+      <tr><td class="nm">Top 30</td><td>1.0</td><td class="yes">100.0%</td><td class="no">16 of 23</td></tr>
+      <tr><td class="nm">Top 60</td><td>2.0</td><td>91.7%</td><td>19 of 23</td></tr>
+      <tr class="hi"><td class="nm">Top 120</td><td>4.0</td><td>85.0%</td><td>20 of 23</td></tr>
+      <tr><td class="nm">Top 240</td><td>8.0</td><td>77.5%</td><td class="yes">23 of 23</td></tr>
+      <tr><td class="nm">Top 480</td><td>16.0</td><td class="no">59.0%</td><td>23 of 23</td></tr>
+    </table>
+
+    <p>That table is the conversation to have with the maintenance manager, and it requires nobody to understand the
+       algorithm. One alert a day is right every time and misses seven episodes in a month. Eight a day catches all
+       twenty-three and is wrong nearly a quarter of the time. Four a day, which is what they said they could handle,
+       gets twenty of twenty-three at 85 percent.</p>
+
+    <p><strong>The threshold is an operations decision presented as a table, not a statistical one presented as a
+       number.</strong></p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-anomaly-budget.png"
+           alt="Left: two curves against alerts per day. The share of alerts that are real falls from 100 percent at one a day to 59 percent at sixteen a day; the share of fault episodes caught rises from 70 percent to 100 percent by eight a day. A dotted line marks the technician's capacity of four a day, where the curves cross at about 85 percent. Right: the robust Mahalanobis score on a log scale against day of the window, with normal running in grey and the three fault types in colour, and a dashed horizontal line at the four-alerts-a-day threshold. The fault episodes appear as vertical stripes of coloured points, many of them above the line.">
+      <figcaption><strong>Left:</strong> precision and episode coverage move in opposite directions and cross close to
+        the stated capacity. <strong>Right:</strong> the faults are visible as vertical stripes, and the threshold
+        catches the upper part of most of them.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 6 -->
+  <section id="consensus">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Using the Disagreement</h2></div>
+
+    <p>Section 3 found the three detectors overlapping on four alerts out of 120. Rather than picking a winner with no
+       evidence, require agreement.</p>
+
+    <table class="disp-table">
+      <tr><th>Policy</th><th>Alerts</th><th>Per day</th><th>Precision</th><th>Episodes caught</th></tr>
+      <tr><td class="nm">Any one of the three</td><td>238</td><td>7.9</td><td class="no">55.0%</td><td>22 of 23</td></tr>
+      <tr class="hi"><td class="nm">At least two of the three</td><td>90</td><td class="yes">3.0</td><td class="yes">72.2%</td><td class="yes">22 of 23</td></tr>
+      <tr><td class="nm">All three agree</td><td>32</td><td>1.1</td><td>87.5%</td><td class="no">15 of 23</td></tr>
+    </table>
+
+    <p><strong>Two of three is the policy to ship.</strong> Ninety alerts over the month, three a day, comfortably
+       inside the budget, 72 percent of them real, and it catches twenty-two of the twenty-three episodes. Requiring
+       all three to agree is more accurate per alert and misses a third of the episodes, because the detectors are
+       looking for different things and only the most blatant faults look wrong in all three ways at once.</p>
+
+    <p>It is also worth knowing which failure mode the system is weak on <em>before</em> it is switched on. At four
+       alerts a day the best single detector catches <strong>9 of 9</strong> bearing-wear episodes and
+       <strong>8 of 8</strong> valve drifts, and only <strong>3 of 6</strong> air leaks.</p>
+  </section>
+
+  <!-- 7 -->
+  <section id="injection">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Measuring Sensitivity With No Labels At All</h2></div>
+
+    <p>Every score so far used the answer key. In practice there is not one, and the question "how bad does a fault
+       have to get before this notices" still needs an answer.</p>
+
+    <p><strong>Injection</strong> answers it. Take the clean data, add a fault of known size and shape, and see
+       whether the detector catches it. This uses no labels, it runs against production data, and it is the only
+       sensitivity figure actually available.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Full-severity episode</div><div class="rv">100%</div><div class="rd">caught every time</div></div>
+      <div class="rchip"><div class="rk">70 percent severity</div><div class="rv">75%</div><div class="rd">caught three times in four</div></div>
+      <div class="rchip"><div class="rk">40 percent severity</div><div class="rv">42%</div><div class="rd">caught two times in five</div></div>
+      <div class="rchip"><div class="rk">Labels required</div><div class="rv">none</div><div class="rd">that is the point</div></div>
+    </div>
+
+    <p>That is a real answer to "how much warning can we expect", obtained without a single labelled fault. Run it
+       monthly against live data and it doubles as a drift check: if the injected-fault detection rate falls,
+       something about the line or the sensors has changed and the detector needs refitting.</p>
+  </section>
+
+  <!-- 8 -->
+  <section id="watch">
+    <div class="section-eyebrow"><div class="num">8</div><h2>What to Watch</h2></div>
+
+    <ul class="checklist">
+      <li><span class="ck">&#10003;</span><span><strong>Read the engineering log before the data.</strong> Every alert in the first month traced to something somebody already knew about, and it was written down.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Expect the first run to find your data problems.</strong> That is not a failed project, it is the first useful output, and it should be handed to whoever owns the historian.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Define normal operation explicitly.</strong> A stopped line is genuinely anomalous and genuinely uninteresting, and no algorithm can tell the difference for you.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Do not expect detectors to agree.</strong> Ten alerts in common out of 120, and with no labels there is no basis for preferring one list. Use the agreement instead.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Score episodes, not readings.</strong> Nobody wants to be told forty times about the same drifting valve.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Set the threshold from capacity and present it as a table.</strong> It has no statistical justification and does not need one.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Inject known faults to measure sensitivity</strong>, then keep doing it on a schedule as a drift monitor.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Write the false alarms back into the log.</strong> When an alert turns out to be a data problem, record it, so the next model does not have to rediscover it.</span></li>
+    </ul>
+  </section>
+
+  <!-- 9 -->
+  <section id="ml">
+    <div class="section-eyebrow"><div class="num">9</div><h2>Unlabelled Detection in Data Science &amp; AI</h2></div>
+
+    <table class="disp-table">
+      <tr><th>Where it appears</th><th>The same problem, in a different costume</th></tr>
+      <tr><td class="nm">Predictive maintenance</td><td>This chapter. The alert budget is a technician's day and the false alarms are the reason systems get turned off</td></tr>
+      <tr><td class="nm">Security monitoring</td><td>Intrusion detection, where the first month of alerts is a misconfigured backup job and alert fatigue is a documented cause of missed breaches</td></tr>
+      <tr><td class="nm">Data quality and observability</td><td>The same detectors pointed deliberately at the thing this chapter treated as a nuisance: schema drift, unit changes, stuck feeds</td></tr>
+      <tr><td class="nm">Model monitoring in production</td><td>Detecting that the input distribution has moved, where there are no labels for months and the injection idea reappears as a canary</td></tr>
+      <tr><td class="nm">Clinical and financial surveillance</td><td>Rare-event flagging where the review capacity is fixed and the cost of a false alarm is somebody's attention</td></tr>
+    </table>
+
+    <div class="research">
+      <span class="rtag">Where the research went</span>
+      <p style="margin:0.4rem 0 0"><strong>Liu, Ting and Zhou</strong> introduced the isolation forest in 2008 and
+         <strong>Breunig and colleagues</strong> the local outlier factor in 2000; the contrast between global and
+         local notions of outlyingness in section 2 is exactly the distinction those two papers are built on.
+         <strong>Rousseeuw and Van Driessen</strong>'s fast minimum covariance determinant algorithm, from 1999, is
+         what makes the robust Mahalanobis distance practical at this scale. <strong>Campos and colleagues</strong>
+         benchmarked the whole field in 2016 and found that preprocessing and parameter choices moved results more
+         than the choice of algorithm, which is the result section 4 reproduces. On the operational side,
+         <strong>Chandola, Banerjee and Kumar</strong>'s 2009 survey remains the standard map of the problem space,
+         and the alert-fatigue literature in clinical monitoring, where <strong>Cvach</strong>'s 2012 review is a
+         common entry point, is the best-documented evidence that a system nobody reads is worse than no system.</p>
+    </div>
+  </section>
+
+  <!-- notebook -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">&#128013;</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook removes the clock-resync duplicates, shows what a limit check achieves, runs all
+             three detectors on the export as delivered and reports what the alerts really are, measures how little
+             the detectors agree, repairs each entry in the engineering log, discovers that the remaining alerts are
+             all the line being stopped, refits on running operation only, builds the alert-budget table, tests the
+             consensus policies, and measures sensitivity by injecting synthetic faults.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-anomaly-detection-unlabeled.html">&#128211; View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-anomaly-detection-unlabeled.ipynb"
+           target="_blank" rel="noopener">&#9654; Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-anomaly-detection-unlabeled.ipynb"
+           target="_blank" rel="noopener">&#11015; View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Read the reports &amp; get the data</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong>
+         (<code>capstone-anomaly-detection-unlabeled.xlsx</code>) holds 8,736 five-minute readings across twelve
+         sensors, with a clock resync that duplicated 96 rows, a two-day unit change, a stuck sensor, a calibration
+         step, twenty-four fault episodes that stay inside every individual limit, and a sealed answer key. Two
+         written reports accompany it: a <strong>plain-language brief</strong> for the maintenance manager, and a
+         <strong>technical report</strong> covering the detectors, the repairs and the threshold.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-34-anomaly-detection-unlabeled.html" target="_blank" rel="noopener">&#128196; Plain-language brief <small>read online</small></a>
+        <a class="ex-file doc" href="../reports/capstone-34-anomaly-detection-unlabeled-technical.html" target="_blank" rel="noopener">&#128202; Technical report <small>read online</small></a>
+        <a class="ex-file xls" href="../data/capstone-anomaly-detection-unlabeled.xlsx">&#128202; Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>&#127891; Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">&#10003;</span><span><strong>A limit check found 7 percent of fault readings</strong> at seven times the alert budget, because the faults are only visible in the combination.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>The first month of alerts was 2 faults and 102 data problems</strong>, ninety of them one firmware update.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Three detectors agreed on 4 alerts out of 120.</strong> With no labels there is no basis for picking a winner, so use the agreement.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Cleaning and scoping moved precision from under 2 percent to 85.</strong> No algorithm choice came close.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Two of three detectors agreeing gives 3 alerts a day at 72 percent precision</strong> and catches 22 of 23 episodes.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">&#10067;</div><h2>Quiz: Test Yourself</h2></div>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-clustering-choosing-k.html">
+      <span style="font-size:1.3rem">&#8592;</span>
+      <span><span class="cn-dir">Chapter 195 &#183; Previous</span><br><span class="cn-title">Clustering: Choosing k Honestly</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">&#8594;</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;&#183;&nbsp;
+  Chapter 196 &nbsp;&#183;&nbsp; &#169; 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch196";
+  window.QUIZ_DATA = [
+    {
+      q: "A three-standard-deviation limit on each sensor caught 7 percent of fault readings while producing 30 alerts a day. Why does it do so badly?",
+      options: ["The limits were set too tight", "Thirty days is not enough data", "The faults raise several correlated sensors together by amounts that are unremarkable individually, so nothing goes out of range", "The sensors are too noisy"],
+      answer: 2,
+      explain: "A worn bearing raises vibration, motor temperature and current together. A drifting valve raises fill volume while the control loop lowers valve position. The information is entirely in the combination."
+    },
+    {
+      q: "The isolation forest's first 120 alerts contained 2 machine faults and 102 data problems, 90 of them a single firmware update. What should the analyst conclude?",
+      options: ["The isolation forest is the wrong algorithm", "The contamination parameter was set wrong", "The detector worked correctly and the data was not ready; the first useful output of the project is a list of data problems", "The faults are undetectable"],
+      answer: 2,
+      explain: "The psi readings really are extreme relative to the rest of the file. Handing the list to whoever owns the historian is a genuine deliverable, and the detector cannot be judged until the data is repaired."
+    },
+    {
+      q: "Local outlier factor found 46 faults where the other two found 2 and 0. What explains the difference?",
+      options: ["LOF is more accurate than the alternatives", "LOF is a local method, so the 576 psi readings sit in an ordinary neighbourhood of 575 similar readings rather than looking like 576 extreme points", "LOF was given more information", "LOF handles missing data better"],
+      answer: 1,
+      explain: "It is not that LOF is smarter; it is asking a different question. On this particular defect the local question happens to be the better one, and that is not a general property."
+    },
+    {
+      q: "After the data was repaired, 100 percent of the isolation forest's alerts had the line stopped, which is 12 percent of the file. Is the detector wrong?",
+      options: ["Yes, it should be refitted with different parameters", "No: a stopped line genuinely is unlike the rest of the data. The detector answers 'unlike the rest of the data' and what was wanted was 'unlike normal operation'", "Yes, stopped readings should have been imputed", "No, and the alerts should be sent as they are"],
+      answer: 1,
+      explain: "Those two questions coincide only if the dataset contains nothing but normal operation, which it never does. Defining normal is a modeling decision that has to be made by somebody who knows the plant."
+    },
+    {
+      q: "Precision at 120 alerts went from under 2 percent to 85 percent. What produced almost all of that gain?",
+      options: ["Switching from isolation forest to robust Mahalanobis distance", "Repairing three columns and restricting to one operating mode", "Increasing the number of trees", "Standardizing the features"],
+      answer: 1,
+      explain: "The algorithm ranking also reversed along the way, but the movement between stages is far larger than the movement between methods within any stage."
+    },
+    {
+      q: "The three detectors shared only 4 of their 120 alerts. What is the practical response when there are no labels?",
+      options: ["Pick the one with the best published benchmarks", "Average the three scores", "Require agreement: two of three gives 3 alerts a day at 72 percent precision and catches 22 of 23 episodes", "Use whichever produces the fewest alerts"],
+      answer: 2,
+      explain: "With no labels there is no basis for preferring one list. The disagreement itself is usable: readings that look wrong in more than one sense are better candidates than readings that look wrong in one."
+    },
+    {
+      q: "The alert budget table showed 100 percent precision at 1 alert a day (16 of 23 episodes) and 59 percent at 16 a day (23 of 23). How should the threshold be chosen?",
+      options: ["At the point that maximises the F1 score", "By the technician's capacity, presented as a table so operations can make the trade themselves", "At the elbow of the precision curve", "At the contamination rate estimated from the data"],
+      answer: 1,
+      explain: "There is no validation set to optimise against and no labelled cost of a missed fault. The threshold has no statistical justification and does not need one; it is a constraint on somebody's day."
+    },
+    {
+      q: "Injecting synthetic bearing-wear episodes gave detection rates of 42, 75 and 100 percent at 40, 70 and 100 percent severity. Why does this matter more than it might seem?",
+      options: ["It proves the detector is unbiased", "It replaces the need for the answer key entirely", "It is a sensitivity measurement that needs no labels, and repeated on a schedule it doubles as a drift monitor", "It calibrates the anomaly scores"],
+      answer: 2,
+      explain: "It answers how bad a fault must get before the system notices, which is the question maintenance actually asks, and it can be run against live production data every month."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

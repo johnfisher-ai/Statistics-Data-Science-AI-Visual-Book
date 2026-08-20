@@ -688,6 +688,8 @@ MAP = {
         ("../../capstone-pca-survey-battery.html#notebook", "Back to the book", "Chapter 194 · Principal Component Analysis: A Survey Battery"),
     "capstone-clustering-choosing-k.html":
         ("../../capstone-clustering-choosing-k.html#notebook", "Back to the book", "Chapter 195 · Clustering: Choosing k Honestly"),
+    "capstone-anomaly-detection-unlabeled.html":
+        ("../../capstone-anomaly-detection-unlabeled.html#notebook", "Back to the book", "Chapter 196 · Anomaly Detection Without Labels"),
 }
 
 def card(href, kicker, title):
