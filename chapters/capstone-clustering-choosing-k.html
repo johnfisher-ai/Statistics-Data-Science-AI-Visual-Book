@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 195 · Clustering: Choosing k Honestly — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .yes { color:#047857; font-weight:700; }
+    .disp-table .no { color:#dc2626; font-weight:700; }
+    .disp-table tr.hi td { background:#f5f3ff; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .embox { background:#f5f3ff; border:1px solid #ddd6fe; border-left:4px solid #6d28d9; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .embox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#4c1d95; }
+    .rw-card { background:#f5f3ff; border:1px solid #ddd6fe; border-left:4px solid #6d28d9; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#4c1d95; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#f5f3ff; color:#6d28d9; border-color:#ddd6fe; }
+    .ex-file.doc { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#f5f3ff; border:1px solid #ddd6fe; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#4c1d95; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #6d28d9; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#4c1d95; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+    .svg-wrap { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.9rem 0.6rem 0.3rem; background:var(--panel); }
+    .svg-wrap svg { width:100%; height:auto; display:block; }
+    .svg-wrap .cap { font-size:0.82rem; color:var(--ink-soft); padding:0.55rem 0.6rem 0.4rem; line-height:1.55; }
+    .svg-wrap .cap strong { color:var(--ink); }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="notebooks/html/capstone-clustering-choosing-k.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">🐍 Notebook</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXXI &#183; Capstone Projects: Machine Learning</span><span class="sep">/</span>
+      <span>Chapter 195</span>
+    </div>
+    <h1>Clustering: Choosing <span class="accent">k Honestly</span></h1>
+    <p class="dek">Capstone 33. Silhouette said two segments. Stability said two segments. The answer was four, and more than half the customers were in none of them. What found it was a variable the algorithm never saw.</p>
+    <div class="hero-meta">
+      <div class="m">&#9201;&#65039; <b>~23 min</b>&nbsp;read</div>
+      <div class="m">&#127919; <b>Clustering</b></div>
+      <div class="m">&#128202; <b>Chapter 195</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">The brief asks for four or five segments with names. It does not ask whether there are any, and
+       <span class="hl">no clustering algorithm will ever raise the question</span>, because every one of them returns
+       exactly as many groups as it is told to.</p>
+
+    <div class="brief-card">
+      <div class="bh">The brief</div>
+      <dl>
+        <dt>Setting</dt><dd>Twelve months of loyalty-account behaviour from a general retailer: 5,693 usable accounts with spend, visits, basket size, tenure, discount use, returns, online share and category breadth.</dd>
+        <dt>The question</dt><dd><strong>How many customer segments does the behaviour actually support, and are they stable enough to build a year of marketing spend on?</strong></dd>
+        <dt>Why it matters</dt><dd>Segments get names, owners and budgets. A segmentation that is really a spend ranking, or that assigns every customer to a group when most belong to none, sends money at people who were never a group.</dd>
+        <dt>What we do</dt><dd>Show that the units decide the answer, run silhouette and stability and find they agree with each other and are both wrong, use a variable held back from the clustering to pick k, let a density method say what k-means cannot, and then open the answer key.</dd>
+      </dl>
+    </div>
+
+    <div class="def-card">
+      <div class="sigma">&#8721;</div>
+      <div class="def-body">
+        An internal validity index scores <span class="def-kw">how well a partition fits</span>. It cannot score
+        whether there was anything to partition, so it always has a maximum, and
+        <span class="def-kw">the height of that maximum</span> carries more information than its position.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">&#11088;</div>
+      <div><div class="ctitle">The finding, up front</div>
+        <p>Silhouette and stability both chose <strong>two</strong> segments. A campaign response variable the
+           clustering never saw chose <strong>four</strong>, and the answer key confirms it: agreement with the truth
+           runs <strong>0.32 at k = 2 and 0.92 at k = 4</strong>. DBSCAN independently found that
+           <strong>55 percent of the base belongs to no segment at all</strong>, against a true figure of 55
+           percent.</p></div>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section id="units">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Units Decide the Answer</h2></div>
+
+    <p>Before any question about method, a question about arithmetic. <code>annual_spend</code> has a standard
+       deviation of <strong>2,135</strong> and <code>discount_share</code> has one of <strong>0.248</strong>, a ratio
+       of about <strong>8,600 to 1</strong>, entirely because one is denominated in dollars and the other is a
+       proportion. Euclidean distance adds up squared differences, so run k-means on the raw columns and see what
+       happens.</p>
+
+    <table class="disp-table">
+      <tr><th>Cluster</th><th>n</th><th>Annual spend</th><th>Visits</th><th>Basket</th><th>Discount share</th><th>Online share</th></tr>
+      <tr><td class="nm">0</td><td>3,675</td><td>$442</td><td>12.1</td><td>$57</td><td>0.42</td><td>0.61</td></tr>
+      <tr><td class="nm">3</td><td>1,151</td><td>$1,405</td><td>27.2</td><td>$63</td><td>0.50</td><td>0.59</td></tr>
+      <tr><td class="nm">1</td><td>520</td><td>$5,017</td><td>37.3</td><td>$138</td><td>0.15</td><td>0.44</td></tr>
+      <tr><td class="nm">2</td><td>347</td><td>$7,875</td><td>48.0</td><td>$164</td><td>0.14</td><td>0.44</td></tr>
+    </table>
+
+    <p>The clusters account for <strong>95 percent</strong> of the variation in spend and <strong>7 percent</strong> of
+       the variation in how much a customer shops online. Clusters 1 and 2 are indistinguishable on every behavioural
+       column and differ only in size of wallet.</p>
+
+    <p>This is not a segmentation. It is a ranking of customers by spend with four names on it, and a sort would have
+       produced it faster.</p>
+
+    <div class="embox">
+      <span class="gb-tag">Standardising is a decision, not a formality</span>
+      <p style="margin:0.45rem 0 0">Rescaling each column to unit variance is the usual fix and it asserts something:
+         that one standard deviation of discount rate matters as much as one standard deviation of spend. That is a
+         claim about the business. Weighting by contribution to margin would be equally defensible and would draw
+         different boundaries. <strong>Whoever chooses the units chooses the segments</strong>, and there is no test
+         that settles it, only an argument.</p>
+    </div>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-clustering-scale-k.png"
+           alt="Left: horizontal bars showing the share of each feature's variance accounted for by k-means on raw units. Annual spend is 0.95, visits 0.55, average basket 0.40, categories 0.25, discount share 0.20, tenure 0.14, returns rate 0.07 and online share 0.07. Right: silhouette score against k for the real customer base, falling from 0.367 at k equals 2 to 0.184 at k equals 10, and for uniform random data of the same shape, which sits flat between 0.081 and 0.095 and also has a maximum.">
+      <figcaption><strong>Left:</strong> on raw units the segmentation is a spend ranking.
+        <strong>Right:</strong> structureless data also produces a silhouette curve with a maximum. The gap between
+        the lines is the evidence; the position of the peak is not.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 2 -->
+  <section id="internal">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Two Internal Criteria, Both Wrong</h2></div>
+
+    <p>On the standardised data, silhouette peaks at <strong>k = 2</strong> with 0.367, against 0.315 at three and
+       0.324 at four. Run the identical procedure on uniform random data of the same shape and it peaks at two as
+       well, at 0.095.</p>
+
+    <p>There is nothing in that second dataset and the procedure still names a best k. It has to: k-means partitions
+       whatever it is given and silhouette compares partitions. What the comparison does give is a
+       <strong>scale</strong>. Real data 0.37, structureless data 0.09, a factor of four. That gap is the evidence
+       there is structure, and it is the number nobody quotes.</p>
+
+    <p>Stability asks a better question: if these segments are real, they should survive re-estimation on a different
+       sample of customers.</p>
+
+    <table class="disp-table">
+      <tr><th>k</th><th>Real data</th><th>Structureless data</th></tr>
+      <tr class="hi"><td class="nm">2</td><td>0.998</td><td class="no">0.230</td></tr>
+      <tr><td class="nm">3</td><td>0.997</td><td class="no">0.162</td></tr>
+      <tr><td class="nm">4</td><td>0.994</td><td class="no">0.151</td></tr>
+      <tr><td class="nm">5</td><td>0.987</td><td class="no">0.198</td></tr>
+      <tr><td class="nm">6</td><td>0.944</td><td class="no">0.223</td></tr>
+      <tr><td class="nm">7</td><td>0.823</td><td class="no">0.226</td></tr>
+    </table>
+
+    <p style="font-size:0.92rem;color:#64748b">Adjusted Rand index between the full solution and a refit on an 80
+       percent subsample, averaged over 25 replications.</p>
+
+    <p>The contrast between the columns is enormous. On real data a refit on different customers reproduces the same
+       partition almost exactly; on structureless data it agrees with itself barely at all, because the boundaries
+       land somewhere different every time.</p>
+
+    <p><strong>Stability is a good test of whether structure exists and a weak test of how much of it there is.</strong>
+       It is above 0.98 for every k from two to five, so it cannot separate them, and its maximum is again at two.</p>
+
+    <p>So two well-regarded criteria, in agreement, both pointing at two segments. Marketing asked for four or five.</p>
+  </section>
+
+  <!-- 3 -->
+  <section id="external">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The Variable the Algorithm Never Saw</h2></div>
+
+    <p><code>campaign_response</code> records who responded to a price-off campaign run the quarter <em>after</em> this
+       window. It was held out of every clustering. If a partition is picking up something real about how customers
+       behave, its clusters should differ in how they responded. If it is slicing a continuum, they will differ a
+       little and smoothly.</p>
+
+    <table class="disp-table">
+      <tr><th>k</th><th>Lowest cluster</th><th>Highest cluster</th><th>Spread</th><th>Agreement with the answer key</th></tr>
+      <tr><td class="nm">2</td><td>0.055</td><td>0.209</td><td>0.154</td><td>0.321</td></tr>
+      <tr><td class="nm">3</td><td>0.054</td><td>0.235</td><td>0.181</td><td>0.568</td></tr>
+      <tr class="hi"><td class="nm">4</td><td>0.053</td><td>0.476</td><td class="yes">0.423</td><td class="yes">0.848</td></tr>
+      <tr><td class="nm">5</td><td>0.054</td><td>0.488</td><td>0.434</td><td>0.577</td></tr>
+      <tr><td class="nm">6</td><td>0.054</td><td>0.489</td><td>0.435</td><td>0.471</td></tr>
+      <tr><td class="nm">8</td><td>0.054</td><td>0.495</td><td>0.441</td><td>0.381</td></tr>
+    </table>
+
+    <p>There is the elbow, and it is not subtle. Going from three clusters to four <strong>more than doubles</strong>
+       the spread in response, from 0.18 to 0.42. Going from four to five adds 0.011, and every further split adds a
+       fraction of a point.</p>
+
+    <p><strong>Four segments</strong>, not because a fit index peaked there, but because the fourth split separates
+       customers who respond to a price-off campaign at 48 percent from customers who respond at 5 percent, and the
+       fifth split separates nothing.</p>
+
+    <div class="callout key">
+      <div class="cico">&#128161;</div>
+      <div><div class="ctitle">The general rule</div>
+        <p>The number of clusters is chosen by <strong>evidence from outside the clustering</strong>. If no such
+           variable exists, k is not identified by the data, and the honest answer to "how many segments are there" is
+           a question back: what are the segments going to be used for?</p></div>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section id="dbscan">
+    <div class="section-eyebrow"><div class="num">4</div><h2>What k-Means Cannot Say</h2></div>
+
+    <p>Every point gets a cluster. There is no way for k-means to report that a customer sits in the middle of the
+       cloud and belongs to nothing in particular, which is a problem if that describes most of the customer base.
+       DBSCAN can: it grows clusters out of dense regions and labels everything else noise.</p>
+
+    <table class="disp-table">
+      <tr><th>Cluster</th><th>n</th><th>Response rate</th><th>Visits</th><th>Basket</th><th>Discount</th><th>Returns</th><th>Reads as</th></tr>
+      <tr class="hi"><td class="nm">0</td><td>877</td><td class="yes">0.483</td><td>33.5</td><td>$27</td><td>0.79</td><td>0.07</td><td>Bargain hunters</td></tr>
+      <tr><td class="nm">1</td><td>661</td><td>0.100</td><td>3.5</td><td>$130</td><td>0.30</td><td>0.24</td><td>Occasional gift buyers</td></tr>
+      <tr><td class="nm">3</td><td>181</td><td>0.039</td><td>38.1</td><td>$149</td><td>0.14</td><td>0.04</td><td>Loyal high spenders</td></tr>
+      <tr><td class="nm">2</td><td>819</td><td>0.126</td><td>9.3</td><td>$42</td><td>0.33</td><td>0.06</td><td class="no">A dense patch of continuum</td></tr>
+      <tr><td class="nm">noise</td><td class="no">3,155</td><td>0.144</td><td>20.8</td><td>$76</td><td>0.34</td><td>0.09</td><td>No segment</td></tr>
+    </table>
+
+    <p><strong>More than half the customer base is not in any segment.</strong> DBSCAN finds four dense regions
+       covering about 45 percent of accounts and declines to classify the rest. That is an unwelcome answer and a
+       useful one: a plan that assigns every customer to a segment and a treatment is planning for a base that does
+       not exist.</p>
+
+    <p>Cluster 2 is the interesting failure. Its profile is unremarkable and its response rate of 0.126 is
+       indistinguishable from the 0.185 base rate. It is a dense patch of the continuum rather than a group, and it is
+       exactly the kind of thing that gets a name and a budget if nobody checks. <strong>The clue was available
+       without the answer key</strong>: it did not separate anything.</p>
+
+    <p>Note also how sensitive DBSCAN is to its radius. At 0.7 it finds two clusters and calls 92 percent noise; at
+       1.5 it merges everything into one. That parameter does the same job k does, and it is chosen the same way: by
+       what the resulting partition separates.</p>
+  </section>
+
+  <!-- 5 -->
+  <section id="answerkey">
+    <div class="section-eyebrow"><div class="num">5</div><h2>The Answer Key</h2></div>
+
+    <p>This dataset was generated, so the truth is known and ships with it. On real data this section does not exist,
+       which is the reason for building the argument in the order above before opening it.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Unstructured middle</div><div class="rv">54.5%</div><div class="rd">3,101 accounts, not a segment</div></div>
+      <div class="rchip"><div class="rk">Bargain hunters</div><div class="rv">978</div><div class="rd">respond at 0.500</div></div>
+      <div class="rchip"><div class="rk">Loyal high spenders</div><div class="rv">862</div><div class="rd">respond at 0.049</div></div>
+      <div class="rchip"><div class="rk">Gift occasionals</div><div class="rv">752</div><div class="rd">respond at 0.094</div></div>
+    </div>
+
+    <table class="disp-table">
+      <tr><th>k</th><th>k-means</th><th>Ward</th></tr>
+      <tr><td class="nm">2 (what silhouette and stability chose)</td><td class="no">0.321</td><td class="no">0.316</td></tr>
+      <tr><td class="nm">3</td><td>0.568</td><td>0.586</td></tr>
+      <tr class="hi"><td class="nm">4 (what the external check chose)</td><td class="yes">0.848</td><td class="yes">0.924</td></tr>
+      <tr><td class="nm">5</td><td>0.577</td><td>0.601</td></tr>
+      <tr><td class="nm">6</td><td>0.471</td><td>0.527</td></tr>
+    </table>
+
+    <p style="font-size:0.92rem;color:#64748b">Adjusted Rand index against the true segment labels. DBSCAN, on the
+       2,538 accounts it was willing to classify, scores <strong>0.963</strong>.</p>
+
+    <p>Everything the external check said turns out to be right and everything the internal indices said turns out to
+       be wrong. Three further things are worth noting.</p>
+
+    <p><strong>DBSCAN's noise fraction was 55.4 percent against a true 54.5.</strong> It identified the size of the
+       unstructured middle to within a percentage point without being told there was one.</p>
+
+    <p><strong>Ward beat k-means at every k from three to six.</strong> The true segments are not equally sized or
+       equally spread, and k-means prefers clusters that are.</p>
+
+    <p><strong>Silhouette and stability were not useless.</strong> They established that structure existed, which is a
+       real question that was worth answering. They could not count it. Counting it needed evidence from outside.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-clustering-external.png"
+           alt="Left: two curves against the number of clusters. The spread in campaign response rises from 0.15 at k equals 2 to 0.42 at k equals 4 and then flattens at about 0.44. The agreement with the answer key rises to 0.85 at k equals 4 and falls away after it. A dotted vertical line marks four. Right: a table of DBSCAN clusters against the true segments, showing cluster 0 holding 855 bargain hunters, cluster 1 holding 653 gift occasionals, cluster 3 holding 180 loyal high spenders, cluster 2 holding 819 accounts all from the unstructured middle, and the noise label holding 2,251 unstructured middle accounts plus 682 loyal high spenders.">
+      <figcaption><strong>Left:</strong> both curves turn at four, and only one of them was available without the
+        answer key. <strong>Right:</strong> three dense regions are one true segment each; the fourth is a patch of
+        continuum.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 6 -->
+  <section id="limits">
+    <div class="section-eyebrow"><div class="num">6</div><h2>What This Does Not Settle</h2></div>
+
+    <p><strong>Segments are a description of one year.</strong> Nothing here says a customer stays in theirs. A
+       retention plan built on these groups needs the transition rates between them, which requires a second year and
+       is a different analysis.</p>
+
+    <p><strong>The scaling choice remains an assumption.</strong> There is no test that settles whether a standard
+       deviation of returns rate should count for as much as one of spend, only a business argument, and the
+       boundaries move with the answer.</p>
+
+    <p><strong>The external variable validates the partition for one purpose.</strong> These four segments separate
+       response to a price-off campaign very well. They may separate response to a loyalty programme or a service
+       change badly. A segmentation is not true or false, it is useful, and useful is always useful for something.</p>
+
+    <p><strong>And the unstructured middle is a finding, not a failure.</strong> Most customer bases are mostly
+       continuum. The interesting question about the 55 percent is not which segment to force them into, but whether
+       there is anything worth doing for them at all.</p>
+  </section>
+
+  <!-- 7 -->
+  <section id="watch">
+    <div class="section-eyebrow"><div class="num">7</div><h2>What to Watch</h2></div>
+
+    <ul class="checklist">
+      <li><span class="ck">&#10003;</span><span><strong>Standardise, and say out loud what standardising assumes.</strong> On raw units the segments accounted for 95 percent of spend and 7 percent of online behaviour.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Run your whole procedure on structureless data of the same shape.</strong> It will return clusters, and the score it returns is the yardstick your real score has to beat.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Read the height of a validity index, not the position of its maximum.</strong> 0.37 against 0.09 is the finding; the argmax at two was wrong.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Stability detects structure; it does not count it.</strong> Above 0.98 for every k from two to five here.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Choose k with something the algorithm never saw.</strong> If nothing was held back, k is not identified and the number is a decision rather than a result.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Let a method say "none of the above".</strong> k-means must classify everyone; density methods can report that most of the base is not in a group.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Be ready to deliver fewer segments than were asked for.</strong> The brief said four or five with names, and the honest answer included "and most of your customers are in none of them".</span></li>
+    </ul>
+  </section>
+
+  <!-- 8 -->
+  <section id="ml">
+    <div class="section-eyebrow"><div class="num">8</div><h2>Clustering in Data Science &amp; AI</h2></div>
+
+    <table class="disp-table">
+      <tr><th>Where it appears</th><th>The same question, in a different costume</th></tr>
+      <tr><td class="nm">Customer and market segmentation</td><td>This chapter, and the commonest place the spend-ranking mistake is made</td></tr>
+      <tr><td class="nm">Anomaly and fraud detection</td><td>Density methods used the other way round: the noise points are the output, which is the next chapter</td></tr>
+      <tr><td class="nm">Document and embedding clustering</td><td>Topic discovery over text embeddings, where the scaling question is settled by the model and the k question is not</td></tr>
+      <tr><td class="nm">Single-cell genomics</td><td>Cell-type discovery, where the number of clusters is a scientific claim and is validated against marker genes held out of the clustering</td></tr>
+      <tr><td class="nm">Image and vector quantisation</td><td>k-means as compression, where nobody asks whether the clusters are real because the codebook only has to reconstruct</td></tr>
+    </table>
+
+    <div class="research">
+      <span class="rtag">Where the research went</span>
+      <p style="margin:0.4rem 0 0"><strong>Rousseeuw</strong> introduced the silhouette in 1987 and
+         <strong>Tibshirani, Walther and Hastie</strong>'s gap statistic in 2001 is the most principled of the
+         internal criteria, comparing the within-cluster dispersion against a reference distribution in the same
+         spirit as the noise comparison used here. <strong>Ben-Hur, Elisseeff and Guyon</strong> made the
+         stability-based case in 2002 and <strong>Hennig</strong>'s bootstrap work in 2007 turned it into a practical
+         per-cluster diagnostic. <strong>Ester and colleagues</strong> introduced DBSCAN in 1996 and its noise label
+         is the feature that matters most here; <strong>Campello, Moulavi and Sander</strong>'s HDBSCAN removes the
+         radius parameter that section 4 shows is doing so much work. The uncomfortable general result belongs to
+         <strong>Kleinberg</strong>, whose 2002 impossibility theorem shows that no clustering function can satisfy
+         three reasonable-sounding properties at once, which is a formal way of saying there is no view from nowhere
+         about how many groups there are.</p>
+    </div>
+  </section>
+
+  <!-- notebook -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">&#128013;</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook cleans the export, shows what raw units do to the partition, runs silhouette on
+             the real data and on structureless data of the same shape, measures stability under resampling for both,
+             uses the held-out campaign variable to choose k, fits DBSCAN across a range of radii, and only then opens
+             the answer key to score every method against it.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-clustering-choosing-k.html">&#128211; View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-clustering-choosing-k.ipynb"
+           target="_blank" rel="noopener">&#9654; Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-clustering-choosing-k.ipynb"
+           target="_blank" rel="noopener">&#11015; View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Read the reports &amp; get the data</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong>
+         (<code>capstone-clustering-choosing-k.xlsx</code>) holds 6,190 loyalty accounts with a duplicated export
+         block, net-refund accounts recorded as negative spend, unmigrated join dates coded as &#8722;1, a held-back
+         campaign response, and a sealed answer key. Two written reports accompany it: a
+         <strong>plain-language brief</strong> for the marketing director, and a <strong>technical report</strong>
+         covering scaling, the validity indices, the external criterion and the density method.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-33-clustering-choosing-k.html" target="_blank" rel="noopener">&#128196; Plain-language brief <small>read online</small></a>
+        <a class="ex-file doc" href="../reports/capstone-33-clustering-choosing-k-technical.html" target="_blank" rel="noopener">&#128202; Technical report <small>read online</small></a>
+        <a class="ex-file xls" href="../data/capstone-clustering-choosing-k.xlsx">&#128202; Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>&#127891; Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">&#10003;</span><span><strong>On raw units the segments were a spend ranking</strong>, accounting for 95 percent of spend and 7 percent of online behaviour.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Uniform random data produces a silhouette curve with a maximum.</strong> Every method returns clusters, including on data that has none.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Silhouette and stability both chose two.</strong> Stability was above 0.98 for every k from two to five, so it could not tell them apart.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>A held-out campaign variable chose four</strong>, doubling the response spread at the fourth split and adding 0.011 at the fifth.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>DBSCAN found 55 percent of the base in no segment</strong>, against a true 54.5, which was the answer nobody asked for.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">&#10067;</div><h2>Quiz: Test Yourself</h2></div>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-pca-survey-battery.html">
+      <span style="font-size:1.3rem">&#8592;</span>
+      <span><span class="cn-dir">Chapter 194 &#183; Previous</span><br><span class="cn-title">Principal Component Analysis: A Survey Battery</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">&#8594;</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;&#183;&nbsp;
+  Chapter 195 &nbsp;&#183;&nbsp; &#169; 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch195";
+  window.QUIZ_DATA = [
+    {
+      q: "K-means on the raw columns produced clusters accounting for 95 percent of the variance in annual spend and 7 percent of the variance in online share. Why?",
+      options: ["Spend is the most important variable for segmentation", "Euclidean distance sums squared differences, so a column measured in thousands of dollars dominates one measured as a proportion", "The algorithm was given the wrong k", "Online share has too little variance to matter"],
+      answer: 1,
+      explain: "Annual spend has a standard deviation about 8,600 times larger than discount share, purely from the units. The result is a spend ranking with four names on it."
+    },
+    {
+      q: "Standardising each column to unit variance fixed that. What does it assume?",
+      options: ["Nothing, it is a neutral preprocessing step", "That all the variables are normally distributed", "That one standard deviation of discount rate matters as much as one standard deviation of spend, which is a claim about the business", "That the clusters are spherical"],
+      answer: 2,
+      explain: "Weighting by contribution to margin would be equally defensible and would draw different boundaries. Whoever chooses the units chooses the segments, and no test settles it."
+    },
+    {
+      q: "Silhouette peaked at k = 2 on the real data (0.367) and also at k = 2 on uniform random data (0.095). What is the right reading?",
+      options: ["Silhouette is broken", "The real data has no more structure than random data", "The gap between 0.37 and 0.09 is the evidence that structure exists; the position of the maximum is a much weaker signal than its height", "k = 2 is correct because both agree"],
+      answer: 2,
+      explain: "k-means partitions whatever it is given and silhouette compares partitions, so a maximum always exists. Comparing against structureless data of the same shape is what makes the number interpretable."
+    },
+    {
+      q: "Stability was 0.998 at k = 2, 0.994 at k = 4 and 0.987 at k = 5 on the real data, against 0.15 to 0.23 on random data. What does that establish?",
+      options: ["That there are two clusters", "That structure exists, but not how much of it; stability cannot separate k values that are all above 0.98", "That the clustering is overfitted", "That four clusters are unstable"],
+      answer: 1,
+      explain: "The contrast between the two columns is decisive evidence of structure. Within the real column the values are too close to discriminate, and the maximum is again at two, which turned out to be wrong."
+    },
+    {
+      q: "The spread in campaign response was 0.181 at k = 3, 0.423 at k = 4 and 0.434 at k = 5. Why does that pick four?",
+      options: ["Because 0.423 is above 0.4", "Because the fourth split separates a 48 percent responder group from a 5 percent responder group, and the fifth split adds 0.011", "Because the chi-square p-value was smallest at k = 4", "Because marketing asked for four"],
+      answer: 1,
+      explain: "The fourth split does real work and the fifth does not. The variable doing the choosing was deliberately held out of every clustering, which is what makes the comparison meaningful."
+    },
+    {
+      q: "DBSCAN labelled 55.4 percent of accounts as noise. The true unstructured share was 54.5 percent. What does k-means structurally lack?",
+      options: ["Speed on large datasets", "The ability to handle standardized data", "Any way to report that a customer belongs to no group; it must assign every point to a cluster", "Support for more than four clusters"],
+      answer: 2,
+      explain: "Most customer bases are mostly continuum. A method that must classify everyone will invent a segment for the middle, and the plan built on it spends money on a group that does not exist."
+    },
+    {
+      q: "One of DBSCAN's four dense regions (cluster 2, n = 819) turned out to be drawn entirely from the unstructured middle. What signal would have flagged it without the answer key?",
+      options: ["Its size", "Its response rate of 0.126, which is indistinguishable from the 0.185 base rate, so it separates nothing", "Its low average basket", "Its density"],
+      answer: 1,
+      explain: "The same external check that chose k also audits individual clusters. A group that does not separate the held-out variable is a dense patch of a continuum, and it is exactly what gets a name and a budget if nobody looks."
+    },
+    {
+      q: "Agreement with the answer key was 0.32 at k = 2 and 0.85 at k = 4 for k-means, and 0.92 at k = 4 for Ward. What is the general lesson about internal validity indices?",
+      options: ["They should be discarded", "They answer whether structure exists, which is worth knowing, but they do not identify how many groups there are", "Ward should always be preferred to k-means", "The adjusted Rand index is the right criterion to optimise"],
+      answer: 1,
+      explain: "Silhouette and stability both established there was structure and both chose the wrong k. Counting the groups required evidence from outside the clustering, and on real data that has to be arranged for in advance."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

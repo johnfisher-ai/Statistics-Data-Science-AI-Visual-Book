@@ -686,6 +686,8 @@ MAP = {
         ("../../capstone-gradient-boosting-regression.html#notebook", "Back to the book", "Chapter 193 · Gradient Boosting for Tabular Regression"),
     "capstone-pca-survey-battery.html":
         ("../../capstone-pca-survey-battery.html#notebook", "Back to the book", "Chapter 194 · Principal Component Analysis: A Survey Battery"),
+    "capstone-clustering-choosing-k.html":
+        ("../../capstone-clustering-choosing-k.html#notebook", "Back to the book", "Chapter 195 · Clustering: Choosing k Honestly"),
 }
 
 def card(href, kicker, title):

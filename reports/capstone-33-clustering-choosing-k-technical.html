@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Segmentation (Technical) &#183; Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/report.css">
+  <style>
+    body.report { --rpt-accent:#6d28d9; --rpt-accent-dark:#4c1d95; --rpt-accent-bg:#f5f3ff; --rpt-accent-line:#ddd6fe; }
+  </style>
+</head>
+
+<body class="report">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="../chapters/capstone-clustering-choosing-k.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">&#8592; Chapter 195</a>
+  </div>
+</nav>
+
+<div class="rpt-sticky" id="rptSticky">
+  <div class="inner">
+    <div class="st-title">Scaling, Internal Indices, an External Criterion and a Density Method</div>
+    <a class="st-back" href="../chapters/capstone-clustering-choosing-k.html">&#8592; Chapter 195</a>
+  </div>
+</div>
+
+<div class="rpt-wrap">
+  <article class="rpt-paper technical">
+    <header class="rpt-head">
+      <div class="rpt-topline">
+        <div class="rpt-kicker">Capstone 33 &#183; Technical Report</div>
+        <span class="rpt-badge technical">Technical Report</span>
+      </div>
+      <h1>Scaling, Internal Indices, an External Criterion and a Density Method</h1>
+      <p class="rpt-sub">Silhouette and stability both selected k = 2. A held-out response variable selected k = 4, which the answer key confirms at an adjusted Rand of 0.85 for k-means and 0.92 for Ward.</p>
+      <div class="rpt-meta"><div><b>Data</b> &nbsp;5,693 loyalty accounts, 8 behavioural features</div><div><b>Methods</b> &nbsp;k-means, Ward, DBSCAN; silhouette, resampling stability, external validation</div><div><b>Headline</b> &nbsp;k = 4, of which 3 map to true segments; 55% of the base unclustered</div></div>
+    </header>
+
+    <div class="rpt-prov">
+      <span class="pv-tag">Where this comes from</span>
+      <div class="pv-row"><div><span>Chapter</span> <a href="../chapters/capstone-clustering-choosing-k.html">Chapter 195 &#183; Clustering: Choosing k Honestly</a></div><div><span>Part</span> Part XXXI &#183; Capstone Projects: Machine Learning</div><div><span>Dataset</span> <a href="../data/capstone-clustering-choosing-k.xlsx">capstone-clustering-choosing-k.xlsx</a></div><div><span>Notebook</span> <a href="../chapters/notebooks/html/capstone-clustering-choosing-k.html" target="_blank" rel="noopener">View the analysis</a></div></div>
+    </div>
+
+    <div class="rpt-body">
+      <h2>1. Sample and preparation</h2>
+      <p>From 6,190 exported rows: a duplicated block of 190 removed on <code>customer_id</code>; 81 net-refund accounts with negative annual spend removed; 226 accounts with <code>tenure_months = -1</code> (join date never migrated) removed. Analysis sample <strong>5,693</strong>. Eight behavioural features; <code>campaign_response</code>, which records a campaign run the following quarter, was withheld from every clustering and used only for validation.</p>
+      <h2>2. Scaling</h2>
+      <p>Feature standard deviations span four orders of magnitude: <code>annual_spend</code> at 2,134.7 against <code>discount_share</code> at 0.248, a ratio of about 8,600. Under a Euclidean metric this makes the partition a function of spend alone.</p>
+      <div class="rpt-cap"><span class="n">Table 1.</span> Between-cluster variance as a share of total, per feature, k = 4 on unstandardized data.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Feature</th><th>Share of its variance explained by k-means on raw units</th></tr></thead><tbody><tr><td><span class='nm'>annual_spend</span></td><td><span class='nm'>0.950</span></td></tr><tr><td>visits_per_year</td><td>0.554</td></tr><tr><td>avg_basket</td><td>0.402</td></tr><tr><td>categories_bought</td><td>0.251</td></tr><tr><td>discount_share</td><td>0.200</td></tr><tr><td>tenure_months</td><td>0.142</td></tr><tr><td>returns_rate</td><td>0.072</td></tr><tr><td><span class='nm'>online_share</span></td><td><span class='nm'>0.068</span></td></tr></tbody></table></div>
+      <p>The resulting clusters have mean annual spends of 442, 1,405, 5,017 and 7,875 dollars and are near-identical on every behavioural rate. All subsequent analysis uses z-standardized features. That choice is itself a weighting assumption, asserting equal importance per standard deviation, and a margin-weighted alternative would produce different boundaries with no test to adjudicate between them.</p>
+      <h2>3. Internal criteria</h2>
+      <div class="rpt-cap"><span class="n">Table 2.</span> Silhouette on a 3,000-point subsample; stability is the mean adjusted Rand between the full solution and 25 refits on 80 percent subsamples.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>k</th><th>Silhouette, real</th><th>Silhouette, uniform random</th><th>Stability, real</th><th>Stability, random</th></tr></thead><tbody><tr><td><span class='nm'>2</span></td><td><span class='nm'>0.3670</span></td><td>0.0950</td><td><span class='nm'>0.998</span></td><td>0.230</td></tr><tr><td>3</td><td>0.3147</td><td>0.0814</td><td>0.997</td><td>0.162</td></tr><tr><td>4</td><td>0.3242</td><td>0.0858</td><td>0.994</td><td>0.151</td></tr><tr><td>5</td><td>0.2932</td><td>0.0862</td><td>0.987</td><td>0.198</td></tr><tr><td>6</td><td>0.2790</td><td>0.0855</td><td>0.944</td><td>0.223</td></tr><tr><td>7</td><td>0.2739</td><td>0.0877</td><td>0.823</td><td>0.226</td></tr><tr><td>10</td><td>0.1841</td><td>0.0925</td><td></td><td></td></tr></tbody></table></div>
+      <p>Both criteria select k = 2. Both also demonstrate their own limitation. Applied to uniform random data of identical shape, silhouette still returns a maximum, at k = 2, because k-means partitions any input and silhouette merely compares partitions. What the comparison provides is a reference scale: 0.37 against 0.09 is strong evidence of structure, and that ratio is more informative than the location of either peak.</p>
+      <p>Stability separates real from structureless data decisively (0.99 against 0.15 to 0.23) and cannot separate k values within the real data, exceeding 0.98 for every k from 2 to 5. It is a test for the existence of structure, not for its cardinality.</p>
+      <h2>4. External criterion</h2>
+      <div class="rpt-cap"><span class="n">Table 3.</span> Response to a campaign run after the observation window, never used in fitting. Base rate 0.185.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>k</th><th>Min cluster response</th><th>Max cluster response</th><th>Spread</th><th>Chi-square p</th><th>ARI vs answer key</th></tr></thead><tbody><tr><td>2</td><td>0.055</td><td>0.209</td><td>0.154</td><td>3.6e-27</td><td>0.321</td></tr><tr><td>3</td><td>0.054</td><td>0.235</td><td>0.181</td><td>2.7e-46</td><td>0.568</td></tr><tr><td><span class='nm'>4</span></td><td>0.053</td><td><span class='nm'>0.476</span></td><td><span class='nm'>0.423</span></td><td>7.7e-179</td><td><span class='nm'>0.848</span></td></tr><tr><td>5</td><td>0.054</td><td>0.488</td><td>0.434</td><td>4.0e-184</td><td>0.577</td></tr><tr><td>6</td><td>0.054</td><td>0.489</td><td>0.435</td><td>1.5e-181</td><td>0.471</td></tr><tr><td>8</td><td>0.054</td><td>0.495</td><td>0.441</td><td>6.1e-180</td><td>0.381</td></tr></tbody></table></div>
+      <p>The marginal gain in separation is 0.027 for the third split, <strong>0.242</strong> for the fourth, and 0.011 for the fifth. The criterion selects k = 4 unambiguously, and the answer key confirms it: adjusted Rand against the true labels is 0.848 for k-means at k = 4 against 0.321 at k = 2.</p>
+      <p>Note that the chi-square p-values are uninformative here. Every partition from k = 2 upward is significant at any conventional level because n is large; the effect size is what distinguishes them. This is the standard distinction between detectable and useful, and at 5,693 accounts almost everything is detectable.</p>
+      <h2>5. Ward and DBSCAN</h2>
+      <div class="rpt-cap"><span class="n">Table 4.</span> Adjusted Rand against the answer key.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>k</th><th>k-means ARI</th><th>Ward ARI</th></tr></thead><tbody><tr><td>2</td><td>0.321</td><td>0.316</td></tr><tr><td>3</td><td>0.568</td><td>0.586</td></tr><tr><td><span class='nm'>4</span></td><td><span class='nm'>0.848</span></td><td><span class='nm'>0.924</span></td></tr><tr><td>5</td><td>0.577</td><td>0.601</td></tr><tr><td>6</td><td>0.471</td><td>0.527</td></tr><tr><td>7</td><td>0.432</td><td>0.428</td></tr></tbody></table></div>
+      <p>Ward linkage outperforms k-means at every k from 3 to 6. The true segments differ in size (978, 862, 752 within a base of 5,693) and in dispersion, and k-means implicitly favours clusters that are comparable in both.</p>
+      <p>DBSCAN at eps = 0.9, min_samples = 25 returns four dense regions and labels <strong>55.4 percent</strong> of accounts as noise, against a true unstructured share of <strong>54.5 percent</strong>. On the 2,538 accounts it was willing to classify it achieves an adjusted Rand of <strong>0.963</strong>.</p>
+      <div class="rpt-cap"><span class="n">Table 5.</span> DBSCAN labels against the answer key.</div>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>DBSCAN cluster</th><th>Bargain hunters</th><th>Gift occasionals</th><th>Loyal high spenders</th><th>Unstructured middle</th></tr></thead><tbody><tr><td>0</td><td><span class='nm'>855</span></td><td>0</td><td>0</td><td>22</td></tr><tr><td>1</td><td>0</td><td><span class='nm'>653</span></td><td>0</td><td>8</td></tr><tr><td>3</td><td>0</td><td>0</td><td><span class='nm'>180</span></td><td>1</td></tr><tr><td><span class='nm'>2</span></td><td>0</td><td>0</td><td>0</td><td><span class='nm'>819</span></td></tr><tr><td>noise</td><td>123</td><td>99</td><td>682</td><td>2,251</td></tr></tbody></table></div>
+      <p>Cluster 2 consists entirely of unstructured-middle accounts: a dense region of a continuum rather than a group. Its response rate of 0.126 against a base rate of 0.185 is the diagnostic that identifies it without the answer key, and it is the same external criterion used to select k, applied per cluster.</p>
+      <p>DBSCAN is highly sensitive to eps: 0.7 yields two clusters and 91.9 percent noise, 1.5 yields one cluster and 1.0 percent noise. The parameter performs the same role as k and should be selected the same way.</p>
+      <h2>6. Limitations</h2>
+      <p>The standardization choice is an unfalsifiable weighting assumption and the partition is conditional on it. Sensitivity of the recommended solution to alternative weightings (margin-weighted, rank-transformed) was not assessed and would be a reasonable addition.</p>
+      <p>The external criterion validates the partition against one outcome. Segments selected to separate price promotion response carry no guarantee of separating response to service or assortment interventions, and the validation should be repeated against any new intended use.</p>
+      <p>Cluster membership is estimated from a single twelve-month window with no measurement of transition rates. Any treatment plan that assumes persistence requires a second window.</p>
+      <p>Finally, the answer key exists only because the data were generated. On observational data none of the ARI figures in sections 4 and 5 are computable, and the external criterion is the entire basis for choosing k. That is the practical situation this analysis is designed to rehearse.</p>
+    </div>
+
+    <div class="rpt-foot"><a class="primary" href="../chapters/capstone-clustering-choosing-k.html">&#8592; Back to Chapter 195</a><a href="../chapters/notebooks/html/capstone-clustering-choosing-k.html" target="_blank" rel="noopener">&#128211; Companion notebook</a><a class="xls" href="../data/capstone-clustering-choosing-k.xlsx">&#128202; Download dataset</a></div>
+    <div class="rpt-colophon">
+      From <strong>Statistics, Data Science and AI: A Visual Handbook</strong> by John Fisher.
+      Every statistic, table, and figure in this report is reproduced by the companion notebook.
+    </div>
+  </article>
+</div>
+
+<script>
+(function(){
+  var bar=document.getElementById('rptSticky');
+  window.addEventListener('scroll',function(){
+    if(window.scrollY>320) bar.classList.add('on'); else bar.classList.remove('on');
+  });
+})();
+</script>
+</body>
+</html>
