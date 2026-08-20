@@ -671,13 +671,13 @@ MAP = {
     "capstone-regression-discontinuity-and-iv.html":
         ("../../capstone-regression-discontinuity-and-iv.html#notebook", "Back to the book", "Chapter 184 · Regression Discontinuity and Instrumental Variables"),
     "capstone-pay-equity-review.html":
-        ("../../capstone-pay-equity-review.html#notebook", "Back to the book", "Chapter 185 · Multiple Regression Done Properly: A Pay Equity Review"),
+        ("../../capstone-pay-equity-review.html#notebook", "Back to the book", "Chapter 186 · Multiple Regression Done Properly: A Pay Equity Review"),
     "capstone-regression-diagnostics-and-remedies.html":
-        ("../../capstone-regression-diagnostics-and-remedies.html#notebook", "Back to the book", "Chapter 186 · When the Assumptions Fail: Diagnostics and Remedies"),
+        ("../../capstone-regression-diagnostics-and-remedies.html#notebook", "Back to the book", "Chapter 187 · When the Assumptions Fail: Diagnostics and Remedies"),
     "capstone-clinical-risk-scoring.html":
-        ("../../capstone-clinical-risk-scoring.html#notebook", "Back to the book", "Chapter 187 · Logistic Regression for Decisions: Clinical Risk Scoring"),
+        ("../../capstone-clinical-risk-scoring.html#notebook", "Back to the book", "Chapter 188 · Logistic Regression for Decisions: Clinical Risk Scoring"),
     "capstone-emergency-department-visits.html":
-        ("../../capstone-emergency-department-visits.html#notebook", "Back to the book", "Chapter 188 · Counts and Rates: Emergency Department Visits"),
+        ("../../capstone-emergency-department-visits.html#notebook", "Back to the book", "Chapter 189 · Counts and Rates: Emergency Department Visits"),
 }
 
 def card(href, kicker, title):

@@ -69,7 +69,9 @@ for slug in slugs_in_order:
     html = re.sub(r'(<title>Ch )\d+( ·)', lambda m: m.group(1)+str(n)+m.group(2), html, count=1)
     html = re.sub(r'(<span>Chapter )\d+(</span>)', lambda m: m.group(1)+str(n)+m.group(2), html, count=1)
     html = re.sub(r'(<b>Chapter )\d+(</b>)', lambda m: m.group(1)+str(n)+m.group(2), html, count=1)
-    html = re.sub(r'(Chapter )\d+( &nbsp;·&nbsp; ©)', lambda m: m.group(1)+str(n)+m.group(2), html, count=1)
+    # the footer separator/copyright appear both as literals and as numeric entities
+    html = re.sub(r'(Chapter )\d+( &nbsp;(?:·|&#183;)&nbsp; (?:©|&#169;))',
+                  lambda m: m.group(1)+str(n)+m.group(2), html, count=1)
     html = set_card_num(html, "prev")
     html = set_card_num(html, "next")
     if n + 1 <= len(slugs_in_order):
