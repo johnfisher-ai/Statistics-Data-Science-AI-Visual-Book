@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intermittent Demand (Technical) &#183; Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/report.css">
+  <style>
+    body.report { --rpt-accent:#0369a1; --rpt-accent-dark:#0c4a6e; --rpt-accent-bg:#f0f9ff; --rpt-accent-line:#bae6fd; }
+  </style>
+</head>
+
+<body class="report">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="../chapters/capstone-intermittent-demand-spare-parts.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">&#8592; Chapter 200</a>
+  </div>
+</nav>
+
+<div class="rpt-sticky" id="rptSticky">
+  <div class="inner">
+    <div class="st-title">Intermittent Demand Forecasting and Inventory Policy for a Sixty-Part Catalogue</div>
+    <a class="st-back" href="../chapters/capstone-intermittent-demand-spare-parts.html">&#8592; Chapter 200</a>
+  </div>
+</div>
+
+<div class="rpt-wrap">
+  <article class="rpt-paper technical">
+    <header class="rpt-head">
+      <div class="rpt-topline">
+        <div class="rpt-kicker">Capstone 37 &#183; Technical Report</div>
+        <span class="rpt-badge technical">Technical Report</span>
+      </div>
+      <h1>Intermittent Demand Forecasting and Inventory Policy for a Sixty-Part Catalogue</h1>
+      <p class="rpt-sub">Classification, four forecasting methods scored by MASE, and a simulated periodic-review policy evaluated on fill rate and average stock held.</p>
+      <div class="rpt-meta"><div><b>Data</b> &nbsp;156 weekly observations, 60 part numbers, Jan 2023 to Dec 2025</div><div><b>Methods</b> &nbsp;Naive, simple exponential smoothing, Croston, Syntetos-Boylan approximation</div><div><b>Evaluation</b> &nbsp;MASE on a 52-week holdout; order-up-to policy simulated over the same period</div></div>
+    </header>
+
+    <div class="rpt-prov">
+      <span class="pv-tag">Where this comes from</span>
+      <div class="pv-row"><div><span>Chapter</span> <a href="../chapters/capstone-intermittent-demand-spare-parts.html">Chapter 200 &#183; Intermittent Demand: Spare Parts</a></div><div><span>Part</span> Part XXXII &#183; Capstone Projects: Time Series &amp; Forecasting</div><div><span>Dataset</span> <a href="../data/capstone-intermittent-demand-spare-parts.xlsx">capstone-intermittent-demand-spare-parts.xlsx</a></div><div><span>Notebook</span> <a href="../chapters/notebooks/html/capstone-intermittent-demand-spare-parts.html" target="_blank" rel="noopener">View the analysis</a></div></div>
+    </div>
+
+    <div class="rpt-body">
+      <h2>Abstract</h2>
+      <p><strong>Objective.</strong> To set order-up-to levels for a 60-part service catalogue against a 95 percent fill-rate target, and to establish which forecasting method and which service quantile the result is sensitive to.</p>
+      <p><strong>Design.</strong> Weekly issues over 156 weeks, split 104 for fitting and 52 for evaluation. Parts were classified by the Syntetos-Boylan-Croston scheme using the published cut-offs of 1.32 for average inter-demand interval and 0.49 for the squared coefficient of variation of order size. Four forecasting methods were applied with a smoothing constant of 0.10 throughout. A periodic-review order-up-to policy with a one-week review and a two-week lead time was simulated over the holdout for each method at five service quantiles, with the level taken from the forecast and the spread from the empirical distribution of three-week demand in the fitting window.</p>
+      <p><strong>Result.</strong> 61.0 percent of part-weeks contain no demand, and MAPE is computable on 39.1 percent of the holdout and on no part in full. SBA attained the lowest mean MASE at 0.873, ahead of SES at 0.875 and Croston at 0.888, with the naive forecast at 1.137. A constant forecast of zero, optimal under absolute error for 44 of 59 parts, attains 0.622 and dominates all four. In simulation the four methods span 3.0 points of fill rate at the 0.95 quantile, against 52.1 points spanned by the quantile itself.</p>
+      <h2>1. Data and preprocessing</h2>
+      <p>The extract contained 9,420 rows against an expected 9,360. One week was duplicated, one part number appeared in three spellings, one row recorded a credited customer return as -11 units and one recorded a stock count of 9,999 in the issues column. The two anomalous values were set to zero rather than deleted, since the part-weeks themselves are real and carry no evidence of demand.</p>
+      <p>One part, P1024, was identified as superseded rather than slow-moving. Measuring elapsed silence in units of each part's own mean inter-demand interval, P1024 stood at 14.0 against a maximum of 3.9 across the remaining catalogue, and recorded zero issues across the holdout. It was excluded, leaving 59 parts.</p>
+      <h2>2. Classification</h2>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Class</th><th>Parts</th><th>Interval</th><th>Size variability</th></tr></thead><tbody><tr><td><span class='nm'>Smooth</span></td><td>6</td><td>below 1.32</td><td>below 0.49</td></tr><tr><td>Erratic</td><td>7</td><td>below 1.32</td><td>above 0.49</td></tr><tr><td>Intermittent</td><td>21</td><td>above 1.32</td><td>below 0.49</td></tr><tr><td><span class='nm'>Lumpy</span></td><td>26</td><td>above 1.32</td><td>above 0.49</td></tr></tbody></table><div class="rpt-cap">Syntetos-Boylan-Croston classification at the published cut-offs.</div></div>
+      <p>All four cells are occupied, and the distribution is typical of a service catalogue in being dominated by the two high-interval cells. Order size when demand occurs has a median of 3 units, an interquartile range of 1 to 5 and a maximum of 222.</p>
+      <h2>3. Forecast accuracy</h2>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Class</th><th>Naive</th><th>SES</th><th>Croston</th><th>SBA</th></tr></thead><tbody><tr><td><span class='nm'>Smooth</span></td><td>0.753</td><td><span class='nm'>0.751</span></td><td>0.752</td><td>0.757</td></tr><tr><td><span class='nm'>Erratic</span></td><td>1.140</td><td>0.848</td><td>0.842</td><td><span class='nm'>0.823</span></td></tr><tr><td><span class='nm'>Intermittent</span></td><td><span class='nm'>0.850</span></td><td>0.901</td><td>0.945</td><td>0.929</td></tr><tr><td><span class='nm'>Lumpy</span></td><td>1.446</td><td>0.890</td><td>0.887</td><td><span class='nm'>0.871</span></td></tr><tr><td><span class='nm'>All parts</span></td><td>1.137</td><td>0.875</td><td>0.888</td><td><span class='nm'>0.873</span></td></tr></tbody></table><div class="rpt-cap">Mean MASE over the 52-week holdout. Values below 1.0 outperform a one-step naive forecast.</div></div>
+      <p>SBA attains the minimum overall and in the two high-variability classes, which is where the upward bias of the Croston ratio is largest. The Syntetos-Boylan correction is worth 0.015 MASE relative to uncorrected Croston. The naive forecast wins the intermittent class and is the worst method overall, by a margin that would not be visible on the aggregated catalogue series.</p>
+      <p>The separation between the three non-naive methods is 0.015 MASE, which is small enough to warrant asking what the measure is capable of distinguishing. The constant forecast minimizing absolute error on the holdout is zero for 44 of the 59 parts and attains a mean MASE of 0.622, superior to every method evaluated. Absolute error is minimized at the conditional median, and for a series with 61 percent zeros that median is zero. Any ranking on MAE or MASE therefore rewards downward bias, and its optimum is a policy that never replenishes.</p>
+      <h2>4. Inventory policy</h2>
+      <p>A periodic-review order-up-to policy was simulated with review period 1 and lead time 2, giving a protection interval of 3 weeks. For each part the order-up-to level was set as the forecast mean over the protection interval plus a multiple of the standard deviation of three-week demand observed in the fitting window, with the multiple taken as the standardized empirical quantile at the chosen service level.</p>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Service quantile</th><th>Naive</th><th>SES</th><th>Croston</th><th>SBA</th></tr></thead><tbody><tr><td>0.50</td><td>37.2%</td><td>45.1%</td><td>46.0%</td><td>44.0%</td></tr><tr><td>0.80</td><td>63.3%</td><td>76.2%</td><td>78.6%</td><td>77.6%</td></tr><tr><td>0.90</td><td>79.4%</td><td>86.7%</td><td>87.3%</td><td>86.9%</td></tr><tr><td><span class='nm'>0.95</span></td><td>89.8%</td><td>92.4%</td><td><span class='nm'>92.9%</span></td><td>92.7%</td></tr><tr><td>0.98</td><td>94.4%</td><td>95.8%</td><td>96.2%</td><td>96.1%</td></tr></tbody></table><div class="rpt-cap">Achieved fill rate over the holdout, by forecasting method and service quantile.</div></div>
+      <p>At the 0.95 quantile the four methods span 3.0 percentage points of fill rate, of which the majority is attributable to the naive forecast. Holding the method fixed, the quantile spans 52.1 points. The ratio of leverage is approximately 17 to 1.</p>
+      <figure class="rpt-fig"><img src="../assets/img/report-37-service-curve.png" alt="Curve of fill rate against average units held per part: 44.0 percent at 1.6 units, 77.6 at 4.8, 86.9 at 7.6, 92.7 at 11.1 and 96.1 at 19.7, with a dashed line at the 95 percent target."><figcaption><span class="n">Figure 1.</span> Fill rate against average stock held, as the service quantile moves from the median of lead-time demand to the 98th percentile.</figcaption></figure>
+      <h2>5. Two properties of the service target</h2>
+      <p><strong>The nominal quantile is not the achieved fill rate.</strong> Specifying the 0.95 quantile of lead-time demand produced a 92.7 percent fill rate. The quantile governs cycle service, the probability that a replenishment cycle does not stock out, whereas fill rate is unit-weighted and penalizes large shortfalls more than small ones. Where a fill-rate target has been contracted, the quantile must be calibrated by simulation rather than assumed equal to it.</p>
+      <p><strong>Marginal cost of service is strongly increasing.</strong> Moving from 44.0 to 86.9 percent fill requires 6.0 additional units per part, at 0.09 to 0.30 units per point. Moving from 86.9 to 96.1 requires a further 12.1 units, reaching 2.46 units per point over the final stretch, approximately 27 times the initial marginal cost.</p>
+      <h2>6. Limitations</h2>
+      <p>The smoothing constant was fixed at 0.10 for all methods and all parts. Per-part optimization on a rolling origin would be expected to yield a small accuracy improvement and no material change to the service curve, which is governed by the demand distribution rather than by the point forecast.</p>
+      <p>The dispersion component of the order-up-to level is taken empirically from the fitting window and is therefore stationary by construction. A part whose demand process is changing would receive a stale spread and no diagnostic here would detect it. A parametric alternative, such as a negative binomial or compound Poisson model of lead-time demand, would permit the spread to be forecast rather than assumed.</p>
+      <p>Fill rate is unit-weighted and order-agnostic. It does not distinguish one order for twenty units from twenty orders for one, and where order completeness matters the target should be specified accordingly.</p>
+      <p>Parts are treated as independent. Common-cause failure raises the joint requirement above the sum of individual requirements, and substitutability lowers it; neither is represented. At this catalogue size the simplification is defensible, and at production scale it is where the remaining gains lie, together with cross-part pooling of the kind global demand models perform.</p>
+    </div>
+
+    <div class="rpt-foot"><a class="primary" href="../chapters/capstone-intermittent-demand-spare-parts.html">&#8592; Back to Chapter 200</a><a href="../chapters/notebooks/html/capstone-intermittent-demand-spare-parts.html" target="_blank" rel="noopener">&#128211; Companion notebook</a><a class="xls" href="../data/capstone-intermittent-demand-spare-parts.xlsx">&#128202; Download dataset</a></div>
+    <div class="rpt-colophon">
+      From <strong>Statistics, Data Science and AI: A Visual Handbook</strong> by John Fisher.
+      Every statistic, table, and figure in this report is reproduced by the companion notebook.
+    </div>
+  </article>
+</div>
+
+<script>
+(function(){
+  var bar=document.getElementById('rptSticky');
+  window.addEventListener('scroll',function(){
+    if(window.scrollY>320) bar.classList.add('on'); else bar.classList.remove('on');
+  });
+})();
+</script>
+</body>
+</html>

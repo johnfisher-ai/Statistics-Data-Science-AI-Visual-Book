@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 200 · Intermittent Demand: Spare Parts — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .yes { color:#047857; font-weight:700; }
+    .disp-table .no { color:#dc2626; font-weight:700; }
+    .disp-table tr.hi td { background:#f0f9ff; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .embox { background:#f0f9ff; border:1px solid #bae6fd; border-left:4px solid #0369a1; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .embox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#0c4a6e; }
+    .rw-card { background:#f0f9ff; border:1px solid #bae6fd; border-left:4px solid #0369a1; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#0c4a6e; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#f0f9ff; color:#0369a1; border-color:#bae6fd; }
+    .ex-file.doc { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#f0f9ff; border:1px solid #bae6fd; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#0c4a6e; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #0369a1; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#0c4a6e; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+    .svg-wrap { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.9rem 0.6rem 0.3rem; background:var(--panel); }
+    .svg-wrap svg { width:100%; height:auto; display:block; }
+    .svg-wrap .cap { font-size:0.82rem; color:var(--ink-soft); padding:0.55rem 0.6rem 0.4rem; line-height:1.55; }
+    .svg-wrap .cap strong { color:var(--ink); }
+    .partclose { background:linear-gradient(135deg,#f0f9ff,#f0f9ff); border:1px solid #bae6fd;
+                 border-radius:14px; padding:1.3rem 1.5rem; margin:1.6rem 0; }
+    .partclose h4 { font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:0.07em;
+                    color:#0c4a6e; margin:0 0 0.75rem; }
+    .partclose ol { margin:0 0 0 1.1rem; padding:0; }
+    .partclose li { font-size:0.9rem; color:var(--ink-soft); line-height:1.62; margin-bottom:0.45rem; }
+    .partclose li a { color:#0369a1; font-weight:700; text-decoration:none; }
+    .partclose li a:hover { text-decoration:underline; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXXII &#183; Capstone Projects: Time Series &amp; Forecasting</span><span class="sep">/</span>
+      <span>Chapter 200</span>
+    </div>
+    <h1>Intermittent Demand: <span class="accent">Spare Parts</span></h1>
+    <p class="dek">Capstone 37. Sixty part numbers, three years, and no demand at all in three weeks out of five. The error measure the warehouse reports every month cannot be computed on most of its own data, and the forecast that scores best on it would empty the shelves.</p>
+    <div class="hero-meta">
+      <div class="m">&#9201;&#65039; <b>~25 min</b>&nbsp;read</div>
+      <div class="m">&#127919; <b>Croston, MASE, service levels</b></div>
+      <div class="m">&#128202; <b>Chapter 200</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <div class="brief-card">
+      <div class="bh">The brief</div>
+      <dl>
+        <dt>Setting</dt><dd>A machinery dealer's parts warehouse. Sixty part numbers, three years of weekly issues, stock reviewed weekly and a supplier who delivers two weeks after an order, so every order has to cover three weeks.</dd>
+        <dt>The question</dt><dd><strong>How many of each part should be held, so that 95 units in every 100 demanded ship the day they are asked for?</strong></dd>
+        <dt>Why it matters</dt><dd>Hold too little and a machine stands idle in a field. Hold too much and the money is on a shelf. The catalogue is mostly slow movers, which is where both mistakes are easiest to make.</dd>
+        <dt>What we do</dt><dd>Classify the catalogue, find the part that is dead rather than slow, show why the reported percentage error cannot be computed, compare four forecasting methods on MASE, and then price the service level that actually decides the answer.</dd>
+      </dl>
+    </div>
+
+    <p class="lead">Every method in this chapter is judged twice: once on how close its forecast came, and
+       once on whether the stock it implied
+       <span class="hl">served the customer</span>. The two answers do not agree, and the gap between them
+       is the chapter.</p>
+  </section>
+
+  <!-- 1 -->
+  <section id="zeros">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Three Weeks in Five Are Empty</h2></div>
+
+    <p>The extract arrived with 9,420 rows for what should be 60 parts across 156 weeks. One week had been
+       extracted twice, one part number was written three ways, a customer return was booked as minus eleven units
+       and a stock count of 9,999 had been typed into the issues column. After cleaning, 60 parts, 156 weeks and
+       17,925 units issued in total.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Part-weeks with no demand</div><div class="rv">61.0%</div><div class="rd">zero is the most common observation</div></div>
+      <div class="rchip"><div class="rk">Typical order, when there is one</div><div class="rv">3 units</div><div class="rd">quartiles 1 to 5, largest 222</div></div>
+      <div class="rchip"><div class="rk">Weeks between orders</div><div class="rv">1.0 to 9.2</div><div class="rd">across the sixty parts</div></div>
+    </div>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-spares-firstlook.png"
+           alt="Four panels. Top left: total weekly units across all sixty parts, an ordinary noisy series between about 50 and 290. Top right: three individual parts drawn as stems, one smooth with 10 percent of weeks empty, one intermittent with 75 percent empty and one lumpy with 80 percent empty. Bottom left: every part plotted by squared coefficient of variation of order size against weeks between orders, with the 0.49 and 1.32 cut-offs drawn, giving smooth 6, erratic 7, intermittent 21 and lumpy 26. Bottom right: what a part-week contains, 61.0 percent nothing, 27.7 percent one to four units, 10.0 percent five to nineteen and 1.3 percent twenty or more.">
+      <figcaption><strong>Top left:</strong> added together the sixty parts make an ordinary, well-behaved series,
+        which is how aggregate demand planning hides this problem. <strong>Top right:</strong> the series that
+        actually have to be forecast, drawn so an empty week reads as empty. <strong>Bottom left:</strong> every
+        part on the two axes that matter, with the published cut-offs. All four cells are occupied.
+        <strong>Bottom right:</strong> the largest bar is the one on which a percentage error is undefined.</figcaption>
+    </figure>
+
+    <p>The classification is the Syntetos-Boylan-Croston scheme: how many weeks pass between orders, and how much
+       the order sizes vary. Both cut-offs are the published ones. Here it gives <strong>26 lumpy, 21 intermittent,
+       7 erratic and 6 smooth</strong>, and the four groups need different things, which is the reason for
+       classifying at all.</p>
+  </section>
+
+  <!-- 2 -->
+  <section id="dead">
+    <div class="section-eyebrow"><div class="num">2</div><h2>One Part Is Not Slow, It Is Dead</h2></div>
+
+    <p>A part that has stopped moving and a part that moves rarely look identical in a spreadsheet, and they need
+       opposite decisions. The way to tell them apart is to measure silence in units of that part's own rhythm
+       rather than in weeks.</p>
+
+    <table class="disp-table">
+      <tr><th>Part</th><th>Weeks since the last order</th><th>Its own typical gap</th><th>Ratio</th></tr>
+      <tr class="hi"><td class="nm">P1024</td><td>37</td><td>2.6</td><td class="no">14.0&#215;</td></tr>
+      <tr><td class="nm">P1052</td><td>21</td><td>5.4</td><td>3.9&#215;</td></tr>
+      <tr><td class="nm">P1053</td><td>11</td><td>3.4</td><td>3.3&#215;</td></tr>
+    </table>
+
+    <p><strong>Fourteen times its own gap, against a runner-up at four.</strong> P1024 was superseded by a newer
+       part number partway through the history. In the year that was held back it was issued zero units, and every
+       method in this chapter would have produced a small positive forecast for it, the warehouse would have
+       stocked it, and the stock would never have moved.</p>
+
+    <p>Four weeks of quiet means nothing for a part ordered twice a year and a great deal for one ordered every
+       fortnight. That is why the test is a ratio. It is a decision about the catalogue rather than about
+       forecasting, and it belongs before any of it: P1024 is excluded, leaving 59 parts.</p>
+  </section>
+
+  <!-- 3 -->
+  <section id="mape">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The Error Measure That Cannot Be Computed</h2></div>
+
+    <p>The planning tool reports a mean absolute percentage error every month. A percentage error divides by the
+       actual demand. On a week when nothing was demanded, there is nothing to divide by.</p>
+
+    <div class="embox">
+      <span class="gb-tag">What the tool was actually reporting</span>
+      <p style="margin:0.4rem 0 0">The holdout year contains <strong>3,068 part-weeks</strong>, of which
+         <strong>1,867 have zero demand</strong>. MAPE is undefined on every one of them. There is
+         <strong>not a single part</strong> in the catalogue where it can be computed for the whole year, and the
+         share of the year it would actually be computed on is <strong>39.1 percent</strong>. The number that
+         reached the monthly pack was a percentage error on the weeks that happened to have demand.</p>
+    </div>
+
+    <p>Those are the easy weeks. A forecast is roughly right about a week with demand far more often than it is
+       right about which weeks will have any, so the measure was scoring the part of the problem that was not the
+       problem. It did not fail loudly. It dropped the undefined rows and averaged what was left.</p>
+
+    <p>The replacement used from here is <strong>MASE</strong>, the mean absolute scaled error, which divides by
+       the average absolute week-to-week change of the series itself rather than by the actual. It is defined on
+       zeros, it is comparable across parts of very different sizes, and below 1 means the forecast beat a rule
+       that just repeats last week.</p>
+  </section>
+
+  <!-- 4 -->
+  <section id="race">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Four Methods, and a Race That Nearly Ties</h2></div>
+
+    <p>Two years of history for each part, one number out. <strong>Croston's method</strong> is the one built for
+       this problem: instead of smoothing the raw series, it smooths the order size and the interval between
+       orders separately and divides one by the other. <strong>SBA</strong> is Croston with the Syntetos-Boylan
+       correction, a multiplier of one minus half the smoothing constant, which exists because a ratio of two
+       smoothed estimates is biased upward.</p>
+
+    <table class="disp-table">
+      <tr><th>Class</th><th>Parts</th><th>Naive</th><th>SES</th><th>Croston</th><th>SBA</th></tr>
+      <tr><td class="nm">Smooth</td><td>6</td><td>0.753</td><td class="yes">0.751</td><td>0.752</td><td>0.757</td></tr>
+      <tr class="hi"><td class="nm">Erratic</td><td>7</td><td>1.140</td><td>0.848</td><td>0.842</td><td class="yes">0.823</td></tr>
+      <tr><td class="nm">Intermittent</td><td>21</td><td class="yes">0.850</td><td>0.901</td><td>0.945</td><td>0.929</td></tr>
+      <tr class="hi"><td class="nm">Lumpy</td><td>26</td><td>1.446</td><td>0.890</td><td>0.887</td><td class="yes">0.871</td></tr>
+      <tr><td class="nm">All parts</td><td>59</td><td>1.137</td><td>0.875</td><td>0.888</td><td class="yes">0.873</td></tr>
+    </table>
+
+    <p>SBA is best overall, and the margin over plain exponential smoothing is 0.002. It wins the erratic and lumpy
+       classes, where sizes swing about and the upward bias bites hardest, and it loses the intermittent class to
+       the naive rule. The Syntetos-Boylan correction is worth 0.014 MASE against uncorrected Croston, which is
+       small and free.</p>
+
+    <p>The naive rule is the worst overall by a wide margin, and it is worth pausing on why that is not obvious:
+       on the aggregate warehouse series in the first picture, repeating last week would have looked perfectly
+       respectable.</p>
+  </section>
+
+  <!-- 5 -->
+  <section id="median">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Why the Race Is Close, and What That Says</h2></div>
+
+    <p>Three of the four methods land within two percent of one another. That is not because the methods resemble
+       each other. It is a property of the measure, and the cleanest way to see it is to ask what the best possible
+       constant forecast would have been, chosen with hindsight.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Best constant forecast</div><div class="rv">zero</div><div class="rd">for 44 of the 59 parts</div></div>
+      <div class="rchip"><div class="rk">Its MASE</div><div class="rv">0.622</div><div class="rd">against SBA's 0.873</div></div>
+      <div class="rchip"><div class="rk">Its fill rate</div><div class="rv">nil</div><div class="rd">it orders nothing, ever</div></div>
+    </div>
+
+    <p><strong>Mean absolute error is minimized at the median, and for a part ordered once a month the median week
+       contains no demand at all.</strong> So a scoreboard built on absolute error rewards whichever method leans
+       lowest, and the outright winner of that contest is a policy that never orders anything. It beats all four
+       honest methods by a wide margin.</p>
+
+    <p>This is the metric lesson from <a href="the-forecasting-workflow.html">Chapter 198</a> in its most extreme
+       form. The measure has to come from the decision. The decision here is how many units to hold, and that is
+       answered by a quantile of demand over the lead time. It is not answered by an average of weekly demand, and
+       it is certainly not answered by whichever method minimizes an error statistic.</p>
+  </section>
+
+  <!-- 6 -->
+  <section id="stock">
+    <div class="section-eyebrow"><div class="num">6</div><h2>The Number the Warehouse Actually Needs</h2></div>
+
+    <p>A forecast of 0.74 units a week is never the demand in any week. The warehouse orders against a level: hold
+       this many, top up weekly, and the supplier takes two weeks. So the quantity to get right is total demand
+       over the three weeks an order has to cover, and specifically a high quantile of it.</p>
+
+    <table class="disp-table">
+      <tr><th>For one lumpy part, P1045</th><th>Order up to</th><th>Fill rate</th><th>Units held</th></tr>
+      <tr><td class="nm">The middle of three-week demand</td><td>0.6</td><td class="no">9.6%</td><td>0.3</td></tr>
+      <tr class="hi"><td class="nm">The 80th percentile</td><td>3.6</td><td>44.8%</td><td>2.3</td></tr>
+      <tr><td class="nm">The 95th percentile</td><td>12.6</td><td class="yes">84.6%</td><td>10.2</td></tr>
+    </table>
+
+    <p><strong>Ordering to the middle fills fewer than one unit in ten.</strong> That is not a broken calculation.
+       Half of all three-week windows fall above the middle, and in demand shaped like this the ones that do fall a
+       long way above. Everything past the middle is safety stock, and how much of it to hold is the decision the
+       warehouse is really making.</p>
+  </section>
+
+  <!-- 7 -->
+  <section id="leverage">
+    <div class="section-eyebrow"><div class="num">7</div><h2>What Moves the Fill Rate</h2></div>
+
+    <p>Every live part run through the policy, for each method and each service quantile, scored on the year that
+       was held back.</p>
+
+    <table class="disp-table">
+      <tr><th>Service quantile</th><th>Naive</th><th>SES</th><th>Croston</th><th>SBA</th></tr>
+      <tr><td class="nm">0.50</td><td>37.2%</td><td>45.1%</td><td>46.0%</td><td>44.0%</td></tr>
+      <tr class="hi"><td class="nm">0.80</td><td>63.3%</td><td>76.2%</td><td>78.6%</td><td>77.6%</td></tr>
+      <tr><td class="nm">0.90</td><td>79.4%</td><td>86.7%</td><td>87.3%</td><td>86.9%</td></tr>
+      <tr class="hi"><td class="nm">0.95</td><td>89.8%</td><td>92.4%</td><td>92.9%</td><td>92.7%</td></tr>
+      <tr><td class="nm">0.98</td><td>94.4%</td><td>95.8%</td><td>96.2%</td><td>96.1%</td></tr>
+    </table>
+
+    <p>At the service level the business asked for, the four methods span <strong>3.0 points</strong> of fill rate,
+       and most of that is the naive rule being poor. Holding the method fixed and moving the quantile moves the
+       fill rate by <strong>52.1 points</strong>. <strong>The choice nobody discusses has seventeen times the
+       leverage of the choice everyone argues about.</strong></p>
+
+    <p>That is not an argument for choosing a method carelessly. SBA is free and slightly better, so use it. It is
+       an argument about where the attention belongs, and in most warehouses it is pointed at the forecast.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-spares-service.png"
+           alt="Two panels. Left: mean MASE for the four methods, naive 1.137, SES 0.875, Croston 0.888 and SBA 0.873, with a dashed line at 0.622 marking the best constant forecast, which is zero for most parts and beats all four. Right: fill rate achieved against average units held, for all four methods; three of the curves lie almost on top of one another while the naive curve sits below them, with a dashed line at the 95 percent target.">
+      <figcaption><strong>Left:</strong> the dashed line is the best constant forecast chosen with hindsight, which
+        is zero for 44 of the 59 parts. It beats all four methods. A scoreboard on which "order nothing" wins is
+        not measuring what the warehouse cares about. <strong>Right:</strong> the same methods plotted the way the
+        decision is made, as stock held against service delivered. Three of the curves are almost the same curve.
+        Where you sit along it is worth tens of points; which of the three you are on is worth almost
+        nothing.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 8 -->
+  <section id="curve">
+    <div class="section-eyebrow"><div class="num">8</div><h2>The Quantile You Ask For Is Not the Service You Get</h2></div>
+
+    <p>Asking for the 0.95 quantile of lead-time demand delivered a fill rate of <strong>92.7 percent</strong>, not
+       95. Those are different quantities. The quantile controls how often a replenishment cycle runs short; the
+       fill rate counts units, and a cycle that runs short by twenty units counts worse than one that runs short by
+       one. If the business has agreed a fill rate, the quantile has to be tuned until the simulation delivers it.</p>
+
+    <table class="disp-table">
+      <tr><th>Quantile</th><th>Fill rate</th><th>Units held</th><th>Extra stock per point of fill rate</th></tr>
+      <tr><td class="nm">0.50</td><td>44.0%</td><td>1.6</td><td>&#8212;</td></tr>
+      <tr class="hi"><td class="nm">0.80</td><td>77.6%</td><td>4.8</td><td>0.09</td></tr>
+      <tr><td class="nm">0.90</td><td>86.9%</td><td>7.6</td><td>0.30</td></tr>
+      <tr class="hi"><td class="nm">0.95</td><td>92.7%</td><td>11.1</td><td>0.61</td></tr>
+      <tr><td class="nm">0.98</td><td>96.1%</td><td>19.7</td><td class="no">2.46</td></tr>
+    </table>
+
+    <p><strong>The last few points of service cost twenty-seven times what the first ones did.</strong> Going from
+       44 to 87 percent costs six units a part. The next nine points cost twelve more. That curve, and not the
+       forecast, is what a service-level conversation should be held over, because it is the only place in this
+       chapter where the business is being asked to spend money.</p>
+  </section>
+
+  <!-- 9 -->
+  <section id="limits">
+    <div class="section-eyebrow"><div class="num">9</div><h2>What This Does Not Settle</h2></div>
+
+    <p><strong>One smoothing constant, never tuned.</strong> Every method here uses 0.10, the conventional default
+       for intermittent demand. Tuning it per part on a rolling origin would tighten the forecasts a little and
+       would not move the service curve, which is the part that matters.</p>
+
+    <p><strong>The spread came from history, not from a model.</strong> The order-up-to level takes its level from
+       the forecast and its spread from that part's own past three-week windows. A part whose pattern is changing
+       gets a stale spread and nothing here would notice.</p>
+
+    <p><strong>Fill rate is not the only service measure.</strong> Counting units treats one customer waiting for
+       twenty parts the same as twenty customers waiting for one each. If the second is worse for the business,
+       the target should not be a fill rate.</p>
+
+    <p><strong>Every part was treated as its own problem.</strong> Parts that fail together, or that substitute for
+       one another, break that assumption in opposite directions. For sixty parts that is defensible. For sixty
+       thousand it is where the remaining gains are.</p>
+  </section>
+
+  <!-- 10 -->
+  <section id="watch">
+    <div class="section-eyebrow"><div class="num">10</div><h2>What to Watch</h2></div>
+
+    <ul class="checklist">
+      <li><span class="ck">&#10003;</span><span><strong>Count the zeros before choosing an error measure.</strong> If a percentage error is being reported on a series with zeros in it, something is being dropped, and it is usually the majority of the data.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Separate the dead from the slow first.</strong> Measure silence in units of the part's own inter-order interval, not in weeks, and set the threshold where the ratio separates cleanly.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Classify before you compare.</strong> The four classes reward different methods, and an average over all of them hides that the naive rule is winning a quarter of your catalogue.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Ask what the error-minimizing forecast would be.</strong> If it is zero, the measure is not aligned with the decision and no amount of method selection will fix that.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Simulate the policy, do not assume the service level.</strong> A 0.95 quantile is not a 95 percent fill rate, and the only way to know the gap is to run the year through the policy.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Put the service curve in front of whoever sets the target.</strong> The last few points of fill rate cost several times what the first ones did, and that is a business decision rather than a forecasting one.</span></li>
+    </ul>
+  </section>
+
+  <!-- 11 -->
+  <section id="in-ds-ai">
+    <div class="section-eyebrow"><div class="num">11</div><h2>Intermittent Demand in Data Science &amp; AI</h2></div>
+
+    <p>Intermittency is the standard case in service parts, and it appears wherever events are rare enough that
+       most periods are empty. In all of them the useful output is a distribution rather than a number, and most
+       forecasting stacks return a number.</p>
+
+    <table class="disp-table">
+      <tr><th>Where it shows up</th><th>The zeros are</th><th>What the decision needs</th></tr>
+      <tr><td class="nm">Service parts and after-sales</td><td>Weeks with no failure</td><td>A stock level that meets a service target</td></tr>
+      <tr class="hi"><td class="nm">Insurance claims by policy</td><td>Years with no claim</td><td>A reserve covering a high quantile of loss</td></tr>
+      <tr><td class="nm">Rare-event alerting</td><td>Hours with no incident</td><td>A threshold priced against the cost of a miss</td></tr>
+      <tr class="hi"><td class="nm">Long-tail retail and marketplaces</td><td>Days with no sale for that item</td><td>A reorder point, per item, at scale</td></tr>
+    </table>
+
+    <div class="research">
+      <span class="rtag">Where the methods came from</span>
+      <p style="margin:0.4rem 0 0"><strong>Croston</strong> proposed separating size from interval in 1972.
+         <strong>Syntetos and Boylan</strong> showed in 2001 that the resulting ratio is biased upward and gave the
+         correction used here, then in 2005 published the classification scheme with the two cut-offs this chapter
+         uses. The modern direction is to model the distribution directly rather than its mean: negative binomial
+         and compound Poisson formulations, quantile-based deep models such as DeepAR trained across a whole
+         catalogue, and zero-inflated approaches. All of them are aimed at the same target as Section 8, which is
+         the quantile rather than the average, and none of them removes the need to simulate the policy and
+         measure the service actually delivered.</p>
+    </div>
+  </section>
+
+  <!-- notebook -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">&#128013;</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook cleans the export, classifies all sixty parts on the Syntetos-Boylan-Croston
+             plane, separates the superseded part from the slow ones, shows how much of the year a percentage error
+             could be computed on, implements Croston and SBA from scratch alongside two baselines, finds the best
+             possible constant forecast, and then simulates a weekly review policy across every method and every
+             service quantile.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-intermittent-demand-spare-parts.html">&#128211; View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-intermittent-demand-spare-parts.ipynb"
+           target="_blank" rel="noopener">&#9654; Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-intermittent-demand-spare-parts.ipynb"
+           target="_blank" rel="noopener">&#11015; View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Read the reports &amp; get the data</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong>
+         (<code>capstone-intermittent-demand-spare-parts.xlsx</code>) holds three years of weekly issues for sixty
+         part numbers, 9,360 rows once the duplicated week is removed, with the parts family and the messy layer
+         the export arrived with. Two written reports accompany it: a <strong>plain-language brief</strong> for the
+         parts director, and a <strong>technical report</strong> covering the classification, the four methods, the
+         MASE comparison and the policy simulation.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-37-intermittent-demand-spare-parts.html" target="_blank" rel="noopener">&#128196; Plain-language brief <small>read online</small></a>
+        <a class="ex-file doc" href="../reports/capstone-37-intermittent-demand-spare-parts-technical.html" target="_blank" rel="noopener">&#128202; Technical report <small>read online</small></a>
+        <a class="ex-file xls" href="../data/capstone-intermittent-demand-spare-parts.xlsx">&#128202; Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>&#127891; Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">&#10003;</span><span><strong>Three part-weeks in five contain no demand</strong>, so the monthly MAPE could be computed on 39.1 percent of the year and on no single part in full.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>One part was dead rather than slow</strong>, silent for 14 times its own typical gap against a runner-up at 4, and it was issued zero units in the holdout year.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>SBA was best overall at 0.873 MASE</strong>, ahead of exponential smoothing by 0.002 and of uncorrected Croston by 0.015, and it lost the intermittent class to a naive rule.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Forecasting zero everywhere scores 0.622 and beats all four</strong>, because absolute error is minimized at the median and the median week is empty.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>The method is worth 3 points of fill rate and the service quantile is worth 52.</strong> Asking for the 0.95 quantile delivered 92.7 percent, and the last three points of service cost twenty-seven times what the first ones did.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">&#10067;</div><h2>Quiz: Test Yourself</h2></div>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-hierarchical-forecasting.html">
+      <span style="font-size:1.3rem">&#8592;</span>
+      <span><span class="cn-dir">Chapter 199 &#183; Previous</span><br><span class="cn-title">Hierarchical Forecasting: Store, Region, National</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">&#8594;</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;&#183;&nbsp;
+  Chapter 200 &nbsp;&#183;&nbsp; &#169; 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch200";
+  window.QUIZ_DATA = [
+    {
+      q: "A planning tool reports a MAPE every month on a catalogue where 61 percent of part-weeks have no demand. What is it actually reporting?",
+      options: ["A MAPE of the whole catalogue", "A MAPE of the 39 percent of weeks that had demand, because the rest are undefined and get dropped", "A MAPE that treats zeros as one", "Nothing: the calculation would fail"],
+      answer: 1,
+      explain: "A percentage error divides by the actual. On a zero week there is nothing to divide by, so the row is undefined and the tool drops it silently. In this catalogue there was not one part where MAPE could be computed for a whole year."
+    },
+    {
+      q: "Why is MASE a workable replacement here?",
+      options: ["Because it is always below 1", "Because it divides by the average absolute change of the series itself, which is defined even when the actuals are zero", "Because it ignores weeks with no demand", "Because it is a percentage"],
+      answer: 1,
+      explain: "The scaling comes from the series, not from the actual value of the week being scored, so zeros are no problem. It is also comparable across parts of very different sizes, which matters across a catalogue."
+    },
+    {
+      q: "Part P1024 had been silent for 37 weeks. Why did that identify it as dead rather than slow?",
+      options: ["37 weeks is longer than any part should go", "Its own typical gap is 2.6 weeks, so 37 weeks is 14 times its normal rhythm, against a runner-up at 4 times", "It had the fewest orders in the catalogue", "Its order sizes were the most variable"],
+      answer: 1,
+      explain: "Silence has to be measured in units of the part's own inter-order interval. Four weeks of quiet means nothing for a part ordered twice a year and a great deal for one ordered every fortnight."
+    },
+    {
+      q: "What does Croston's method smooth, and how does SBA differ from it?",
+      options: ["The raw series; SBA uses a larger smoothing constant", "The order size and the interval between orders separately; SBA multiplies the ratio by one minus half the smoothing constant to remove an upward bias", "The seasonal component; SBA removes the trend", "The lead-time demand; SBA uses a quantile"],
+      answer: 1,
+      explain: "Dividing one smoothed estimate by another is biased upward, because the expectation of a ratio is not the ratio of expectations. Syntetos and Boylan derived the correction; here it is worth 0.014 MASE and costs nothing."
+    },
+    {
+      q: "The best possible constant forecast, chosen with hindsight, was zero for 44 of the 59 parts and scored 0.622 MASE, beating all four methods. What does that establish?",
+      options: ["That the methods were implemented incorrectly", "That absolute error is minimized at the median, and on this catalogue the median week is empty, so the measure rewards forecasting nothing", "That zero is the right forecast", "That MASE is not a valid measure"],
+      answer: 1,
+      explain: "It is a property of the measure meeting the data, not a discovery about forecasting. A scoreboard whose winning entry is a policy that never orders anything is not measuring what the warehouse cares about."
+    },
+    {
+      q: "At the 0.95 service quantile the four methods span 3.0 points of fill rate, while moving the quantile spans 52.1 points. What follows for practice?",
+      options: ["Pick any forecasting method at random", "Use the best method, since it is free, but put the attention and the business conversation on where to sit on the service curve", "Always use the 0.98 quantile", "Forecasting is not worth doing here"],
+      answer: 1,
+      explain: "SBA is slightly better and costs nothing, so use it. The point is where the leverage is: in most warehouses the argument is about the forecasting method, which is worth a small fraction of what the service level is worth."
+    },
+    {
+      q: "Asking for the 0.95 quantile of lead-time demand delivered a 92.7 percent fill rate. Why are those different?",
+      options: ["The simulation was too short", "The quantile controls how often a cycle runs short; the fill rate counts units, and a cycle short by twenty units counts worse than one short by one", "The forecast was biased low", "They are the same thing and the difference is rounding"],
+      answer: 1,
+      explain: "Cycle service and fill rate are different quantities. If the business has agreed a fill rate, the quantile has to be tuned until the simulation delivers it rather than assumed to equal it."
+    },
+    {
+      q: "The service curve shows the last three points of fill rate costing 2.46 extra units per point against 0.09 for the first stretch. What should be done with that?",
+      options: ["Nothing: the target is fixed at 95 percent", "Show it to whoever sets the target, because the shape of that curve is a business decision rather than a forecasting one", "Use it to select the forecasting method", "Use it to set the smoothing constant"],
+      answer: 1,
+      explain: "It is the only place in the analysis where the business is being asked to spend money, and the cost of each additional point of service rises steeply. That conversation belongs with whoever owns the service commitment."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

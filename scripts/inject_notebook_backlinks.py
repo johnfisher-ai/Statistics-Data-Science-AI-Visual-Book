@@ -694,6 +694,8 @@ MAP = {
         ("../../capstone-reinforcement-learning-pricing.html#notebook", "Back to the book", "Chapter 197 · Reinforcement Learning: Dynamic Pricing"),
     "capstone-hierarchical-forecasting.html":
         ("../../capstone-hierarchical-forecasting.html#notebook", "Back to the book", "Chapter 199 · Hierarchical Forecasting: Store, Region, National"),
+    "capstone-intermittent-demand-spare-parts.html":
+        ("../../capstone-intermittent-demand-spare-parts.html#notebook", "Back to the book", "Chapter 200 · Intermittent Demand: Spare Parts"),
 }
 
 def card(href, kicker, title):
