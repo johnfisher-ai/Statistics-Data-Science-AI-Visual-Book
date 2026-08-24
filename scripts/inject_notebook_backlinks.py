@@ -702,6 +702,8 @@ MAP = {
         ("../../capstone-missing-data-imputation.html#notebook", "Back to the book", "Chapter 202 · Missing Data: What Dropping Rows Costs You"),
     "capstone-survival-analysis-time-to-event.html":
         ("../../capstone-survival-analysis-time-to-event.html#notebook", "Back to the book", "Chapter 203 · Survival Analysis: Time to Event"),
+    "capstone-fairness-audit.html":
+        ("../../capstone-fairness-audit.html#notebook", "Back to the book", "Chapter 204 · A Fairness Audit"),
 }
 
 def card(href, kicker, title):

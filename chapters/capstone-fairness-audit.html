@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 204 · A Fairness Audit — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .yes { color:#047857; font-weight:700; }
+    .disp-table .no { color:#dc2626; font-weight:700; }
+    .disp-table tr.hi td { background:#f0fdfa; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .embox { background:#f0fdfa; border:1px solid #99f6e4; border-left:4px solid #115e59; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .embox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#134e4a; }
+    .rw-card { background:#f0fdfa; border:1px solid #99f6e4; border-left:4px solid #115e59; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#134e4a; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#f0fdfa; color:#115e59; border-color:#99f6e4; }
+    .ex-file.doc { background:#ecfdf5; color:#0f766e; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#f0fdfa; border:1px solid #99f6e4; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#134e4a; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #115e59; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#134e4a; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+    .svg-wrap { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.9rem 0.6rem 0.3rem; background:var(--panel); }
+    .svg-wrap svg { width:100%; height:auto; display:block; }
+    .svg-wrap .cap { font-size:0.82rem; color:var(--ink-soft); padding:0.55rem 0.6rem 0.4rem; line-height:1.55; }
+    .svg-wrap .cap strong { color:var(--ink); }
+    .partclose { background:linear-gradient(135deg,#f0fdfa,#f0fdfa); border:1px solid #99f6e4;
+                 border-radius:14px; padding:1.3rem 1.5rem; margin:1.6rem 0; }
+    .partclose h4 { font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:0.07em;
+                    color:#134e4a; margin:0 0 0.75rem; }
+    .partclose ol { margin:0 0 0 1.1rem; padding:0; }
+    .partclose li { font-size:0.9rem; color:var(--ink-soft); line-height:1.62; margin-bottom:0.45rem; }
+    .partclose li a { color:#115e59; font-weight:700; text-decoration:none; }
+    .partclose li a:hover { text-decoration:underline; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXXIII &#183; Capstone Projects: Specialized Methods</span><span class="sep">/</span>
+      <span>Chapter 204</span>
+    </div>
+    <h1>A <span class="accent">Fairness Audit</span></h1>
+    <p class="dek">Capstone 41. A care-management model with an AUC of 0.92 enrolls one group at a third of the other's rate. Every fairness check against the label it was trained on comes back clean, and every one of them is looking in the wrong place, because the label is where the problem is.</p>
+    <div class="hero-meta">
+      <div class="m">&#9201;&#65039; <b>~25 min</b>&nbsp;read</div>
+      <div class="m">&#127919; <b>Disparate impact, label bias, the impossibility result</b></div>
+      <div class="m">&#128202; <b>Chapter 204</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <div class="brief-card">
+      <div class="bh">The brief</div>
+      <dl>
+        <dt>Setting</dt><dd>A health system's care-management program: extra nursing, medication review and care coordination, with capacity for about three percent of a twelve-thousand-patient panel. A model ranks everyone and the top slice is auto-enrolled.</dd>
+        <dt>The question</dt><dd><strong>Does the program reach the patients who need it, and does it reach them equally?</strong> It has been running for a year.</dd>
+        <dt>Why it matters</dt><dd>The model predicts next year's medical cost, because the health system has no direct measure of need and cost is the number every claims system already produces. If cost does not mean the same thing for both groups, a model that ranks cost perfectly ranks need imperfectly.</dd>
+        <dt>What we do</dt><dd>Run the audit the way it is usually run, watch it pass, then change what we measure against and watch it fail. Compare four remedies, and finish with why no threshold rule can satisfy every fairness criterion at once.</dd>
+      </dl>
+    </div>
+
+    <p class="lead">Group A and group B are placeholders for a patient characteristic the health system is required
+       to monitor. <span class="hl">The mechanism is real and the people are not.</span> What matters is that
+       the two groups do not have equal access to care, which is a fact about the system rather than about the
+       patients.</p>
+  </section>
+
+  <!-- 1 -->
+  <section id="proxy">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Cost Is Standing In for Need</h2></div>
+
+    <p>The substitution at the heart of this is neither lazy nor unusual. Cost is the only number a claims system
+       produces for every patient every month without anyone having to define anything. It correlates strongly
+       with illness, it is auditable, and every incentive points at using it.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Group B, chronic conditions</div><div class="rv">2.10</div><div class="rd">against 1.88 for group A</div></div>
+      <div class="rchip"><div class="rk">Group B, cost next year</div><div class="rv">5.1k</div><div class="rd">against 7.0k for group A</div></div>
+      <div class="rchip"><div class="rk">At equal illness, B costs</div><div class="rv">59 to 72%</div><div class="rd">of what A costs</div></div>
+    </div>
+
+    <p><strong>Group B carries more chronic conditions and generates less spending.</strong> Those two facts
+       together are not a paradox. They are the finding, and everything downstream follows from them.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-fairness-firstlook.png"
+           alt="Four panels. Top left: distributions of chronic conditions by group, with group B shifted slightly right at 2.10 conditions against 1.88. Top right: cost distributions, with group B's mean at 5.1 thousand and group A's at 7.0 thousand. Bottom left: median cost next year plotted against number of chronic conditions for each group, two rising lines with group B consistently below group A and the gap between them shaded. Bottom right: primary care visits and emergency visits against chronic conditions, showing group B with fewer primary care visits and more emergency visits at every level of illness.">
+      <figcaption><strong>Top left and right:</strong> sicker, and cheaper. <strong>Bottom left:</strong> the same
+        comparison held at a fixed level of illness. The shaded gap is what a dollar-based measure reads as
+        &quot;less sick&quot; and what is actually &quot;less served.&quot; <strong>Bottom right:</strong> where
+        the missing care goes. Fewer primary-care visits, more emergency visits, at every level of
+        illness.</figcaption>
+    </figure>
+
+    <p>The bottom-right panel is worth sitting with. <strong>The evidence of the bias is present in the data, in
+       columns the model uses as predictors rather than as warnings.</strong></p>
+  </section>
+
+  <!-- 2 -->
+  <section id="deployed">
+    <div class="section-eyebrow"><div class="num">2</div><h2>The Model Works, and Fails the First Test</h2></div>
+
+    <p>The deployed model uses the five features a claims system has: age, primary-care visits, emergency visits,
+       active medications and prior cost. It identifies the most expensive three percent of the panel with an
+       <strong>AUC of 0.920</strong>. By any ordinary standard it works.</p>
+
+    <table class="disp-table">
+      <tr><th></th><th>Group A</th><th>Group B</th><th>Ratio</th></tr>
+      <tr><td class="nm">Enrollment rate</td><td>3.72%</td><td>1.36%</td><td class="no">0.36</td></tr>
+      <tr class="hi"><td class="nm">Share of the 144 places</td><td>86.8%</td><td class="no">13.2%</td><td></td></tr>
+      <tr><td class="nm">Share of the panel</td><td>70.6%</td><td>29.4%</td><td></td></tr>
+    </table>
+
+    <p>A ratio of 0.36 against the four-fifths threshold of 0.80. <strong>This is where an audit starts, and on
+       its own it settles nothing</strong>, because there is an obvious defense: if group B genuinely costs less,
+       a cost model is right to rank them lower and the disparity is a property of the data.</p>
+
+    <p>The rest of the chapter is about whether that defense holds.</p>
+  </section>
+
+  <!-- 3 -->
+  <section id="clean">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The Audit That Comes Back Clean</h2></div>
+
+    <p>The standard next step is to check whether the model's predictions are calibrated within each group. If it
+       says twelve thousand dollars, do both groups go on to cost twelve thousand dollars?</p>
+
+    <table class="disp-table">
+      <tr><th>Top two risk deciles</th><th>Predicted</th><th>Actual</th><th>Ratio</th></tr>
+      <tr><td class="nm">Group A</td><td>14.1k</td><td>14.3k</td><td class="ok">1.01</td></tr>
+      <tr class="hi"><td class="nm">Group B</td><td>12.3k</td><td>10.7k</td><td>0.87</td></tr>
+    </table>
+
+    <p>The model is close to calibrated on cost, and where it is not, <strong>it errs in group B's favor</strong>
+       by predicting they will spend more than they do. Read that as an auditor would: every standard check against
+       the label says the model is doing its job, and the one imperfection points away from harm.</p>
+
+    <p class="callout-inline">A fairness review that audits a model against its own training label cannot find a
+       problem that lives in the label.</p>
+  </section>
+
+  <!-- 4 -->
+  <section id="yardstick">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Changing What We Measure Against</h2></div>
+
+    <p>The audit that works asks a different question. Take the patients the model considers equally risky, and
+       count how ill they actually are.</p>
+
+    <table class="disp-table">
+      <tr><th>Decile of predicted risk</th><th>Group A conditions</th><th>Group B conditions</th><th>Difference</th></tr>
+      <tr><td class="nm">8th</td><td>2.31</td><td>3.19</td><td class="no">+38%</td></tr>
+      <tr class="hi"><td class="nm">9th</td><td>2.92</td><td>3.76</td><td class="no">+29%</td></tr>
+      <tr><td class="nm">10th</td><td>4.13</td><td>4.65</td><td class="no">+12%</td></tr>
+      <tr class="hi"><td class="nm">8th to 10th pooled</td><td>3.19</td><td>3.69</td><td class="no">+16%</td></tr>
+    </table>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-fairness-audit.png"
+           alt="Two panels. Left: group B's share of program places under four approaches, 13.2 percent as deployed, 29.9 percent with group-specific thresholds on the cost model, 19.7 percent with the need label, and 29.9 percent with both, against a dashed line at the 29.4 percent panel share. Right: mean chronic conditions by decile of predicted cost risk for each group, with group B's line above group A's across the upper deciles and the gap shaded.">
+      <figcaption><strong>Left:</strong> who gets a place under each approach. <strong>Right:</strong> at the same
+        predicted risk, group B patients carry more chronic conditions. The model is not ranking them lower
+        because they are healthier.</figcaption>
+    </figure>
+
+    <p>That is the defense answered. The model ranks group B lower because the same illness generates fewer dollars
+       for them and the model was told to find dollars. <strong>Every patient it treats as equivalent to a group A
+       patient is in fact sicker than them</strong>, and the program is allocating on the wrong ordering.</p>
+
+    <p>None of this is visible in accuracy, calibration, or any error rate computed against cost.</p>
+  </section>
+
+  <!-- 5 -->
+  <section id="remedies">
+    <div class="section-eyebrow"><div class="num">5</div><h2>Four Things We Could Do</h2></div>
+
+    <table class="disp-table">
+      <tr><th>Approach</th><th>B/A ratio</th><th>B share of places</th><th>Enrollees truly high-need</th></tr>
+      <tr><td class="nm">As deployed, cost label</td><td class="no">0.36</td><td>13.2%</td><td>84.7%</td></tr>
+      <tr><td class="nm">Cost label, group-specific thresholds</td><td class="ok">1.02</td><td>29.9%</td><td>85.4%</td></tr>
+      <tr class="hi"><td class="nm">Need label, one threshold</td><td>0.59</td><td>19.7%</td><td class="ok">86.6%</td></tr>
+      <tr><td class="nm">Need label, group-specific thresholds</td><td class="ok">1.02</td><td>29.9%</td><td>84.7%</td></tr>
+    </table>
+
+    <p><strong>The two remedies do different jobs and neither does both.</strong></p>
+
+    <p><strong>Changing the label helps most on who gets in.</strong> Training on next year's condition count
+       raises the share of enrollees who are genuinely high-need to 86.6 percent, the best of the four, and lifts
+       group B's ratio from 0.36 to 0.59. It does not reach parity, because the features the model uses, visits
+       and prior cost, carry the same access gap the label did.
+       <span class="hl">You cannot fully repair a label problem through a feature set that has the same
+       problem.</span></p>
+
+    <p><strong>Group-specific thresholds deliver parity by construction</strong> and improve targeting barely at
+       all, because they reorder nobody. They take the same ranking and cut it in two places.</p>
+
+    <p><strong>Doing both gives parity and gives back the targeting gain.</strong> That is the honest result and it
+       is not the tidy one: on this panel the combination is no better at finding high-need patients than the cost
+       model was, it is simply far more evenly distributed.</p>
+
+    <p>The recommendation is the label change, because it is the only one that improves the measurement rather
+       than redistributing an unimproved one, with thresholds as a policy decision layered on top and reported as
+       one.</p>
+  </section>
+
+  <!-- 6 -->
+  <section id="impossible">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Why You Cannot Have Everything</h2></div>
+
+    <p>Suppose we tried to fix this purely by choosing thresholds. There is a result that says we cannot: when two
+       groups have different base rates, calibration and equal error rates are mutually incompatible. Here is what
+       that looks like in numbers rather than in algebra.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-fairness-impossibility.png"
+           alt="Two panels of grouped bars showing the gap between groups on three fairness criteria under three threshold rules. Left panel, targeting high cost: one threshold gives gaps of 0.09, 0.05 and 0.11; equalizing the false-positive rate closes it to 0.00 but opens the precision gap to 0.18; equalizing precision closes that to 0.00 but opens the miss-rate gap to 0.35. Right panel, targeting high need: all gaps are small throughout, at most 0.10 and mostly around 0.03.">
+      <figcaption><strong>Left:</strong> on the cost label, closing any one gap opens another.
+        <strong>Right:</strong> on the corrected label, the same three rules leave every gap small. The trade-off
+        did not disappear, it shrank by an order of magnitude.</figcaption>
+    </figure>
+
+    <p><strong>Equalize the false-positive rate and the precision gap widens to 0.18. Equalize precision instead
+       and the miss rate diverges to 0.35</strong>, with group B failing to be identified 76 percent of the time
+       against group A's 41. No threshold pair closes all three, and that is arithmetic rather than a failed
+       search.</p>
+
+    <p>Now read the right-hand panel. On the corrected label, once either criterion is equalized every remaining
+       gap is under 0.033. The reason is in the base rates: on cost they are 22.9 percent and 13.1 percent, a gap
+       of nearly ten points that exists <em>because the label is dollars and one group spends fewer of them</em>.
+       On need they are 31.4 and 35.9, and what remains is a real difference in illness.</p>
+
+    <p><strong>The severity of the impossibility was itself a symptom.</strong> Much of what looked like an
+       unavoidable ethical trade-off had been manufactured by the choice of what to predict, and it went away when
+       that choice was corrected.</p>
+  </section>
+
+  <!-- 7 -->
+  <section id="limits">
+    <div class="section-eyebrow"><div class="num">7</div><h2>What This Does Not Settle</h2></div>
+
+    <p><strong>Condition count is also a proxy.</strong> It comes from diagnoses on a problem list, and a diagnosis
+       requires someone to have been seen. It is less sensitive to access than dollars are, which is why it is an
+       improvement, but its residual bias runs the same way, so the true disparity is probably larger than measured
+       here.</p>
+
+    <p><strong>Two groups, one attribute.</strong> Real audits handle several attributes and their intersections,
+       where cell sizes fall quickly and the multiple-comparison problem becomes severe.</p>
+
+    <p><strong>Nothing here measures the program's effect.</strong> Everything is about who gets a place. Whether
+       care management helps, and whether it helps both groups equally, is a causal question this observational
+       panel cannot answer and a randomized rollout could.</p>
+
+    <p><strong>Parity was imposed on a fixed capacity.</strong> Every place given to one group is taken from
+       another, which is why parity thresholds cost targeting. If the real answer is that the program is too
+       small, no allocation rule fixes that.</p>
+
+    <p><strong>The four-fifths rule is a legal screening device, not a definition of fairness.</strong> A model can
+       pass it and still do what this one does, and a model can fail it for entirely justified reasons. It starts
+       audits. It does not finish them.</p>
+  </section>
+
+  <!-- 8 -->
+  <section id="watch">
+    <div class="section-eyebrow"><div class="num">8</div><h2>What to Watch</h2></div>
+
+    <ul class="checklist">
+      <li><span class="ck">&#10003;</span><span><strong>Write down what the label is a proxy for.</strong> Cost for need, clicks for interest, arrests for crime, tenure for performance. If the target is a stand-in, the audit has to be against the thing it stands in for.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Ask whether the proxy is equally good for everyone.</strong> That is the question the whole chapter turns on, and it is answered by comparing groups at a fixed level of the underlying quantity rather than in aggregate.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Never conclude from calibration on the label alone.</strong> A perfectly calibrated model on a biased target is a perfectly calibrated biased model, and it will pass every check you run against its own predictions.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Treat the four-fifths ratio as a smoke alarm.</strong> It tells you to investigate. It does not tell you the model is unfair, and passing it does not tell you the model is fair.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Expect to trade one criterion against another.</strong> When base rates differ you cannot have calibration and equal error rates together. Decide in advance which one the decision cares about and say so.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Fix the target before tuning the thresholds.</strong> Threshold adjustment redistributes an ordering. Only a better label produces a better ordering, and it also shrinks the trade-offs you then have to make.</span></li>
+    </ul>
+  </section>
+
+  <!-- 9 -->
+  <section id="in-ds-ai">
+    <div class="section-eyebrow"><div class="num">9</div><h2>Label Bias in Data Science &amp; AI</h2></div>
+
+    <p>Almost every consequential model is trained on a proxy, because the thing anyone actually cares about is
+       rarely recorded. The proxy is chosen because it is available, and availability is not neutral.</p>
+
+    <table class="disp-table">
+      <tr><th>What is wanted</th><th>What gets predicted</th><th>What the gap encodes</th></tr>
+      <tr><td class="nm">Health need</td><td>Medical cost</td><td>Who can reach and afford care</td></tr>
+      <tr class="hi"><td class="nm">Job performance</td><td>Manager ratings, or tenure</td><td>Who managers already favored</td></tr>
+      <tr><td class="nm">Crime</td><td>Arrests</td><td>Where police already patrolled</td></tr>
+      <tr class="hi"><td class="nm">Creditworthiness</td><td>Default on loans granted</td><td>Only the people previously approved</td></tr>
+      <tr><td class="nm">Content quality</td><td>Engagement</td><td>What provokes a reaction</td></tr>
+    </table>
+
+    <p><strong>In every row the model can be accurate, calibrated and audited clean while doing something nobody
+       intended.</strong> The failure is upstream of the algorithm, which is why it survives model changes, more
+       data and better validation, and why so much of the fairness literature that focuses on the classifier
+       cannot reach it.</p>
+
+    <div class="research">
+      <span class="rtag">Where the methods came from</span>
+      <p style="margin:0.4rem 0 0">The <strong>four-fifths rule</strong> comes from the 1978 Uniform Guidelines on
+         Employee Selection Procedures in US employment law, which is why a statistical audit begins with a legal
+         threshold. <strong>Hardt, Price and Srebro</strong> formalized equalized odds in 2016, and
+         <strong>Kleinberg, Mullainathan and Raghavan</strong> along with <strong>Chouldechova</strong>
+         independently proved the impossibility result the same year: calibration, equal false-positive rates and
+         equal false-negative rates cannot hold together when base rates differ. The label-bias mechanism in this
+         chapter follows <strong>Obermeyer and colleagues</strong>, who showed in <em>Science</em> in 2019 that a
+         widely deployed US care-management algorithm used cost as a proxy for need and consequently
+         under-referred Black patients at equal illness, and that changing the label largely closed the gap. The
+         practical tooling has moved toward documentation as much as arithmetic, through
+         <strong>model cards</strong> and <strong>datasheets for datasets</strong>, both of which begin by asking
+         what the label actually is.</p>
+    </div>
+
+    <div class="partclose">
+      <h4>Part XXXIII in three capstones</h4>
+      <ol>
+        <li><a href="capstone-missing-data-imputation.html">Missing Data: What Dropping Rows Costs You</a> took
+          values that were never recorded, and found that the method which fills them in most confidently is the
+          one that is right 3 percent of the time.</li>
+        <li><a href="capstone-survival-analysis-time-to-event.html">Survival Analysis: Time to Event</a> took
+          events that have not happened yet, and found that leaving them out understates tenure by a third and
+          reverses the answer on a policy question.</li>
+        <li><strong>This chapter</strong> took a quantity nobody measured at all, health need, and found that the
+          number standing in for it carried a bias that no amount of model validation could see.</li>
+      </ol>
+      <p style="margin:0.9rem 0 0;font-size:0.9rem;color:var(--ink-soft);line-height:1.62">Three absences: a value
+         that exists and was not recorded, a value that does not exist yet, and a value that was never collected
+         because something cheaper was available instead. In all three the damage came from the same move, which
+         was letting a convenient stand-in be treated as the thing itself.</p>
+    </div>
+  </section>
+
+  <!-- notebook -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">&#128013;</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook cleans four faults out of the patient extract, rebuilds the deployed model on
+             claims features and the cost label, measures disparate impact, runs the calibration audit that passes,
+             then re-audits against chronic conditions to show the gap at equal predicted risk, compares four
+             remedies, and demonstrates the impossibility result numerically on both the biased and the corrected
+             label.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-fairness-audit.html">&#128211; View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-fairness-audit.ipynb"
+           target="_blank" rel="noopener">&#9654; Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-fairness-audit.ipynb"
+           target="_blank" rel="noopener">&#11015; View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Read the reports &amp; get the data</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong>
+         (<code>capstone-fairness-audit.xlsx</code>) holds 12,000 patients with utilization, chronic conditions,
+         next-year cost and next-year condition count, as the extract arrived: duplicated patients, negative
+         billing adjustments, two impossible ages and a group field with gaps. Two written reports accompany it: a
+         <strong>plain-language brief</strong> for the chief medical officer, and a <strong>technical report</strong>
+         covering the audit design, the four remedies and the impossibility analysis.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-41-fairness-audit.html" target="_blank" rel="noopener">&#128196; Plain-language brief <small>read online</small></a>
+        <a class="ex-file doc" href="../reports/capstone-41-fairness-audit-technical.html" target="_blank" rel="noopener">&#128202; Technical report <small>read online</small></a>
+        <a class="ex-file xls" href="../data/capstone-fairness-audit.xlsx">&#128202; Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>&#127891; Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">&#10003;</span><span><strong>The model was accurate and the outcome was wrong.</strong> An AUC of 0.920 on cost, and an enrollment ratio of 0.36 against the four-fifths threshold of 0.80.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>The standard audit passed.</strong> Calibration on cost was close within both groups and where it missed it over-predicted group B's spending, pointing away from harm.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>At equal predicted risk, group B carried 16 percent more chronic conditions</strong>, rising to 38 percent in the eighth decile. The model ranked them lower because the same illness generates fewer dollars for them.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Relabeling improved targeting the most and did not reach parity</strong>, taking high-need enrollees from 84.7 to 86.6 percent and group B's ratio from 0.36 to 0.59, because the features carry the same access gap the label did.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>No threshold rule satisfies every criterion.</strong> On the cost label, equalizing the false-positive rate opened a 0.18 precision gap and equalizing precision opened a 0.35 miss-rate gap.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>The severity of that trade-off was itself a symptom.</strong> On the corrected label every gap fell under 0.033, because the ten-point base-rate difference had been an artifact of measuring need in dollars.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">&#10067;</div><h2>Quiz: Test Yourself</h2></div>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-survival-analysis-time-to-event.html">
+      <span style="font-size:1.3rem">&#8592;</span>
+      <span><span class="cn-dir">Chapter 203 &#183; Previous</span><br><span class="cn-title">Survival Analysis: Time to Event</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">&#8594;</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;&#183;&nbsp;
+  Chapter 204 &nbsp;&#183;&nbsp; &#169; 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch204";
+  window.QUIZ_DATA = [
+    {
+      q: "The model achieves an AUC of 0.920 and enrolls group B at 0.36 times group A's rate. What does the AUC tell you about whether that is unfair?",
+      options: ["It proves the model is fair, since it is accurate", "Nothing, because it measures accuracy against cost, which is the quantity whose fairness is in question", "It proves the model is unfair", "It is irrelevant to the audit"],
+      answer: 1,
+      explain: "Accuracy is always measured against a label. If the label is the biased thing, high accuracy tells you the model faithfully reproduced the bias."
+    },
+    {
+      q: "Calibration on cost was close in both groups, and where it missed it over-predicted group B's spending. Why did this audit pass?",
+      options: ["Because the model is genuinely unbiased", "Because it checks the model against its own training label, and the problem is in that label rather than in the model's use of it", "Because the sample was too small", "Because calibration is the wrong metric in all cases"],
+      answer: 1,
+      explain: "The model was asked to predict cost and it predicts cost well for everyone. Auditing predictions against the target they were fitted to cannot detect that the target is the wrong quantity."
+    },
+    {
+      q: "At the same decile of predicted risk, group B carries 16 percent more chronic conditions. What does that establish?",
+      options: ["That the model is miscalibrated", "That the model ranks group B lower not because they are healthier but because the same illness generates fewer dollars for them", "That group B is over-diagnosed", "That chronic conditions are a bad measure"],
+      answer: 1,
+      explain: "It answers the natural defense of the model. If group B were simply less ill, they would show fewer conditions at equal predicted risk. They show more."
+    },
+    {
+      q: "Retraining on next year's condition count raised group B's ratio from 0.36 to 0.59, still short of parity. Why did it not go further?",
+      options: ["The new label is also biased in the same direction, and the features the model uses carry the same access gap", "The model was under-trained", "Condition counts are noisier than costs", "Parity is impossible in principle"],
+      answer: 0,
+      explain: "Prior cost, visits and medication counts all reflect utilization, which reflects access. Fixing the label removes one channel of the bias, not all of them."
+    },
+    {
+      q: "Group-specific thresholds delivered parity but barely improved targeting, while relabeling improved targeting but not parity. What follows?",
+      options: ["Use thresholds, since parity is the legal requirement", "They address different problems: thresholds redistribute an ordering, only a better label produces a better ordering, and the choice between them should be stated rather than hidden in a pipeline", "Use neither", "They are equivalent"],
+      answer: 1,
+      explain: "Thresholds reorder nobody; they cut the same ranking in two places. Reporting a threshold adjustment as a technical fix rather than as the policy decision it is conceals who decided what."
+    },
+    {
+      q: "On the cost label, equalizing the false-positive rate opened a precision gap of 0.18, and equalizing precision opened a miss-rate gap of 0.35. Why can both not be closed?",
+      options: ["The optimizer failed to converge", "Because when two groups have different base rates, calibration and equal error rates are mathematically incompatible", "Because the sample is too small", "Because the thresholds were badly chosen"],
+      answer: 1,
+      explain: "This is the impossibility result proved independently by Kleinberg, Mullainathan and Raghavan and by Chouldechova in 2016. It is arithmetic, and no tuning evades it."
+    },
+    {
+      q: "On the corrected label every gap fell below 0.033 under the same threshold rules. What explains the difference?",
+      options: ["The need model is more accurate", "The base rates are much closer on the need label, because the ten-point gap on the cost label was an artifact of measuring illness in dollars", "The corrected label has fewer positives", "Random variation"],
+      answer: 1,
+      explain: "The impossibility bites in proportion to the base-rate difference. Much of what looked like an unavoidable ethical trade-off had been manufactured by the choice of target."
+    },
+    {
+      q: "A model predicts arrests as a proxy for crime, and passes every calibration check by arrest. What is the analogous risk?",
+      options: ["None, since calibration is sufficient", "Arrests record where police patrolled as well as where crime occurred, so a model calibrated on arrests can be accurate and still allocate on the wrong ordering", "Arrest data is too sparse to model", "The model should use more features"],
+      answer: 1,
+      explain: "It is the same structure as cost for need. The proxy is measured through a process that differs by group, and any audit run against the proxy will confirm the model is doing exactly what it was asked."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

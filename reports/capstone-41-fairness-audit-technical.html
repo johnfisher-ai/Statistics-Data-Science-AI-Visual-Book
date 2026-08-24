@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fairness Audit (Technical) &#183; Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/report.css">
+  <style>
+    body.report { --rpt-accent:#115e59; --rpt-accent-dark:#134e4a; --rpt-accent-bg:#f0fdfa; --rpt-accent-line:#99f6e4; }
+  </style>
+</head>
+
+<body class="report">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="../chapters/capstone-fairness-audit.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">&#8592; Chapter 204</a>
+  </div>
+</nav>
+
+<div class="rpt-sticky" id="rptSticky">
+  <div class="inner">
+    <div class="st-title">Label Bias in a Care-Management Risk Model: Detection, Remediation and the Limits of Threshold Adjustment</div>
+    <a class="st-back" href="../chapters/capstone-fairness-audit.html">&#8592; Chapter 204</a>
+  </div>
+</div>
+
+<div class="rpt-wrap">
+  <article class="rpt-paper technical">
+    <header class="rpt-head">
+      <div class="rpt-topline">
+        <div class="rpt-kicker">Capstone 41 &#183; Technical Report</div>
+        <span class="rpt-badge technical">Technical Report</span>
+      </div>
+      <h1>Label Bias in a Care-Management Risk Model: Detection, Remediation and the Limits of Threshold Adjustment</h1>
+      <p class="rpt-sub">Disparate impact analysis, calibration against the training label, re-audit against an outcome proxy that does not run through utilization, four remediation strategies, and an empirical demonstration of the calibration and error-rate impossibility.</p>
+      <div class="rpt-meta"><div><b>Data</b> &nbsp;12,000 patients, one year of history and one year of follow-up</div><div><b>Model</b> &nbsp;Gradient boosting on five claims features, target next-year cost, top 3 percent enrolled</div><div><b>Comparators</b> &nbsp;Same features with next-year chronic-condition count as target; group-specific thresholds</div></div>
+    </header>
+
+    <div class="rpt-prov">
+      <span class="pv-tag">Where this comes from</span>
+      <div class="pv-row"><div><span>Chapter</span> <a href="../chapters/capstone-fairness-audit.html">Chapter 204 &#183; A Fairness Audit</a></div><div><span>Part</span> Part XXXIII &#183; Capstone Projects: Specialized Methods</div><div><span>Dataset</span> <a href="../data/capstone-fairness-audit.xlsx">capstone-fairness-audit.xlsx</a></div><div><span>Notebook</span> <a href="../chapters/notebooks/html/capstone-fairness-audit.html" target="_blank" rel="noopener">View the analysis</a></div></div>
+    </div>
+
+    <div class="rpt-body">
+      <h2>Abstract</h2>
+      <p><strong>Objective.</strong> To determine whether a deployed care-management enrollment model allocates places equitably, and if not, to locate the mechanism and evaluate remedies.</p>
+      <p><strong>Design.</strong> A gradient boosting regressor was fitted on five claims-derived features with next-year billed cost as the target, replicating the deployed configuration, and evaluated on a 4,800-patient holdout with capacity fixed at 3 percent. Disparate impact was assessed by the four-fifths ratio. Calibration was assessed within group against the training label. The model was then re-audited against chronic-condition count, a need proxy that does not run through utilization. Four allocation strategies were compared, and the calibration and error-rate trade-off was evaluated empirically on both the deployed and corrected labels.</p>
+      <p><strong>Result.</strong> AUC for identifying the top 3 percent of cost was 0.920. The enrollment ratio for group B against group A was <strong>0.36</strong>, failing the four-fifths threshold, with group B receiving 13.2 percent of places against a 29.4 percent panel share. Calibration on cost was close within both groups, with group B's realized cost 0.87 of predicted in the top two deciles. At matched predicted risk, group B carried <strong>16 percent more chronic conditions</strong> across deciles 8 to 10. Retraining on next-year condition count raised the ratio to 0.59 and the share of genuinely high-need enrollees from 84.7 to 86.6 percent. On the cost label, equalizing false-positive rates produced a precision gap of 0.176 and equalizing precision produced a false-negative gap of 0.354; on the corrected label all gaps fell below 0.033.</p>
+      <h2>1. Data and preprocessing</h2>
+      <p>The extract contained 12,023 rows. Twenty-three duplicate patient identifiers were removed. Fourteen rows carried a negative prior cost, representing billing adjustments, and were set to zero. Two rows carried impossible ages (0 and 214) and were set to the median. The group field was absent for 96 patients, who were retained in model fitting and excluded from group comparisons rather than imputed.</p>
+      <h2>2. Model performance on its own terms</h2>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody><tr><td>AUC, top 3 percent of next-year cost</td><td>0.920</td></tr><tr><td>Correlation of prediction with realized cost</td><td>0.610</td></tr><tr><td>Evaluation panel</td><td>4,800 patients, 4,761 with group recorded</td></tr><tr><td>Program capacity</td><td>144 places</td></tr></tbody></table><div class="rpt-cap">The model does what it was specified to do.</div></div>
+      <h2>3. Disparate impact</h2>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th></th><th>Group A</th><th>Group B</th><th>Ratio</th></tr></thead><tbody><tr><td>Enrollment rate</td><td>3.72%</td><td>1.36%</td><td><strong>0.36</strong></td></tr><tr><td>Share of places</td><td>86.8%</td><td>13.2%</td><td>&#8212;</td></tr><tr><td>Share of panel</td><td>70.6%</td><td>29.4%</td><td>&#8212;</td></tr></tbody></table><div class="rpt-cap">The four-fifths guideline treats a ratio below 0.80 as adverse impact requiring justification.</div></div>
+      <h2>4. Calibration against the training label</h2>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Top two risk deciles</th><th>Predicted</th><th>Realized</th><th>Ratio</th></tr></thead><tbody><tr><td>Group A</td><td>14.1k</td><td>14.3k</td><td>1.01</td></tr><tr><td>Group B</td><td>12.3k</td><td>10.7k</td><td>0.87</td></tr></tbody></table><div class="rpt-cap">Deviation from calibration favors group B, in the sense of over-predicting their spending.</div></div>
+      <p>Within-group calibration against cost is close, and its residual error runs in the direction opposite to the observed allocation harm. An audit restricted to the training label therefore produces no finding. This is the central methodological point: label bias is not detectable by any statistic computed against the biased label.</p>
+      <h2>5. Re-audit against a need proxy</h2>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Decile of predicted cost risk</th><th>Group A conditions</th><th>Group B conditions</th><th>Ratio</th></tr></thead><tbody><tr><td>8</td><td>2.31</td><td>3.19</td><td>1.38</td></tr><tr><td>9</td><td>2.92</td><td>3.76</td><td>1.29</td></tr><tr><td>10</td><td>4.13</td><td>4.65</td><td>1.12</td></tr><tr><td>8 to 10 pooled</td><td>3.19</td><td>3.69</td><td><strong>1.16</strong></td></tr></tbody></table><div class="rpt-cap">Chronic conditions on the problem list, which do not require billing to be recorded.</div></div>
+      <p>The mechanism is a group-dependent mapping from need to cost. At matched chronic-condition count, median next-year cost for group B is 0.59 to 0.72 of group A's. Utilization patterns are consistent with an access explanation: at every condition count group B records fewer primary-care visits and more emergency visits.</p>
+      <h2>6. Remediation</h2>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Strategy</th><th>B/A ratio</th><th>B share of places</th><th>Enrollee conditions next year</th><th>Share truly high-need</th></tr></thead><tbody><tr><td>Deployed, cost label</td><td>0.36</td><td>13.2%</td><td>5.42</td><td>84.7%</td></tr><tr><td>Cost label, group thresholds</td><td>1.02</td><td>29.9%</td><td>5.47</td><td>85.4%</td></tr><tr><td>Need label, single threshold</td><td>0.59</td><td>19.7%</td><td>5.49</td><td><strong>86.6%</strong></td></tr><tr><td>Need label, group thresholds</td><td>1.02</td><td>29.9%</td><td>5.46</td><td>84.7%</td></tr></tbody></table><div class="rpt-cap">High-need defined as the top quintile of next-year chronic-condition count.</div></div>
+      <p>Relabeling improves targeting and only partially closes the allocation gap, because the feature set carries the same access-dependence as the original label. Group-specific thresholds close the gap by construction without reordering candidates, and therefore improve targeting only incidentally. The combination attains parity at the deployed model's targeting level, which is a genuine trade rather than a free improvement.</p>
+      <h2>7. The calibration and error-rate trade-off</h2>
+      <figure class="rpt-fig"><img src="../assets/img/report-41-disparity.png" alt="A bar chart of group B's share of program places under four approaches, 13.2, 29.9, 19.7 and 29.9 percent, against a dashed reference line at their 29.4 percent panel share."><figcaption><span class="n">Figure 1.</span> Allocation outcome under each remediation strategy.</figcaption></figure>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Threshold rule</th><th>Precision gap</th><th>False-positive gap</th><th>False-negative gap</th></tr></thead><tbody><tr><td><em>Target: high cost, base rates 22.9% and 13.1%</em></td><td></td><td></td><td></td></tr><tr><td>One threshold for all</td><td>0.094</td><td>0.049</td><td>0.115</td></tr><tr><td>Equalize false-positive rate</td><td><strong>0.176</strong></td><td>0.001</td><td>0.017</td></tr><tr><td>Equalize precision</td><td>0.002</td><td>0.098</td><td><strong>0.354</strong></td></tr><tr><td><em>Target: high need, base rates 31.4% and 35.9%</em></td><td></td><td></td><td></td></tr><tr><td>One threshold for all</td><td>0.051</td><td>0.024</td><td>0.098</td></tr><tr><td>Equalize false-positive rate</td><td>0.032</td><td>0.001</td><td>0.026</td></tr><tr><td>Equalize precision</td><td>0.001</td><td>0.028</td><td>0.027</td></tr></tbody></table><div class="rpt-cap">Absolute between-group gaps. No threshold pair closes all three on the cost label.</div></div>
+      <p>The impossibility of simultaneous calibration and equal error rates under unequal base rates is a theorem, not an artifact of search. What the second block shows is that its practical severity is a function of the base-rate difference, and that the base-rate difference on the deployed label was substantially manufactured by the choice of target: 9.8 points on cost against 4.5 points in the opposite direction on need.</p>
+      <h2>8. Limitations</h2>
+      <p>Chronic-condition count is itself recorded through clinical contact and retains bias in the same direction, so the estimated disparity is a lower bound. A single binary protected attribute is analyzed; intersectional audits face severe multiplicity and cell-size problems not addressed here. The analysis concerns allocation only and estimates no treatment effect; whether the program benefits either group, or benefits them equally, requires a randomized rollout. Parity is evaluated under fixed capacity, so all redistribution is zero-sum. The four-fifths rule is a screening heuristic from employment law with no claim to being a definition of fairness in a clinical allocation setting.</p>
+    </div>
+
+    <div class="rpt-foot"><a class="primary" href="../chapters/capstone-fairness-audit.html">&#8592; Back to Chapter 204</a><a href="../chapters/notebooks/html/capstone-fairness-audit.html" target="_blank" rel="noopener">&#128211; Companion notebook</a><a class="xls" href="../data/capstone-fairness-audit.xlsx">&#128202; Download dataset</a></div>
+    <div class="rpt-colophon">
+      From <strong>Statistics, Data Science and AI: A Visual Handbook</strong> by John Fisher.
+      Every statistic, table, and figure in this report is reproduced by the companion notebook.
+    </div>
+  </article>
+</div>
+
+<script>
+(function(){
+  var bar=document.getElementById('rptSticky');
+  window.addEventListener('scroll',function(){
+    if(window.scrollY>320) bar.classList.add('on'); else bar.classList.remove('on');
+  });
+})();
+</script>
+</body>
+</html>
