@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 198 · The Forecasting Workflow — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .yes { color:#047857; font-weight:700; }
+    .disp-table .no { color:#dc2626; font-weight:700; }
+    .disp-table tr.hi td { background:#f0f9ff; }
+    .embox { background:#f0f9ff; border:1px solid #bae6fd; border-left:4px solid #0369a1; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .embox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#0c4a6e; }
+    .research { background:#f0f9ff; border:1px solid #bae6fd; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#0c4a6e; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #0369a1; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#0c4a6e; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+    .svg-wrap { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.9rem 0.6rem 0.3rem; background:var(--panel); }
+    .svg-wrap svg { width:100%; height:auto; display:block; }
+    .svg-wrap .cap { font-size:0.82rem; color:var(--ink-soft); padding:0.55rem 0.6rem 0.4rem; line-height:1.55; }
+    .svg-wrap .cap strong { color:var(--ink); }
+    .cap-group { margin:1.5rem 0 0.5rem; font-size:0.7rem; font-weight:800; text-transform:uppercase;
+                 letter-spacing:0.06em; color:#0c4a6e; border-bottom:2px solid #bae6fd; padding-bottom:0.3rem; }
+    .cap-card { display:flex; gap:0.85rem; align-items:flex-start; border:1px solid var(--line);
+                border-left:4px solid #0369a1; border-radius:11px; padding:0.75rem 1.05rem; margin:0.55rem 0; background:#f0f9ff44; }
+    .cap-card .cap-n { flex:0 0 auto; width:30px; height:30px; border-radius:50%; background:#0369a1; color:#fff;
+                       font-weight:800; font-size:0.82rem; display:flex; align-items:center; justify-content:center; margin-top:2px; }
+    .cap-card .cap-body { flex:1; }
+    .cap-card .cap-tag { font-size:0.65rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#0369a1; }
+    .cap-card .cap-t { font-weight:700; color:var(--ink); font-size:0.97rem; margin:1px 0 2px; }
+    .cap-card .cap-q { font-size:0.84rem; color:var(--ink-soft); line-height:1.5; }
+    a.cap-card:hover { background:#f0f9ff; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXXII &#183; Capstone Projects: Time Series &amp; Forecasting</span><span class="sep">/</span>
+      <span>Chapter 198</span>
+    </div>
+    <h1>The <span class="accent">Forecasting</span> Workflow</h1>
+    <p class="dek">The previous part replaced assumption checking with validation design. This one breaks the validation design, because the rows are no longer interchangeable and every convenience that assumed they were has to be rebuilt.</p>
+    <div class="hero-meta">
+      <div class="m">&#9201;&#65039; <b>~18 min</b>&nbsp;read</div>
+      <div class="m">&#127919; <b>The workflow</b></div>
+      <div class="m">&#128202; <b>Chapter 198</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <p class="lead">Every method in this book so far has quietly assumed that the rows could be
+       <span class="hl">shuffled</span> without loss. Draw a random sample, split at random, resample at random.
+       On a time series, every one of those moves is a mistake, and the mistake is invisible in the output.</p>
+
+    <div class="def-card">
+      <div class="sigma">&#374;</div>
+      <div class="def-body">
+        A forecast is not a prediction of a value. It is a prediction of
+        <span class="def-kw">a value at a stated distance ahead, made from a stated point in time, using only what
+        was known then</span>. Drop any of those three and the number that comes back is measuring something
+        nobody will ever be able to reproduce.
+      </div>
+    </div>
+
+    <div class="callout key">
+      <div class="cico">&#11088;</div>
+      <div><div class="ctitle">What this part is for</div>
+        <p>Three projects on the parts of forecasting that the textbook examples step around: forecasts at several
+           levels of a business that are required to add up, demand that is zero in most periods so that the usual
+           error measures cannot be computed at all, and the backtesting discipline that decides whether any of it
+           was real. In each one the model fits, the accuracy number looks respectable, and the honest answer is
+           somewhere else.</p></div>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section id="what-time-takes">
+    <div class="section-eyebrow"><div class="num">1</div><h2>What Time Takes Away</h2></div>
+
+    <p>The modeling workflow in <a href="the-modeling-workflow.html">Chapter 190</a> is still the right shape. Four of
+       its moves stop working, and they stop working for the same reason: the rows arrived in an order, and the order
+       carries information the model must not be allowed to see.</p>
+
+    <table class="disp-table">
+      <tr><th>Modeling workflow</th><th>What it assumed</th><th>What forecasting needs instead</th></tr>
+      <tr class="hi"><td class="nm">Random train and test split</td><td>Rows are interchangeable</td><td><strong>A time split</strong>: train on the past, test on the future, never the reverse</td></tr>
+      <tr><td class="nm">k-fold cross-validation</td><td>Any fold can be held out</td><td><strong>Rolling origin</strong>: a sequence of forecasts, each made from a later point</td></tr>
+      <tr class="hi"><td class="nm">One accuracy number</td><td>All predictions are alike</td><td><strong>Accuracy by horizon</strong>: one step ahead and twelve steps ahead are different problems</td></tr>
+      <tr><td class="nm">Feature engineering</td><td>A row's features describe that row</td><td><strong>The information set at time t</strong>: only what had happened by then</td></tr>
+      <tr class="hi"><td class="nm">A point prediction</td><td>The interval is optional</td><td><strong>An interval whose coverage is measured</strong>, because a plan is built on the range</td></tr>
+    </table>
+
+    <p>One thing does not change, and it is worth saying plainly. The baseline still decides whether anything was
+       achieved. In forecasting the baselines are unusually strong, which is why so many projects that report a
+       respectable error have in fact lost to a rule that fits on one line.</p>
+  </section>
+
+  <!-- 2 -->
+  <section id="never-shuffle">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Never Shuffle, and What Shuffling Hides</h2></div>
+
+    <p>A random split on a time series does not merely bend a rule. It changes the question. The model is handed
+       January and March and asked about February, which is interpolation, and then judged as though it had been
+       asked about next year, which is extrapolation. Those two tasks have almost nothing in common, and the first
+       is far easier.</p>
+
+    <div class="embox">
+      <span class="gb-tag">The tell</span>
+      <p style="margin:0.4rem 0 0">A random split on a seasonal series usually produces an <strong>excellent</strong>
+         score, because the model has seen the same month in adjacent years and only has to remember it. The number
+         is real. It is just an answer to a question nobody asked.</p>
+    </div>
+
+    <p>Three leaks are more common than the split itself, and all three survive a careful reading of the code because
+       none of them look like time at all.</p>
+
+    <table class="disp-table">
+      <tr><th>Leak</th><th>What it looks like</th><th>The fix</th></tr>
+      <tr><td class="nm">Fitted preprocessing</td><td>Scaling, imputation or a seasonal index computed on the whole series before splitting</td><td>Fit every step on the training window only, inside the fold</td></tr>
+      <tr class="hi"><td class="nm">A centered window</td><td>A rolling mean or median that averages the periods either side of each point</td><td>Trailing windows only. A centered average of week 20 contains week 21</td></tr>
+      <tr><td class="nm">An aggregate joined back</td><td>A monthly total, a store's annual average, a category share, attached to every row inside that month</td><td>Compute it from periods strictly before the row, expanding rather than whole</td></tr>
+    </table>
+
+    <p>The third one is the quiet killer, because it is how most people build a useful feature. A restaurant's
+       average delivery time is a genuinely predictive feature, and computing it over the full history means the
+       feature for January already knows about December of the following year. The version that works uses only
+       what had happened before each row, which is slower to write and is the difference between a model and a
+       memory.</p>
+  </section>
+
+  <!-- 3 -->
+  <section id="origin-horizon">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The Origin and the Horizon</h2></div>
+
+    <p>Two numbers turn a forecast into something that can be checked, and most reports carry neither. The
+       <strong>origin</strong> is the last period the model was allowed to see. The <strong>horizon</strong> is how
+       far past it the forecast reaches. A single accuracy figure with no horizon attached is an average over
+       whatever mixture of easy and hard predictions happened to be in the test set.</p>
+
+    <div class="svg-wrap">
+      <svg viewBox="0 0 880 258" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="Four stacked timelines. In each one a blue training block runs from the start of the series to a marked origin, an amber block of four periods follows it as the forecast horizon, and the remainder is grey. The origin moves later on each successive row, so the training block grows and the amber block slides to the right.">
+        <text x="8" y="18" font-size="12" font-weight="700" fill="#0c4a6e">ROLLING ORIGIN</text>
+        <text x="8" y="34" font-size="11" fill="#64748b">each row is one complete forecast: fit, forecast h periods, score, then move the origin forward</text>
+
+        <g font-size="10.5" fill="#475569">
+          <text x="8" y="66">fold 1</text><text x="8" y="106">fold 2</text>
+          <text x="8" y="146">fold 3</text><text x="8" y="186">fold 4</text>
+        </g>
+
+        <rect x="60" y="52" width="330" height="20" rx="4" fill="#0369a1"/>
+        <rect x="390" y="52" width="120" height="20" rx="4" fill="#d97706"/>
+        <rect x="510" y="52" width="330" height="20" rx="4" fill="#e2e8f0"/>
+        <line x1="390" y1="46" x2="390" y2="78" stroke="#0c4a6e" stroke-width="2"/>
+
+        <rect x="60" y="92" width="450" height="20" rx="4" fill="#0369a1"/>
+        <rect x="510" y="92" width="120" height="20" rx="4" fill="#d97706"/>
+        <rect x="630" y="92" width="210" height="20" rx="4" fill="#e2e8f0"/>
+        <line x1="510" y1="86" x2="510" y2="118" stroke="#0c4a6e" stroke-width="2"/>
+
+        <rect x="60" y="132" width="570" height="20" rx="4" fill="#0369a1"/>
+        <rect x="630" y="132" width="120" height="20" rx="4" fill="#d97706"/>
+        <rect x="750" y="132" width="90" height="20" rx="4" fill="#e2e8f0"/>
+        <line x1="630" y1="126" x2="630" y2="158" stroke="#0c4a6e" stroke-width="2"/>
+
+        <rect x="60" y="172" width="660" height="20" rx="4" fill="#0369a1"/>
+        <rect x="720" y="172" width="120" height="20" rx="4" fill="#d97706"/>
+        <line x1="720" y1="166" x2="720" y2="198" stroke="#0c4a6e" stroke-width="2"/>
+
+        <text x="393" y="44" font-size="10" font-weight="700" fill="#0c4a6e">origin</text>
+        <text x="450" y="230" font-size="10.5" font-weight="700" fill="#b45309" text-anchor="middle">the horizon: h periods, scored separately at h = 1, 2, 3, 4</text>
+
+        <g font-size="10" fill="#475569">
+          <rect x="60" y="240" width="12" height="10" rx="2" fill="#0369a1"/><text x="78" y="249">seen by the model</text>
+          <rect x="205" y="240" width="12" height="10" rx="2" fill="#d97706"/><text x="223" y="249">forecast and scored</text>
+          <rect x="360" y="240" width="12" height="10" rx="2" fill="#e2e8f0"/><text x="378" y="249">not yet available at this origin</text>
+        </g>
+      </svg>
+      <div class="cap"><strong>One fold per row, and every row is a complete honest forecast.</strong> The model is
+        refitted at each origin using only the blue portion, asked for the amber portion, and scored against it. Four
+        folds give four one-step errors, four two-step errors and so on, which is what makes it possible to report
+        accuracy by horizon instead of averaging over a mixture.</div>
+    </div>
+
+    <p>Errors grow with the horizon, almost always, and they grow at a rate that is itself worth reporting. A model
+       that is excellent one step out and no better than the naive rule at six steps is telling you exactly how far
+       ahead the business can plan on it. Pooling those into a single figure hides the only part of the answer that
+       affects a decision.</p>
+  </section>
+
+  <!-- 4 -->
+  <section id="baselines">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Baselines That Are Harder Than They Look</h2></div>
+
+    <p>Forecasting has the strongest naive baselines in applied statistics, and people who have not tried to beat
+       them consistently underestimate how good they are. Each of these fits on one line and none of them has a
+       parameter to tune.</p>
+
+    <table class="disp-table">
+      <tr><th>Baseline</th><th>The forecast is</th><th>When it is hard to beat</th></tr>
+      <tr><td class="nm">Naive</td><td>The last observed value, repeated</td><td>Anything close to a random walk, which includes most prices</td></tr>
+      <tr class="hi"><td class="nm">Seasonal naive</td><td>The value from the same period one season ago</td><td>Strongly seasonal series with a stable pattern. On monthly retail this is a serious opponent</td></tr>
+      <tr><td class="nm">Drift</td><td>The last value plus the average change per period so far</td><td>Series with a persistent trend and little seasonality</td></tr>
+      <tr class="hi"><td class="nm">Mean</td><td>The average of the history</td><td>Series with no trend and no season, which is rarer than it sounds</td></tr>
+    </table>
+
+    <p>These are also the denominator of the one error measure built for the job.
+       <strong>MASE</strong>, the mean absolute scaled error, divides the forecast's mean absolute error by the mean
+       absolute error of the one-step naive forecast on the training data. Below 1 means better than naive, above 1
+       means worse, and the units cancel, so a value is comparable across series measured in dollars, pallets and
+       page views. That last property is what makes it the right choice when a report covers many series at once.</p>
+
+    <div class="embox">
+      <span class="gb-tag">The comparison to insist on</span>
+      <p style="margin:0.4rem 0 0">Every forecast in this part is reported against the seasonal naive rule on the same
+         backtest, at the same horizons, on the same origins. A model that cannot state that comparison has not
+         established anything, however sophisticated it is.</p>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section id="metric">
+    <div class="section-eyebrow"><div class="num">5</div><h2>The Metric Follows From the Decision</h2></div>
+
+    <p>The default in most forecasting software is a percentage error, and it is the wrong default more often than
+       any other choice in this part. Two of its problems are arithmetic and one is a matter of incentives.</p>
+
+    <table class="disp-table">
+      <tr><th>Measure</th><th>What it aims at</th><th>Where it fails</th></tr>
+      <tr><td class="nm">MAPE</td><td>Average percentage error</td><td class="no">Undefined when the actual is zero, and unbounded above while capped at 100 percent below, so it quietly rewards under-forecasting</td></tr>
+      <tr class="hi"><td class="nm">sMAPE</td><td>A symmetric repair of MAPE</td><td>Bounded, and still unstable near zero and still not symmetric in the way the name suggests</td></tr>
+      <tr><td class="nm">RMSE</td><td>The conditional <strong>mean</strong></td><td>Dominated by the largest errors, which is correct only if large errors really do hurt disproportionately</td></tr>
+      <tr class="hi"><td class="nm">MAE</td><td>The conditional <strong>median</strong></td><td>Optimizing it produces a forecast that is under half the time and over half the time, which is not what a stock level wants</td></tr>
+      <tr><td class="nm">MASE</td><td>Performance relative to naive</td><td>Needs a sensible naive rule to scale against, and says nothing about the size of the error in business units</td></tr>
+      <tr class="hi"><td class="nm">Pinball loss</td><td>A stated <strong>quantile</strong></td><td>Requires you to name the quantile, which means naming the cost of running short against the cost of holding stock</td></tr>
+    </table>
+
+    <p>The asymmetry in MAPE deserves the extra sentence. If the actual is 100 and you forecast 200, the percentage
+       error is 100 percent. If you forecast 0, it is also 100 percent, and there is nothing below zero to forecast.
+       Over-forecasting can be penalized without limit and under-forecasting cannot, so a team tuned on MAPE drifts
+       low, and the drift looks like an improving score.</p>
+
+    <p>The way out is the same one the modeling workflow used: name the decision first. If the forecast sets a stock
+       level and running out costs three times as much as holding a spare unit, the target is not the middle of the
+       distribution at all, it is the 75th percentile of it, and the measure that scores that honestly is the pinball
+       loss at that quantile. The spare-parts project later in this part is built on exactly that gap between a good
+       average and a workable service level.</p>
+  </section>
+
+  <!-- 6 -->
+  <section id="coverage">
+    <div class="section-eyebrow"><div class="num">6</div><h2>A Forecast Without an Interval Is Not a Forecast</h2></div>
+
+    <p>Nobody plans against a point. They plan against a range, and they choose the width of the range from what
+       they can afford to be wrong by. That makes the interval the deliverable and the point estimate the summary,
+       which is the reverse of how forecasts are usually presented.</p>
+
+    <p>An interval makes a claim that can be checked. Ninety-five percent of future values should land inside a
+       95 percent interval. Backtesting gives you enough forecasts to count, and the count is nearly always
+       disappointing.</p>
+
+    <div class="svg-wrap">
+      <svg viewBox="0 0 880 300" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="A series of past values runs up to a marked origin, after which a forecast line continues and a shaded interval band fans out around it. Twenty future actual values are drawn as dots: fourteen fall inside the band and six fall well outside it, three above and three below, so the empirical coverage is 70 percent against a nominal 95 percent.">
+        <text x="8" y="18" font-size="12" font-weight="700" fill="#0c4a6e">INTERVAL COVERAGE</text>
+        <text x="8" y="34" font-size="11" fill="#64748b">the band claims 95 percent. Count how often it is right.</text>
+
+        <path d="M330 150 L840 70 L840 196 Z" fill="#0369a1" fill-opacity="0.15"/>
+        <path d="M330 150 L840 70" stroke="#0369a1" stroke-width="1.1" stroke-dasharray="5 4" fill="none"/>
+        <path d="M330 150 L840 196" stroke="#0369a1" stroke-width="1.1" stroke-dasharray="5 4" fill="none"/>
+        <path d="M330 150 L840 133" stroke="#0369a1" stroke-width="2.4" fill="none"/>
+
+        <path d="M60 168 L90 155 L120 162 L150 148 L180 158 L210 145 L240 152 L270 142 L300 150 L330 150"
+              stroke="#334155" stroke-width="2.2" fill="none" stroke-linejoin="round"/>
+
+        <line x1="330" y1="46" x2="330" y2="224" stroke="#0c4a6e" stroke-width="2"/>
+        <text x="325" y="42" font-size="10.5" font-weight="700" fill="#0c4a6e" text-anchor="end">origin</text>
+        <text x="336" y="42" font-size="10.5" font-weight="700" fill="#b45309">forecast starts here</text>
+
+        <g fill="#0c4a6e">
+          <circle cx="355" cy="149" r="3.6"/><circle cx="380" cy="145" r="3.6"/><circle cx="430" cy="150" r="3.6"/>
+          <circle cx="455" cy="140" r="3.6"/><circle cx="480" cy="155" r="3.6"/><circle cx="530" cy="130" r="3.6"/>
+          <circle cx="555" cy="160" r="3.6"/><circle cx="580" cy="125" r="3.6"/><circle cx="630" cy="150" r="3.6"/>
+          <circle cx="655" cy="115" r="3.6"/><circle cx="680" cy="165" r="3.6"/><circle cx="730" cy="105" r="3.6"/>
+          <circle cx="755" cy="170" r="3.6"/><circle cx="805" cy="140" r="3.6"/>
+        </g>
+        <g fill="#dc2626">
+          <circle cx="405" cy="130" r="4.6"/><circle cx="505" cy="180" r="4.6"/><circle cx="605" cy="88" r="4.6"/>
+          <circle cx="705" cy="202" r="4.6"/><circle cx="780" cy="58" r="4.6"/><circle cx="830" cy="212" r="4.6"/>
+        </g>
+
+        <text x="195" y="240" font-size="10.5" fill="#475569" text-anchor="middle">what actually happened, up to the origin</text>
+        <text x="585" y="240" font-size="10.5" fill="#475569" text-anchor="middle">what happened next, against the band that predicted it</text>
+
+        <rect x="60" y="256" width="360" height="34" rx="6" fill="#f0f9ff" stroke="#bae6fd"/>
+        <text x="76" y="270" font-size="10" font-weight="700" fill="#0c4a6e">NOMINAL</text>
+        <text x="76" y="283" font-size="11.5" fill="#334155">95 percent, as printed on the chart</text>
+
+        <rect x="436" y="256" width="404" height="34" rx="6" fill="#fef2f2" stroke="#fecaca"/>
+        <text x="452" y="270" font-size="10" font-weight="700" fill="#991b1b">EMPIRICAL</text>
+        <text x="452" y="283" font-size="11.5" fill="#334155">14 of 20 inside, so 70 percent. The band is too narrow.</text>
+      </svg>
+      <div class="cap"><strong>Coverage is a claim, and claims can be counted.</strong> Six of the twenty actuals fall
+        outside a band that promised to miss one. Under-coverage is the usual direction, because most software builds
+        the interval from the residual variance alone and ignores the uncertainty in the parameters and in the choice
+        of model. A plan built on that band is quietly under-insured.</div>
+    </div>
+
+    <p>Two habits follow. Report coverage alongside accuracy, every time, from the same backtest that produced the
+       error figures. And when the band is too narrow, say so rather than widening it by hand, because the gap
+       between nominal and empirical coverage is itself information about how much the model does not know.</p>
+  </section>
+
+  <!-- 7 -->
+  <section id="ai">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Forecasting in Data Science &amp; AI</h2></div>
+
+    <p>Forecasting is the corner of applied statistics where the classical methods have held up best against machine
+       learning, and the reason is instructive. Most business series are short, noisy and seasonal, which is the
+       regime where a flexible model has the least to work with and the most opportunity to overfit.</p>
+
+    <table class="disp-table">
+      <tr><th>Family</th><th>Examples</th><th>Where it earns its place</th></tr>
+      <tr><td class="nm">Classical</td><td>Exponential smoothing, ARIMA, seasonal decomposition</td><td>Single series, short history, strong seasonality. Fast, interpretable, and a genuine contender</td></tr>
+      <tr class="hi"><td class="nm">Tabular machine learning</td><td>Gradient boosting on lag and calendar features</td><td>Many related series with covariates. Won the M5 retail competition outright</td></tr>
+      <tr><td class="nm">Global deep models</td><td>DeepAR, N-BEATS, temporal fusion transformers</td><td>Thousands of series that share structure, where one model can learn a pattern no single series shows clearly</td></tr>
+      <tr class="hi"><td class="nm">Pretrained time-series models</td><td>Chronos, TimeGPT, Moirai and their successors</td><td>Zero-shot forecasts on a new series with no fitting at all, useful as a fast, strong baseline</td></tr>
+      <tr><td class="nm">Combination</td><td>Averaging or weighting several of the above</td><td>Almost always. Combining forecasts is the most reliably useful trick in the field</td></tr>
+    </table>
+
+    <div class="research">
+      <span class="rtag">What the competitions found</span>
+      <p style="margin:0.4rem 0 0">The M4 competition in 2018 was won by a hybrid that put exponential smoothing
+         together with a recurrent network, and the runner-up was a weighted combination of statistical methods.
+         The M5 competition in 2020, on hierarchical Walmart sales, was dominated by gradient boosting on engineered
+         features. Two lessons survive both. <strong>Combinations beat their own components</strong>, reliably enough
+         to be the default rather than a refinement. And <strong>the winning margins over a well-implemented
+         seasonal naive rule are smaller than newcomers expect</strong>, which is why the baseline is not a formality
+         in this part.</p>
+    </div>
+
+    <p>Scale has not dissolved the three problems ahead either. A pretrained model still returns forecasts that do not
+       add up across a hierarchy, still cannot compute a percentage error on a series of zeros, and still produces
+       intervals whose coverage has to be measured rather than trusted.</p>
+  </section>
+
+  <!-- 8 -->
+  <section id="projects">
+    <div class="section-eyebrow"><div class="num">8</div><h2>The Three Projects Ahead</h2></div>
+
+    <p>Three projects, each built on a failure that survives a good model. The
+       <a href="../toc.html">Contents</a> always shows what is live.</p>
+
+    <div class="cap-group">Structure &#183; when the forecasts have to agree with each other</div>
+    <a class="cap-card" href="capstone-hierarchical-forecasting.html" style="text-decoration:none"><div class="cap-n">1</div><div class="cap-body"><div class="cap-tag">Hierarchical forecasting</div><div class="cap-t">Store, Region, National</div><div class="cap-q">Forecast each level separately and the levels disagree. Bottom-up, top-down and optimal reconciliation are three answers, and they do not agree either.</div></div></a>
+
+    <div class="cap-group">Shape &#183; when the usual measures cannot be computed</div>
+    <a class="cap-card" href="capstone-intermittent-demand-spare-parts.html" style="text-decoration:none"><div class="cap-n">2</div><div class="cap-body"><div class="cap-tag">Intermittent demand</div><div class="cap-t">Spare Parts</div><div class="cap-q">Demand that is zero most weeks. Croston's method, why percentage errors break down entirely, and the service level the forecast is really for.</div></div></a>
+
+    <div class="cap-group">Evidence &#183; when the question is whether any of it was real</div>
+    <a class="cap-card" href="capstone-forecast-backtesting.html" style="text-decoration:none"><div class="cap-n">3</div><div class="cap-body"><div class="cap-tag">Backtesting</div><div class="cap-t">Honest Model Selection</div><div class="cap-q">Rolling-origin cross-validation, interval coverage, and what it costs to have tuned on the period you are about to report.</div></div></a>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>&#127891; Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">&#10003;</span><span><strong>Never shuffle, and check the three quiet leaks.</strong> Fitted preprocessing, centered windows and joined-back aggregates all reach into the future without looking like time at all.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>A forecast has an origin and a horizon.</strong> Report accuracy by horizon; a single pooled figure averages over easy and hard predictions and hides how far ahead the business can plan.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>The seasonal naive rule is a serious opponent.</strong> State the comparison against it on the same backtest, or you have not established that the model achieved anything.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>MAPE rewards under-forecasting and dies on zeros.</strong> Pick the measure from the decision: the mean, the median or a named quantile, and use MASE when the report spans series in different units.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Coverage is a claim you can count.</strong> Measure it on the backtest, expect it to be short of nominal, and report the gap rather than papering over it.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">&#10067;</div><h2>Quiz: Test Yourself</h2></div>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-reinforcement-learning-pricing.html">
+      <span style="font-size:1.3rem">&#8592;</span>
+      <span><span class="cn-dir">Chapter 197 &#183; Previous</span><br><span class="cn-title">Reinforcement Learning: Dynamic Pricing</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">&#8594;</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;&#183;&nbsp;
+  Chapter 198 &nbsp;&#183;&nbsp; &#169; 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch198";
+  window.QUIZ_DATA = [
+    {
+      q: "A monthly sales model is validated with a random 80/20 split and reports an excellent error. What is the problem?",
+      options: ["The test set is too small", "The model has seen the same month in adjacent years, so it is interpolating where it will be asked to extrapolate", "Random splits require stratification by month", "Nothing, provided the residuals are checked"],
+      answer: 1,
+      explain: "A random split hands the model January and March and asks about February. That is an easier task than the one it will face, and the score is a real answer to a question nobody asked."
+    },
+    {
+      q: "Which of these features leaks the future, even though no split rule was broken?",
+      options: ["The value of the series one period ago", "A 7-day trailing average ending at the current period", "A 7-day centered moving average", "The calendar month"],
+      answer: 2,
+      explain: "A centered average of week 20 contains week 21. Trailing windows only, and the same applies to any aggregate joined back onto rows inside the period it was computed from."
+    },
+    {
+      q: "What does it mean to report accuracy 'by horizon'?",
+      options: ["Reporting the error separately for one step ahead, two steps ahead and so on", "Reporting the error for each series in the panel", "Reporting the error on the training set and the test set", "Reporting the error at several confidence levels"],
+      answer: 0,
+      explain: "Errors grow with the horizon. A model that is excellent one step out and no better than naive at six is telling you how far ahead the business can plan on it, and pooling hides exactly that."
+    },
+    {
+      q: "A forecast has a MASE of 1.15. What has been established?",
+      options: ["It is 15 percent accurate", "It is worse than the one-step naive forecast on the training data", "It is better than the naive forecast by 15 percent", "The units were not scaled correctly"],
+      answer: 1,
+      explain: "MASE divides the forecast's mean absolute error by that of the one-step naive forecast. Below 1 beats naive, above 1 loses to it. The scaling is what makes values comparable across series in different units."
+    },
+    {
+      q: "Why does MAPE quietly reward under-forecasting?",
+      options: ["Because it uses absolute values", "Because over-forecasting can be penalized without limit while under-forecasting is capped at 100 percent", "Because it is undefined at zero", "Because it weights recent periods more heavily"],
+      answer: 1,
+      explain: "If the actual is 100, forecasting 0 gives an error of 100 percent and there is nothing lower to forecast, while forecasting 400 gives 300 percent. A team tuned on MAPE drifts low, and the drift looks like improvement."
+    },
+    {
+      q: "Running out of stock costs three times as much as holding a spare unit. Which target should the forecast aim at?",
+      options: ["The conditional mean, scored by RMSE", "The conditional median, scored by MAE", "An upper quantile of the demand distribution, scored by pinball loss", "The seasonal naive value"],
+      answer: 2,
+      explain: "The cost ratio names the quantile: with a shortage three times as expensive, the target sits at the 75th percentile rather than the middle. Pinball loss at that quantile is the measure that scores it honestly."
+    },
+    {
+      q: "A backtest produces 20 forecasts with 95 percent intervals, and 14 of the actuals fall inside. What does that say?",
+      options: ["The point forecasts are biased", "The intervals are too narrow, so plans built on them are under-insured", "The intervals are too wide", "The sample of 20 is too small to say anything"],
+      answer: 1,
+      explain: "Seventy percent coverage against a nominal 95 is under-coverage, the usual direction, because most software builds the band from residual variance alone and ignores parameter and model uncertainty."
+    },
+    {
+      q: "What is the most reliably useful finding from the M4 and M5 forecasting competitions?",
+      options: ["Deep learning replaced statistical methods", "Combinations of forecasts beat their own components, and margins over a well-implemented seasonal naive rule are smaller than newcomers expect", "ARIMA outperforms machine learning on all series", "Longer histories always improve accuracy"],
+      answer: 1,
+      explain: "M4 was won by a hybrid with a combination as runner-up, and M5 by gradient boosting on engineered features. Combining is the default rather than a refinement, and the naive baseline stays a serious opponent throughout."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
