@@ -692,6 +692,8 @@ MAP = {
         ("../../capstone-anomaly-detection-unlabeled.html#notebook", "Back to the book", "Chapter 196 · Anomaly Detection Without Labels"),
     "capstone-reinforcement-learning-pricing.html":
         ("../../capstone-reinforcement-learning-pricing.html#notebook", "Back to the book", "Chapter 197 · Reinforcement Learning: Dynamic Pricing"),
+    "capstone-hierarchical-forecasting.html":
+        ("../../capstone-hierarchical-forecasting.html#notebook", "Back to the book", "Chapter 199 · Hierarchical Forecasting: Store, Region, National"),
 }
 
 def card(href, kicker, title):

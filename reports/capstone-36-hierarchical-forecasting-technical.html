@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hierarchical Reconciliation (Technical) &#183; Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/report.css">
+  <style>
+    body.report { --rpt-accent:#0369a1; --rpt-accent-dark:#0c4a6e; --rpt-accent-bg:#f0f9ff; --rpt-accent-line:#bae6fd; }
+  </style>
+</head>
+
+<body class="report">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="../chapters/capstone-hierarchical-forecasting.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">&#8592; Chapter 199</a>
+  </div>
+</nav>
+
+<div class="rpt-sticky" id="rptSticky">
+  <div class="inner">
+    <div class="st-title">Hierarchical Reconciliation for a Sixteen-Store Chain</div>
+    <a class="st-back" href="../chapters/capstone-hierarchical-forecasting.html">&#8592; Chapter 199</a>
+  </div>
+</div>
+
+<div class="rpt-wrap">
+  <article class="rpt-paper technical">
+    <header class="rpt-head">
+      <div class="rpt-topline">
+        <div class="rpt-kicker">Capstone 36 &#183; Technical Report</div>
+        <span class="rpt-badge technical">Technical Report</span>
+      </div>
+      <h1>Hierarchical Reconciliation for a Sixteen-Store Chain</h1>
+      <p class="rpt-sub">Base forecasts at three levels of an exact hierarchy, four coherent alternatives, and a five-origin rolling backtest scored by level and by series.</p>
+      <div class="rpt-meta"><div><b>Data</b> &nbsp;84 monthly observations, 16 stores, 4 regions, Jan 2019 to Dec 2025</div><div><b>Methods</b> &nbsp;Holt-Winters base forecasts; bottom-up, top-down, OLS and MinT reconciliation</div><div><b>Evaluation</b> &nbsp;Rolling origin, 5 origins x 12-month horizon, MASE</div></div>
+    </header>
+
+    <div class="rpt-prov">
+      <span class="pv-tag">Where this comes from</span>
+      <div class="pv-row"><div><span>Chapter</span> <a href="../chapters/capstone-hierarchical-forecasting.html">Chapter 199 &#183; Hierarchical Forecasting: Store, Region, National</a></div><div><span>Part</span> Part XXXII &#183; Capstone Projects: Time Series &amp; Forecasting</div><div><span>Dataset</span> <a href="../data/capstone-hierarchical-forecasting.xlsx">capstone-hierarchical-forecasting.xlsx</a></div><div><span>Notebook</span> <a href="../chapters/notebooks/html/capstone-hierarchical-forecasting.html" target="_blank" rel="noopener">View the analysis</a></div></div>
+    </div>
+
+    <div class="rpt-body">
+      <h2>Abstract</h2>
+      <p><strong>Objective.</strong> To produce a coherent twelve-month plan at store, region and chain level for a sixteen-store retail chain, and to establish empirically which reconciliation approach to adopt.</p>
+      <p><strong>Design.</strong> The hierarchy is exact and comprises 21 series: 16 stores, 4 regions and one chain total. Base forecasts were produced independently for all 21 by additive Holt-Winters with a 12-period season. Four coherent alternatives were formed: bottom-up, top-down by average historical proportions, OLS reconciliation, and MinT with a covariance estimate shrunk toward its diagonal. Evaluation used a rolling origin with five origins spaced six months apart and a 12-month horizon at each, scored by MASE against the in-sample seasonal naive error of the corresponding series.</p>
+      <p><strong>Result.</strong> Independent base forecasts were incoherent by 10,924 units, 0.85 percent of the chain total. Bottom-up gave the lowest MASE at all three levels (0.747 chain, 0.782 region, 0.792 store). MinT was within 0.055 at the chain and within 0.005 at store level, and dominated OLS at every level. Top-down exceeded 1.0 at store level (1.198), that is, it was outperformed by a seasonal naive forecast.</p>
+      <h2>1. Data and preprocessing</h2>
+      <p>The planning extract contained 1,360 rows. A duplicated extract for August 2022 was removed, taking the frame to 1,344 rows, being 84 months for each of 16 stores. Region labels appeared in six spellings and were normalized to four. Three observations were not sales: a stocktake adjustment recorded as -412 units and two months in which the till export wrote a zero. All three were set to missing and interpolated within the store's own series. Left in place, each would depress the corresponding store's trend estimate and propagate into every aggregate containing it.</p>
+      <p>Aggregates are exact by construction. The maximum absolute discrepancy between the chain series and the sum of the four regional series across the 84 months is zero.</p>
+      <h2>2. Base forecasts and the coherence deficit</h2>
+      <p>Forecasting each of the 21 series independently from an origin at month 72 gives a chain total of 1,278,691 units for the following twelve months, against 1,273,167 from summing the four regional forecasts and 1,284,091 from summing the sixteen store forecasts.</p>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Aggregation</th><th>Twelve-month total</th><th>Against the direct chain forecast</th></tr></thead><tbody><tr><td><span class='nm'>Chain series, forecast directly</span></td><td><span class='nm'>1,278,691</span></td><td>&#8212;</td></tr><tr><td>Sum of four regional forecasts</td><td>1,273,167</td><td>-0.43%</td></tr><tr><td>Sum of sixteen store forecasts</td><td>1,284,091</td><td>+0.42%</td></tr></tbody></table><div class="rpt-cap">Independent base forecasts, origin at month 72, horizon 12.</div></div>
+      <p>The deficit is not evidence of misspecification at any level. It is the expected consequence of estimating 21 models under no cross-sectional constraint, and it does not diminish with a better base method.</p>
+      <h2>3. Reconciliation</h2>
+      <p>Writing the hierarchy as a summing matrix S of dimension 21 by 16, each coherent forecast takes the form S G y-hat for a mapping matrix G. Bottom-up sets G to select the bottom level. Top-down applies historical proportions to the top-level forecast. OLS reconciliation uses the ordinary least squares projection. MinT uses the generalized least squares projection weighted by the covariance of the base forecast errors, estimated here from in-sample one-step residuals and shrunk toward its diagonal with a shrinkage weight of 0.35, since 21 series over 72 months does not support an unregularized estimate.</p>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Method</th><th>Mean absolute adjustment to the base forecasts (units per series-month)</th></tr></thead><tbody><tr><td><span class='nm'>MinT</span></td><td><span class='nm'>93</span></td></tr><tr><td>OLS reconciliation</td><td>95</td></tr><tr><td>Bottom-up</td><td>103</td></tr><tr><td><span class='nm'>Top-down</span></td><td><span class='nm'>1,266</span></td></tr></tbody></table><div class="rpt-cap">How far each method moves the original 21 forecasts to achieve coherence.</div></div>
+      <p>MinT achieves coherence with the smallest adjustment, which is the property the projection is constructed to have. Top-down moves the base forecasts by more than an order of magnitude more, because it discards 20 of the 21 fits and reconstructs them from proportions.</p>
+      <h2>4. Backtest</h2>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Level</th><th>Independent</th><th>Bottom-up</th><th>Top-down</th><th>OLS</th><th>MinT</th></tr></thead><tbody><tr><td><span class='nm'>Chain</span></td><td>0.840</td><td><span class='nm'>0.747</span></td><td>0.840</td><td>0.839</td><td>0.802</td></tr><tr><td><span class='nm'>Region</span></td><td>0.799</td><td><span class='nm'>0.782</span></td><td>0.999</td><td>0.796</td><td>0.788</td></tr><tr><td><span class='nm'>Store</span></td><td>0.792</td><td><span class='nm'>0.792</span></td><td><span class='nm'>1.198</span></td><td>0.798</td><td>0.796</td></tr></tbody></table><div class="rpt-cap">Mean MASE, five origins by twelve horizons. Values below 1.0 outperform a seasonal naive forecast.</div></div>
+      <p>Bottom-up attains the minimum at all three levels. MinT dominates OLS at every level, which isolates the contribution of the error covariance, since the two methods are otherwise identical projections. Top-down is the only method exceeding 1.0 anywhere, and does so at the level with the most series.</p>
+      <p>Disaggregating the top-down result identifies where the loss is concentrated. The five worst series under top-down are WE2 at 4.3 times the bottom-up error, SO3 at 3.8, SO4 at 2.3, the West region at 1.5 and WE1 at 1.4. Every one is a series whose share of its parent has been trending.</p>
+      <figure class="rpt-fig"><img src="../assets/img/report-36-share-drift.png" alt="Paired bars comparing each store's six-year average share of the chain with its share last year: WE2 rises from 10.1 to 15.8 percent, SO3 falls from 4.5 to 2.5 percent."><figcaption><span class="n">Figure 1.</span> The two stores with the largest share drift. A proportion estimated over six years represents neither.</figcaption></figure>
+      <h2>5. Interpretation, and the limits of the result</h2>
+      <p>The superiority of bottom-up here is a property of this hierarchy rather than a general finding. Differencing the seasonal period from each series, the standard deviation of the year-on-year change is 17.6 percent at store level, 9.5 percent at region and 5.6 percent at chain, against 4.4 percent that 16 mutually independent stores would imply. The proximity of 5.6 to 4.4 indicates that store-level errors are largely idiosyncratic and therefore diversify on aggregation, which is the condition under which bottom-up performs well. A hierarchy with stronger common shocks, more series or a shorter history would not be expected to reproduce this ranking.</p>
+      <p>Coherence and accuracy are distinct properties. All four methods evaluated in section 4 are coherent, including the one that is outperformed by a seasonal naive forecast at store level.</p>
+      <p>Three limitations bear on the deployment of this result. The hierarchy is single and static, so a chain with cross-cutting groupings such as channel or category requires reconciliation across multiple hierarchies simultaneously, which is not addressed here. No prediction intervals are produced; the interval of a reconciled forecast is not that of its base forecasts, and its coverage requires separate empirical assessment. And the ranking established here should be re-estimated whenever the store portfolio changes materially, since it depends on the diversification property quantified above rather than on any structural feature of the method.</p>
+    </div>
+
+    <div class="rpt-foot"><a class="primary" href="../chapters/capstone-hierarchical-forecasting.html">&#8592; Back to Chapter 199</a><a href="../chapters/notebooks/html/capstone-hierarchical-forecasting.html" target="_blank" rel="noopener">&#128211; Companion notebook</a><a class="xls" href="../data/capstone-hierarchical-forecasting.xlsx">&#128202; Download dataset</a></div>
+    <div class="rpt-colophon">
+      From <strong>Statistics, Data Science and AI: A Visual Handbook</strong> by John Fisher.
+      Every statistic, table, and figure in this report is reproduced by the companion notebook.
+    </div>
+  </article>
+</div>
+
+<script>
+(function(){
+  var bar=document.getElementById('rptSticky');
+  window.addEventListener('scroll',function(){
+    if(window.scrollY>320) bar.classList.add('on'); else bar.classList.remove('on');
+  });
+})();
+</script>
+</body>
+</html>
