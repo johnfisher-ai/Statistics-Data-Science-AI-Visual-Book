@@ -696,6 +696,8 @@ MAP = {
         ("../../capstone-hierarchical-forecasting.html#notebook", "Back to the book", "Chapter 199 · Hierarchical Forecasting: Store, Region, National"),
     "capstone-intermittent-demand-spare-parts.html":
         ("../../capstone-intermittent-demand-spare-parts.html#notebook", "Back to the book", "Chapter 200 · Intermittent Demand: Spare Parts"),
+    "capstone-forecast-backtesting.html":
+        ("../../capstone-forecast-backtesting.html#notebook", "Back to the book", "Chapter 201 · Backtesting and Honest Model Selection"),
 }
 
 def card(href, kicker, title):

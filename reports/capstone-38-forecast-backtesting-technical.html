@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forecast Backtesting (Technical) &#183; Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/report.css">
+  <style>
+    body.report { --rpt-accent:#0369a1; --rpt-accent-dark:#0c4a6e; --rpt-accent-bg:#f0f9ff; --rpt-accent-line:#bae6fd; }
+  </style>
+</head>
+
+<body class="report">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="../chapters/capstone-forecast-backtesting.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">&#8592; Chapter 201</a>
+  </div>
+</nav>
+
+<div class="rpt-sticky" id="rptSticky">
+  <div class="inner">
+    <div class="st-title">Selection Bias and Interval Calibration in a Thirty-Two Model Forecast Bake-Off</div>
+    <a class="st-back" href="../chapters/capstone-forecast-backtesting.html">&#8592; Chapter 201</a>
+  </div>
+</div>
+
+<div class="rpt-wrap">
+  <article class="rpt-paper technical">
+    <header class="rpt-head">
+      <div class="rpt-topline">
+        <div class="rpt-kicker">Capstone 38 &#183; Technical Report</div>
+        <span class="rpt-badge technical">Technical Report</span>
+      </div>
+      <h1>Selection Bias and Interval Calibration in a Thirty-Two Model Forecast Bake-Off</h1>
+      <p class="rpt-sub">Rolling-origin evaluation against a single holdout, the optimism of best-of-K selection measured against a sealed period, and empirical coverage of prediction intervals by horizon.</p>
+      <div class="rpt-meta"><div><b>Data</b> &nbsp;156 monthly observations, Jan 2013 to Dec 2025, single series</div><div><b>Design</b> &nbsp;120-month development window, 36-month sealed period, 12-month horizon</div><div><b>Evaluation</b> &nbsp;MAPE at 17 quarterly origins; coverage at 49 monthly origins</div></div>
+    </header>
+
+    <div class="rpt-prov">
+      <span class="pv-tag">Where this comes from</span>
+      <div class="pv-row"><div><span>Chapter</span> <a href="../chapters/capstone-forecast-backtesting.html">Chapter 201 &#183; Backtesting and Honest Model Selection</a></div><div><span>Part</span> Part XXXII &#183; Capstone Projects: Time Series &amp; Forecasting</div><div><span>Dataset</span> <a href="../data/capstone-forecast-backtesting.xlsx">capstone-forecast-backtesting.xlsx</a></div><div><span>Notebook</span> <a href="../chapters/notebooks/html/capstone-forecast-backtesting.html" target="_blank" rel="noopener">View the analysis</a></div></div>
+    </div>
+
+    <div class="rpt-body">
+      <h2>Abstract</h2>
+      <p><strong>Objective.</strong> To establish whether a reported accuracy of 3.34 percent MAPE, obtained by selecting the best of 32 candidates on a single 12-month holdout, is a defensible estimate of out-of-sample forecast error, and to quantify the components of any discrepancy.</p>
+      <p><strong>Design.</strong> A 156-month series was split into a 120-month development window and a 36-month sealed period used for no selection decision. Thirty-two candidates, comprising eight fixed rules and 24 exponential smoothing configurations, were scored by MAPE at a 12-month horizon from 17 quarterly rolling origins within the development window. Optimism was estimated by drawing 4,000 random candidate pools at each of nine pool sizes, selecting the pool minimum on the single holdout, and comparing its holdout score with its sealed-period score. Interval coverage was measured at 49 monthly origins, comparing a constant-width band from the in-sample residual standard deviation against empirical 2.5th and 97.5th percentiles of backtest errors computed separately at each horizon.</p>
+      <p><strong>Result.</strong> The single-holdout winner ranked 23rd of 32 under rolling-origin evaluation and delivered 5.57 percent on the sealed period against its claim of 3.34, an understatement of 40 percent. Fourteen candidates won at least one of 17 origins and none won more than two. Optimism grew monotonically with pool size, from -0.26 points at K=1 to +2.24 at K=32, while sealed-period error was flat from K=2 onward. Rolling-origin selection claimed 5.47 percent and delivered 4.62. The residual-based interval, nominal 95 percent, attained 67.9 percent coverage overall and 57 percent at a 12-month horizon; the horizon-specific empirical interval attained 94 percent on the sealed period.</p>
+      <h2>1. Data and preprocessing</h2>
+      <p>The extract contained 156 rows against 156 complete months plus one partial. Five faults were repaired: June 2019 duplicated; a partial final month covering 11 days of January 2026, dropped; July and August 2017 absent; March 2021 recorded at 9.9 times its year-earlier value and divided by ten; and two date formats in the month column. The 2017 gap was filled by linear interpolation of the deseasonalized level, with seasonal factors from a centered 12-month moving average, then reseasonalized. Two of 156 observations are therefore imputed and enter the training window of every backtest.</p>
+      <p>The cleaned series runs 3,326 to 8,596 cases per month with a mean of 5,457. Annual totals grew 67 percent over the period, but not uniformly: 2018 to 2020 averaged 10.3 percent growth a year and 2021 to 2024 averaged 0.7 percent. December runs 29 percent above the average month and February 20 percent below.</p>
+      <h2>2. Evaluation design</h2>
+      <p>The horizon is 12 months, matching the planning cycle the forecast feeds. Origins advance quarterly through the development window, giving 17 evaluations from the 12 months beginning January 2018 through the 12 months beginning January 2022. Each fit uses only observations available at its origin. The sealed period supplies three further origins, January 2023, 2024 and 2025, opened after all selection was complete.</p>
+      <p>The candidate pool comprises the mean of the last 24 months, naive, seasonal naive, drift, seasonal naive with drift, three seasonally-adjusted moving averages, nine ETS structures crossing trend in {none, linear, damped} with seasonality in {none, additive, multiplicative}, and 15 further ETS configurations with the smoothing level fixed at 0.1 through 0.9.</p>
+      <h2>3. Single holdout versus rolling origin</h2>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Selection rule</th><th>Winner</th><th>Its score</th><th>Its rank under the other rule</th></tr></thead><tbody><tr><td>Single holdout, Jan 2022 origin</td><td>ETS trend=none, seasonal=additive, alpha=0.1</td><td>3.34%</td><td>23 of 32</td></tr><tr><td>Rolling origin, 17 evaluations</td><td>ETS trend=linear, seasonal=multiplicative</td><td>5.47%</td><td>10 of 32</td></tr></tbody></table><div class="rpt-cap">The two rules select different models, and each ranks the other's choice well down the field.</div></div>
+      <p>The 12 months on which the bake-off was scored grew 0.0 percent, the flattest of the 17 available windows, against 10 of 17 growing above 5 percent. Six of the eight highest-placed candidates on that holdout specify no trend and the remaining two are damped, so the leaderboard is a property of the test window rather than of the series.</p>
+      <p>Rank instability across origins is severe. The rolling-origin winner occupies ranks 1 through 22 depending on origin; seasonal naive occupies 4 through 26. Fourteen distinct candidates take first place at least once across 17 origins, with a maximum of two wins each.</p>
+      <h2>4. Optimism of best-of-K selection</h2>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Candidates tried</th><th>Reported MAPE</th><th>Sealed-period MAPE</th><th>Optimism</th></tr></thead><tbody><tr><td>1</td><td>7.83%</td><td>7.57%</td><td>-0.26</td></tr><tr><td>2</td><td>5.18%</td><td>5.58%</td><td>+0.40</td></tr><tr><td>3</td><td>4.61%</td><td>5.31%</td><td>+0.70</td></tr><tr><td>5</td><td>4.18%</td><td>5.28%</td><td>+1.10</td></tr><tr><td>8</td><td>3.91%</td><td>5.31%</td><td>+1.40</td></tr><tr><td>12</td><td>3.69%</td><td>5.34%</td><td>+1.65</td></tr><tr><td>18</td><td>3.50%</td><td>5.40%</td><td>+1.89</td></tr><tr><td>24</td><td>3.40%</td><td>5.49%</td><td>+2.09</td></tr><tr><td>32</td><td>3.34%</td><td>5.57%</td><td>+2.24</td></tr></tbody></table><div class="rpt-cap">Mean over 4,000 random pools at each size. Percentage points.</div></div>
+      <p>Reported error falls by 4.49 points across the range while sealed-period error is flat from K=2 onward, varying between 5.28 and 5.58 with a slight upward drift as the pool widens. The reported figure is a minimum over K noisy measurements and is therefore a downward-biased estimate of any individual candidate's error; the bias is the quantity tabulated as optimism. At K=1 it is slightly negative, which is sampling noise around an unbiased estimate.</p>
+      <figure class="rpt-fig"><img src="../assets/img/report-38-optimism.png" alt="A line chart against the number of forecasting models tried on a logarithmic axis from 1 to 32. Reported error falls steadily from 7.83 percent to 3.34 percent while delivered error settles near 5.3 percent from two models onward and drifts slightly upward to 5.57, with the widening gap shaded and labeled 2.24 points of overstatement."><figcaption><span class="n">Figure 1.</span> Reported and delivered error against pool size. The lines coincide when there is nothing to select on and separate monotonically thereafter.</figcaption></figure>
+      <h2>5. Sealed-period performance</h2>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Selection rule</th><th>Claimed</th><th>Delivered</th><th>2023 (+0.7%)</th><th>2024 (+0.6%)</th><th>2025 (+7.9%)</th></tr></thead><tbody><tr><td>Single holdout</td><td>3.34%</td><td>5.57%</td><td>5.33%</td><td>4.46%</td><td>6.93%</td></tr><tr><td>Rolling origin</td><td>5.47%</td><td>4.62%</td><td>5.10%</td><td>4.24%</td><td>4.53%</td></tr><tr><td>Seasonal naive</td><td>not claimed</td><td>6.76%</td><td>6.56%</td><td>6.54%</td><td>7.19%</td></tr></tbody></table><div class="rpt-cap">MAPE by sealed year, with each year's growth against the preceding twelve months.</div></div>
+      <p>The two selected models are within 0.25 points of each other in 2023 and 2024, both near-flat years, and diverge by 2.40 points in 2025, the only sealed year with material growth. This is consistent with the mechanism in section 3: the single-holdout winner was selected on evidence containing no growth.</p>
+      <p>The rolling-origin selection coincides with the model that minimizes sealed-period error across the pool, at 4.62 percent. This coincidence should not be read as a property of the procedure. The defensible claim is directional: selection across many origins produced a conservative accuracy claim, selection on one produced an optimistic one.</p>
+      <h2>6. Interval coverage</h2>
+      <p>Coverage was measured for the rolling-origin winner at 49 monthly origins in the development window, giving 588 forecast points. The conventional construction, forecast plus or minus 1.96 times the standard deviation of in-sample residuals, attained 67.9 percent against a nominal 95.</p>
+      <figure class="rpt-fig"><img src="../assets/img/report-38-coverage.png" alt="A line chart of coverage against forecast horizon from one to twelve months. Coverage starts at 82 percent at one month, falls to about 73 to 76 percent between two and five months, drops to 61 percent at six through eight, recovers slightly to 65 percent at nine and ten, and ends at 57 percent at twelve months, all well below a dashed line at the promised 95 percent."><figcaption><span class="n">Figure 2.</span> Empirical coverage by horizon for a nominal 95 percent interval built from in-sample residuals.</figcaption></figure>
+      <p>Two failure modes are present. Coverage is 82 percent at a one-month horizon, so the interval is too narrow even before horizon effects, because in-sample residuals are computed after the model has adapted to those observations and understate genuine forecast error. Coverage then declines to 57 percent at 12 months because the construction is horizon-invariant while the series has a stochastic level whose uncertainty accumulates.</p>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Interval</th><th>Sealed coverage</th><th>Width at h=1</th><th>Width at h=12</th></tr></thead><tbody><tr><td>Residual standard deviation, constant</td><td>83%</td><td>897</td><td>897</td></tr><tr><td>Empirical percentiles by horizon</td><td>94%</td><td>1,096</td><td>2,346</td></tr></tbody></table><div class="rpt-cap">Cases. Empirical bands are the 2.5th and 97.5th percentiles of relative backtest error at each horizon, estimated on the development window only.</div></div>
+      <p>The horizon-specific interval is wider at every horizon, by 22 percent at h=1 and by a factor of 2.6 at h=12. No constant multiplier applied to the residual band would reproduce it, since the error is one of shape rather than scale.</p>
+      <h2>7. Limitations</h2>
+      <p>The sealed period supplies three origins, so sealed-period estimates carry substantial sampling error; the direction of every comparison is supported by the 17 development origins, but its magnitude is not tightly estimated. Two observations are imputed. A single series is analyzed, so no between-series variance is available and results are conditional on this series' stochastic-level structure. MAPE is asymmetric between over- and under-forecasting and undefined at zero; a loss function matching the asymmetry of stockout versus holding cost could reorder the rankings. Finally, honest evaluation measures the candidate pool it is given, and cannot detect a driver absent from every candidate in it.</p>
+    </div>
+
+    <div class="rpt-foot"><a class="primary" href="../chapters/capstone-forecast-backtesting.html">&#8592; Back to Chapter 201</a><a href="../chapters/notebooks/html/capstone-forecast-backtesting.html" target="_blank" rel="noopener">&#128211; Companion notebook</a><a class="xls" href="../data/capstone-forecast-backtesting.xlsx">&#128202; Download dataset</a></div>
+    <div class="rpt-colophon">
+      From <strong>Statistics, Data Science and AI: A Visual Handbook</strong> by John Fisher.
+      Every statistic, table, and figure in this report is reproduced by the companion notebook.
+    </div>
+  </article>
+</div>
+
+<script>
+(function(){
+  var bar=document.getElementById('rptSticky');
+  window.addEventListener('scroll',function(){
+    if(window.scrollY>320) bar.classList.add('on'); else bar.classList.remove('on');
+  });
+})();
+</script>
+</body>
+</html>

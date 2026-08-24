@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 201 · Backtesting and Honest Model Selection — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .yes { color:#047857; font-weight:700; }
+    .disp-table .no { color:#dc2626; font-weight:700; }
+    .disp-table tr.hi td { background:#f0f9ff; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .embox { background:#f0f9ff; border:1px solid #bae6fd; border-left:4px solid #0369a1; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .embox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#0c4a6e; }
+    .rw-card { background:#f0f9ff; border:1px solid #bae6fd; border-left:4px solid #0369a1; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#0c4a6e; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#f0f9ff; color:#0369a1; border-color:#bae6fd; }
+    .ex-file.doc { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#f0f9ff; border:1px solid #bae6fd; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#0c4a6e; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #0369a1; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#0c4a6e; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+    .svg-wrap { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.9rem 0.6rem 0.3rem; background:var(--panel); }
+    .svg-wrap svg { width:100%; height:auto; display:block; }
+    .svg-wrap .cap { font-size:0.82rem; color:var(--ink-soft); padding:0.55rem 0.6rem 0.4rem; line-height:1.55; }
+    .svg-wrap .cap strong { color:var(--ink); }
+    .partclose { background:linear-gradient(135deg,#f0f9ff,#f0f9ff); border:1px solid #bae6fd;
+                 border-radius:14px; padding:1.3rem 1.5rem; margin:1.6rem 0; }
+    .partclose h4 { font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:0.07em;
+                    color:#0c4a6e; margin:0 0 0.75rem; }
+    .partclose ol { margin:0 0 0 1.1rem; padding:0; }
+    .partclose li { font-size:0.9rem; color:var(--ink-soft); line-height:1.62; margin-bottom:0.45rem; }
+    .partclose li a { color:#0369a1; font-weight:700; text-decoration:none; }
+    .partclose li a:hover { text-decoration:underline; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXXII &#183; Capstone Projects: Time Series &amp; Forecasting</span><span class="sep">/</span>
+      <span>Chapter 201</span>
+    </div>
+    <h1>Backtesting and <span class="accent">Honest Model Selection</span></h1>
+    <p class="dek">Capstone 38. A bake-off tried thirty-two models, scored them on last year, and reported a winner accurate to 3.4 percent. The production plan was built on that number. Three sealed years say the real figure was 5.6, and the gap can be traced to a single decision nobody thought was a decision.</p>
+    <div class="hero-meta">
+      <div class="m">&#9201;&#65039; <b>~25 min</b>&nbsp;read</div>
+      <div class="m">&#127919; <b>Rolling origin, selection bias, coverage</b></div>
+      <div class="m">&#128202; <b>Chapter 201</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <div class="brief-card">
+      <div class="bh">The brief</div>
+      <dl>
+        <dt>Setting</dt><dd>A specialty foods manufacturer shipping to wholesale grocery accounts. Thirteen years of monthly case volumes, and a planning team that ran a forecasting bake-off last year.</dd>
+        <dt>The question</dt><dd><strong>Is 3.4 percent what this business should expect next year?</strong></dd>
+        <dt>Why it matters</dt><dd>Next year's production plan, hiring plan and raw-material contracts were all sized against that number. If the forecast is less accurate than advertised, every one of them is built on a tolerance that does not exist.</dd>
+        <dt>What we do</dt><dd>Seal three years, re-run the bake-off on the rest, score the same thirty-two candidates from seventeen origins instead of one, measure what searching a candidate pool costs, and then check whether the prediction interval covers what it claims.</dd>
+      </dl>
+    </div>
+
+    <p class="lead">Nothing in the original bake-off was done incorrectly. The pool was sensible, the holdout
+       was genuinely held out, and the arithmetic was right. The number it produced was still
+       <span class="hl">wrong by two-thirds</span>, and this chapter is about why that can happen
+       without anyone making a mistake.</p>
+  </section>
+
+  <!-- 1 -->
+  <section id="claim">
+    <div class="section-eyebrow"><div class="num">1</div><h2>The Claim on the Table</h2></div>
+
+    <p>The export needed five repairs before anything could be measured on it. June 2019 had been pulled twice,
+       March 2021 was recorded ten times too large, July and August 2017 were absent for an ERP migration, the
+       month column was written two ways, and the final row covered eleven days of January rather than a month.
+       That last one is the dangerous one: eleven days booked as a month reads as a 64 percent collapse, and it
+       sits at the end of the file where it lands in the training window of every forecast made from the most
+       recent data.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-backtest-firstlook.png"
+           alt="Four panels. Top left: the series as exported, where a single March 2021 value near 57,000 dwarfs a business that otherwise runs between 3,300 and 8,600 cases a month, with the partial final month marked at the far right. Top right: the cleaned series from 2013 to 2025, a level that wanders upward rather than following a smooth curve, with the last three years shaded as the sealed period and the filled 2017 gap marked. Bottom left: a boxplot by calendar month showing December about a third above the average month and February about a fifth below. Bottom right: annual totals in thousands of cases, with 2018 to 2020 highlighted at plus 12, 11 and 8 percent and 2021 to 2024 muted at plus 2, 0, 1 and 1 percent.">
+      <figcaption><strong>Top left:</strong> as the file arrived, one keystroke owns the whole y axis.
+        <strong>Top right:</strong> cleaned, with the three sealed years shaded. The level wanders rather than
+        following a curve, which is what makes a twelve-month forecast far less certain than a one-month forecast.
+        <strong>Bottom left:</strong> December runs 29 percent above the average month, so only methods that
+        handle seasonality are worth comparing. <strong>Bottom right:</strong> growth is not a constant. Three
+        years above ten percent, then four averaging under one.</figcaption>
+    </figure>
+
+    <p>The bake-off itself was ordinary. Thirty-two candidates, eight of them simple rules that need no fitting and
+       twenty-four exponential smoothing configurations, each scored on the most recent twelve months. The lowest
+       error won.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Reported winner</div><div class="rv">3.34%</div><div class="rd">MAPE, best of thirty-two</div></div>
+      <div class="rchip"><div class="rk">Its trend assumption</div><div class="rv">None</div><div class="rd">the business does not grow</div></div>
+      <div class="rchip"><div class="rk">Growth in the test year</div><div class="rv">+0.0%</div><div class="rd">the flattest window available</div></div>
+    </div>
+
+    <p>Read the leaderboard rather than the number. Of the eight best candidates, <strong>six assume the business
+       does not grow at all and the other two damp their growth toward zero.</strong> Not one model near the top
+       expects the volume to rise.</p>
+
+    <p>That is not a finding about the business. The twelve months the bake-off tested on grew by 0.0 percent,
+       which is <strong>the flattest of the seventeen windows in the history</strong>, while ten of those seventeen
+       grew faster than five percent. The bake-off asked which model best describes a year in which nothing
+       happened, and answered correctly. The plan needs a model that describes next year.</p>
+  </section>
+
+  <!-- 2 -->
+  <section id="onedraw">
+    <div class="section-eyebrow"><div class="num">2</div><h2>One Holdout Is One Draw</h2></div>
+
+    <p>A rolling origin is the same test repeated from many standing points. Stand at the end of December 2017,
+       forecast the next twelve months using only what was genuinely available then, and score it. Step forward a
+       quarter and repeat. Seventeen origins, the same thirty-two candidates, the same horizon.</p>
+
+    <table class="disp-table">
+      <tr><th>Chosen by</th><th>Winner</th><th>Its score</th><th>Where the other procedure ranks it</th></tr>
+      <tr><td class="nm">One holdout</td><td>ETS, no trend, additive seasonal</td><td>3.34%</td><td class="no">23rd of 32 on rolling origin</td></tr>
+      <tr class="hi"><td class="nm">Rolling origin</td><td>ETS, linear trend, multiplicative seasonal</td><td>5.47%</td><td>10th of 32 on the single holdout</td></tr>
+    </table>
+
+    <p>The two procedures disagree, and the disagreement is not marginal. The model the bake-off crowned is
+       twenty-third of thirty-two once it has to perform at more than one standing point.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Distinct winners</div><div class="rv">14</div><div class="rd">across seventeen origins</div></div>
+      <div class="rchip"><div class="rk">Most wins by any one</div><div class="rv">2</div><div class="rd">no candidate dominates</div></div>
+      <div class="rchip"><div class="rk">Rank of the rolling winner</div><div class="rv">1st to 22nd</div><div class="rd">depending only on the quarter</div></div>
+    </div>
+
+    <p><strong>Fourteen different candidates win at least one origin and none wins more than twice.</strong> A
+       bake-off run one quarter earlier or later would very likely have crowned a different model, reported a
+       different number, and sized the production plan differently. The seasonal naive rule, which repeats last
+       year month for month and costs nothing to run, ranked anywhere from fourth to twenty-sixth.</p>
+
+    <p class="callout-inline">A leaderboard built on one origin is describing the year, not the model.</p>
+  </section>
+
+  <!-- 3 -->
+  <section id="search">
+    <div class="section-eyebrow"><div class="num">3</div><h2>What the Searching Costs</h2></div>
+
+    <p>There is a second problem underneath the first, and it survives even if the holdout year is perfectly
+       representative. The bake-off did not measure a model, it measured <em>the best of thirty-two</em>. Those are
+       different quantities, and the difference can be priced.</p>
+
+    <p>The experiment is to draw a random pool of a given size out of the thirty-two, pick the best of that pool on
+       the holdout exactly as the team did, and then look at what it goes on to deliver on data nobody touched.
+       Repeating that four thousand times per pool size gives the following.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-backtest-optimism.png"
+           alt="Two panels. Left: two lines against the number of candidates tried on a log axis from 1 to 32. The reported error falls steadily from 7.83 percent to 3.34 percent while the error delivered on fresh data drops to about 5.3 percent at two candidates and then stays flat, drifting slightly up to 5.57. The widening gap between them is shaded. Right: a bar chart of how many origins each winning candidate won, fourteen bars of which three reach two and eleven reach one, with a note that one genuinely best model would be a single bar of seventeen.">
+      <figcaption><strong>Left:</strong> the two lines start together and separate. At one candidate there is
+        nothing to select on and the holdout is an honest measurement. Every candidate added after that gives the
+        procedure another chance to mistake a lucky year for a good model. <strong>Right:</strong> how many origins
+        each winning candidate won. Fourteen bars, none taller than two.</figcaption>
+    </figure>
+
+    <p>Read the two lines against each other, because they move in opposite directions. <strong>Reported error more
+       than halves</strong>, from 7.83 percent for a model picked without looking to 3.34 percent for the best of
+       all thirty-two. <strong>Delivered error stops improving after the second candidate</strong> and sits
+       between 5.3 and 5.6 percent from there on, drifting slightly worse as the search widens.</p>
+
+    <p>Searching harder made the report better and the forecast no better. The wedge between the lines is what the
+       procedure overstates its own accuracy by, and it is a function of how many things were tried:
+       <strong>2.24 percentage points on a claim of 3.34</strong>. Thirty-two is a modest search. Automated
+       forecasting tools routinely evaluate several hundred configurations, and this effect grows with that count.</p>
+  </section>
+
+  <!-- 4 -->
+  <section id="sealed">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Opening the Sealed Period</h2></div>
+
+    <p>Three years, January 2023 to December 2025, were held back before any of this began and used to choose
+       nothing. Opening them once, after every decision has been made, is the only way to find out what the
+       choosing cost.</p>
+
+    <table class="disp-table">
+      <tr><th>Chosen by</th><th>Claimed</th><th>Delivered</th><th></th></tr>
+      <tr><td class="nm">One holdout, best of thirty-two</td><td>3.34%</td><td class="no">5.57%</td><td class="no">two-thirds worse than promised</td></tr>
+      <tr class="hi"><td class="nm">Rolling origin, best of thirty-two</td><td>5.47%</td><td class="ok">4.62%</td><td class="ok">better than promised</td></tr>
+      <tr><td class="nm">Best possible with hindsight</td><td>not claimed</td><td>4.62%</td><td>the same model</td></tr>
+      <tr><td class="nm">Seasonal naive, fitted to nothing</td><td>not claimed</td><td>6.76%</td><td>the floor to beat</td></tr>
+    </table>
+
+    <p><strong>The honest procedure claimed a worse number and produced a better forecast.</strong> That is the
+       trade this chapter is arguing for, and it is worth being precise about which part of it is repeatable. That
+       rolling-origin selection landed on exactly the model hindsight would have picked is luck. That its claim was
+       conservative while the one-origin claim was optimistic is not.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-backtest-coverage.png"
+           alt="Two panels. Left: coverage of the prediction interval against forecast horizon, starting at 82 percent one month ahead and falling to 57 percent at twelve months, against a dashed line at the nominal 95 percent, with the shortfall shaded. Right: the first sealed year with two prediction bands drawn over it, a constant-width band from the residual shortcut and a wider band measured separately at each horizon that opens out as the year progresses.">
+      <figcaption><strong>Left:</strong> coverage against the horizon. A calibrated interval would sit on the
+        dashed line everywhere. <strong>Right:</strong> the two bands over the first sealed year. The measured band
+        opens as the year runs on, which is what genuine uncertainty about a wandering level looks like. The
+        shortcut is a corridor of constant width.</figcaption>
+    </figure>
+
+    <p>The year-by-year figures show the mechanism rather than the outcome. In 2023 and 2024, which grew 0.7 and
+       0.6 percent, the two models are within a quarter of a point of each other. <strong>In 2025, which grew 7.9
+       percent, the bake-off's pick posted 6.93 percent against the other's 4.53.</strong> It was never a worse
+       model in general. It was a model selected on evidence that contained no growth, and it failed on the first
+       year that had some.</p>
+
+    <p>Neither model reached 3.4 percent in any of the three years. The claim was not merely optimistic on average.
+       It was never met.</p>
+  </section>
+
+  <!-- 5 -->
+  <section id="interval">
+    <div class="section-eyebrow"><div class="num">5</div><h2>The Interval Nobody Checked</h2></div>
+
+    <p>A point forecast alone is not a plan. Somewhere downstream a planner needs a range, and the usual shortcut
+       is the forecast plus or minus 1.96 times the standard deviation of the model's residuals. It is one line of
+       code and it is almost never checked.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Promised</div><div class="rv">95%</div><div class="rd">of months inside the band</div></div>
+      <div class="rchip"><div class="rk">Delivered</div><div class="rv">67.9%</div><div class="rd">over 588 forecast points</div></div>
+      <div class="rchip"><div class="rk">At twelve months out</div><div class="rv">57%</div><div class="rd">against 82% at one month</div></div>
+    </div>
+
+    <p>An interval meant to miss one month in twenty misses one month in three. Two separate faults are stacked
+       here, and they need separating.</p>
+
+    <p><strong>It is too narrow everywhere.</strong> Even one month ahead, coverage is 82 percent rather than 95.
+       Residuals are what is left after the model has already adapted to those months. They measure how well it
+       fits, not how well it forecasts, and using one as a proxy for the other understates by construction.</p>
+
+    <p><strong>It is the same width at twelve months as at one.</strong> Uncertainty about next December compounds
+       every month of drift between here and there. The interval does not widen by a single case, so coverage falls
+       away with the horizon.</p>
+  </section>
+
+  <!-- 6 -->
+  <section id="measured">
+    <div class="section-eyebrow"><div class="num">6</div><h2>An Interval Measured Instead of Assumed</h2></div>
+
+    <p>The backtest has already produced the thing the interval needed. Forty-nine origins each generated a
+       one-month-ahead error, a two-month-ahead error, and so on out to twelve. Taking the 2.5th and 97.5th
+       percentiles of those errors <em>at each horizon separately</em> gives a band built from what the model has
+       done rather than from an assumption about what it should do.</p>
+
+    <table class="disp-table">
+      <tr><th>On the sealed period</th><th>Coverage</th><th>Width at one month</th><th>Width at twelve months</th></tr>
+      <tr><td class="nm">Residual shortcut</td><td class="no">83%</td><td>897 cases</td><td>897 cases</td></tr>
+      <tr class="hi"><td class="nm">Measured by horizon</td><td class="ok">94%</td><td>1,096 cases</td><td>2,346 cases</td></tr>
+    </table>
+
+    <p>It covers 94 percent against a nominal 95, and it is wider than the shortcut at every horizon but not by a
+       constant amount. At one month it is a modest correction. At twelve it is <strong>2.6 times wider</strong>.
+       The shortcut was not simply too small by some factor that could be patched with a multiplier. It was the
+       wrong shape: mildly over-confident about next month and badly over-confident about next December.</p>
+
+    <p>What goes to the planning team is therefore a range and not a point. Next December is
+       <strong>7,285 to 9,631 cases</strong>. A raw-material contract written against the midpoint is a contract
+       written against a number nobody should have believed.</p>
+  </section>
+
+  <!-- 7 -->
+  <section id="limits">
+    <div class="section-eyebrow"><div class="num">7</div><h2>What This Does Not Settle</h2></div>
+
+    <p><strong>Three sealed years is three draws.</strong> The direction of every result here is well supported by
+       the seventeen development origins, but the size of the gap on the sealed period is itself measured with
+       error, and a fourth year could move it.</p>
+
+    <p><strong>Two of the 156 months were invented.</strong> July and August 2017 were interpolated across the ERP
+       gap, and every backtest trains through them. It is a small debt and it is real.</p>
+
+    <p><strong>The tie at the end is luck.</strong> Rolling-origin selection happened to land on the model that
+       hindsight says was best of the thirty-two. Nothing in the method guarantees that, and reporting it as though
+       the procedure finds optima would be exactly the overclaiming this chapter is about.</p>
+
+    <p><strong>One series, one metric.</strong> MAPE penalizes over-forecasting and under-forecasting differently,
+       and it is undefined on zeros, which is why the previous chapter could not use it at all. A business that
+       would rather carry stock than miss an order should be selecting on a loss function that says so, and the
+       rankings could reorder under one.</p>
+
+    <p><strong>Nothing here fixes a model that is wrong about the world.</strong> Honest evaluation measures a
+       candidate pool. If every candidate in the pool misses a driver the business already knows about, backtesting
+       will faithfully report which of them misses it least.</p>
+  </section>
+
+  <!-- 8 -->
+  <section id="watch">
+    <div class="section-eyebrow"><div class="num">8</div><h2>What to Watch</h2></div>
+
+    <ul class="checklist">
+      <li><span class="ck">&#10003;</span><span><strong>Ask what the test period looked like.</strong> Before reading any accuracy figure, find out what happened in the window it was measured on. A flat year selects flat models and a fast year selects fast ones, and neither tells you about next year.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Count what was tried.</strong> The overstatement grows with the number of candidates, so a reported error means nothing without the size of the search that produced it. Automated model selection makes this larger, not smaller.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Use many origins, and look at the spread as well as the average.</strong> If the winner's rank swings from first to twenty-second across origins, the ranking is not a stable fact and should not be reported as one.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Seal something and keep it sealed.</strong> Data used to choose a model is spent and cannot also measure it. One look, at the end, after every decision.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Keep a free baseline in the comparison forever.</strong> Seasonal naive delivered 6.76 percent here without being fitted to anything. The day a maintained model stops beating it is the day it has quietly broken.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Measure coverage, never assume it.</strong> An interval is a claim about frequency, and it is cheap to check. Check it separately at each horizon, because the failure usually grows with distance.</span></li>
+    </ul>
+  </section>
+
+  <!-- 9 -->
+  <section id="in-ds-ai">
+    <div class="section-eyebrow"><div class="num">9</div><h2>Backtesting in Data Science &amp; AI</h2></div>
+
+    <p>Nothing in this chapter is specific to forecasting. Any procedure that reports the best score out of many
+       attempts, and does not pay for the search, reports a number that is too good. The forecasting case is only
+       the one where the leakage is easiest to see, because time gives an unarguable ordering.</p>
+
+    <table class="disp-table">
+      <tr><th>Where the same thing happens</th><th>The many attempts are</th><th>What the honest version costs</th></tr>
+      <tr><td class="nm">Hyperparameter search</td><td>Every configuration in the grid</td><td>A nested split, so the tuning does not score itself</td></tr>
+      <tr class="hi"><td class="nm">Feature selection</td><td>Every subset considered</td><td>Selection repeated inside each fold, not before them</td></tr>
+      <tr><td class="nm">Leaderboards and benchmarks</td><td>Every submission against a public test set</td><td>A held-back private set, opened once</td></tr>
+      <tr class="hi"><td class="nm">Quantitative trading</td><td>Every strategy variant backtested</td><td>Out-of-sample periods and deflated performance measures</td></tr>
+      <tr><td class="nm">Prompt and model iteration</td><td>Every prompt tried against an eval set</td><td>A fresh eval the prompts were not written against</td></tr>
+    </table>
+
+    <div class="research">
+      <span class="rtag">Where the methods came from</span>
+      <p style="margin:0.4rem 0 0"><strong>Rolling-origin evaluation</strong> was set out by Tashman in 2000 as the
+         standard for forecast accuracy, and the <strong>M-competitions</strong> run by Makridakis since 1979 have
+         repeatedly found that simple methods are harder to beat than the field expects, and that combinations beat
+         individual models. <strong>Hyndman and Koehler</strong> introduced the scaled error in 2006, partly because
+         percentage errors break down in exactly the way the previous chapter showed. The selection-bias problem
+         has a large literature of its own, from <strong>White's reality check</strong> in 2000 through the
+         <strong>Hansen superior predictive ability test</strong> and the deflated Sharpe ratios used to discount
+         backtested trading strategies, all of them answering the same question: how good does the best of many
+         attempts have to look before it is more than luck.</p>
+    </div>
+
+    <div class="partclose">
+      <h4>Part XXXII in four chapters</h4>
+      <ol>
+        <li><a href="the-forecasting-workflow.html">The Forecasting Workflow</a> set out why a time series breaks
+          the usual validation rules: never shuffle, respect the origin, and forecast at the horizon the decision
+          actually needs.</li>
+        <li><a href="capstone-hierarchical-forecasting.html">Hierarchical Forecasting: Store, Region, National</a>
+          took forecasts that have to add up and found that reconciliation is insurance rather than an improvement.</li>
+        <li><a href="capstone-intermittent-demand-spare-parts.html">Intermittent Demand: Spare Parts</a> met a
+          series that is zero most weeks, where the reported error could not be computed and the metric's optimum
+          was a warehouse that never orders.</li>
+        <li><strong>This chapter</strong> asked what any of those accuracy figures are worth, and found that the
+          number depends on how many models were tried and which year they were tried on.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- notebook -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">&#128013;</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook repairs five faults in the export, builds the thirty-two candidates, runs the
+             bake-off exactly as the team ran it, re-scores every candidate from seventeen rolling origins,
+             measures how much the reported error is inflated by the size of the search, opens the sealed period
+             once, and then tests whether the prediction interval covers what it promises at every horizon.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-forecast-backtesting.html">&#128211; View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-forecast-backtesting.ipynb"
+           target="_blank" rel="noopener">&#9654; Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-forecast-backtesting.ipynb"
+           target="_blank" rel="noopener">&#11015; View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Read the reports &amp; get the data</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong>
+         (<code>capstone-forecast-backtesting.xlsx</code>) holds thirteen years of monthly case volumes as the
+         extract arrived, with the duplicated month, the decimal slip, the missing summer, the two date formats
+         and the partial final row all still in place. Two written reports accompany it: a
+         <strong>plain-language brief</strong> for the planning director, and a <strong>technical report</strong>
+         covering the evaluation design, the selection-bias experiment and the coverage tests.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-38-forecast-backtesting.html" target="_blank" rel="noopener">&#128196; Plain-language brief <small>read online</small></a>
+        <a class="ex-file doc" href="../reports/capstone-38-forecast-backtesting-technical.html" target="_blank" rel="noopener">&#128202; Technical report <small>read online</small></a>
+        <a class="ex-file xls" href="../data/capstone-forecast-backtesting.xlsx">&#128202; Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>&#127891; Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">&#10003;</span><span><strong>The bake-off promised 3.34 percent and delivered 5.57</strong> on three sealed years, an error two-thirds larger than the figure the production plan was sized against.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>It tested on the flattest year in the history</strong>, which grew 0.0 percent, and every model near the top of its leaderboard assumes no growth. The pick then failed on the first sealed year that grew.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Fourteen of thirty-two candidates win at least one of seventeen origins and none wins more than twice</strong>, so a one-origin leaderboard is reporting the year rather than the model.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Overstatement grows with the size of the search</strong>: reported error more than halves from 7.83 to 3.34 percent as the pool widens while delivered error stays near 5.4, a gap of 2.24 points at thirty-two candidates.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Rolling-origin selection claimed 5.47 and delivered 4.62</strong>, conservative rather than optimistic, and beat the free seasonal naive baseline by about two points.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>A nominal 95 percent interval covered 67.9 percent</strong>, falling from 82 percent at one month to 57 at twelve. Rebuilt from backtest errors at each horizon it covered 94 percent, and needed to be 2.6 times wider at twelve months.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">&#10067;</div><h2>Quiz: Test Yourself</h2></div>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-intermittent-demand-spare-parts.html">
+      <span style="font-size:1.3rem">&#8592;</span>
+      <span><span class="cn-dir">Chapter 200 &#183; Previous</span><br><span class="cn-title">Intermittent Demand: Spare Parts</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">&#8594;</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;&#183;&nbsp;
+  Chapter 201 &nbsp;&#183;&nbsp; &#169; 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch201";
+  window.QUIZ_DATA = [
+    {
+      q: "The bake-off scored thirty-two candidates on the twelve months from January 2022 and crowned one at 3.34 percent MAPE. What was special about that window?",
+      options: ["It was the most recent year available", "It grew 0.0 percent, the flattest of the seventeen windows in the history, so the leaderboard filled with models that assume no growth", "It contained the decimal slip", "It was the only year with complete data"],
+      answer: 1,
+      explain: "Six of the top eight assume no trend and the other two damp it toward zero. That is a fact about the test window, not about the business, and the pick then failed on the first sealed year that grew."
+    },
+    {
+      q: "Across seventeen rolling origins, fourteen different candidates won at least one and none won more than two. What does that establish?",
+      options: ["That the candidate pool was badly built", "That no candidate dominates, so which model a one-origin bake-off crowns is largely determined by which quarter it happened to be run in", "That all thirty-two models are equally good", "That seventeen origins is too many"],
+      answer: 1,
+      explain: "If one model were genuinely best you would see it win most origins. Instead the ranking reshuffles constantly, and the eventual rolling winner ranked anywhere from first to twenty-second."
+    },
+    {
+      q: "As the candidate pool widens from 1 to 32, reported error falls from 7.83 to 3.34 percent while delivered error stays near 5.4. Why?",
+      options: ["The larger pool contains better models that overfit", "Selecting the minimum of many noisy scores finds candidates that were lucky on that particular window, and luck does not carry to fresh data", "The reported error is calculated incorrectly", "Fresh data is always harder to forecast"],
+      answer: 1,
+      explain: "The reported figure is the minimum of thirty-two noisy measurements, which is biased low as an estimate of any single model's true error. The overstatement grows with the number of candidates tried."
+    },
+    {
+      q: "Why must the sealed period be opened only once, at the very end?",
+      options: ["To save computation", "Because data used to choose anything is spent and can no longer measure what it chose, so a second look would reintroduce the same bias", "Because the sealed period is the most recent data", "Because three years is the minimum sample"],
+      answer: 1,
+      explain: "The moment a result from the sealed period influences a decision, later scores on it inherit the same selection bias the exercise is trying to measure."
+    },
+    {
+      q: "Rolling-origin selection claimed 5.47 percent and delivered 4.62. What is the durable lesson, and what is luck?",
+      options: ["Both are luck", "Durable: the claim was conservative rather than optimistic. Luck: it happened to land on exactly the model hindsight would have chosen", "Durable: rolling origin always finds the best model. Luck: nothing", "Neither, the difference is rounding"],
+      answer: 1,
+      explain: "Nothing in rolling-origin selection guarantees finding the optimum. What it does reliably is produce an accuracy claim built from many standing points, which is far less likely to flatter itself than one built from a single window."
+    },
+    {
+      q: "A nominal 95 percent interval, built as the forecast plus or minus 1.96 residual standard deviations, covered 67.9 percent of months. Two faults are stacked. What are they?",
+      options: ["The model was wrong and the data was noisy", "It is too narrow at every horizon because in-sample residuals understate forecast error, and it does not widen with the horizon even though uncertainty compounds", "The residuals were not normal and the sample was small", "The seasonality was multiplicative and the trend was linear"],
+      answer: 1,
+      explain: "Coverage is already 82 percent one month out, so it is too narrow from the start, and it falls to 57 percent by twelve months because the band never widens while the genuine uncertainty does."
+    },
+    {
+      q: "Rebuilding the interval from the 2.5th and 97.5th percentiles of backtest errors at each horizon gave 94 percent coverage. How did its width compare with the shortcut?",
+      options: ["Narrower everywhere", "Wider at every horizon, but by a growing amount: a modest correction at one month and 2.6 times wider at twelve", "The same width, better centered", "Wider at one month and narrower at twelve"],
+      answer: 1,
+      explain: "The shortcut was the wrong shape, not merely the wrong size, so no single multiplier could have fixed it. The correction has to grow with the horizon."
+    },
+    {
+      q: "Seasonal naive, which repeats last year month for month and is fitted to nothing, delivered 6.76 percent on the sealed years. What should be done with that?",
+      options: ["Drop it, since the chosen model beat it", "Keep it in the comparison permanently, because it is the floor any maintained model must clear and the day it stops being cleared is the day the model has broken", "Use it as the production forecast", "Use it to set the prediction interval"],
+      answer: 1,
+      explain: "The chosen model beats it by about two points, which is a real but modest gain. A free baseline that requires no maintenance is the cheapest monitoring you will ever have."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
