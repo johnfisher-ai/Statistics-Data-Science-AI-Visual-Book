@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Missing Data (Technical) &#183; Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/report.css">
+  <style>
+    body.report { --rpt-accent:#115e59; --rpt-accent-dark:#134e4a; --rpt-accent-bg:#f0fdfa; --rpt-accent-line:#99f6e4; }
+  </style>
+</head>
+
+<body class="report">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="../chapters/capstone-missing-data-imputation.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">&#8592; Chapter 202</a>
+  </div>
+</nav>
+
+<div class="rpt-sticky" id="rptSticky">
+  <div class="inner">
+    <div class="st-title">Mechanism, Method and Coverage in a Survey with 51 Percent Incomplete Records</div>
+    <a class="st-back" href="../chapters/capstone-missing-data-imputation.html">&#8592; Chapter 202</a>
+  </div>
+</div>
+
+<div class="rpt-wrap">
+  <article class="rpt-paper technical">
+    <header class="rpt-head">
+      <div class="rpt-topline">
+        <div class="rpt-kicker">Capstone 39 &#183; Technical Report</div>
+        <span class="rpt-badge technical">Technical Report</span>
+      </div>
+      <h1>Mechanism, Method and Coverage in a Survey with 51 Percent Incomplete Records</h1>
+      <p class="rpt-sub">Four missing-data methods scored against known removed values, bias and interval coverage over 150 replications, and a delta-adjustment sensitivity analysis for a non-ignorable mechanism.</p>
+      <div class="rpt-meta"><div><b>Data</b> &nbsp;1,400 respondents, county health assessment, gaps in three covariates</div><div><b>Estimands</b> &nbsp;Adjusted BMI coefficient on systolic BP; population mean household income</div><div><b>Validation</b> &nbsp;Removed values retained, so all methods are scored against the complete-data analysis</div></div>
+    </header>
+
+    <div class="rpt-prov">
+      <span class="pv-tag">Where this comes from</span>
+      <div class="pv-row"><div><span>Chapter</span> <a href="../chapters/capstone-missing-data-imputation.html">Chapter 202 &#183; Missing Data: What Dropping Rows Costs You</a></div><div><span>Part</span> Part XXXIII &#183; Capstone Projects: Specialized Methods</div><div><span>Dataset</span> <a href="../data/capstone-missing-data-imputation.xlsx">capstone-missing-data-imputation.xlsx</a></div><div><span>Notebook</span> <a href="../chapters/notebooks/html/capstone-missing-data-imputation.html" target="_blank" rel="noopener">View the analysis</a></div></div>
+    </div>
+
+    <div class="rpt-body">
+      <h2>Abstract</h2>
+      <p><strong>Objective.</strong> To determine which missing-data method to adopt for a survey in which 51.2 percent of records are incomplete, and to establish whether either of two estimands is recoverable.</p>
+      <p><strong>Design.</strong> Gaps were imposed on a complete extract under three mechanisms, so the removed values are available for scoring. Activity minutes were made MCAR at 15.5 percent. BMI was made MAR at 31.5 percent through a logistic model in systolic blood pressure and age, that is, dependent on the OUTCOME of the target regression. Income was made MNAR at 17.0 percent through a logistic model in income itself. Four methods were compared: complete-case, unconditional mean imputation, single conditional-mean imputation via iterative chained equations without noise, and proper multiple imputation with m = 20 combined by Rubin's rules. The entire study was then replicated 150 times to estimate bias and 95 percent interval coverage.</p>
+      <p><strong>Result.</strong> The complete-data estimate was 0.980 mm Hg per BMI unit. Over 150 replications, coverage was 96.0 percent for complete data, 82.7 for complete-case, 78.0 for mean imputation, 88.7 for multiple imputation, and <strong>2.7 percent for single conditional-mean imputation</strong>, which carried a bias of +0.330 against a between-replication standard deviation of 0.089. Fraction of missing information on the target coefficient was 25.4 percent. For mean income, all three feasible methods returned 59.4k against a true 68.2k; delta-adjustment located a tipping point at 35k.</p>
+      <h2>1. Data and preprocessing</h2>
+      <p>The extract contained 1,406 rows. Six duplicate respondent identifiers were removed. Three sentinel conventions were present and were converted to explicit missingness: <code>-1</code> in activity minutes (204 rows), <code>999</code> in income (143 rows), and the string <code>not measured</code> in BMI (111 rows), the last of which caused the column to be read as object dtype. Naive completeness on the raw file reported 29.6 percent of rows affected; after sentinel conversion the figure was 51.2 percent, leaving 683 complete cases of 1,400.</p>
+      <h2>2. Evidence on the mechanisms</h2>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Column</th><th>Missing</th><th>Mean SBP when observed</th><th>Mean SBP when missing</th><th>Mechanism</th></tr></thead><tbody><tr><td>Activity</td><td>14.4%</td><td>134.3</td><td>134.9</td><td>MCAR</td></tr><tr><td>BMI</td><td>31.5%</td><td>131.0</td><td>141.7</td><td>MAR, on the outcome</td></tr><tr><td>Income</td><td>17.0%</td><td>&#8212;</td><td>&#8212;</td><td>MNAR</td></tr></tbody></table><div class="rpt-cap">Observed-data evidence. The income row cannot be filled from observed data, which is the definition of the problem.</div></div>
+      <p>Respondents missing BMI averaged 10.7 mm Hg higher systolic pressure and were 7.7 years older, both observed, so the mechanism is MAR. It is nonetheless the case that complete-case analysis is biased here, because the missingness depends on the regression outcome rather than only on covariates. For income, the true mean among non-responders was 110.9k against 59.4k among responders, a fact available only from the retained values.</p>
+      <h2>3. Single-dataset estimates</h2>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Method</th><th>Estimate</th><th>SE</th><th>95% CI</th></tr></thead><tbody><tr><td>Complete data</td><td>0.980</td><td>0.055</td><td>0.872 to 1.087</td></tr><tr><td>Complete-case, n = 683</td><td>0.874</td><td>0.077</td><td>0.724 to 1.025</td></tr><tr><td>Mean imputation</td><td>0.895</td><td>0.072</td><td>0.753 to 1.037</td></tr><tr><td>Single regression imputation</td><td><strong>1.324</strong></td><td>0.063</td><td>1.200 to 1.448</td></tr><tr><td>Multiple imputation, m = 20</td><td>0.954</td><td>0.066</td><td>0.826 to 1.083</td></tr></tbody></table><div class="rpt-cap">Adjusted coefficient of BMI on systolic blood pressure, mm Hg per unit.</div></div>
+      <p>Three of the four feasible intervals contain the complete-data estimate on this realization, which is why a single dataset cannot discriminate between methods. Single regression imputation is both the furthest from the target and the narrowest of the methods using all n, having imputed BMI from a model containing the outcome and then analyzed the imputations as observations.</p>
+      <h2>4. Bias and coverage over 150 replications</h2>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Method</th><th>Mean estimate</th><th>Bias</th><th>SD</th><th>Coverage</th></tr></thead><tbody><tr><td>Complete data</td><td>0.901</td><td>+0.001</td><td>0.059</td><td>96.0%</td></tr><tr><td>Complete-case</td><td>0.822</td><td>-0.078</td><td>0.077</td><td>82.7%</td></tr><tr><td>Mean imputation</td><td>0.814</td><td>-0.086</td><td>0.071</td><td>78.0%</td></tr><tr><td>Single regression imputation</td><td>1.230</td><td><strong>+0.330</strong></td><td>0.089</td><td><strong>2.7%</strong></td></tr><tr><td>Multiple imputation, m = 6</td><td>0.882</td><td>-0.018</td><td>0.073</td><td>88.7%</td></tr></tbody></table><div class="rpt-cap">Target value 0.90. Coverage is the proportion of nominal 95 percent intervals containing it.</div></div>
+      <figure class="rpt-fig"><img src="../assets/img/report-39-coverage.png" alt="A bar chart of five methods against a dashed line at 95 percent: complete data 96 percent, complete-case 83, mean imputation 78, single regression imputation 3, multiple imputation 89."><figcaption><span class="n">Figure 1.</span> Empirical coverage of nominal 95 percent intervals by method.</figcaption></figure>
+      <p>Mean imputation attenuates through variance reduction in the imputed covariate. Complete-case is biased downward because selection operates on the outcome. Single conditional-mean imputation is biased upward because the imputation model conditions on the outcome and contributes no imputation variance, producing intervals that are simultaneously displaced and too narrow. Multiple imputation retains a residual bias of -0.018 and coverage of 88.7 percent, attributable to the MNAR income covariate, which no MAR-based procedure can address.</p>
+      <h2>5. A non-ignorable estimand</h2>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Method</th><th>Mean household income</th><th>Grant eligibility below $65k</th></tr></thead><tbody><tr><td>Complete-case</td><td>59.40k</td><td>qualifies</td></tr><tr><td>Mean imputation</td><td>59.40k</td><td>qualifies</td></tr><tr><td>Multiple imputation, m = 20</td><td>59.42k</td><td>qualifies</td></tr><tr><td>Complete data</td><td><strong>68.16k</strong></td><td><strong>does not qualify</strong></td></tr></tbody></table><div class="rpt-cap">Agreement among the three feasible methods reflects a shared MAR assumption, not corroboration.</div></div>
+      <p>A delta-adjustment was applied to the imputed income values, shifting each non-responder's imputation by a constant delta and recomputing the mean. With a 17.0 percent non-response rate the estimate rises by 0.17 per unit of delta, crossing the eligibility threshold at <strong>delta = 35k</strong>. The retained values imply an actual delta near 52k, 1.5 times the tipping point. The reportable quantity is the tipping point.</p>
+      <h2>6. Limitations</h2>
+      <p>The replication study is conditional on this data-generating process, these missingness rates and this imputation specification; the ordering of methods is not guaranteed to transfer, although the mechanism behind the single-imputation failure is general. The MAR assumption supporting the BMI estimand is untestable outside this constructed setting. Every arm used the same imputation model specification, so the comparison is not sensitive to misspecification of that model. Multiple imputation was run at m = 6 in the replication study for tractability against m = 20 in the primary analysis, which slightly understates its coverage.</p>
+    </div>
+
+    <div class="rpt-foot"><a class="primary" href="../chapters/capstone-missing-data-imputation.html">&#8592; Back to Chapter 202</a><a href="../chapters/notebooks/html/capstone-missing-data-imputation.html" target="_blank" rel="noopener">&#128211; Companion notebook</a><a class="xls" href="../data/capstone-missing-data-imputation.xlsx">&#128202; Download dataset</a></div>
+    <div class="rpt-colophon">
+      From <strong>Statistics, Data Science and AI: A Visual Handbook</strong> by John Fisher.
+      Every statistic, table, and figure in this report is reproduced by the companion notebook.
+    </div>
+  </article>
+</div>
+
+<script>
+(function(){
+  var bar=document.getElementById('rptSticky');
+  window.addEventListener('scroll',function(){
+    if(window.scrollY>320) bar.classList.add('on'); else bar.classList.remove('on');
+  });
+})();
+</script>
+</body>
+</html>

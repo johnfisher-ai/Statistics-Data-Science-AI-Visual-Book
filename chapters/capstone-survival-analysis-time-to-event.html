@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 203 · Survival Analysis: Time to Event — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .yes { color:#047857; font-weight:700; }
+    .disp-table .no { color:#dc2626; font-weight:700; }
+    .disp-table tr.hi td { background:#f0fdfa; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .embox { background:#f0fdfa; border:1px solid #99f6e4; border-left:4px solid #115e59; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .embox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#134e4a; }
+    .rw-card { background:#f0fdfa; border:1px solid #99f6e4; border-left:4px solid #115e59; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#134e4a; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#f0fdfa; color:#115e59; border-color:#99f6e4; }
+    .ex-file.doc { background:#ecfdf5; color:#0f766e; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#f0fdfa; border:1px solid #99f6e4; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#134e4a; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #115e59; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#134e4a; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+    .svg-wrap { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.9rem 0.6rem 0.3rem; background:var(--panel); }
+    .svg-wrap svg { width:100%; height:auto; display:block; }
+    .svg-wrap .cap { font-size:0.82rem; color:var(--ink-soft); padding:0.55rem 0.6rem 0.4rem; line-height:1.55; }
+    .svg-wrap .cap strong { color:var(--ink); }
+    .partclose { background:linear-gradient(135deg,#f0fdfa,#f0fdfa); border:1px solid #99f6e4;
+                 border-radius:14px; padding:1.3rem 1.5rem; margin:1.6rem 0; }
+    .partclose h4 { font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:0.07em;
+                    color:#134e4a; margin:0 0 0.75rem; }
+    .partclose ol { margin:0 0 0 1.1rem; padding:0; }
+    .partclose li { font-size:0.9rem; color:var(--ink-soft); line-height:1.62; margin-bottom:0.45rem; }
+    .partclose li a { color:#115e59; font-weight:700; text-decoration:none; }
+    .partclose li a:hover { text-decoration:underline; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXXIII &#183; Capstone Projects: Specialized Methods</span><span class="sep">/</span>
+      <span>Chapter 203</span>
+    </div>
+    <h1>Survival Analysis: <span class="accent">Time to Event</span></h1>
+    <p class="dek">Capstone 40. Fifty-seven percent of these employees have not left yet, so they have no tenure to average. The figure HR reports leaves them out and understates how long people stay by a third. Two standard summaries then agree that remote work makes no difference, and both are averaging a halving and a doubling.</p>
+    <div class="hero-meta">
+      <div class="m">&#9201;&#65039; <b>~25 min</b>&nbsp;read</div>
+      <div class="m">&#127919; <b>Censoring, Kaplan-Meier, Cox, proportional hazards</b></div>
+      <div class="m">&#128202; <b>Chapter 203</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <div class="brief-card">
+      <div class="bh">The brief</div>
+      <dl>
+        <dt>Setting</dt><dd>A software services firm. Everyone hired between January 2020 and a cut-off of 1 January 2026, with their department, job level, salary position, manager history and work mode.</dd>
+        <dt>The question</dt><dd><strong>How long do people stay, which teams keep them, and does working remotely make any difference?</strong> A remote-work policy decision is waiting on the last one.</dd>
+        <dt>Why it matters</dt><dd>HR currently reports mean tenure among people who left. That figure is 19.1 months and it is not an estimate of how long people stay. It is an estimate of how long the ones who have already gone lasted, which is a different and much shorter thing.</dd>
+        <dt>What we do</dt><dd>Build the survival curve properly, compare departments, test the remote-work policy three ways, and find out why two of the three answers are wrong.</dd>
+      </dl>
+    </div>
+
+    <p class="lead">An employee hired thirty months ago who is still here has not given us a tenure. They have
+       given us a <span class="hl">lower bound</span>, which is a real observation with a real value, and the
+       entire chapter is about tools that can use one.</p>
+  </section>
+
+  <!-- 1 -->
+  <section id="censoring">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Censoring Is Not Missing Data</h2></div>
+
+    <p>The previous chapter was about rows with a gap in them. This looks like the same problem and is not, and the
+       difference decides what you are allowed to do.</p>
+
+    <table class="disp-table">
+      <tr><th></th><th>A missing BMI</th><th>A censored tenure</th></tr>
+      <tr><td class="nm">The value</td><td>Exists, and was not recorded</td><td>Does not exist yet</td></tr>
+      <tr class="hi"><td class="nm">What you know</td><td>Nothing about it directly</td><td>That it is greater than the follow-up so far</td></tr>
+      <tr><td class="nm">Can you impute it?</td><td>Yes, from the other columns</td><td class="no">No. There is nothing yet to impute</td></tr>
+      <tr class="hi"><td class="nm">Can you drop it?</td><td class="no">Only at a cost</td><td class="no">Only at a much larger one</td></tr>
+    </table>
+
+    <p>Of 3,191 employees, <strong>1,375 resigned, 83 were let go and 1,733 were still employed at the cut-off.</strong>
+       For the question being asked, resignation, that leaves <strong>56.9 percent censored</strong>. Those people
+       are not missing from the study. They are the study.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-survival-firstlook.png"
+           alt="Four panels. Top left: a sample of employees drawn as horizontal lines from hire date to either a resignation dot or the cut-off arrow, forming a triangular shape with a hard vertical edge at the January 2026 cut-off. Top right: a stacked histogram of months observed, split into resigned and censored, where the censored portion dominates. Bottom left: the Kaplan-Meier survival curve with a confidence band, a dotted line at the median of 29 months and a dashed red line at the 19 months HR reports. Bottom right: five survival curves by department, with Platform's curve stopping at 18 months but sitting highest.">
+      <figcaption><strong>Top left:</strong> the diagonal edge is the cut-off. Everyone hired recently has a short
+        line whether they are happy or not. <strong>Top right:</strong> the blue mass is the part HR's number
+        throws away. <strong>Bottom left:</strong> the survival curve and the figure it replaces, ten months apart.
+        <strong>Bottom right:</strong> read the height of a curve, not its length.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 2 -->
+  <section id="naive">
+    <div class="section-eyebrow"><div class="num">2</div><h2>The Number HR Reports</h2></div>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Mean tenure of those who left</div><div class="rv">19.1 mo</div><div class="rd">what is reported today</div></div>
+      <div class="rchip"><div class="rk">Kaplan-Meier median tenure</div><div class="rv">29.0 mo</div><div class="rd">95% CI on 2-year survival 56.4 to 60.5%</div></div>
+      <div class="rchip"><div class="rk">Understatement</div><div class="rv">34%</div><div class="rd">of the true median</div></div>
+    </div>
+
+    <p>The reported figure is not a bad estimate of how long people stay. It is a good estimate of something else:
+       the average tenure of the subset who have already gone, <strong>which is guaranteed to be short because
+       anyone who stays a long time has not entered the average yet.</strong></p>
+
+    <p>Kaplan-Meier asks a different question at each month: of the people still here at the start of it, what
+       fraction left during it? Someone censored at month 30 contributes to every one of those questions up to
+       month 30 and to none afterward. Nothing is dropped and nothing is invented. Survival at twelve months is
+       84.2 percent, at twenty-four 58.5 percent and at thirty-six 41.4 percent.</p>
+  </section>
+
+  <!-- 3 -->
+  <section id="platform">
+    <div class="section-eyebrow"><div class="num">3</div><h2>The Department That Looks Worst</h2></div>
+
+    <table class="disp-table">
+      <tr><th>Department</th><th>Mean tenure at exit</th><th>Resignation rate</th><th>Mean follow-up</th><th>Still there at 12 months</th></tr>
+      <tr class="hi"><td class="nm">Platform</td><td class="no">6.9 mo</td><td>5.3%</td><td>8.9 mo</td><td class="ok">93.4%</td></tr>
+      <tr><td class="nm">Customer Support</td><td>18.0 mo</td><td>60.0%</td><td>20.7 mo</td><td>75.6%</td></tr>
+      <tr><td class="nm">Operations</td><td>19.6 mo</td><td>44.2%</td><td>24.8 mo</td><td>85.0%</td></tr>
+      <tr><td class="nm">Sales</td><td>19.6 mo</td><td>53.8%</td><td>22.1 mo</td><td>83.7%</td></tr>
+      <tr><td class="nm">Engineering</td><td>19.8 mo</td><td>40.1%</td><td>25.3 mo</td><td>86.5%</td></tr>
+    </table>
+
+    <p><strong>Platform is bottom of the first column and top of the last.</strong> On the number HR reports its
+       people last 6.9 months against roughly nineteen everywhere else, which reads as a team in crisis. On a
+       survival curve, 93.4 percent of its hires are still there at twelve months, the best retention in the
+       company.</p>
+
+    <p>Both figures are arithmetically correct. Platform was created eighteen months before the cut-off, so its
+       mean follow-up is 8.9 months and only 5.3 percent of its people have resigned at all. The few who did leave
+       left early, because leaving late was not yet possible.
+       <span class="hl">The naive statistic measures how long a department has existed at least as much as it
+       measures whether people stay.</span></p>
+  </section>
+
+  <!-- 4 -->
+  <section id="crossing">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Two Summaries That Agree, and Are Wrong</h2></div>
+
+    <p>The policy question is whether remote work affects retention. The two standard tools both say no.</p>
+
+    <table class="disp-table">
+      <tr><th>Method</th><th>Result</th><th>Reading</th></tr>
+      <tr><td class="nm">Log-rank test, remote against onsite</td><td>chi-square 1.92, p = 0.165</td><td>no evidence of a difference</td></tr>
+      <tr><td class="nm">Cox regression, adjusted</td><td>hazard ratio 1.08, p = 0.238</td><td>no evidence of a difference</td></tr>
+    </table>
+
+    <p>And then the survival curves, which are what those two numbers were summarizing.</p>
+
+    <table class="disp-table">
+      <tr><th>Months since hire</th><th>Remote</th><th>Onsite</th><th>Gap</th></tr>
+      <tr><td class="nm">12</td><td>90.9%</td><td>81.6%</td><td class="ok">+9.2 points</td></tr>
+      <tr class="hi"><td class="nm">18</td><td>84.0%</td><td>70.3%</td><td class="ok">+13.7 points</td></tr>
+      <tr><td class="nm">24</td><td>57.9%</td><td>59.1%</td><td>-1.2 points</td></tr>
+      <tr><td class="nm">36</td><td>32.8%</td><td>43.2%</td><td class="no">-10.4 points</td></tr>
+      <tr class="hi"><td class="nm">48</td><td>25.7%</td><td>38.2%</td><td class="no">-12.5 points</td></tr>
+    </table>
+
+    <p><strong>The curves cross between eighteen and twenty-four months.</strong> The log-rank test accumulates
+       the difference between them across the whole of follow-up, so when a group is ahead early and behind later
+       the two halves cancel. A p-value of 0.165 here does not mean nothing is happening. It means the two things
+       that are happening point in opposite directions.</p>
+  </section>
+
+  <!-- 5 -->
+  <section id="ph">
+    <div class="section-eyebrow"><div class="num">5</div><h2>The Assumption Behind the Hazard Ratio</h2></div>
+
+    <p>Everything Cox reports as a single hazard ratio rests on <strong>proportional hazards</strong>: the
+       assumption that a covariate's multiplier is the same at month 3 as at month 40. It is not a technicality and
+       it is testable. Correlate each covariate's residuals with time, and a non-zero correlation means the effect
+       is moving.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Remote work</div><div class="rv">67.5</div><div class="rd">test statistic, p &lt; 0.0001</div></div>
+      <div class="rchip"><div class="rk">Sales</div><div class="rv">7.5</div><div class="rd">p = 0.006, nine times smaller</div></div>
+      <div class="rchip"><div class="rk">Every other covariate</div><div class="rv">passes</div><div class="rd">p from 0.15 to 0.91</div></div>
+    </div>
+
+    <p>That is not a marginal warning. It is the model saying that the number it just printed for remote work is
+       not a constant and should not be read as one. <strong>The check takes one line and it is the difference
+       between the wrong answer and the right one.</strong></p>
+  </section>
+
+  <!-- 6 -->
+  <section id="split">
+    <div class="section-eyebrow"><div class="num">6</div><h2>Letting the Effect Change With Time</h2></div>
+
+    <p>Splitting each employee's follow-up at eighteen months turns 3,191 people into 4,761 rows. Someone who
+       lasted thirty months contributes one row covering months 0 to 18, in which they were remote-and-early, and a
+       second covering months 18 to 30, in which they were remote-and-late. The resignation is attached to
+       whichever row it happened in. Nobody is counted twice.</p>
+
+    <table class="disp-table">
+      <tr><th>Estimate</th><th>Hazard ratio</th><th>95% CI</th><th></th></tr>
+      <tr><td class="nm">Single hazard ratio, as first reported</td><td>1.08</td><td>0.95 to 1.24</td><td>p = 0.238</td></tr>
+      <tr class="hi"><td class="nm">Remote, first 18 months</td><td class="ok">0.49</td><td>0.39 to 0.61</td><td>resign at half the onsite rate</td></tr>
+      <tr class="hi"><td class="nm">Remote, after 18 months</td><td class="no">2.02</td><td>1.71 to 2.38</td><td>resign at twice the onsite rate</td></tr>
+    </table>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-survival-crossing.png"
+           alt="Two panels. Left: survival curves for remote, onsite and hybrid employees, with the remote curve above the others until about 18 months and clearly below them thereafter, and a dotted vertical line marking where they cross. Right: a forest plot of three hazard ratios against a dashed line at one: the single reported estimate at 1.08 sitting almost on the line, remote in the first 18 months at 0.49 well to the left, and remote after 18 months at 2.02 well to the right.">
+      <figcaption><strong>Left:</strong> remote sits above onsite for a year and a half and below it thereafter.
+        <strong>Right:</strong> the hazard ratio as first reported, against the two it was averaging. The single
+        estimate sits almost on the line of no effect while the two underneath sit far on either side.</figcaption>
+    </figure>
+
+    <p>A factor of four separates the two regimes, and it was reported as 1.08.
+       <strong>Nothing about the earlier answers was a computational error.</strong> A hazard ratio and a log-rank
+       statistic both compress the whole of follow-up into one number, and when the truth reverses partway through,
+       the one number that fits it is roughly no effect.</p>
+  </section>
+
+  <!-- 7 -->
+  <section id="three">
+    <div class="section-eyebrow"><div class="num">7</div><h2>Three Analyses, Three Answers</h2></div>
+
+    <p>There is a third way to get this wrong, and it is the most confident of the lot. Analyze only the 1,375
+       people who resigned, which discards 1,816 employees, and remote workers appear to have stayed
+       <strong>3.8 months longer</strong>, significant at any threshold.</p>
+
+    <table class="disp-table">
+      <tr><th>Analysis</th><th>What it says</th><th>What it would recommend</th></tr>
+      <tr><td class="nm">Leavers only</td><td>remote stay 3.8 months longer</td><td class="no">expand remote work</td></tr>
+      <tr><td class="nm">Log-rank and Cox</td><td>no difference, p = 0.17, HR 1.08</td><td class="no">the policy is irrelevant</td></tr>
+      <tr class="hi"><td class="nm">Time-varying Cox</td><td class="ok">HR 0.49, then 2.02</td><td class="ok">keep it, and act at eighteen months</td></tr>
+    </table>
+
+    <p>The first is wrong for the same reason the naive tenure figure was. <strong>The leavers are not a sample of
+       employees, they are a sample of endings</strong>, and which endings have happened yet depends on when people
+       were hired and how long they were going to last.</p>
+
+    <p>Only the last analysis used every employee. What it recommends is not a policy reversal but something
+       specific at around the eighteen-month mark for remote employees, and a measurement of whether that moves the
+       second hazard ratio.</p>
+  </section>
+
+  <!-- 8 -->
+  <section id="limits">
+    <div class="section-eyebrow"><div class="num">8</div><h2>What This Does Not Settle</h2></div>
+
+    <p><strong>Involuntary exits were treated as censoring.</strong> Eighty-three people were let go, and the
+       analysis assumes that being let go says nothing about whether that person was about to resign. If the two
+       are related, and they plausibly are, every hazard ratio here is somewhat off. The proper treatment is a
+       competing-risks model that estimates both events.</p>
+
+    <p><strong>Eighteen months was chosen by looking at the curves.</strong> The split point was picked after
+       seeing where they crossed, which makes the two hazard ratios a little sharper than an honest out-of-sample
+       estimate would be. A pre-registered split, or a smooth time-varying coefficient, would give some of that
+       back.</p>
+
+    <p><strong>Sales also fails the proportional-hazards test</strong>, at p = 0.006 with a statistic nine times
+       smaller than remote work's. It is small enough that a single hazard ratio is a fair summary and large enough
+       to mention.</p>
+
+    <p><strong>Nobody hired before 2020 is in this file.</strong> Everything here describes people hired into the
+       company as it has been for six years and says nothing about the people who were already there, who are
+       exactly the long-tenure employees a retention study would most want.</p>
+
+    <p><strong>This is an observational comparison.</strong> Nobody was assigned to remote work at random. Whatever
+       leads a person to choose it travels with them into the hazard ratio.</p>
+  </section>
+
+  <!-- 9 -->
+  <section id="watch">
+    <div class="section-eyebrow"><div class="num">9</div><h2>What to Watch</h2></div>
+
+    <ul class="checklist">
+      <li><span class="ck">&#10003;</span><span><strong>Never average the durations of the ones that ended.</strong> Mean time-to-event among those who experienced the event is short by construction, and the more censoring there is the shorter it gets. It is the single most common error in this area.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Check how long each group has been observed before comparing them.</strong> A team, cohort or product line that is younger than the others will look worse on any duration statistic and better on any rate statistic, regardless of what is actually happening.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Plot the curves before running the test.</strong> The log-rank test has almost no power against curves that cross, and will report no difference where the difference is large and reverses.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Test proportional hazards on every Cox model.</strong> One line of code. If a covariate fails, its hazard ratio is an average of a changing effect and should not be quoted as a constant.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Split follow-up when an effect moves.</strong> Episode splitting is simple, uses every subject, and turns an uninterpretable average into two numbers a decision can be made on.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Say what you treated as censoring.</strong> Competing events are not censoring, and calling them that quietly assumes they are unrelated to the event you care about.</span></li>
+    </ul>
+  </section>
+
+  <!-- 10 -->
+  <section id="in-ds-ai">
+    <div class="section-eyebrow"><div class="num">10</div><h2>Time-to-Event in Data Science &amp; AI</h2></div>
+
+    <p>Anywhere the outcome is <em>when</em> rather than <em>whether</em>, and the observation window ends before
+       everyone has had their turn, this is the right toolkit and a classifier is the wrong one.</p>
+
+    <table class="disp-table">
+      <tr><th>Where it appears</th><th>The event</th><th>What censoring looks like</th></tr>
+      <tr><td class="nm">Subscription churn</td><td>Cancellation</td><td>Customers still subscribed at the extract date</td></tr>
+      <tr class="hi"><td class="nm">Credit risk</td><td>Default</td><td>Loans still performing, and loans repaid early, which is a competing risk</td></tr>
+      <tr><td class="nm">Predictive maintenance</td><td>Component failure</td><td>Machines still running, and machines replaced on schedule</td></tr>
+      <tr class="hi"><td class="nm">Clinical trials</td><td>Death, relapse, recovery</td><td>Patients still alive at the analysis date, and patients lost to follow-up</td></tr>
+      <tr><td class="nm">Product analytics</td><td>Time to first purchase, time to activation</td><td>Users who have not done it yet, who are most of them</td></tr>
+    </table>
+
+    <p><strong>The common failure is to turn the question into a classifier.</strong> Predicting "will this customer
+       churn in the next 90 days" throws away when, discards everyone whose 90 days is not yet complete, and
+       relabels the same customer differently depending on when the snapshot was taken. A survival model answers
+       the question the business asked, which is usually how long, and gives a curve rather than a probability.</p>
+
+    <div class="research">
+      <span class="rtag">Where the methods came from</span>
+      <p style="margin:0.4rem 0 0"><strong>Edward Kaplan and Paul Meier</strong> published the product-limit
+         estimator in 1958, and it remains one of the most cited papers in all of statistics.
+         <strong>Nathan Mantel</strong> and others developed the log-rank test through the 1960s. <strong>David
+         Cox</strong>'s 1972 proportional hazards paper made it possible to adjust for covariates without
+         specifying the shape of the baseline hazard at all, which is why it became the default. <strong>David
+         Schoenfeld</strong>'s 1982 residuals gave the assumption behind it a test, and the modern extensions are
+         competing risks, through the Fine and Gray subdistribution hazard, and machine-learning survival models
+         such as random survival forests and DeepSurv, all of which inherit the same requirement to handle
+         censoring correctly.</p>
+    </div>
+  </section>
+
+  <!-- notebook -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">&#128013;</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook repairs four faults in the HR export, builds tenure and the censoring
+             indicator from hire and exit dates, contrasts the reported figure with the Kaplan-Meier curve, works
+             through the department that looks worst and is best, runs the log-rank test and a Cox model, tests
+             proportional hazards, splits follow-up at eighteen months to recover the two hazard ratios, and
+             finishes by showing what a leavers-only analysis would have recommended.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-survival-analysis-time-to-event.html">&#128211; View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-survival-analysis-time-to-event.ipynb"
+           target="_blank" rel="noopener">&#9654; Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-survival-analysis-time-to-event.ipynb"
+           target="_blank" rel="noopener">&#11015; View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Read the reports &amp; get the data</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong>
+         (<code>capstone-survival-analysis-time-to-event.xlsx</code>) holds 3,200 employees as the HR export
+         arrived, with duplicated rows, a department renamed mid-period, nine exit dates before their hire dates
+         and a work-mode column with gaps. Two written reports accompany it: a <strong>plain-language brief</strong>
+         for the people director, and a <strong>technical report</strong> covering the estimator, the tests and the
+         time-varying model.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-40-survival-analysis.html" target="_blank" rel="noopener">&#128196; Plain-language brief <small>read online</small></a>
+        <a class="ex-file doc" href="../reports/capstone-40-survival-analysis-technical.html" target="_blank" rel="noopener">&#128202; Technical report <small>read online</small></a>
+        <a class="ex-file xls" href="../data/capstone-survival-analysis-time-to-event.xlsx">&#128202; Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>&#127891; Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">&#10003;</span><span><strong>Censoring is not missing data.</strong> A censored tenure is a value that does not exist yet, and what you know about it, that it exceeds the follow-up so far, is real information that neither imputation nor deletion can use.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Averaging the ones that ended understates by a third.</strong> HR's 19.1 months against a Kaplan-Meier median of 29.0, because anyone who stays a long time has not entered the average yet.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>A young department looks like a failing one.</strong> Platform showed 6.9 months mean tenure at exit, the worst in the company, and 93.4 percent twelve-month survival, the best.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>The log-rank test is near-blind to crossing curves.</strong> Remote against onsite returned p = 0.165 while the two curves were 13.7 points apart at eighteen months and 12.5 points apart the other way at forty-eight.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>The proportional-hazards test caught it.</strong> Remote work returned a statistic of 67.5 against p &lt; 0.0001 while every other covariate passed, which is the model refusing to stand behind its own hazard ratio.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Splitting follow-up at eighteen months recovered 0.49 and 2.02</strong>, a factor of four that had been reported as 1.08. Three analyses of the same file recommended expanding remote work, ignoring it, and managing it at the eighteen-month mark.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">&#10067;</div><h2>Quiz: Test Yourself</h2></div>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-missing-data-imputation.html">
+      <span style="font-size:1.3rem">&#8592;</span>
+      <span><span class="cn-dir">Chapter 202 &#183; Previous</span><br><span class="cn-title">Missing Data: What Dropping Rows Costs You</span></span>
+    </a>
+    <a class="cn-btn next" href="../toc.html">
+      <span><span class="cn-dir">More coming soon</span><br><span class="cn-title">Browse the full Contents</span></span>
+      <span style="font-size:1.3rem">&#8594;</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;&#183;&nbsp;
+  Chapter 203 &nbsp;&#183;&nbsp; &#169; 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch203";
+  window.QUIZ_DATA = [
+    {
+      q: "An employee hired 30 months ago is still with the company. How should that observation be treated?",
+      options: ["Dropped, since they have no tenure", "Imputed from similar employees", "Kept as a censored observation contributing the information that their tenure exceeds 30 months", "Recorded as a tenure of 30 months"],
+      answer: 2,
+      explain: "Their tenure does not exist yet, so it cannot be imputed, but the lower bound is real. Kaplan-Meier uses them in every monthly risk set up to month 30 and in none after."
+    },
+    {
+      q: "HR reports mean tenure among people who left as 19.1 months, while the Kaplan-Meier median is 29.0. Why is the reported figure systematically low?",
+      options: ["The sample is too small", "Anyone who stays a long time has not left yet, so they are excluded from an average computed only over completed tenures", "Resignations are under-recorded", "The median and the mean measure different things"],
+      answer: 1,
+      explain: "It is an average over endings, not over employees, and long tenures are structurally under-represented in it. The more censoring there is, the further down the figure is dragged."
+    },
+    {
+      q: "Platform shows the shortest mean tenure at exit in the company, 6.9 months, and the highest 12-month survival, 93.4 percent. What explains both?",
+      options: ["An error in the data", "Platform was created 18 months before the cut-off, so its mean follow-up is 8.9 months and only 5.3 percent of its people have resigned at all", "Platform hires more junior people", "Platform has more remote workers"],
+      answer: 1,
+      explain: "Nobody in Platform could have left late, because late did not exist yet. A duration statistic on a young group measures the age of the group at least as much as the retention of it."
+    },
+    {
+      q: "The log-rank test comparing remote and onsite returned p = 0.165, yet the survival curves are 13.7 points apart at 18 months. How?",
+      options: ["The test was misapplied", "The curves cross near 20 months, so an early advantage and a later disadvantage cancel in a statistic that accumulates the difference across all of follow-up", "The sample was too small", "The p-value is wrong"],
+      answer: 1,
+      explain: "The log-rank test has very little power against crossing hazards. A non-significant result is evidence about the summed difference, not evidence that the groups behave alike."
+    },
+    {
+      q: "The proportional-hazards test returned a statistic of 67.5 for remote work while every other covariate passed. What does that mean?",
+      options: ["The Cox model should be discarded", "The effect of remote work is not constant over time, so its single hazard ratio is an average of a changing quantity and should not be quoted as one", "Remote workers are outliers", "The model needs more covariates"],
+      answer: 1,
+      explain: "Proportional hazards is the assumption that lets Cox report one multiplier per covariate. When it fails for a covariate, that covariate's estimate is the thing to fix, not the whole model."
+    },
+    {
+      q: "Splitting follow-up at 18 months gave hazard ratios of 0.49 before and 2.02 after. What does episode splitting actually do?",
+      options: ["It fits two separate models on two subsets of employees", "It gives each employee one row per time window, attaches the event to the window it occurred in, and lets the same person belong to different risk regimes at different times", "It drops employees who lasted past 18 months", "It weights early observations more heavily"],
+      answer: 1,
+      explain: "3,191 employees became 4,761 rows. Nobody is counted twice as an event and no data is invented; the follow-up is simply partitioned so a covariate can take different values in different stretches of it."
+    },
+    {
+      q: "Analyzing only the 1,375 employees who resigned suggested remote workers stayed 3.8 months longer, highly significant. Why is that the worst of the three answers?",
+      options: ["The sample size was too small", "It discards 1,816 employees and analyzes a sample of endings rather than a sample of employees, so which endings have occurred depends on hire dates and on how long people were going to last", "It failed to adjust for department", "Remote workers were over-represented"],
+      answer: 1,
+      explain: "It is the previous chapter's error in a new costume, and it is the most confident of the three. Restricting to completed durations selects on the outcome, and 57 percent of the company vanishes."
+    },
+    {
+      q: "Involuntary exits were treated as censored. What does that assume?",
+      options: ["Nothing, it is standard practice", "That being let go is unrelated to whether that person was about to resign, which is a competing-risks assumption that is stated rather than tested here", "That involuntary exits are rare", "That they resigned anyway"],
+      answer: 1,
+      explain: "Censoring must be independent of the event to be valid. Two events that compete for the same person are not censoring, and the correct treatment is a competing-risks model that estimates both."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>

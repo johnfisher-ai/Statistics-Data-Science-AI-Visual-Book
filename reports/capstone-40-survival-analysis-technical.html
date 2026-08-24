@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Survival Analysis (Technical) &#183; Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/report.css">
+  <style>
+    body.report { --rpt-accent:#115e59; --rpt-accent-dark:#134e4a; --rpt-accent-bg:#f0fdfa; --rpt-accent-line:#99f6e4; }
+  </style>
+</head>
+
+<body class="report">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+    <a href="../chapters/capstone-survival-analysis-time-to-event.html" class="btn btn-primary" style="padding:0.4rem 1rem;font-size:0.8rem">&#8592; Chapter 203</a>
+  </div>
+</nav>
+
+<div class="rpt-sticky" id="rptSticky">
+  <div class="inner">
+    <div class="st-title">Time-to-Resignation in a Six-Year Hiring Cohort, with a Non-Proportional Covariate</div>
+    <a class="st-back" href="../chapters/capstone-survival-analysis-time-to-event.html">&#8592; Chapter 203</a>
+  </div>
+</div>
+
+<div class="rpt-wrap">
+  <article class="rpt-paper technical">
+    <header class="rpt-head">
+      <div class="rpt-topline">
+        <div class="rpt-kicker">Capstone 40 &#183; Technical Report</div>
+        <span class="rpt-badge technical">Technical Report</span>
+      </div>
+      <h1>Time-to-Resignation in a Six-Year Hiring Cohort, with a Non-Proportional Covariate</h1>
+      <p class="rpt-sub">Kaplan-Meier estimation under 57 percent right-censoring, log-rank comparison, Cox regression with a Schoenfeld test, and episode splitting to recover a reversing effect.</p>
+      <div class="rpt-meta"><div><b>Data</b> &nbsp;3,191 employees hired January 2020 to January 2026, monthly resolution</div><div><b>Event</b> &nbsp;Voluntary resignation. Involuntary exits and active employment treated as censoring</div><div><b>Models</b> &nbsp;Kaplan-Meier, log-rank, Cox proportional hazards, Cox with time-varying covariates</div></div>
+    </header>
+
+    <div class="rpt-prov">
+      <span class="pv-tag">Where this comes from</span>
+      <div class="pv-row"><div><span>Chapter</span> <a href="../chapters/capstone-survival-analysis-time-to-event.html">Chapter 203 &#183; Survival Analysis: Time to Event</a></div><div><span>Part</span> Part XXXIII &#183; Capstone Projects: Specialized Methods</div><div><span>Dataset</span> <a href="../data/capstone-survival-analysis-time-to-event.xlsx">capstone-survival-analysis-time-to-event.xlsx</a></div><div><span>Notebook</span> <a href="../chapters/notebooks/html/capstone-survival-analysis-time-to-event.html" target="_blank" rel="noopener">View the analysis</a></div></div>
+    </div>
+
+    <div class="rpt-body">
+      <h2>Abstract</h2>
+      <p><strong>Objective.</strong> To estimate tenure distribution and covariate effects on voluntary resignation, and to evaluate a remote-work policy whose effect the standard summaries report as null.</p>
+      <p><strong>Design.</strong> All 3,200 employees hired into a six-year window were followed to a fixed administrative cut-off. Tenure was computed from hire and exit dates; voluntary resignation was the event of interest, with involuntary exits and continuing employment treated as right-censored. Kaplan-Meier estimation, multivariate log-rank testing, and Cox proportional hazards regression were applied, followed by a Schoenfeld residual test of proportionality and, where it failed, episode splitting at 18 months fitted by a time-varying Cox model.</p>
+      <p><strong>Result.</strong> 1,375 resignations, 83 involuntary exits and 1,733 censored, giving 56.9 percent censoring. Median tenure was 29.0 months against 19.1 for the mean among leavers. The proportionality test rejected for work mode (statistic 67.5, p &lt; 0.0001) while the adjusted hazard ratio for remote work was 1.08 (p = 0.238) and the log-rank test returned p = 0.165. After episode splitting, remote work carried a hazard ratio of <strong>0.487</strong> (95% CI 0.390 to 0.607) in months 0 to 18 and <strong>2.016</strong> (1.708 to 2.379) thereafter.</p>
+      <h2>1. Data and preprocessing</h2>
+      <p>The extract contained 3,211 rows. Eleven duplicate employee identifiers were removed. The Operations department appeared under two spellings following a mid-period rename and was consolidated. Nine records carried an exit date preceding the hire date and were dropped. Work mode was absent for 58 employees and was retained as an explicit category rather than deleted or imputed. Tenure was computed in months to the exit date or to the 1 January 2026 cut-off, giving 3,191 employees with follow-up from 0.9 to 72.0 months, median 18.0.</p>
+      <h2>2. Kaplan-Meier estimation</h2>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Months since hire</th><th>Survival</th><th>95% CI</th></tr></thead><tbody><tr><td>12</td><td>84.2%</td><td>&#8212;</td></tr><tr><td>24</td><td>58.5%</td><td>56.4% to 60.5%</td></tr><tr><td>36</td><td>41.4%</td><td>&#8212;</td></tr><tr><td>48</td><td>36.0%</td><td>&#8212;</td></tr></tbody></table><div class="rpt-cap">Product-limit estimates of the probability of not having resigned.</div></div>
+      <p>Median survival is 29.0 months. The mean tenure among the 1,375 employees who resigned is 19.1 months, an understatement of 34 percent relative to the median. The discrepancy is structural: restricting to completed durations conditions on the event having occurred within the observation window, which excludes long durations by construction.</p>
+      <h2>3. Group comparison and a follow-up-time artifact</h2>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Department</th><th>n</th><th>Mean tenure at exit</th><th>Resignation rate</th><th>Mean follow-up</th><th>12-month survival</th></tr></thead><tbody><tr><td>Platform</td><td>339</td><td>6.9</td><td>5.3%</td><td>8.9</td><td><strong>93.4%</strong></td></tr><tr><td>Customer Support</td><td>542</td><td>18.0</td><td>60.0%</td><td>20.7</td><td>75.6%</td></tr><tr><td>Operations</td><td>591</td><td>19.6</td><td>44.2%</td><td>24.8</td><td>85.0%</td></tr><tr><td>Sales</td><td>599</td><td>19.6</td><td>53.8%</td><td>22.1</td><td>83.7%</td></tr><tr><td>Engineering</td><td>1,120</td><td>19.8</td><td>40.1%</td><td>25.3</td><td>86.5%</td></tr></tbody></table><div class="rpt-cap">Platform ranks last on mean tenure at exit and first on survival. It was created 18 months before the cut-off.</div></div>
+      <p>The multivariate log-rank test across departments gives chi-square 109.4 on 4 degrees of freedom, p = 9.9e-23. The department comparison is therefore real; the ordering implied by mean tenure at exit is not.</p>
+      <h2>4. Cox regression and the proportionality test</h2>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Covariate</th><th>Hazard ratio</th><th>95% CI</th><th>p</th></tr></thead><tbody><tr><td>Job level, per level</td><td>0.837</td><td>0.804 to 0.871</td><td>&lt;0.001</td></tr><tr><td>Salary percentile, per point</td><td>0.992</td><td>0.989 to 0.995</td><td>&lt;0.001</td></tr><tr><td>Manager changes, each</td><td>1.214</td><td>1.129 to 1.307</td><td>&lt;0.001</td></tr><tr><td>Customer Support vs Engineering</td><td>1.836</td><td>1.591 to 2.119</td><td>&lt;0.001</td></tr><tr><td>Sales vs Engineering</td><td>1.613</td><td>1.397 to 1.862</td><td>&lt;0.001</td></tr><tr><td>Platform vs Engineering</td><td>0.537</td><td>0.334 to 0.865</td><td>0.011</td></tr><tr><td>Remote vs onsite</td><td>1.084</td><td>0.948 to 1.238</td><td>0.238</td></tr></tbody></table><div class="rpt-cap">Concordance 0.620. Reference categories Engineering and onsite.</div></div>
+      <p>Schoenfeld residual tests with rank time transformation reject proportionality for remote work (statistic 67.49, p &lt; 0.0001) and, far more weakly, for Sales (7.47, p = 0.0063). All remaining covariates return p between 0.15 and 0.91. The reported hazard ratio for remote work is therefore an average over a non-constant effect.</p>
+      <h2>5. Episode splitting</h2>
+      <p>Follow-up was partitioned at 18 months, expanding 3,191 employees into 4,761 rows, with the event indicator assigned to the interval containing the exit. Remote status was interacted with interval membership.</p>
+      <div class="rpt-tablewrap"><table class="rpt-table"><thead><tr><th>Estimate</th><th>Hazard ratio</th><th>95% CI</th><th>p</th></tr></thead><tbody><tr><td>Remote, months 0 to 18</td><td><strong>0.487</strong></td><td>0.390 to 0.607</td><td>&lt;0.001</td></tr><tr><td>Remote, months 18 onward</td><td><strong>2.016</strong></td><td>1.708 to 2.379</td><td>&lt;0.001</td></tr><tr><td>Hybrid vs onsite</td><td>0.913</td><td>0.805 to 1.035</td><td>0.156</td></tr></tbody></table><div class="rpt-cap">A ratio of 4.1 between the two regimes, previously summarized as 1.08.</div></div>
+      <p>Kaplan-Meier estimates by work mode confirm the crossing directly: remote survival exceeds onsite by 9.2 points at 12 months and 13.7 at 18 months, and trails it by 10.4 at 36 months and 12.5 at 48. The log-rank statistic, which integrates the difference over follow-up, is correspondingly near zero at 1.92.</p>
+      <h2>6. Comparison with a completed-durations analysis</h2>
+      <p>Restricting to the 1,375 resignations and regressing tenure on the same covariates by ordinary least squares returns a remote coefficient of +3.83 months (p &lt; 0.001), discarding 1,816 employees and reversing the sign of the practical conclusion. This is selection on the outcome and is presented as a contrast rather than an analysis.</p>
+      <h2>7. Limitations</h2>
+      <p>Involuntary exits are a competing risk treated as censoring, which requires them to be independent of the resignation hazard conditional on covariates; a Fine and Gray subdistribution model or cause-specific modeling of both events would relax this. The 18-month split point was selected after inspecting the survival curves, so the two hazard ratios are optimistically sharp relative to a pre-specified split or a smooth time-varying coefficient. Left truncation is absent by construction since only employees hired within the window are included, which excludes the longest-tenured population. Work mode is self-selected and the estimates are associational.</p>
+    </div>
+
+    <div class="rpt-foot"><a class="primary" href="../chapters/capstone-survival-analysis-time-to-event.html">&#8592; Back to Chapter 203</a><a href="../chapters/notebooks/html/capstone-survival-analysis-time-to-event.html" target="_blank" rel="noopener">&#128211; Companion notebook</a><a class="xls" href="../data/capstone-survival-analysis-time-to-event.xlsx">&#128202; Download dataset</a></div>
+    <div class="rpt-colophon">
+      From <strong>Statistics, Data Science and AI: A Visual Handbook</strong> by John Fisher.
+      Every statistic, table, and figure in this report is reproduced by the companion notebook.
+    </div>
+  </article>
+</div>
+
+<script>
+(function(){
+  var bar=document.getElementById('rptSticky');
+  window.addEventListener('scroll',function(){
+    if(window.scrollY>320) bar.classList.add('on'); else bar.classList.remove('on');
+  });
+})();
+</script>
+</body>
+</html>

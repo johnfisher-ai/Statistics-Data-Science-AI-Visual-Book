@@ -698,6 +698,10 @@ MAP = {
         ("../../capstone-intermittent-demand-spare-parts.html#notebook", "Back to the book", "Chapter 200 · Intermittent Demand: Spare Parts"),
     "capstone-forecast-backtesting.html":
         ("../../capstone-forecast-backtesting.html#notebook", "Back to the book", "Chapter 201 · Backtesting and Honest Model Selection"),
+    "capstone-missing-data-imputation.html":
+        ("../../capstone-missing-data-imputation.html#notebook", "Back to the book", "Chapter 202 · Missing Data: What Dropping Rows Costs You"),
+    "capstone-survival-analysis-time-to-event.html":
+        ("../../capstone-survival-analysis-time-to-event.html#notebook", "Back to the book", "Chapter 203 · Survival Analysis: Time to Event"),
 }
 
 def card(href, kicker, title):

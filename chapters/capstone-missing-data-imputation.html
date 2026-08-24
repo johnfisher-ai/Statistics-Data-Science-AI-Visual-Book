@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ch 202 · Missing Data: What Dropping Rows Costs You — Statistics, Data Science and AI</title>
+  <link rel="stylesheet" href="../assets/css/book.css">
+  <link rel="stylesheet" href="../assets/css/chapter.css">
+  <link rel="stylesheet" href="../assets/css/quiz.css">
+  <style>
+    .disp-table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.84rem;
+                  border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .disp-table th,.disp-table td { padding:0.55rem 0.75rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+    .disp-table th { background:var(--panel-2); color:var(--ink); font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .disp-table td { color:var(--ink-soft); } .disp-table tr:last-child td { border-bottom:none; }
+    .disp-table .nm { font-weight:700; color:var(--ink); white-space:nowrap; }
+    .disp-table code { font-size:0.82em; }
+    .disp-table .yes { color:#047857; font-weight:700; }
+    .disp-table .no { color:#dc2626; font-weight:700; }
+    .disp-table tr.hi td { background:#f0fdfa; }
+    .nb-fig { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.6rem; background:var(--panel); }
+    .nb-fig img { width:100%; border-radius:8px; display:block; }
+    .nb-fig figcaption { font-size:0.82rem; color:var(--ink-soft); padding:0.6rem 0.5rem 0.15rem; line-height:1.55; }
+    .nb-fig figcaption strong { color:var(--ink); }
+    .embox { background:#f0fdfa; border:1px solid #99f6e4; border-left:4px solid #115e59; border-radius:12px; padding:1.1rem 1.3rem; margin:1.2rem 0; }
+    .embox .gb-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#134e4a; }
+    .rw-card { background:#f0fdfa; border:1px solid #99f6e4; border-left:4px solid #115e59; border-radius:12px; padding:1.1rem 1.3rem; margin:1.1rem 0; }
+    .rw-card .rw-tag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#134e4a; }
+    .ex-files { display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.95rem; }
+    .ex-file { display:inline-flex; align-items:center; gap:7px; font-size:0.8rem; font-weight:700; text-decoration:none;
+               padding:0.5rem 0.95rem; border-radius:8px; border:1px solid var(--line); transition:filter .15s; }
+    .ex-file.xls { background:#f0fdfa; color:#115e59; border-color:#99f6e4; }
+    .ex-file.doc { background:#ecfdf5; color:#0f766e; border-color:#a7f3d0; }
+    .ex-file:hover { filter:brightness(0.96); }
+    .ex-file small { font-weight:500; opacity:0.72; }
+    .research { background:#f0fdfa; border:1px solid #99f6e4; border-radius:12px; padding:1rem 1.2rem; margin:1.1rem 0; }
+    .research .rtag { font-size:0.68rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#134e4a; }
+    .resultline { display:flex; gap:0.8rem; flex-wrap:wrap; margin:1.2rem 0; }
+    .rchip { flex:1; min-width:150px; border:1px solid var(--line); border-top:3px solid #115e59; border-radius:11px; padding:0.7rem 0.9rem; background:var(--panel); }
+    .rchip .rk { font-size:0.66rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:#134e4a; }
+    .rchip .rv { font-size:1.15rem; font-weight:800; color:var(--ink); margin-top:2px; }
+    .rchip .rd { font-size:0.76rem; color:var(--ink-soft); }
+    .svg-wrap { margin:1.4rem 0; border:1px solid var(--line); border-radius:14px; padding:0.9rem 0.6rem 0.3rem; background:var(--panel); }
+    .svg-wrap svg { width:100%; height:auto; display:block; }
+    .svg-wrap .cap { font-size:0.82rem; color:var(--ink-soft); padding:0.55rem 0.6rem 0.4rem; line-height:1.55; }
+    .svg-wrap .cap strong { color:var(--ink); }
+    .partclose { background:linear-gradient(135deg,#f0fdfa,#f0fdfa); border:1px solid #99f6e4;
+                 border-radius:14px; padding:1.3rem 1.5rem; margin:1.6rem 0; }
+    .partclose h4 { font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:0.07em;
+                    color:#134e4a; margin:0 0 0.75rem; }
+    .partclose ol { margin:0 0 0 1.1rem; padding:0; }
+    .partclose li { font-size:0.9rem; color:var(--ink-soft); line-height:1.62; margin-bottom:0.45rem; }
+    .partclose li a { color:#115e59; font-weight:700; text-decoration:none; }
+    .partclose li a:hover { text-decoration:underline; }
+  </style>
+</head>
+<body class="chapter">
+
+<nav class="topnav">
+  <div class="logo">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10" stroke="#00d4ff" stroke-width="1.5"/>
+      <path d="M5 14 Q8 7 11 11 Q14 15 17 8" stroke="#7c3aed" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-text">Statistics, Data Science and <span class="ai">AI</span></span>
+  </div>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="../toc.html">Contents</a>
+  </div>
+</nav>
+<div class="read-progress" id="readProgress"></div>
+
+<header class="chapter-hero">
+  <div class="chapter-hero-inner">
+    <div class="crumb">
+      <a href="../toc.html">Contents</a><span class="sep">/</span>
+      <span>Part XXXIII &#183; Capstone Projects: Specialized Methods</span><span class="sep">/</span>
+      <span>Chapter 202</span>
+    </div>
+    <h1>Missing Data: <span class="accent">What Dropping Rows Costs You</span></h1>
+    <p class="dek">Capstone 39. Half of a 1,400-person health survey has a gap somewhere, and more than half of those gaps are not blank at all. Four ways of handling it are scored against the values that were actually removed, and the most sensible-looking method gets the right answer three times in 150.</p>
+    <div class="hero-meta">
+      <div class="m">&#9201;&#65039; <b>~25 min</b>&nbsp;read</div>
+      <div class="m">&#127919; <b>MCAR, MAR, MNAR, multiple imputation</b></div>
+      <div class="m">&#128202; <b>Chapter 202</b></div>
+    </div>
+  </div>
+</header>
+
+<main class="reading">
+
+  <section id="intro">
+    <div class="brief-card">
+      <div class="bh">The brief</div>
+      <dl>
+        <dt>Setting</dt><dd>A county health department's community needs assessment. Fourteen hundred adults interviewed at clinics, with gaps in three columns that got there three different ways.</dd>
+        <dt>The question</dt><dd><strong>How much higher is blood pressure per unit of BMI, and what is mean household income in the county?</strong> The first sizes an intervention. The second decides whether the county applies for a state grant.</dd>
+        <dt>Why it matters</dt><dd>Complete-case analysis would discard 717 of the 1,400 respondents. Whether that is harmless, costly or actively misleading depends on why each value is absent, and that is not a question about the size of the gap.</dd>
+        <dt>What we do</dt><dd>Find the gaps that are not blank, name the three mechanisms, score four methods against the values that were removed, repeat the whole study 150 times to measure how often each is right, and then handle the question that no method can answer.</dd>
+      </dl>
+    </div>
+
+    <p class="lead">This is a teaching dataset, so the removed values are on a Truth sheet and every method can be
+       <span class="hl">scored rather than argued about</span>. Real work never has that sheet, which is exactly
+       what makes the last section the important one.</p>
+  </section>
+
+  <!-- 1 -->
+  <section id="disguise">
+    <div class="section-eyebrow"><div class="num">1</div><h2>Half the Study Has a Gap</h2></div>
+
+    <p>Counting blank cells says 29.6 percent of respondents are missing something. The true figure is
+       <strong>51.2 percent</strong>, and everything in between is a gap wearing a disguise.</p>
+
+    <table class="disp-table">
+      <tr><th>Column</th><th>How the gap was recorded</th><th>What a tool does with it</th></tr>
+      <tr><td class="nm">bmi</td><td>Blank, or the text <code>not measured</code></td><td>The text makes the whole column non-numeric, and the blank count comes out wrong</td></tr>
+      <tr class="hi"><td class="nm">activity_min_wk</td><td>Coded <code>-1</code></td><td class="no">Averages it. Minus one minute of exercise a week is a perfectly good number</td></tr>
+      <tr><td class="nm">income_k</td><td>Coded <code>999</code>, or blank</td><td class="no">Averages it. A household on 999 thousand dollars pulls the mean a long way</td></tr>
+    </table>
+
+    <p>The sentinels are the dangerous ones. A blank announces itself; every tool in the language has a function
+       for counting blanks. <strong>A <code>-1</code> does not weaken the activity variable, it corrupts it</strong>,
+       and nothing will warn you, because as far as the arithmetic is concerned it is data.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Gaps visible as blanks</div><div class="rv">29.6%</div><div class="rd">of respondents</div></div>
+      <div class="rchip"><div class="rk">Gaps once sentinels are found</div><div class="rv">51.2%</div><div class="rd">of respondents</div></div>
+      <div class="rchip"><div class="rk">Complete cases left</div><div class="rv">683</div><div class="rd">of 1,400</div></div>
+    </div>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-missing-firstlook.png"
+           alt="Four panels. Top left: a missingness map with every respondent as a column and three rows for bmi, activity and income, sorted into blocks by pattern. Top right: a horizontal bar chart of which columns go missing together, with 683 respondents missing nothing, about 310 missing bmi alone, and smaller bars for combinations. Bottom left: two overlaid histograms of systolic blood pressure, showing that respondents whose bmi is missing sit about 11 mm Hg to the right of those whose bmi was recorded. Bottom right: two overlaid histograms of household income, showing the people who declined earn roughly twice what the people who answered earn.">
+      <figcaption><strong>Top left:</strong> the gaps are not scattered evenly. <strong>Top right:</strong> which
+        columns go missing together, with the complete cases as the largest bar. <strong>Bottom left:</strong>
+        whether BMI was recorded depends on the blood pressure reading, which is the condition under which
+        dropping rows stops being safe. <strong>Bottom right:</strong> the same picture for income, drawn from the
+        Truth sheet, which is the only reason it can be drawn at all.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 2 -->
+  <section id="mechanisms">
+    <div class="section-eyebrow"><div class="num">2</div><h2>Three Ways to Go Missing</h2></div>
+
+    <p>The vocabulary decides what is possible, which is why it is worth being exact about.</p>
+
+    <table class="disp-table">
+      <tr><th>Mechanism</th><th>In this survey</th><th>Can it be fixed from the data?</th></tr>
+      <tr><td class="nm">Missing completely at random</td><td>The tablet failed to record activity for 14.4 percent of interviews</td><td class="ok">Yes. Those people look like everyone else, so dropping them costs precision and nothing else</td></tr>
+      <tr class="hi"><td class="nm">Missing at random</td><td>BMI is missing where blood pressure was high and the respondent was older</td><td class="ok">Yes, but not by dropping rows. The information that predicts the gap is in the file</td></tr>
+      <tr><td class="nm">Missing not at random</td><td>People declined to give income because of what their income was</td><td class="no">No. Nothing in the file distinguishes a refuser earning 200 from one earning 40</td></tr>
+    </table>
+
+    <p><strong>The middle name is a bad one.</strong> Nothing about missing at random is random. What it means is
+       that the reason for the gap was recorded, somewhere, in a column you still have.</p>
+
+    <p><strong>And you cannot test which one you have.</strong> Missing at random and missing not at random make
+       identical predictions about the data you can see. The distinction is decidable here only because of a sheet
+       that does not exist outside a textbook.</p>
+  </section>
+
+  <!-- 3 -->
+  <section id="scored">
+    <div class="section-eyebrow"><div class="num">3</div><h2>Four Methods, Scored Against the Truth</h2></div>
+
+    <p>Each method estimates the same quantity: the adjusted association between BMI and systolic blood pressure.
+       The complete data says <strong>0.980 mm Hg per BMI unit</strong>, which is the answer the survey would have
+       produced had nobody skipped anything.</p>
+
+    <table class="disp-table">
+      <tr><th>Method</th><th>Estimate</th><th>Standard error</th><th></th></tr>
+      <tr><td class="nm">Complete data (Truth sheet)</td><td>0.980</td><td>0.055</td><td>the target</td></tr>
+      <tr><td class="nm">Complete-case, drop the row</td><td>0.874</td><td>0.077</td><td>low, and it used 683 people</td></tr>
+      <tr><td class="nm">Mean imputation</td><td>0.895</td><td>0.072</td><td>low</td></tr>
+      <tr class="hi"><td class="nm">Single regression imputation</td><td class="no">1.324</td><td>0.063</td><td class="no">high, and the most confident of the four</td></tr>
+      <tr><td class="nm">Multiple imputation, m = 20</td><td class="ok">0.954</td><td>0.066</td><td class="ok">closest</td></tr>
+    </table>
+
+    <p><strong>Single regression imputation predicts each missing BMI from the other columns, including blood
+       pressure, and then treats the prediction as a measurement.</strong> The imputed values agree with blood
+       pressure perfectly, because they were built out of it, and the regression duly reports a stronger
+       relationship than exists. It is also the narrowest interval of any method that used all 1,400 rows.</p>
+
+    <p>But one dataset is one draw, and three of these four intervals happen to contain the right answer. Judging a
+       missing-data method by running it once is not possible.</p>
+  </section>
+
+  <!-- 4 -->
+  <section id="coverage">
+    <div class="section-eyebrow"><div class="num">4</div><h2>Running the Whole Study 150 Times</h2></div>
+
+    <p>The question that matters is not what a method returns once. It is how often its 95 percent interval
+       contains the truth, which should be 95 percent of the time.</p>
+
+    <div class="resultline">
+      <div class="rchip"><div class="rk">Single regression imputation</div><div class="rv">2.7%</div><div class="rd">four intervals out of 150</div></div>
+      <div class="rchip"><div class="rk">Mean imputation</div><div class="rv">78.0%</div><div class="rd">biased down 0.086</div></div>
+      <div class="rchip"><div class="rk">Multiple imputation</div><div class="rv">88.7%</div><div class="rd">biased down 0.018</div></div>
+    </div>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-missing-coverage.png"
+           alt="Two panels. Left: the mean estimate from each of five methods over 150 runs with error bars, against a dashed line at the true value of 0.90. Complete data sits on the line, complete-case and mean imputation sit slightly below it, multiple imputation sits just below, and single regression imputation sits far above at 1.23. Right: a bar chart of how often each method's 95 percent interval contained the truth: complete data 96 percent, complete-case 83, mean imputation 78, single regression 3, multiple imputation 89, against a dashed line at the nominal 95 percent.">
+      <figcaption><strong>Left:</strong> where each method centers. The single-regression cloud barely overlaps
+        the truth at all. <strong>Right:</strong> how often the interval was right. A method can be confidently and
+        repeatably wrong, and nothing in its own output will say so.</figcaption>
+    </figure>
+
+    <p><strong>Single regression imputation is biased by 0.330, more than a third of the quantity being
+       estimated, and its intervals are narrow enough that they miss almost every time.</strong> The most natural
+       of the four fixes is the only catastrophic one, and on any single dataset it looks like the most precise.</p>
+
+    <p>Complete-case analysis is not neutral either. It cannot be, because whether a row survives depends on the
+       outcome being modeled. Multiple imputation is much the best of the four and still short of 95 percent,
+       because one column is missing not at random and no imputation model can repair that.</p>
+  </section>
+
+  <!-- 5 -->
+  <section id="mi">
+    <div class="section-eyebrow"><div class="num">5</div><h2>What Multiple Imputation Actually Does</h2></div>
+
+    <p>The difference between the method that fails at 2.7 percent and the method that works is one word: noise.
+       Both predict a missing BMI from the other columns. One writes the prediction down.
+       <strong>The other draws from the distribution around it, twenty times, and carries the disagreement between
+       those twenty answers into the standard error.</strong></p>
+
+    <p>Filling a gap with one number claims the value is known. Filling it with twenty different numbers records
+       that it is not, and the spread across draws here is 3.57 BMI units against an observed spread of 4.56.</p>
+
+    <p>The fraction of missing information says what the gaps cost in precision on this particular question:
+       <strong>25.4 percent</strong>. The 683 complete cases were worth about three quarters of a complete
+       1,400-person survey, which is a far better outcome than discarding the other 717 to find out.</p>
+  </section>
+
+  <!-- 6 -->
+  <section id="mnar">
+    <div class="section-eyebrow"><div class="num">6</div><h2>The Question Nothing Can Fix</h2></div>
+
+    <p>The second question is mean household income, and a state grant is available where that mean is below
+       65 thousand dollars.</p>
+
+    <table class="disp-table">
+      <tr><th>Method</th><th>Mean household income</th><th>Does the county apply?</th></tr>
+      <tr><td class="nm">Complete-case</td><td>59.40k</td><td class="no">yes</td></tr>
+      <tr><td class="nm">Mean imputation</td><td>59.40k</td><td class="no">yes</td></tr>
+      <tr><td class="nm">Multiple imputation, m = 20</td><td>59.42k</td><td class="no">yes</td></tr>
+      <tr class="hi"><td class="nm">The Truth sheet</td><td class="ok">68.16k</td><td class="ok">no, it does not qualify</td></tr>
+    </table>
+
+    <p><strong>Multiple imputation gave 59.42 against a complete-case 59.40. It did not help, and it was never
+       going to.</strong> Every imputation model in the chapter assumes the data can explain the gaps. Here the gap
+       is explained by income, and the file does not contain it.</p>
+
+    <p class="callout-inline">Agreement between methods is not evidence. They agree because they share an
+       assumption, and the assumption is wrong.</p>
+  </section>
+
+  <!-- 7 -->
+  <section id="tipping">
+    <div class="section-eyebrow"><div class="num">7</div><h2>A Tipping Point Instead of an Estimate</h2></div>
+
+    <p>What can be done is to state the size of the assumption the answer depends on. Suppose every refuser earns
+       some amount more than the model predicts for them, and vary that amount.</p>
+
+    <figure class="nb-fig">
+      <img src="../assets/img/capstone-missing-tipping.png"
+           alt="Two panels. Left: estimated mean income rising linearly as the assumed shortfall of a non-responder rises from zero to ninety thousand, crossing the sixty-five thousand grant threshold at thirty-five thousand, with the region below the threshold shaded green and above it red. Right: a bar chart of mean income under complete-case, mean imputation and multiple imputation, all near 59.4 thousand and all below the threshold, against the truth at 68.2 thousand which is above it.">
+      <figcaption><strong>Left:</strong> the estimate as a function of an assumption that cannot be checked.
+        <strong>Right:</strong> the three feasible methods and the truth. The bar that matters is the gap between
+        the first three and the fourth.</figcaption>
+    </figure>
+
+    <p><strong>The conclusion survives only while refusers earn less than 35 thousand more than the model predicts
+       for them.</strong> Ask whether that is plausible and the answer is not difficult: people who decline to state
+       their income on a government survey are not, as a rule, the ones earning below average. The Truth sheet puts
+       the real figure near 52 thousand, half again past the tipping point.</p>
+
+    <p>That number, and not 59.4, is the honest deliverable. The recommendation that follows is to go and get the
+       data: a follow-up on a random sample of even a hundred refusers would settle a question no amount of
+       modeling can.</p>
+  </section>
+
+  <!-- 8 -->
+  <section id="limits">
+    <div class="section-eyebrow"><div class="num">8</div><h2>What This Does Not Settle</h2></div>
+
+    <p><strong>The 150-run study is specific to this population.</strong> These missingness rates, this estimand
+       and this imputation model. The ordering of methods can change when any of them change. What does not change
+       is that imputing without noise invents precision.</p>
+
+    <p><strong>The missing-at-random assumption behind the BMI answer is itself untestable.</strong> It is
+       supported here by the Truth sheet and by nothing else, and outside a textbook it is an argument about how the
+       data was collected rather than a result.</p>
+
+    <p><strong>Multiple imputation reached 88.7 percent, not 95.</strong> The income column contaminates the
+       regression too, mildly. Reporting it as the method that works is accurate only in comparison with the
+       others.</p>
+
+    <p><strong>Every method here assumes its model of the missing values is roughly right.</strong> A badly
+       specified imputation model fails in ways this comparison would not detect, because every arm of it used the
+       same specification.</p>
+  </section>
+
+  <!-- 9 -->
+  <section id="watch">
+    <div class="section-eyebrow"><div class="num">9</div><h2>What to Watch</h2></div>
+
+    <ul class="checklist">
+      <li><span class="ck">&#10003;</span><span><strong>Count the gaps before you trust the count.</strong> Look at dtypes, minima and maxima on every column. A numeric column read as text, a minus one, a 999 and a 9999 are all missing values that will otherwise be analyzed as data.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Ask what predicts the gap, not how big it is.</strong> Fourteen percent missing completely at random is harmless. Thirty percent missing in a way that depends on the outcome is not, and the second one is not visible in a completeness report.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Never impute without noise.</strong> Filling a gap with a prediction and analyzing it as a measurement is the single worst option in this chapter, and it is the one that looks most reasonable in code review.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Put the outcome in the imputation model.</strong> Leaving it out biases the association toward zero. Including it is correct, and it is only dangerous when the imputation is deterministic.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Report the fraction of missing information.</strong> It says what the gaps cost on the specific quantity you are estimating, which is more useful than the share of rows that were incomplete.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>When the mechanism cannot be tested, report a tipping point.</strong> How far the assumption has to move before the decision changes is a real deliverable. A point estimate that quietly assumes the untestable thing is not.</span></li>
+    </ul>
+  </section>
+
+  <!-- 10 -->
+  <section id="in-ds-ai">
+    <div class="section-eyebrow"><div class="num">10</div><h2>Missing Data in Data Science &amp; AI</h2></div>
+
+    <p>Most machine-learning pipelines handle missingness by whichever method is one line long, and the default is
+       usually the mean. That choice is rarely revisited, and it is made in the part of the code nobody reviews.</p>
+
+    <table class="disp-table">
+      <tr><th>Where it appears</th><th>The usual default</th><th>What it assumes</th></tr>
+      <tr><td class="nm">A scikit-learn pipeline</td><td><code>SimpleImputer</code> with the mean</td><td>Missing completely at random, and that shrinking the variance is free</td></tr>
+      <tr class="hi"><td class="nm">Gradient boosting</td><td>Learned default directions for missing values</td><td>That the pattern of missingness is a legitimate predictor, which it often is and sometimes must not be</td></tr>
+      <tr><td class="nm">Feature stores</td><td>Backfill, or a sentinel like -1</td><td>That downstream consumers know it is a sentinel</td></tr>
+      <tr class="hi"><td class="nm">Survey and panel research</td><td>Multiple imputation with Rubin's rules</td><td>Missing at random, stated and defended rather than assumed</td></tr>
+      <tr><td class="nm">Clinical trials</td><td>Sensitivity analysis over departures from MAR</td><td>Nothing. That is the point of it</td></tr>
+    </table>
+
+    <p><strong>A missingness indicator is worth its own thought.</strong> Whether a value was recorded is sometimes
+       the most predictive feature available, and a model that uses it can be both accurate and unusable, because
+       it has learned who gets tested rather than who is ill. The next chapter has a version of the same problem,
+       and the one after that is entirely about it.</p>
+
+    <div class="research">
+      <span class="rtag">Where the methods came from</span>
+      <p style="margin:0.4rem 0 0"><strong>Donald Rubin</strong> gave the three mechanisms their names in 1976 and
+         set out multiple imputation in 1987, including the rules for combining estimates across imputed datasets
+         that the notebook uses. <strong>Roderick Little</strong> and Rubin's <em>Statistical Analysis with Missing
+         Data</em> remains the standard reference. <strong>Stef van Buuren</strong>'s chained-equations approach,
+         MICE, is what made it practical for datasets with many columns of different types and is the algorithm
+         behind both implementations used here. The delta-adjustment sensitivity analysis in Section 7 follows the
+         approach the pharmaceutical regulators now expect for clinical trials, where the untestable assumption has
+         to be stressed rather than stated.</p>
+    </div>
+  </section>
+
+  <!-- notebook -->
+  <section id="notebook">
+    <div class="nb-cta" style="display:block">
+      <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
+        <div class="nb-ic">&#128013;</div>
+        <div class="nb-body">
+          <h3>The full project, step by step</h3>
+          <p>The companion notebook finds the three sentinel codes, maps which columns go missing together,
+             implements four methods and scores each against the Truth sheet, repeats the entire study 150 times
+             to measure bias and interval coverage, shows what multiple imputation is doing by printing the same
+             missing value imputed five different ways, and finishes with the delta-adjustment tipping point.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
+        <a class="btn btn-primary" href="notebooks/html/capstone-missing-data-imputation.html">&#128211; View Notebook (code &amp; outputs)</a>
+        <a class="btn" style="background:#f9ab00;color:#1a2138;font-weight:700"
+           href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-missing-data-imputation.ipynb"
+           target="_blank" rel="noopener">&#9654; Open in Colab</a>
+        <a class="btn btn-ghost" style="background:rgba(255,255,255,0.08);color:#fff;border-color:rgba(255,255,255,0.2)"
+           href="https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/capstone-missing-data-imputation.ipynb"
+           target="_blank" rel="noopener">&#11015; View / Download on GitHub</a>
+      </div>
+    </div>
+
+    <div class="rw-card">
+      <span class="rw-tag">Read the reports &amp; get the data</span>
+      <p style="margin:0.45rem 0 0"><strong>The dataset</strong>
+         (<code>capstone-missing-data-imputation.xlsx</code>) holds 1,400 respondents with the sentinel codes and
+         duplicate rows still in place, plus a <strong>Truth sheet</strong> carrying the values that were removed so
+         every method can be scored. Two written reports accompany it: a <strong>plain-language brief</strong> for
+         the county health director, and a <strong>technical report</strong> covering the mechanisms, the simulation
+         study and the sensitivity analysis.</p>
+      <div class="ex-files">
+        <a class="ex-file doc" href="../reports/capstone-39-missing-data-imputation.html" target="_blank" rel="noopener">&#128196; Plain-language brief <small>read online</small></a>
+        <a class="ex-file doc" href="../reports/capstone-39-missing-data-imputation-technical.html" target="_blank" rel="noopener">&#128202; Technical report <small>read online</small></a>
+        <a class="ex-file xls" href="../data/capstone-missing-data-imputation.xlsx">&#128202; Download dataset <small>Excel .xlsx</small></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- takeaways -->
+  <section id="takeaways">
+    <div class="takeaways">
+      <h3>&#127891; Key Takeaways</h3>
+      <ul>
+        <li><span class="ck">&#10003;</span><span><strong>More than half the gaps were not blank.</strong> Counting blanks found 29.6 percent of rows affected; the true figure was 51.2 percent, and the difference was sentinel codes that any tool would have analyzed as data.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>What predicts the gap matters more than how big it is.</strong> Activity was missing completely at random and cost only precision. BMI was missing where the blood pressure reading was high, which is what makes dropping rows biased.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Single regression imputation covered the truth 3 percent of the time</strong>, biased by 0.330, while producing the narrowest interval of any method using all the rows. It is the most reasonable-looking fix and the only catastrophic one.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Multiple imputation reached 88.7 percent coverage against complete-case 82.7 and mean imputation 78.0</strong>, and used all 1,400 respondents rather than the 683 that were complete.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>No imputation fixes missing not at random.</strong> All three feasible methods put mean income at 59.4 against a truth of 68.2, and agreed with each other because they shared the same wrong assumption.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>When the mechanism cannot be tested, report the tipping point.</strong> The county's grant conclusion flips once refusers earn 35 thousand more than modeled, and the real gap is near 52.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- quiz -->
+  <section id="quiz">
+    <div class="section-eyebrow"><div class="num">&#10067;</div><h2>Quiz: Test Yourself</h2></div>
+    <div id="quiz-root"></div>
+  </section>
+
+  <nav class="chapter-nav">
+    <a class="cn-btn prev" href="capstone-forecast-backtesting.html">
+      <span style="font-size:1.3rem">&#8592;</span>
+      <span><span class="cn-dir">Chapter 201 &#183; Previous</span><br><span class="cn-title">Backtesting and Honest Model Selection</span></span>
+    </a>
+    <a class="cn-btn next" href="capstone-survival-analysis-time-to-event.html">
+      <span><span class="cn-dir">Chapter 203 &#183; Next</span><br><span class="cn-title">Survival Analysis: Time to Event</span></span>
+      <span style="font-size:1.3rem">&#8594;</span>
+    </a>
+  </nav>
+
+</main>
+
+<footer class="book-footer" style="background:#0a1230;color:#8892b0;border-top:none">
+  <strong style="color:#cbd5e1">Statistics, Data Science and AI: A Visual Handbook</strong> &nbsp;&#183;&nbsp;
+  Chapter 202 &nbsp;&#183;&nbsp; &#169; 2026 John Fisher
+</footer>
+
+<script>
+const bar = document.getElementById('readProgress');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = ((h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100) + '%';
+});
+</script>
+
+<script>
+  window.QUIZ_ID = "ch202";
+  window.QUIZ_DATA = [
+    {
+      q: "A completeness report says 29.6 percent of rows have a gap, but the true figure is 51.2 percent. What accounts for the difference?",
+      options: ["Rounding", "Sentinel codes: -1 for unrecorded activity, 999 for a declined income, and the text 'not measured' in a numeric column", "Duplicate rows", "The Truth sheet"],
+      answer: 1,
+      explain: "Only blanks are counted as missing by default. A -1 and a 999 are numerically valid and will be averaged, regressed and reported without any warning, which makes them more dangerous than a blank."
+    },
+    {
+      q: "Activity was missing for 14.4 percent of respondents because a tablet failed, and those respondents had the same blood pressure and age as everyone else. What follows?",
+      options: ["The rows must be imputed", "It is missing completely at random, so dropping those rows costs precision and introduces no bias", "It is missing not at random", "The variable should be discarded"],
+      answer: 1,
+      explain: "MCAR is the benign case. The concern is efficiency, not validity. It is also the only one of the three mechanisms that can be checked against the observed data."
+    },
+    {
+      q: "BMI was missing more often when the blood pressure reading was high. Why does that make complete-case analysis biased for the BMI-blood-pressure association?",
+      options: ["Because 31.5 percent is too much missingness", "Because whether a row survives depends on the outcome being modeled, so the surviving sample is selected on the thing being predicted", "Because BMI and blood pressure are correlated", "Because the missingness is MCAR"],
+      answer: 1,
+      explain: "Missing at random does not by itself make dropping rows unsafe. Dropping rows becomes biased specifically when the missingness depends on the outcome, which truncates the relationship being estimated."
+    },
+    {
+      q: "Single regression imputation returned 1.324 against a truth of 0.980, and its 95 percent interval contained the right answer in 4 of 150 runs. What went wrong?",
+      options: ["The imputation model was too simple", "Each missing BMI was replaced by a prediction built from blood pressure and then analyzed as a measurement, so the imputed values agree with the outcome perfectly and the association is inflated", "Too few rows were imputed", "The random seed was unlucky"],
+      answer: 1,
+      explain: "The prediction carries no uncertainty, so the analysis treats invented values as observed ones. Including the outcome in the imputation model is correct; doing so without adding noise is what breaks it."
+    },
+    {
+      q: "What does multiple imputation do that single regression imputation does not?",
+      options: ["It uses a better model", "It draws each missing value from the distribution around its prediction, many times, and carries the disagreement between those draws into the standard error", "It drops rows with too many gaps", "It only imputes the outcome"],
+      answer: 1,
+      explain: "One number claims the value is known. Twenty different numbers record that it is not, and Rubin's rules combine the within-imputation and between-imputation variance so the interval reflects both."
+    },
+    {
+      q: "Complete-case, mean imputation and multiple imputation all estimated mean income at about 59.4 thousand, against a truth of 68.2. What does their agreement tell you?",
+      options: ["That 59.4 is probably right", "Nothing reassuring: they agree because all three assume the refusers resemble the responders, and that shared assumption is what is false", "That the sample was too small", "That multiple imputation was misconfigured"],
+      answer: 1,
+      explain: "Convergence between methods is only evidence when the methods rest on different assumptions. Here income is missing not at random, and no method that models the gap from the observed data can escape it."
+    },
+    {
+      q: "The county qualifies for the grant if mean income is below 65 thousand, and the estimate crosses that threshold once refusers are assumed to earn 35 thousand more than modeled. How should that be reported?",
+      options: ["Report 59.4 and apply", "Report the tipping point, because the conclusion depends on an assumption that cannot be tested and 35 thousand is well inside plausible non-response behavior", "Report the Truth sheet figure", "Report that the analysis is impossible"],
+      answer: 1,
+      explain: "A sensitivity analysis converts an untestable assumption into a statement about how much it would have to move to change the decision. That is a real deliverable; a point estimate that silently assumes MAR is not."
+    },
+    {
+      q: "The fraction of missing information on the BMI coefficient was 25.4 percent, while 51.2 percent of rows were incomplete. Why are these different numbers?",
+      options: ["One is a typo", "Rows with a gap still carry information about the coefficient through their observed columns, so the loss in precision on this particular estimand is much smaller than the share of incomplete rows", "The fraction of missing information is always half the row loss", "They measure the same thing at different times"],
+      answer: 1,
+      explain: "Discarding a row throws away everything it knew. Imputation keeps its observed columns, so the surviving data was worth roughly three quarters of a complete survey for this question rather than the 49 percent of rows that were complete."
+    }
+  ];
+</script>
+<script src="../assets/js/quiz.js"></script>
+</body>
+</html>
