@@ -704,6 +704,9 @@ MAP = {
         ("../../capstone-survival-analysis-time-to-event.html#notebook", "Back to the book", "Chapter 203 · Survival Analysis: Time to Event"),
     "capstone-fairness-audit.html":
         ("../../capstone-fairness-audit.html#notebook", "Back to the book", "Chapter 204 · A Fairness Audit"),
+    "the-whole-pipeline-reflection-and-next-steps.html":
+        ("../../the-whole-pipeline-reflection-and-next-steps.html#notebook", "Back to the book",
+         "Chapter 205 · The Whole Pipeline: Reflection and Next Steps"),
 }
 
 def card(href, kicker, title):
