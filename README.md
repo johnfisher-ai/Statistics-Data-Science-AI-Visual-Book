@@ -54,6 +54,13 @@ last ones are checked against the local tree with no network call, which is the 
 to catch a broken Colab button: the chapter page loads fine, and the notebook 404s only
 when a reader clicks it.
 
+It also validates the backlink table in `scripts/inject_notebook_backlinks.py`, which
+rewrites notebook HTML at deploy time. A wrong anchor there outlives any fix to the
+rendered pages, because the next re-render puts it straight back.
+
+**This runs in CI.** `.github/workflows/check-links.yml` fails a push or a pull request
+that leaves a link pointing at nothing.
+
 ## Publishing
 
 See **[PUBLISHING.md](PUBLISHING.md)** for first-time setup and the per-chapter workflow.

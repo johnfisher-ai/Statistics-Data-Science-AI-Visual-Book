@@ -71,6 +71,32 @@ def as_repo_path(url: str):
     return None
 
 
+def check_injector(problems: list) -> int:
+    """Validate the backlink table in scripts/inject_notebook_backlinks.py.
+
+    That script rewrites notebook HTML at deploy time, so a wrong anchor there
+    survives any fix made to the rendered pages: the next re-render puts it
+    straight back. Checking the table catches the cause, not the symptom.
+    """
+    src = ROOT / "scripts/inject_notebook_backlinks.py"
+    if not src.exists():
+        return 0
+    seen, checked = set(), 0
+    for page, frag in re.findall(r'"\.\./\.\./([^"#]+\.html)#([a-z-]+)"', src.read_text()):
+        if (page, frag) in seen:
+            continue
+        seen.add((page, frag))
+        checked += 1
+        f = ROOT / "chapters" / page
+        if not f.exists():
+            problems.append(("scripts/inject_notebook_backlinks.py",
+                             f"../../{page}#{frag}", f"chapters/{page} does not exist"))
+        elif f'id="{frag}"' not in f.read_text(errors="replace"):
+            problems.append(("scripts/inject_notebook_backlinks.py",
+                             f"../../{page}#{frag}", f"no id {frag!r} in chapters/{page}"))
+    return checked
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--external", action="store_true", help="also HTTP-check outside hosts")
@@ -117,6 +143,8 @@ def main() -> int:
             if frag and target.suffix == ".html" and frag not in anchors_in(target, cache):
                 problems.append((str(rel), url, f"no id {frag!r} in {base}"))
 
+    injector = check_injector(problems)
+
     if args.external:
         import urllib.request
         import urllib.error
@@ -135,6 +163,8 @@ def main() -> int:
     print(f"  {sum(1 for _ in html_files())} html files: "
           f"{counts['relative']} relative, {counts['anchor']} anchors, "
           f"{counts['self']} back into this repo, {counts['external']} outside")
+    if injector:
+        print(f"  backlink table: {injector} distinct targets")
     if problems:
         print()
         for where, url, why in problems:

@@ -569,39 +569,39 @@ MAP = {
     "from-model-to-production-mlops--solutions.html":
         ("../../from-model-to-production-mlops.html#challenges", "Back to the book", "Chapter 150 · Challenge solutions"),
     "python-for-data-analysis--1-python-foundations.html":
-        ("../../python-for-data-analysis.html#notebook", "Back to the book", "Chapter 151 · Notebook 1 · Python Foundations"),
+        ("../../python-for-data-analysis.html#notebooks", "Back to the book", "Chapter 151 · Notebook 1 · Python Foundations"),
     "python-for-data-analysis--2-numpy.html":
-        ("../../python-for-data-analysis.html#notebook", "Back to the book", "Chapter 151 · Notebook 2 · NumPy"),
+        ("../../python-for-data-analysis.html#notebooks", "Back to the book", "Chapter 151 · Notebook 2 · NumPy"),
     "python-for-data-analysis--3-pandas-essentials.html":
-        ("../../python-for-data-analysis.html#notebook", "Back to the book", "Chapter 151 · Notebook 3 · pandas Essentials"),
+        ("../../python-for-data-analysis.html#notebooks", "Back to the book", "Chapter 151 · Notebook 3 · pandas Essentials"),
     "python-for-data-analysis--4-reshaping-and-aggregation.html":
-        ("../../python-for-data-analysis.html#notebook", "Back to the book", "Chapter 151 · Notebook 4 · Reshaping &amp; Aggregating"),
+        ("../../python-for-data-analysis.html#notebooks", "Back to the book", "Chapter 151 · Notebook 4 · Reshaping &amp; Aggregating"),
     "python-for-data-analysis--5-visualization.html":
-        ("../../python-for-data-analysis.html#notebook", "Back to the book", "Chapter 151 · Notebook 5 · Visualization"),
+        ("../../python-for-data-analysis.html#notebooks", "Back to the book", "Chapter 151 · Notebook 5 · Visualization"),
     "python-for-data-analysis--solutions.html":
         ("../../python-for-data-analysis.html#challenges", "Back to the book", "Chapter 151 · Challenge solutions"),
     "sql-and-databases--1-foundations.html":
-        ("../../sql-and-databases.html#notebook", "Back to the book", "Chapter 154 · Notebook 1 · SQL Foundations"),
+        ("../../sql-and-databases.html#notebooks", "Back to the book", "Chapter 154 · Notebook 1 · SQL Foundations"),
     "sql-and-databases--2-aggregation.html":
-        ("../../sql-and-databases.html#notebook", "Back to the book", "Chapter 154 · Notebook 2 · Aggregation"),
+        ("../../sql-and-databases.html#notebooks", "Back to the book", "Chapter 154 · Notebook 2 · Aggregation"),
     "sql-and-databases--3-joins.html":
-        ("../../sql-and-databases.html#notebook", "Back to the book", "Chapter 154 · Notebook 3 · Joins"),
+        ("../../sql-and-databases.html#notebooks", "Back to the book", "Chapter 154 · Notebook 3 · Joins"),
     "sql-and-databases--4-window-functions.html":
-        ("../../sql-and-databases.html#notebook", "Back to the book", "Chapter 154 · Notebook 4 · Window Functions"),
+        ("../../sql-and-databases.html#notebooks", "Back to the book", "Chapter 154 · Notebook 4 · Window Functions"),
     "sql-and-databases--5-subqueries-and-pandas.html":
-        ("../../sql-and-databases.html#notebook", "Back to the book", "Chapter 154 · Notebook 5 · Subqueries &amp; pandas"),
+        ("../../sql-and-databases.html#notebooks", "Back to the book", "Chapter 154 · Notebook 5 · Subqueries &amp; pandas"),
     "sql-and-databases--solutions.html":
         ("../../sql-and-databases.html#challenges", "Back to the book", "Chapter 154 · Challenge solutions"),
     "reproducibility-and-version-control--1-reproducibility.html":
-        ("../../reproducibility-and-version-control.html#notebook", "Back to the book", "Chapter 156 · Notebook 1 · Reproducibility"),
+        ("../../reproducibility-and-version-control.html#notebooks", "Back to the book", "Chapter 156 · Notebook 1 · Reproducibility"),
     "reproducibility-and-version-control--2-project-structure.html":
-        ("../../reproducibility-and-version-control.html#notebook", "Back to the book", "Chapter 156 · Notebook 2 · Project Structure"),
+        ("../../reproducibility-and-version-control.html#notebooks", "Back to the book", "Chapter 156 · Notebook 2 · Project Structure"),
     "reproducibility-and-version-control--3-git-basics.html":
-        ("../../reproducibility-and-version-control.html#notebook", "Back to the book", "Chapter 156 · Notebook 3 · Git Basics"),
+        ("../../reproducibility-and-version-control.html#notebooks", "Back to the book", "Chapter 156 · Notebook 3 · Git Basics"),
     "reproducibility-and-version-control--4-branching-and-merging.html":
-        ("../../reproducibility-and-version-control.html#notebook", "Back to the book", "Chapter 156 · Notebook 4 · Branching &amp; Merging"),
+        ("../../reproducibility-and-version-control.html#notebooks", "Back to the book", "Chapter 156 · Notebook 4 · Branching &amp; Merging"),
     "reproducibility-and-version-control--5-experiment-tracking.html":
-        ("../../reproducibility-and-version-control.html#notebook", "Back to the book", "Chapter 156 · Notebook 5 · Experiment Tracking"),
+        ("../../reproducibility-and-version-control.html#notebooks", "Back to the book", "Chapter 156 · Notebook 5 · Experiment Tracking"),
     "reproducibility-and-version-control--solutions.html":
         ("../../reproducibility-and-version-control.html#challenges", "Back to the book", "Chapter 156 · Challenge solutions"),
     "communicating-insights--A-chart-toolkit.html":
