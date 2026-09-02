@@ -41,6 +41,19 @@ pip install -r requirements.txt
 bash scripts/build_notebook_html.sh
 ```
 
+## Checking links
+
+```bash
+python3 scripts/check_links.py              # local and self-referencing links
+python3 scripts/check_links.py --external   # also HTTP-check outside hosts
+```
+
+Resolves every `href` and `src` in all 646 pages: relative paths, in-page anchors, and
+the Colab, `github.com/blob` and Pages URLs that point back into this repository. Those
+last ones are checked against the local tree with no network call, which is the only way
+to catch a broken Colab button: the chapter page loads fine, and the notebook 404s only
+when a reader clicks it.
+
 ## Publishing
 
 See **[PUBLISHING.md](PUBLISHING.md)** for first-time setup and the per-chapter workflow.
