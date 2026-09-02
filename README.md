@@ -46,4 +46,21 @@ bash scripts/build_notebook_html.sh
 See **[PUBLISHING.md](PUBLISHING.md)** for first-time setup and the per-chapter workflow.
 
 ---
-© 2026 John Fisher. All rights reserved.
+
+## License
+
+**The book, the figures and the datasets: [CC BY 4.0](LICENSE). The code: [MIT](LICENSE-CODE).**
+
+Use any of it, including commercially, with credit. Teach from it, translate it, quote
+it, build on it. A reasonable credit:
+
+> John Fisher, *Statistics, Data Science and AI: A Visual Handbook*.
+> https://johnfisher-ai.github.io/Statistics-Data-Science-AI-Visual-Book/
+
+See **[LICENSES.md](LICENSES.md)** for which license covers which files.
+
+Every dataset in `data/` was written for this book. Two are named after well-known public
+datasets and are **not** those datasets: see **[data/README.md](data/README.md)** before
+comparing results against published analyses.
+
+© 2026 John Fisher.
