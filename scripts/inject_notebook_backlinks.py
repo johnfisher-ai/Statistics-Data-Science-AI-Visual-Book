@@ -17,157 +17,157 @@ HTML_DIR = os.path.join(
 # notebook-html filename -> (relative href to the chapter section, kicker, title)
 MAP = {
     "what-is-machine-learning.html":
-        ("../../what-is-machine-learning.html#notebook", "Back to the book", "Chapter 104 · What Is Machine Learning?"),
+        ("../../what-is-machine-learning.html#notebook", "Back to the book", "Chapter 108 · What Is Machine Learning?"),
     "what-is-machine-learning--solutions.html":
-        ("../../what-is-machine-learning.html#quiz", "Back to the book", "Chapter 104 · Take the quiz &amp; aim for 100%"),
+        ("../../what-is-machine-learning.html#quiz", "Back to the book", "Chapter 108 · Take the quiz &amp; aim for 100%"),
     "the-machine-learning-workflow.html":
-        ("../../the-machine-learning-workflow.html#notebook", "Back to the book", "Chapter 105 · The Machine Learning Workflow"),
+        ("../../the-machine-learning-workflow.html#notebook", "Back to the book", "Chapter 109 · The Machine Learning Workflow"),
     "the-machine-learning-workflow--solutions.html":
-        ("../../the-machine-learning-workflow.html#quiz", "Back to the book", "Chapter 105 · Take the quiz &amp; aim for 100%"),
+        ("../../the-machine-learning-workflow.html#quiz", "Back to the book", "Chapter 109 · Take the quiz &amp; aim for 100%"),
     "distance-metrics.html":
-        ("../../distance-metrics.html#notebook", "Back to the book", "Chapter 106 · Distance Metrics"),
+        ("../../distance-metrics.html#notebook", "Back to the book", "Chapter 110 · Distance Metrics"),
     "distance-metrics--solutions.html":
-        ("../../distance-metrics.html#quiz", "Back to the book", "Chapter 106 · Take the quiz &amp; aim for 100%"),
+        ("../../distance-metrics.html#quiz", "Back to the book", "Chapter 110 · Take the quiz &amp; aim for 100%"),
     "core-classification-and-regression-algorithms.html":
-        ("../../core-classification-and-regression-algorithms.html#notebook", "Back to the book", "Chapter 107 · Core Classification &amp; Regression Algorithms"),
+        ("../../core-classification-and-regression-algorithms.html#notebook", "Back to the book", "Chapter 111 · Core Classification &amp; Regression Algorithms"),
     "core-classification-and-regression-algorithms--solutions.html":
-        ("../../core-classification-and-regression-algorithms.html#quiz", "Back to the book", "Chapter 107 · Take the quiz &amp; aim for 100%"),
+        ("../../core-classification-and-regression-algorithms.html#quiz", "Back to the book", "Chapter 111 · Take the quiz &amp; aim for 100%"),
     "ensemble-methods.html":
-        ("../../ensemble-methods.html#notebook", "Back to the book", "Chapter 108 · Ensemble Methods"),
+        ("../../ensemble-methods.html#notebook", "Back to the book", "Chapter 112 · Ensemble Methods"),
     "ensemble-methods--solutions.html":
-        ("../../ensemble-methods.html#quiz", "Back to the book", "Chapter 108 · Take the quiz &amp; aim for 100%"),
+        ("../../ensemble-methods.html#quiz", "Back to the book", "Chapter 112 · Take the quiz &amp; aim for 100%"),
     "feature-selection.html":
-        ("../../feature-selection.html#notebook", "Back to the book", "Chapter 109 · Feature Selection"),
+        ("../../feature-selection.html#notebook", "Back to the book", "Chapter 113 · Feature Selection"),
     "feature-selection--solutions.html":
-        ("../../feature-selection.html#quiz", "Back to the book", "Chapter 109 · Take the quiz &amp; aim for 100%"),
+        ("../../feature-selection.html#quiz", "Back to the book", "Chapter 113 · Take the quiz &amp; aim for 100%"),
     "optimization-and-gradient-descent.html":
-        ("../../optimization-and-gradient-descent.html#notebook", "Back to the book", "Chapter 110 · Optimization &amp; Gradient Descent"),
+        ("../../optimization-and-gradient-descent.html#notebook", "Back to the book", "Chapter 114 · Optimization &amp; Gradient Descent"),
     "optimization-and-gradient-descent--solutions.html":
-        ("../../optimization-and-gradient-descent.html#quiz", "Back to the book", "Chapter 110 · Take the quiz &amp; aim for 100%"),
+        ("../../optimization-and-gradient-descent.html#quiz", "Back to the book", "Chapter 114 · Take the quiz &amp; aim for 100%"),
     "model-evaluation.html":
-        ("../../model-evaluation.html#notebook", "Back to the book", "Chapter 111 · Model Evaluation"),
+        ("../../model-evaluation.html#notebook", "Back to the book", "Chapter 115 · Model Evaluation"),
     "model-evaluation--solutions.html":
-        ("../../model-evaluation.html#quiz", "Back to the book", "Chapter 111 · Take the quiz &amp; aim for 100%"),
+        ("../../model-evaluation.html#quiz", "Back to the book", "Chapter 115 · Take the quiz &amp; aim for 100%"),
     "model-pitfalls.html":
-        ("../../model-pitfalls.html#notebook", "Back to the book", "Chapter 112 · Model Pitfalls"),
+        ("../../model-pitfalls.html#notebook", "Back to the book", "Chapter 116 · Model Pitfalls"),
     "model-pitfalls--solutions.html":
-        ("../../model-pitfalls.html#quiz", "Back to the book", "Chapter 112 · Take the quiz &amp; aim for 100%"),
+        ("../../model-pitfalls.html#quiz", "Back to the book", "Chapter 116 · Take the quiz &amp; aim for 100%"),
     "model-interpretability-and-explainability.html":
-        ("../../model-interpretability-and-explainability.html#notebook", "Back to the book", "Chapter 113 · Model Interpretability &amp; Explainability"),
+        ("../../model-interpretability-and-explainability.html#notebook", "Back to the book", "Chapter 117 · Model Interpretability &amp; Explainability"),
     "model-interpretability-and-explainability--solutions.html":
-        ("../../model-interpretability-and-explainability.html#quiz", "Back to the book", "Chapter 113 · Take the quiz &amp; aim for 100%"),
+        ("../../model-interpretability-and-explainability.html#quiz", "Back to the book", "Chapter 117 · Take the quiz &amp; aim for 100%"),
     "clustering.html":
-        ("../../clustering.html#notebook", "Back to the book", "Chapter 114 · Clustering"),
+        ("../../clustering.html#notebook", "Back to the book", "Chapter 118 · Clustering"),
     "clustering--solutions.html":
-        ("../../clustering.html#quiz", "Back to the book", "Chapter 114 · Take the quiz &amp; aim for 100%"),
+        ("../../clustering.html#quiz", "Back to the book", "Chapter 118 · Take the quiz &amp; aim for 100%"),
     "dimensionality-reduction.html":
-        ("../../dimensionality-reduction.html#notebook", "Back to the book", "Chapter 115 · Dimensionality Reduction"),
+        ("../../dimensionality-reduction.html#notebook", "Back to the book", "Chapter 119 · Dimensionality Reduction"),
     "dimensionality-reduction--solutions.html":
-        ("../../dimensionality-reduction.html#quiz", "Back to the book", "Chapter 115 · Take the quiz &amp; aim for 100%"),
+        ("../../dimensionality-reduction.html#quiz", "Back to the book", "Chapter 119 · Take the quiz &amp; aim for 100%"),
     "association-rule-mining.html":
-        ("../../association-rule-mining.html#notebook", "Back to the book", "Chapter 116 · Association Rule Mining"),
+        ("../../association-rule-mining.html#notebook", "Back to the book", "Chapter 120 · Association Rule Mining"),
     "association-rule-mining--solutions.html":
-        ("../../association-rule-mining.html#quiz", "Back to the book", "Chapter 116 · Take the quiz &amp; aim for 100%"),
+        ("../../association-rule-mining.html#quiz", "Back to the book", "Chapter 120 · Take the quiz &amp; aim for 100%"),
     "anomaly-detection.html":
-        ("../../anomaly-detection.html#notebook", "Back to the book", "Chapter 117 · Anomaly Detection"),
+        ("../../anomaly-detection.html#notebook", "Back to the book", "Chapter 121 · Anomaly Detection"),
     "anomaly-detection--solutions.html":
-        ("../../anomaly-detection.html#quiz", "Back to the book", "Chapter 117 · Take the quiz &amp; aim for 100%"),
+        ("../../anomaly-detection.html#quiz", "Back to the book", "Chapter 121 · Take the quiz &amp; aim for 100%"),
     "reinforcement-learning-primer.html":
-        ("../../reinforcement-learning-primer.html#notebook", "Back to the book", "Chapter 118 · Reinforcement Learning Primer"),
+        ("../../reinforcement-learning-primer.html#notebook", "Back to the book", "Chapter 122 · Reinforcement Learning Primer"),
     "reinforcement-learning-primer--solutions.html":
-        ("../../reinforcement-learning-primer.html#quiz", "Back to the book", "Chapter 118 · Take the quiz &amp; aim for 100%"),
+        ("../../reinforcement-learning-primer.html#quiz", "Back to the book", "Chapter 122 · Take the quiz &amp; aim for 100%"),
     "deep-rl-and-applications.html":
-        ("../../deep-rl-and-applications.html#notebook", "Back to the book", "Chapter 119 · Deep RL &amp; Applications"),
+        ("../../deep-rl-and-applications.html#notebook", "Back to the book", "Chapter 123 · Deep RL &amp; Applications"),
     "deep-rl-and-applications--solutions.html":
-        ("../../deep-rl-and-applications.html#quiz", "Back to the book", "Chapter 119 · Take the quiz &amp; aim for 100%"),
+        ("../../deep-rl-and-applications.html#quiz", "Back to the book", "Chapter 123 · Take the quiz &amp; aim for 100%"),
     "case-study-an-end-to-end-ml-project.html":
-        ("../../case-study-an-end-to-end-ml-project.html#notebook", "Back to the book", "Chapter 120 · An End-to-End ML Project"),
+        ("../../case-study-an-end-to-end-ml-project.html#notebook", "Back to the book", "Chapter 124 · An End-to-End ML Project"),
     "case-study-an-end-to-end-ml-project--take-it-further.html":
-        ("../../case-study-an-end-to-end-ml-project.html#challenges", "Back to the book", "Chapter 120 · Take it further"),
+        ("../../case-study-an-end-to-end-ml-project.html#challenges", "Back to the book", "Chapter 124 · Take it further"),
     "case-study-fraud-detection.html":
-        ("../../case-study-fraud-detection.html#notebook", "Back to the book", "Chapter 121 · Fraud Detection"),
+        ("../../case-study-fraud-detection.html#notebook", "Back to the book", "Chapter 125 · Fraud Detection"),
     "case-study-fraud-detection--take-it-further.html":
-        ("../../case-study-fraud-detection.html#challenges", "Back to the book", "Chapter 121 · Take it further"),
+        ("../../case-study-fraud-detection.html#challenges", "Back to the book", "Chapter 125 · Take it further"),
     "case-study-predictive-maintenance.html":
-        ("../../case-study-predictive-maintenance.html#notebook", "Back to the book", "Chapter 122 · Predictive Maintenance"),
+        ("../../case-study-predictive-maintenance.html#notebook", "Back to the book", "Chapter 126 · Predictive Maintenance"),
     "case-study-predictive-maintenance--take-it-further.html":
-        ("../../case-study-predictive-maintenance.html#challenges", "Back to the book", "Chapter 122 · Take it further"),
+        ("../../case-study-predictive-maintenance.html#challenges", "Back to the book", "Chapter 126 · Take it further"),
     "case-study-customer-segmentation-and-targeting.html":
-        ("../../case-study-customer-segmentation-and-targeting.html#notebook", "Back to the book", "Chapter 123 · Customer Segmentation &amp; Targeting"),
+        ("../../case-study-customer-segmentation-and-targeting.html#notebook", "Back to the book", "Chapter 127 · Customer Segmentation &amp; Targeting"),
     "case-study-customer-segmentation-and-targeting--take-it-further.html":
-        ("../../case-study-customer-segmentation-and-targeting.html#challenges", "Back to the book", "Chapter 123 · Take it further"),
+        ("../../case-study-customer-segmentation-and-targeting.html#challenges", "Back to the book", "Chapter 127 · Take it further"),
     "case-study-loan-default-risk.html":
-        ("../../case-study-loan-default-risk.html#notebook", "Back to the book", "Chapter 124 · Loan Default Risk"),
+        ("../../case-study-loan-default-risk.html#notebook", "Back to the book", "Chapter 128 · Loan Default Risk"),
     "case-study-loan-default-risk--take-it-further.html":
-        ("../../case-study-loan-default-risk.html#challenges", "Back to the book", "Chapter 124 · Take it further"),
+        ("../../case-study-loan-default-risk.html#challenges", "Back to the book", "Chapter 128 · Take it further"),
     "case-study-from-model-to-decision.html":
-        ("../../case-study-from-model-to-decision.html#notebook", "Back to the book", "Chapter 125 · From Model to Decision"),
+        ("../../case-study-from-model-to-decision.html#notebook", "Back to the book", "Chapter 129 · From Model to Decision"),
     "case-study-from-model-to-decision--take-it-further.html":
-        ("../../case-study-from-model-to-decision.html#challenges", "Back to the book", "Chapter 125 · Take it further"),
+        ("../../case-study-from-model-to-decision.html#challenges", "Back to the book", "Chapter 129 · Take it further"),
     "case-study-operationalizing-the-model-mlops.html":
-        ("../../case-study-operationalizing-the-model-mlops.html#notebook", "Back to the book", "Chapter 126 · Operationalizing the Model"),
+        ("../../case-study-operationalizing-the-model-mlops.html#notebook", "Back to the book", "Chapter 130 · Operationalizing the Model"),
     "case-study-operationalizing-the-model-mlops--take-it-further.html":
-        ("../../case-study-operationalizing-the-model-mlops.html#challenges", "Back to the book", "Chapter 126 · Take it further"),
+        ("../../case-study-operationalizing-the-model-mlops.html#challenges", "Back to the book", "Chapter 130 · Take it further"),
     "components-of-a-time-series.html":
-        ("../../components-of-a-time-series.html#notebook", "Back to the book", "Chapter 127 · Components of a Time Series"),
+        ("../../components-of-a-time-series.html#notebook", "Back to the book", "Chapter 132 · Components of a Time Series"),
     "components-of-a-time-series--solutions.html":
-        ("../../components-of-a-time-series.html#challenges", "Back to the book", "Chapter 127 · Challenge solutions"),
+        ("../../components-of-a-time-series.html#challenges", "Back to the book", "Chapter 132 · Challenge solutions"),
     "forecasting-models.html":
-        ("../../forecasting-models.html#notebook", "Back to the book", "Chapter 128 · Forecasting Models"),
+        ("../../forecasting-models.html#notebook", "Back to the book", "Chapter 133 · Forecasting Models"),
     "forecasting-models--solutions.html":
-        ("../../forecasting-models.html#challenges", "Back to the book", "Chapter 128 · Challenge solutions"),
+        ("../../forecasting-models.html#challenges", "Back to the book", "Chapter 133 · Challenge solutions"),
     "volatility-and-advanced-models.html":
-        ("../../volatility-and-advanced-models.html#notebook", "Back to the book", "Chapter 129 · Volatility & Advanced Models"),
+        ("../../volatility-and-advanced-models.html#notebook", "Back to the book", "Chapter 134 · Volatility & Advanced Models"),
     "volatility-and-advanced-models--solutions.html":
-        ("../../volatility-and-advanced-models.html#challenges", "Back to the book", "Chapter 129 · Challenge solutions"),
+        ("../../volatility-and-advanced-models.html#challenges", "Back to the book", "Chapter 134 · Challenge solutions"),
     "forecast-accuracy.html":
-        ("../../forecast-accuracy.html#notebook", "Back to the book", "Chapter 130 · Forecast Accuracy"),
+        ("../../forecast-accuracy.html#notebook", "Back to the book", "Chapter 135 · Forecast Accuracy"),
     "forecast-accuracy--solutions.html":
-        ("../../forecast-accuracy.html#challenges", "Back to the book", "Chapter 130 · Challenge solutions"),
+        ("../../forecast-accuracy.html#challenges", "Back to the book", "Chapter 135 · Challenge solutions"),
     "case-study-forecasting-retail-sales.html":
-        ("../../case-study-forecasting-retail-sales.html#notebook", "Back to the book", "Chapter 131 · Forecasting Retail Sales"),
+        ("../../case-study-forecasting-retail-sales.html#notebook", "Back to the book", "Chapter 136 · Forecasting Retail Sales"),
     "case-study-forecasting-retail-sales--take-it-further.html":
-        ("../../case-study-forecasting-retail-sales.html#challenges", "Back to the book", "Chapter 131 · Take it further"),
+        ("../../case-study-forecasting-retail-sales.html#challenges", "Back to the book", "Chapter 136 · Take it further"),
     "case-study-financial-volatility-and-risk.html":
-        ("../../case-study-financial-volatility-and-risk.html#notebook", "Back to the book", "Chapter 132 · Financial Volatility & Risk"),
+        ("../../case-study-financial-volatility-and-risk.html#notebook", "Back to the book", "Chapter 137 · Financial Volatility & Risk"),
     "case-study-financial-volatility-and-risk--take-it-further.html":
-        ("../../case-study-financial-volatility-and-risk.html#challenges", "Back to the book", "Chapter 132 · Take it further"),
+        ("../../case-study-financial-volatility-and-risk.html#challenges", "Back to the book", "Chapter 137 · Take it further"),
     "case-study-energy-demand-forecasting.html":
-        ("../../case-study-energy-demand-forecasting.html#notebook", "Back to the book", "Chapter 133 · Energy Demand Forecasting"),
+        ("../../case-study-energy-demand-forecasting.html#notebook", "Back to the book", "Chapter 138 · Energy Demand Forecasting"),
     "case-study-energy-demand-forecasting--take-it-further.html":
-        ("../../case-study-energy-demand-forecasting.html#challenges", "Back to the book", "Chapter 133 · Take it further"),
+        ("../../case-study-energy-demand-forecasting.html#challenges", "Back to the book", "Chapter 138 · Take it further"),
     "case-study-from-forecast-to-decision.html":
-        ("../../case-study-from-forecast-to-decision.html#notebook", "Back to the book", "Chapter 134 · From Forecast to Decision"),
+        ("../../case-study-from-forecast-to-decision.html#notebook", "Back to the book", "Chapter 139 · From Forecast to Decision"),
     "case-study-from-forecast-to-decision--take-it-further.html":
-        ("../../case-study-from-forecast-to-decision.html#challenges", "Back to the book", "Chapter 134 · Take it further"),
+        ("../../case-study-from-forecast-to-decision.html#challenges", "Back to the book", "Chapter 139 · Take it further"),
     "case-study-operationalizing-a-forecast.html":
-        ("../../case-study-operationalizing-a-forecast.html#notebook", "Back to the book", "Chapter 135 · Operationalizing a Forecast"),
+        ("../../case-study-operationalizing-a-forecast.html#notebook", "Back to the book", "Chapter 140 · Operationalizing a Forecast"),
     "case-study-operationalizing-a-forecast--take-it-further.html":
-        ("../../case-study-operationalizing-a-forecast.html#challenges", "Back to the book", "Chapter 135 · Take it further"),
+        ("../../case-study-operationalizing-a-forecast.html#challenges", "Back to the book", "Chapter 140 · Take it further"),
     "case-study-designing-and-analyzing-a-survey.html":
-        ("../../case-study-designing-and-analyzing-a-survey.html#notebook", "Back to the book", "Chapter 136 · Designing and Analyzing a Survey"),
+        ("../../case-study-designing-and-analyzing-a-survey.html#notebook", "Back to the book", "Chapter 70 · Designing and Analyzing a Survey"),
     "case-study-designing-and-analyzing-a-survey--take-it-further.html":
-        ("../../case-study-designing-and-analyzing-a-survey.html#challenges", "Back to the book", "Chapter 136 · Take it further"),
+        ("../../case-study-designing-and-analyzing-a-survey.html#challenges", "Back to the book", "Chapter 70 · Take it further"),
     "case-study-difference-in-differences.html":
-        ("../../case-study-difference-in-differences.html#notebook", "Back to the book", "Chapter 137 · Difference-in-Differences"),
+        ("../../case-study-difference-in-differences.html#notebook", "Back to the book", "Chapter 107 · Difference-in-Differences"),
     "case-study-difference-in-differences--take-it-further.html":
-        ("../../case-study-difference-in-differences.html#challenges", "Back to the book", "Chapter 137 · Take it further"),
+        ("../../case-study-difference-in-differences.html#challenges", "Back to the book", "Chapter 107 · Take it further"),
     "case-study-a-paired-pre-post-study.html":
-        ("../../case-study-a-paired-pre-post-study.html#notebook", "Back to the book", "Chapter 138 · A Paired Pre/Post Study"),
+        ("../../case-study-a-paired-pre-post-study.html#notebook", "Back to the book", "Chapter 91 · A Paired Pre/Post Study"),
     "case-study-a-paired-pre-post-study--take-it-further.html":
-        ("../../case-study-a-paired-pre-post-study.html#challenges", "Back to the book", "Chapter 138 · Take it further"),
+        ("../../case-study-a-paired-pre-post-study.html#challenges", "Back to the book", "Chapter 91 · Take it further"),
     "case-study-customer-lifetime-value.html":
-        ("../../case-study-customer-lifetime-value.html#notebook", "Back to the book", "Chapter 139 · Customer Lifetime Value"),
+        ("../../case-study-customer-lifetime-value.html#notebook", "Back to the book", "Chapter 131 · Customer Lifetime Value"),
     "case-study-customer-lifetime-value--take-it-further.html":
-        ("../../case-study-customer-lifetime-value.html#challenges", "Back to the book", "Chapter 139 · Take it further"),
+        ("../../case-study-customer-lifetime-value.html#challenges", "Back to the book", "Chapter 131 · Take it further"),
     "case-study-forecasting-with-drivers.html":
-        ("../../case-study-forecasting-with-drivers.html#notebook", "Back to the book", "Chapter 140 · Forecasting with Drivers"),
+        ("../../case-study-forecasting-with-drivers.html#notebook", "Back to the book", "Chapter 141 · Forecasting with Drivers"),
     "case-study-forecasting-with-drivers--take-it-further.html":
-        ("../../case-study-forecasting-with-drivers.html#challenges", "Back to the book", "Chapter 140 · Take it further"),
+        ("../../case-study-forecasting-with-drivers.html#challenges", "Back to the book", "Chapter 141 · Take it further"),
     "case-study-multi-file-and-datetime-eda.html":
-        ("../../case-study-multi-file-and-datetime-eda.html#notebook", "Back to the book", "Chapter 141 · Multi-File, Multi-Date EDA"),
+        ("../../case-study-multi-file-and-datetime-eda.html#notebook", "Back to the book", "Chapter 30 · Multi-File, Multi-Date EDA"),
     "case-study-multi-file-and-datetime-eda--take-it-further.html":
-        ("../../case-study-multi-file-and-datetime-eda.html#challenges", "Back to the book", "Chapter 141 · Take it further"),
+        ("../../case-study-multi-file-and-datetime-eda.html#challenges", "Back to the book", "Chapter 30 · Take it further"),
     "what-is-statistics.html":
         ("../../what-is-statistics.html#notebook", "Back to the book", "Chapter 1 · What Is Statistics?"),
     "what-is-statistics--solutions.html":
@@ -285,253 +285,253 @@ MAP = {
     "case-study-palmer-penguins--solutions.html":
         ("../../case-study-palmer-penguins.html#quiz", "Back to the book", "Chapter 29 · Take the quiz &amp; aim for 100%"),
     "probability-fundamentals.html":
-        ("../../probability-fundamentals.html#notebook", "Back to the book", "Chapter 30 · Probability Fundamentals"),
+        ("../../probability-fundamentals.html#notebook", "Back to the book", "Chapter 31 · Probability Fundamentals"),
     "probability-fundamentals--solutions.html":
-        ("../../probability-fundamentals.html#quiz", "Back to the book", "Chapter 30 · Take the quiz &amp; aim for 100%"),
+        ("../../probability-fundamentals.html#quiz", "Back to the book", "Chapter 31 · Take the quiz &amp; aim for 100%"),
     "rules-of-probability.html":
-        ("../../rules-of-probability.html#notebook", "Back to the book", "Chapter 31 · Rules of Probability"),
+        ("../../rules-of-probability.html#notebook", "Back to the book", "Chapter 32 · Rules of Probability"),
     "rules-of-probability--solutions.html":
-        ("../../rules-of-probability.html#quiz", "Back to the book", "Chapter 31 · Take the quiz &amp; aim for 100%"),
+        ("../../rules-of-probability.html#quiz", "Back to the book", "Chapter 32 · Take the quiz &amp; aim for 100%"),
     "counting-and-combinatorics.html":
-        ("../../counting-and-combinatorics.html#notebook", "Back to the book", "Chapter 32 · Counting &amp; Combinatorics"),
+        ("../../counting-and-combinatorics.html#notebook", "Back to the book", "Chapter 33 · Counting &amp; Combinatorics"),
     "counting-and-combinatorics--solutions.html":
-        ("../../counting-and-combinatorics.html#quiz", "Back to the book", "Chapter 32 · Take the quiz &amp; aim for 100%"),
+        ("../../counting-and-combinatorics.html#quiz", "Back to the book", "Chapter 33 · Take the quiz &amp; aim for 100%"),
     "conditional-probability-and-independence.html":
-        ("../../conditional-probability-and-independence.html#notebook", "Back to the book", "Chapter 33 · Conditional Probability &amp; Independence"),
+        ("../../conditional-probability-and-independence.html#notebook", "Back to the book", "Chapter 34 · Conditional Probability &amp; Independence"),
     "conditional-probability-and-independence--solutions.html":
-        ("../../conditional-probability-and-independence.html#quiz", "Back to the book", "Chapter 33 · Take the quiz &amp; aim for 100%"),
+        ("../../conditional-probability-and-independence.html#quiz", "Back to the book", "Chapter 34 · Take the quiz &amp; aim for 100%"),
     "bayes-theorem.html":
-        ("../../bayes-theorem.html#notebook", "Back to the book", "Chapter 34 · Bayes' Theorem &amp; the Law of Total Probability"),
+        ("../../bayes-theorem.html#notebook", "Back to the book", "Chapter 35 · Bayes' Theorem &amp; the Law of Total Probability"),
     "bayes-theorem--solutions.html":
-        ("../../bayes-theorem.html#quiz", "Back to the book", "Chapter 34 · Take the quiz &amp; aim for 100%"),
+        ("../../bayes-theorem.html#quiz", "Back to the book", "Chapter 35 · Take the quiz &amp; aim for 100%"),
     "random-variables-and-expectation.html":
-        ("../../random-variables-and-expectation.html#notebook", "Back to the book", "Chapter 35 · Random Variables &amp; Expectation"),
+        ("../../random-variables-and-expectation.html#notebook", "Back to the book", "Chapter 36 · Random Variables &amp; Expectation"),
     "random-variables-and-expectation--solutions.html":
-        ("../../random-variables-and-expectation.html#quiz", "Back to the book", "Chapter 35 · Take the quiz &amp; aim for 100%"),
+        ("../../random-variables-and-expectation.html#quiz", "Back to the book", "Chapter 36 · Take the quiz &amp; aim for 100%"),
     "probability-by-simulation.html":
-        ("../../probability-by-simulation.html#notebook", "Back to the book", "Chapter 36 · Probability by Simulation (Monte Carlo)"),
+        ("../../probability-by-simulation.html#notebook", "Back to the book", "Chapter 37 · Probability by Simulation (Monte Carlo)"),
     "probability-by-simulation--solutions.html":
-        ("../../probability-by-simulation.html#quiz", "Back to the book", "Chapter 36 · Take the quiz &amp; aim for 100%"),
+        ("../../probability-by-simulation.html#quiz", "Back to the book", "Chapter 37 · Take the quiz &amp; aim for 100%"),
     "discrete-distributions.html":
-        ("../../discrete-distributions.html#notebook", "Back to the book", "Chapter 37 · Discrete Distributions"),
+        ("../../discrete-distributions.html#notebook", "Back to the book", "Chapter 38 · Discrete Distributions"),
     "discrete-distributions--solutions.html":
-        ("../../discrete-distributions.html#quiz", "Back to the book", "Chapter 37 · Take the quiz &amp; aim for 100%"),
+        ("../../discrete-distributions.html#quiz", "Back to the book", "Chapter 38 · Take the quiz &amp; aim for 100%"),
     "continuous-distributions.html":
-        ("../../continuous-distributions.html#notebook", "Back to the book", "Chapter 38 · Continuous Distributions"),
+        ("../../continuous-distributions.html#notebook", "Back to the book", "Chapter 39 · Continuous Distributions"),
     "continuous-distributions--solutions.html":
-        ("../../continuous-distributions.html#quiz", "Back to the book", "Chapter 38 · Take the quiz &amp; aim for 100%"),
+        ("../../continuous-distributions.html#quiz", "Back to the book", "Chapter 39 · Take the quiz &amp; aim for 100%"),
     "the-normal-distribution-in-depth.html":
-        ("../../the-normal-distribution-in-depth.html#notebook", "Back to the book", "Chapter 39 · The Normal Distribution in Depth"),
+        ("../../the-normal-distribution-in-depth.html#notebook", "Back to the book", "Chapter 40 · The Normal Distribution in Depth"),
     "the-normal-distribution-in-depth--solutions.html":
-        ("../../the-normal-distribution-in-depth.html#quiz", "Back to the book", "Chapter 39 · Take the quiz &amp; aim for 100%"),
+        ("../../the-normal-distribution-in-depth.html#quiz", "Back to the book", "Chapter 40 · Take the quiz &amp; aim for 100%"),
     "sampling-distributions-and-the-central-limit-theorem.html":
-        ("../../sampling-distributions-and-the-central-limit-theorem.html#notebook", "Back to the book", "Chapter 40 · Sampling Distributions &amp; the CLT"),
+        ("../../sampling-distributions-and-the-central-limit-theorem.html#notebook", "Back to the book", "Chapter 41 · Sampling Distributions &amp; the CLT"),
     "sampling-distributions-and-the-central-limit-theorem--solutions.html":
-        ("../../sampling-distributions-and-the-central-limit-theorem.html#quiz", "Back to the book", "Chapter 40 · Take the quiz &amp; aim for 100%"),
+        ("../../sampling-distributions-and-the-central-limit-theorem.html#quiz", "Back to the book", "Chapter 41 · Take the quiz &amp; aim for 100%"),
     "distributions-for-inference.html":
-        ("../../distributions-for-inference.html#notebook", "Back to the book", "Chapter 41 · Distributions for Inference"),
+        ("../../distributions-for-inference.html#notebook", "Back to the book", "Chapter 42 · Distributions for Inference"),
     "distributions-for-inference--solutions.html":
-        ("../../distributions-for-inference.html#quiz", "Back to the book", "Chapter 41 · Take the quiz &amp; aim for 100%"),
+        ("../../distributions-for-inference.html#quiz", "Back to the book", "Chapter 42 · Take the quiz &amp; aim for 100%"),
     "joint-marginal-and-conditional-densities.html":
-        ("../../joint-marginal-and-conditional-densities.html#notebook", "Back to the book", "Chapter 42 · Joint, Marginal &amp; Conditional Densities"),
+        ("../../joint-marginal-and-conditional-densities.html#notebook", "Back to the book", "Chapter 43 · Joint, Marginal &amp; Conditional Densities"),
     "joint-marginal-and-conditional-densities--solutions.html":
-        ("../../joint-marginal-and-conditional-densities.html#quiz", "Back to the book", "Chapter 42 · Take the quiz &amp; aim for 100%"),
+        ("../../joint-marginal-and-conditional-densities.html#quiz", "Back to the book", "Chapter 43 · Take the quiz &amp; aim for 100%"),
     "transformations-of-random-variables.html":
-        ("../../transformations-of-random-variables.html#notebook", "Back to the book", "Chapter 43 · Transformations of Random Variables"),
+        ("../../transformations-of-random-variables.html#notebook", "Back to the book", "Chapter 44 · Transformations of Random Variables"),
     "transformations-of-random-variables--solutions.html":
-        ("../../transformations-of-random-variables.html#quiz", "Back to the book", "Chapter 43 · Take the quiz &amp; aim for 100%"),
+        ("../../transformations-of-random-variables.html#quiz", "Back to the book", "Chapter 44 · Take the quiz &amp; aim for 100%"),
     "conditional-expectation-and-the-tower-property.html":
-        ("../../conditional-expectation-and-the-tower-property.html#notebook", "Back to the book", "Chapter 44 · Conditional Expectation &amp; the Tower Property"),
+        ("../../conditional-expectation-and-the-tower-property.html#notebook", "Back to the book", "Chapter 45 · Conditional Expectation &amp; the Tower Property"),
     "conditional-expectation-and-the-tower-property--solutions.html":
-        ("../../conditional-expectation-and-the-tower-property.html#quiz", "Back to the book", "Chapter 44 · Take the quiz &amp; aim for 100%"),
+        ("../../conditional-expectation-and-the-tower-property.html#quiz", "Back to the book", "Chapter 45 · Take the quiz &amp; aim for 100%"),
     "moments-mgfs-and-inequalities.html":
-        ("../../moments-mgfs-and-inequalities.html#notebook", "Back to the book", "Chapter 45 · Moments, MGFs &amp; Inequalities"),
+        ("../../moments-mgfs-and-inequalities.html#notebook", "Back to the book", "Chapter 46 · Moments, MGFs &amp; Inequalities"),
     "moments-mgfs-and-inequalities--solutions.html":
-        ("../../moments-mgfs-and-inequalities.html#quiz", "Back to the book", "Chapter 45 · Take the quiz &amp; aim for 100%"),
+        ("../../moments-mgfs-and-inequalities.html#quiz", "Back to the book", "Chapter 46 · Take the quiz &amp; aim for 100%"),
     "estimation-theory.html":
-        ("../../estimation-theory.html#notebook", "Back to the book", "Chapter 46 · Estimation Theory"),
+        ("../../estimation-theory.html#notebook", "Back to the book", "Chapter 47 · Estimation Theory"),
     "estimation-theory--solutions.html":
-        ("../../estimation-theory.html#quiz", "Back to the book", "Chapter 46 · Take the quiz &amp; aim for 100%"),
+        ("../../estimation-theory.html#quiz", "Back to the book", "Chapter 47 · Take the quiz &amp; aim for 100%"),
     "the-probability-distribution-framework.html":
-        ("../../the-probability-distribution-framework.html#notebook", "Back to the book", "Chapter 47 · The Probability Distribution Framework"),
+        ("../../the-probability-distribution-framework.html#notebook", "Back to the book", "Chapter 48 · The Probability Distribution Framework"),
     "case-study-e-commerce-conversions-bernoulli.html":
-        ("../../case-study-e-commerce-conversions-bernoulli.html#notebook", "Back to the book", "Chapter 48 · E-commerce Conversions (Bernoulli)"),
+        ("../../case-study-e-commerce-conversions-bernoulli.html#notebook", "Back to the book", "Chapter 49 · E-commerce Conversions (Bernoulli)"),
     "case-study-manufacturing-defects-binomial.html":
-        ("../../case-study-manufacturing-defects-binomial.html#notebook", "Back to the book", "Chapter 49 · Manufacturing Defects (Binomial)"),
+        ("../../case-study-manufacturing-defects-binomial.html#notebook", "Back to the book", "Chapter 50 · Manufacturing Defects (Binomial)"),
     "case-study-server-traffic-spikes-poisson.html":
-        ("../../case-study-server-traffic-spikes-poisson.html#notebook", "Back to the book", "Chapter 50 · Server Traffic Spikes (Poisson)"),
+        ("../../case-study-server-traffic-spikes-poisson.html#notebook", "Back to the book", "Chapter 51 · Server Traffic Spikes (Poisson)"),
     "case-study-sales-calls-to-first-win-geometric.html":
-        ("../../case-study-sales-calls-to-first-win-geometric.html#notebook", "Back to the book", "Chapter 51 · Sales Calls to First Win (Geometric)"),
+        ("../../case-study-sales-calls-to-first-win-geometric.html#notebook", "Back to the book", "Chapter 52 · Sales Calls to First Win (Geometric)"),
     "case-study-wildlife-capture-recapture-hypergeometric.html":
-        ("../../case-study-wildlife-capture-recapture-hypergeometric.html#notebook", "Back to the book", "Chapter 52 · Capture-Recapture (Hypergeometric)"),
+        ("../../case-study-wildlife-capture-recapture-hypergeometric.html#notebook", "Back to the book", "Chapter 53 · Capture-Recapture (Hypergeometric)"),
     "case-study-software-reliability-testing-negative-binomial.html":
-        ("../../case-study-software-reliability-testing-negative-binomial.html#notebook", "Back to the book", "Chapter 53 · Software Reliability (Negative Binomial)"),
+        ("../../case-study-software-reliability-testing-negative-binomial.html#notebook", "Back to the book", "Chapter 54 · Software Reliability (Negative Binomial)"),
     "case-study-standardized-exam-scores-normal.html":
-        ("../../case-study-standardized-exam-scores-normal.html#notebook", "Back to the book", "Chapter 54 · Exam Scores (Normal)"),
+        ("../../case-study-standardized-exam-scores-normal.html#notebook", "Back to the book", "Chapter 55 · Exam Scores (Normal)"),
     "case-study-hardware-lifespans-exponential.html":
-        ("../../case-study-hardware-lifespans-exponential.html#notebook", "Back to the book", "Chapter 55 · Hardware Lifespans (Exponential)"),
+        ("../../case-study-hardware-lifespans-exponential.html#notebook", "Back to the book", "Chapter 56 · Hardware Lifespans (Exponential)"),
     "case-study-regional-rainfall-gamma.html":
-        ("../../case-study-regional-rainfall-gamma.html#notebook", "Back to the book", "Chapter 56 · Regional Rainfall (Gamma)"),
+        ("../../case-study-regional-rainfall-gamma.html#notebook", "Back to the book", "Chapter 57 · Regional Rainfall (Gamma)"),
     "case-study-freight-weights-and-the-clt-central-limit-theorem.html":
-        ("../../case-study-freight-weights-and-the-clt-central-limit-theorem.html#notebook", "Back to the book", "Chapter 57 · Freight Weights & the CLT"),
+        ("../../case-study-freight-weights-and-the-clt-central-limit-theorem.html#notebook", "Back to the book", "Chapter 58 · Freight Weights & the CLT"),
     "case-study-clinical-trial-efficacy-student-s-t.html":
-        ("../../case-study-clinical-trial-efficacy-student-s-t.html#notebook", "Back to the book", "Chapter 58 · Clinical Trial Efficacy (Student's t)"),
+        ("../../case-study-clinical-trial-efficacy-student-s-t.html#notebook", "Back to the book", "Chapter 59 · Clinical Trial Efficacy (Student's t)"),
     "case-study-survey-demographics-chi-square.html":
-        ("../../case-study-survey-demographics-chi-square.html#notebook", "Back to the book", "Chapter 59 · Survey Demographics (Chi-Square)"),
+        ("../../case-study-survey-demographics-chi-square.html#notebook", "Back to the book", "Chapter 60 · Survey Demographics (Chi-Square)"),
     "case-study-crop-yield-by-fertilizer-f-anova.html":
-        ("../../case-study-crop-yield-by-fertilizer-f-anova.html#notebook", "Back to the book", "Chapter 60 · Crop Yield by Fertilizer (F / ANOVA)"),
+        ("../../case-study-crop-yield-by-fertilizer-f-anova.html#notebook", "Back to the book", "Chapter 61 · Crop Yield by Fertilizer (F / ANOVA)"),
     "why-we-sample.html":
-        ("../../why-we-sample.html#notebook", "Back to the book", "Chapter 61 · Why We Sample"),
+        ("../../why-we-sample.html#notebook", "Back to the book", "Chapter 62 · Why We Sample"),
     "why-we-sample--solutions.html":
-        ("../../why-we-sample.html#challenges", "Back to the book", "Chapter 61 · Why We Sample"),
+        ("../../why-we-sample.html#challenges", "Back to the book", "Chapter 62 · Why We Sample"),
     "probability-sampling-methods.html":
-        ("../../probability-sampling-methods.html#notebook", "Back to the book", "Chapter 62 · Probability Sampling Methods"),
+        ("../../probability-sampling-methods.html#notebook", "Back to the book", "Chapter 63 · Probability Sampling Methods"),
     "probability-sampling-methods--solutions.html":
-        ("../../probability-sampling-methods.html#challenges", "Back to the book", "Chapter 62 · Probability Sampling Methods"),
+        ("../../probability-sampling-methods.html#challenges", "Back to the book", "Chapter 63 · Probability Sampling Methods"),
     "non-probability-sampling-methods.html":
-        ("../../non-probability-sampling-methods.html#notebook", "Back to the book", "Chapter 63 · Non-Probability Sampling Methods"),
+        ("../../non-probability-sampling-methods.html#notebook", "Back to the book", "Chapter 64 · Non-Probability Sampling Methods"),
     "non-probability-sampling-methods--solutions.html":
-        ("../../non-probability-sampling-methods.html#challenges", "Back to the book", "Chapter 63 · Non-Probability Sampling Methods"),
+        ("../../non-probability-sampling-methods.html#challenges", "Back to the book", "Chapter 64 · Non-Probability Sampling Methods"),
     "determining-sample-size.html":
-        ("../../determining-sample-size.html#notebook", "Back to the book", "Chapter 64 · Determining Sample Size"),
+        ("../../determining-sample-size.html#notebook", "Back to the book", "Chapter 65 · Determining Sample Size"),
     "determining-sample-size--solutions.html":
-        ("../../determining-sample-size.html#challenges", "Back to the book", "Chapter 64 · Determining Sample Size"),
+        ("../../determining-sample-size.html#challenges", "Back to the book", "Chapter 65 · Determining Sample Size"),
     "study-design-and-data-quality.html":
-        ("../../study-design-and-data-quality.html#notebook", "Back to the book", "Chapter 65 · Study Design & Data Quality"),
+        ("../../study-design-and-data-quality.html#notebook", "Back to the book", "Chapter 66 · Study Design & Data Quality"),
     "study-design-and-data-quality--solutions.html":
-        ("../../study-design-and-data-quality.html#challenges", "Back to the book", "Chapter 65 · Study Design & Data Quality"),
+        ("../../study-design-and-data-quality.html#challenges", "Back to the book", "Chapter 66 · Study Design & Data Quality"),
     "bias-in-data-collection.html":
-        ("../../bias-in-data-collection.html#notebook", "Back to the book", "Chapter 66 · Bias in Data Collection"),
+        ("../../bias-in-data-collection.html#notebook", "Back to the book", "Chapter 67 · Bias in Data Collection"),
     "bias-in-data-collection--solutions.html":
-        ("../../bias-in-data-collection.html#challenges", "Back to the book", "Chapter 66 · Bias in Data Collection"),
+        ("../../bias-in-data-collection.html#challenges", "Back to the book", "Chapter 67 · Bias in Data Collection"),
     "point-vs-interval-estimation.html":
-        ("../../point-vs-interval-estimation.html#notebook", "Back to the book", "Chapter 69 · Point vs. Interval Estimation"),
+        ("../../point-vs-interval-estimation.html#notebook", "Back to the book", "Chapter 71 · Point vs. Interval Estimation"),
     "point-vs-interval-estimation--solutions.html":
-        ("../../point-vs-interval-estimation.html#challenges", "Back to the book", "Chapter 69 · Point vs. Interval Estimation"),
+        ("../../point-vs-interval-estimation.html#challenges", "Back to the book", "Chapter 71 · Point vs. Interval Estimation"),
     "confidence-intervals-for-a-mean.html":
-        ("../../confidence-intervals-for-a-mean.html#notebook", "Back to the book", "Chapter 70 · Confidence Intervals for a Mean"),
+        ("../../confidence-intervals-for-a-mean.html#notebook", "Back to the book", "Chapter 72 · Confidence Intervals for a Mean"),
     "confidence-intervals-for-a-mean--solutions.html":
-        ("../../confidence-intervals-for-a-mean.html#challenges", "Back to the book", "Chapter 70 · Confidence Intervals for a Mean"),
+        ("../../confidence-intervals-for-a-mean.html#challenges", "Back to the book", "Chapter 72 · Confidence Intervals for a Mean"),
     "confidence-intervals-for-proportions-and-differences.html":
-        ("../../confidence-intervals-for-proportions-and-differences.html#notebook", "Back to the book", "Chapter 71 · Confidence Intervals for Proportions & Differences"),
+        ("../../confidence-intervals-for-proportions-and-differences.html#notebook", "Back to the book", "Chapter 73 · Confidence Intervals for Proportions & Differences"),
     "confidence-intervals-for-proportions-and-differences--solutions.html":
-        ("../../confidence-intervals-for-proportions-and-differences.html#challenges", "Back to the book", "Chapter 71 · Confidence Intervals for Proportions & Differences"),
+        ("../../confidence-intervals-for-proportions-and-differences.html#challenges", "Back to the book", "Chapter 73 · Confidence Intervals for Proportions & Differences"),
     "margin-of-error.html":
-        ("../../margin-of-error.html#notebook", "Back to the book", "Chapter 72 · Margin of Error"),
+        ("../../margin-of-error.html#notebook", "Back to the book", "Chapter 74 · Margin of Error"),
     "margin-of-error--solutions.html":
-        ("../../margin-of-error.html#challenges", "Back to the book", "Chapter 72 · Margin of Error"),
+        ("../../margin-of-error.html#challenges", "Back to the book", "Chapter 74 · Margin of Error"),
     "resampling-and-simulation.html":
-        ("../../resampling-and-simulation.html#notebook", "Back to the book", "Chapter 73 · Resampling & Simulation"),
+        ("../../resampling-and-simulation.html#notebook", "Back to the book", "Chapter 75 · Resampling & Simulation"),
     "resampling-and-simulation--solutions.html":
-        ("../../resampling-and-simulation.html#challenges", "Back to the book", "Chapter 73 · Resampling & Simulation"),
+        ("../../resampling-and-simulation.html#challenges", "Back to the book", "Chapter 75 · Resampling & Simulation"),
     "the-logic-of-hypothesis-testing.html":
-        ("../../the-logic-of-hypothesis-testing.html#notebook", "Back to the book", "Chapter 74 · The Logic of Hypothesis Testing"),
+        ("../../the-logic-of-hypothesis-testing.html#notebook", "Back to the book", "Chapter 76 · The Logic of Hypothesis Testing"),
     "the-logic-of-hypothesis-testing--solutions.html":
-        ("../../the-logic-of-hypothesis-testing.html#challenges", "Back to the book", "Chapter 74 · The Logic of Hypothesis Testing"),
+        ("../../the-logic-of-hypothesis-testing.html#challenges", "Back to the book", "Chapter 76 · The Logic of Hypothesis Testing"),
     "significance-p-values-and-errors.html":
-        ("../../significance-p-values-and-errors.html#notebook", "Back to the book", "Chapter 75 · Significance, p-values &amp; Errors"),
+        ("../../significance-p-values-and-errors.html#notebook", "Back to the book", "Chapter 77 · Significance, p-values &amp; Errors"),
     "significance-p-values-and-errors--solutions.html":
-        ("../../significance-p-values-and-errors.html#challenges", "Back to the book", "Chapter 75 · Significance, p-values &amp; Errors"),
+        ("../../significance-p-values-and-errors.html#challenges", "Back to the book", "Chapter 77 · Significance, p-values &amp; Errors"),
     "z-tests.html":
-        ("../../z-tests.html#notebook", "Back to the book", "Chapter 76 · z-Tests"),
+        ("../../z-tests.html#notebook", "Back to the book", "Chapter 78 · z-Tests"),
     "z-tests--solutions.html":
-        ("../../z-tests.html#challenges", "Back to the book", "Chapter 76 · z-Tests"),
+        ("../../z-tests.html#challenges", "Back to the book", "Chapter 78 · z-Tests"),
     "t-tests.html":
-        ("../../t-tests.html#notebook", "Back to the book", "Chapter 77 · t-Tests"),
+        ("../../t-tests.html#notebook", "Back to the book", "Chapter 79 · t-Tests"),
     "t-tests--solutions.html":
-        ("../../t-tests.html#challenges", "Back to the book", "Chapter 77 · t-Tests"),
+        ("../../t-tests.html#challenges", "Back to the book", "Chapter 79 · t-Tests"),
     "anova.html":
-        ("../../anova.html#notebook", "Back to the book", "Chapter 78 · ANOVA"),
+        ("../../anova.html#notebook", "Back to the book", "Chapter 80 · ANOVA"),
     "anova--solutions.html":
-        ("../../anova.html#challenges", "Back to the book", "Chapter 78 · ANOVA"),
+        ("../../anova.html#challenges", "Back to the book", "Chapter 80 · ANOVA"),
     "chi-square-tests.html":
-        ("../../chi-square-tests.html#notebook", "Back to the book", "Chapter 79 · Chi-Square Tests"),
+        ("../../chi-square-tests.html#notebook", "Back to the book", "Chapter 81 · Chi-Square Tests"),
     "chi-square-tests--solutions.html":
-        ("../../chi-square-tests.html#challenges", "Back to the book", "Chapter 79 · Chi-Square Tests"),
+        ("../../chi-square-tests.html#challenges", "Back to the book", "Chapter 81 · Chi-Square Tests"),
     "nonparametric-tests.html":
-        ("../../nonparametric-tests.html#notebook", "Back to the book", "Chapter 80 · Nonparametric Tests"),
+        ("../../nonparametric-tests.html#notebook", "Back to the book", "Chapter 82 · Nonparametric Tests"),
     "nonparametric-tests--solutions.html":
-        ("../../nonparametric-tests.html#challenges", "Back to the book", "Chapter 80 · Nonparametric Tests"),
+        ("../../nonparametric-tests.html#challenges", "Back to the book", "Chapter 82 · Nonparametric Tests"),
     "choosing-the-right-test.html":
-        ("../../choosing-the-right-test.html#notebook", "Back to the book", "Chapter 81 · Choosing the Right Test"),
+        ("../../choosing-the-right-test.html#notebook", "Back to the book", "Chapter 83 · Choosing the Right Test"),
     "choosing-the-right-test--solutions.html":
-        ("../../choosing-the-right-test.html#challenges", "Back to the book", "Chapter 81 · Choosing the Right Test"),
+        ("../../choosing-the-right-test.html#challenges", "Back to the book", "Chapter 83 · Choosing the Right Test"),
     "a-b-testing-and-online-experiments.html":
-        ("../../a-b-testing-and-online-experiments.html#notebook", "Back to the book", "Chapter 82 · A/B Testing &amp; Online Experiments"),
+        ("../../a-b-testing-and-online-experiments.html#notebook", "Back to the book", "Chapter 84 · A/B Testing &amp; Online Experiments"),
     "a-b-testing-and-online-experiments--solutions.html":
-        ("../../a-b-testing-and-online-experiments.html#challenges", "Back to the book", "Chapter 82 · A/B Testing &amp; Online Experiments"),
+        ("../../a-b-testing-and-online-experiments.html#challenges", "Back to the book", "Chapter 84 · A/B Testing &amp; Online Experiments"),
     "review-and-choosing-the-right-test.html":
-        ("../../review-and-choosing-the-right-test.html#notebook", "Back to the book", "Chapter 83 · Review &amp; Choosing the Right Test"),
+        ("../../review-and-choosing-the-right-test.html#notebook", "Back to the book", "Chapter 85 · Review &amp; Choosing the Right Test"),
     "case-study-a-web-a-b-test.html":
-        ("../../case-study-a-web-a-b-test.html#notebook", "Back to the book", "Chapter 84 · Case Study: A Web A/B Test"),
+        ("../../case-study-a-web-a-b-test.html#notebook", "Back to the book", "Chapter 86 · Case Study: A Web A/B Test"),
     "case-study-comparing-marketing-channels.html":
-        ("../../case-study-comparing-marketing-channels.html#notebook", "Back to the book", "Chapter 85 · Case Study: Comparing Marketing Channels"),
+        ("../../case-study-comparing-marketing-channels.html#notebook", "Back to the book", "Chapter 87 · Case Study: Comparing Marketing Channels"),
     "case-study-a-clinical-trial.html":
-        ("../../case-study-a-clinical-trial.html#notebook", "Back to the book", "Chapter 86 · Case Study: A Clinical Trial"),
+        ("../../case-study-a-clinical-trial.html#notebook", "Back to the book", "Chapter 88 · Case Study: A Clinical Trial"),
     "case-study-a-customer-satisfaction-survey.html":
-        ("../../case-study-a-customer-satisfaction-survey.html#notebook", "Back to the book", "Chapter 87 · Case Study: A Customer Satisfaction Survey"),
+        ("../../case-study-a-customer-satisfaction-survey.html#notebook", "Back to the book", "Chapter 89 · Case Study: A Customer Satisfaction Survey"),
     "case-study-manufacturing-quality.html":
-        ("../../case-study-manufacturing-quality.html#notebook", "Back to the book", "Chapter 88 · Case Study: Manufacturing Quality"),
+        ("../../case-study-manufacturing-quality.html#notebook", "Back to the book", "Chapter 90 · Case Study: Manufacturing Quality"),
     "covariance.html":
-        ("../../covariance.html#notebook", "Back to the book", "Chapter 89 · Covariance"),
+        ("../../covariance.html#notebook", "Back to the book", "Chapter 92 · Covariance"),
     "covariance--solutions.html":
-        ("../../covariance.html#challenges", "Back to the book", "Chapter 89 · Covariance"),
+        ("../../covariance.html#challenges", "Back to the book", "Chapter 92 · Covariance"),
     "correlation-coefficients.html":
-        ("../../correlation-coefficients.html#notebook", "Back to the book", "Chapter 90 · Correlation Coefficients"),
+        ("../../correlation-coefficients.html#notebook", "Back to the book", "Chapter 93 · Correlation Coefficients"),
     "correlation-coefficients--solutions.html":
-        ("../../correlation-coefficients.html#challenges", "Back to the book", "Chapter 90 · Correlation Coefficients"),
+        ("../../correlation-coefficients.html#challenges", "Back to the book", "Chapter 93 · Correlation Coefficients"),
     "correlation-vs-causation.html":
-        ("../../correlation-vs-causation.html#notebook", "Back to the book", "Chapter 91 · Correlation vs. Causation"),
+        ("../../correlation-vs-causation.html#notebook", "Back to the book", "Chapter 94 · Correlation vs. Causation"),
     "correlation-vs-causation--solutions.html":
-        ("../../correlation-vs-causation.html#challenges", "Back to the book", "Chapter 91 · Correlation vs. Causation"),
+        ("../../correlation-vs-causation.html#challenges", "Back to the book", "Chapter 94 · Correlation vs. Causation"),
     "simple-linear-regression.html":
-        ("../../simple-linear-regression.html#notebook", "Back to the book", "Chapter 92 · Simple Linear Regression"),
+        ("../../simple-linear-regression.html#notebook", "Back to the book", "Chapter 95 · Simple Linear Regression"),
     "simple-linear-regression--solutions.html":
-        ("../../simple-linear-regression.html#challenges", "Back to the book", "Chapter 92 · Simple Linear Regression"),
+        ("../../simple-linear-regression.html#challenges", "Back to the book", "Chapter 95 · Simple Linear Regression"),
     "the-ols-framework.html":
-        ("../../the-ols-framework.html#notebook", "Back to the book", "Chapter 93 · The OLS Framework"),
+        ("../../the-ols-framework.html#notebook", "Back to the book", "Chapter 96 · The OLS Framework"),
     "the-ols-framework--solutions.html":
-        ("../../the-ols-framework.html#challenges", "Back to the book", "Chapter 93 · The OLS Framework"),
+        ("../../the-ols-framework.html#challenges", "Back to the book", "Chapter 96 · The OLS Framework"),
     "multiple-linear-regression.html":
-        ("../../multiple-linear-regression.html#notebook", "Back to the book", "Chapter 94 · Multiple Linear Regression"),
+        ("../../multiple-linear-regression.html#notebook", "Back to the book", "Chapter 97 · Multiple Linear Regression"),
     "multiple-linear-regression--solutions.html":
-        ("../../multiple-linear-regression.html#challenges", "Back to the book", "Chapter 94 · Multiple Linear Regression"),
+        ("../../multiple-linear-regression.html#challenges", "Back to the book", "Chapter 97 · Multiple Linear Regression"),
     "regression-assumptions-and-diagnostics.html":
-        ("../../regression-assumptions-and-diagnostics.html#notebook", "Back to the book", "Chapter 95 · Regression Assumptions & Diagnostics"),
+        ("../../regression-assumptions-and-diagnostics.html#notebook", "Back to the book", "Chapter 98 · Regression Assumptions & Diagnostics"),
     "regression-assumptions-and-diagnostics--solutions.html":
-        ("../../regression-assumptions-and-diagnostics.html#challenges", "Back to the book", "Chapter 95 · Regression Assumptions & Diagnostics"),
+        ("../../regression-assumptions-and-diagnostics.html#challenges", "Back to the book", "Chapter 98 · Regression Assumptions & Diagnostics"),
     "logistic-regression.html":
-        ("../../logistic-regression.html#notebook", "Back to the book", "Chapter 96 · Logistic Regression"),
+        ("../../logistic-regression.html#notebook", "Back to the book", "Chapter 99 · Logistic Regression"),
     "logistic-regression--solutions.html":
-        ("../../logistic-regression.html#challenges", "Back to the book", "Chapter 96 · Logistic Regression"),
+        ("../../logistic-regression.html#challenges", "Back to the book", "Chapter 99 · Logistic Regression"),
     "regularization-and-flexible-models.html":
-        ("../../regularization-and-flexible-models.html#notebook", "Back to the book", "Chapter 97 · Regularization & Flexible Models"),
+        ("../../regularization-and-flexible-models.html#notebook", "Back to the book", "Chapter 100 · Regularization & Flexible Models"),
     "regularization-and-flexible-models--solutions.html":
-        ("../../regularization-and-flexible-models.html#challenges", "Back to the book", "Chapter 97 · Regularization & Flexible Models"),
+        ("../../regularization-and-flexible-models.html#challenges", "Back to the book", "Chapter 100 · Regularization & Flexible Models"),
     "generalized-linear-models.html":
-        ("../../generalized-linear-models.html#notebook", "Back to the book", "Chapter 98 · Generalized Linear Models"),
+        ("../../generalized-linear-models.html#notebook", "Back to the book", "Chapter 101 · Generalized Linear Models"),
     "generalized-linear-models--solutions.html":
-        ("../../generalized-linear-models.html#challenges", "Back to the book", "Chapter 98 · Generalized Linear Models"),
+        ("../../generalized-linear-models.html#challenges", "Back to the book", "Chapter 101 · Generalized Linear Models"),
     "econometrics-and-panel-data.html":
-        ("../../econometrics-and-panel-data.html#notebook", "Back to the book", "Chapter 99 · Econometrics & Panel Data"),
+        ("../../econometrics-and-panel-data.html#notebook", "Back to the book", "Chapter 102 · Econometrics & Panel Data"),
     "econometrics-and-panel-data--solutions.html":
-        ("../../econometrics-and-panel-data.html#challenges", "Back to the book", "Chapter 99 · Econometrics & Panel Data"),
+        ("../../econometrics-and-panel-data.html#challenges", "Back to the book", "Chapter 102 · Econometrics & Panel Data"),
     "case-study-predicting-ames-house-prices.html":
-        ("../../case-study-predicting-ames-house-prices.html#notebook", "Back to the book", "Chapter 100 · Case Study: Predicting Ames House Prices"),
+        ("../../case-study-predicting-ames-house-prices.html#notebook", "Back to the book", "Chapter 103 · Case Study: Predicting Ames House Prices"),
     "case-study-predicting-ames-house-prices--take-it-further.html":
-        ("../../case-study-predicting-ames-house-prices.html#challenges", "Back to the book", "Chapter 100 · Take It Further"),
+        ("../../case-study-predicting-ames-house-prices.html#challenges", "Back to the book", "Chapter 103 · Take It Further"),
     "case-study-logistic-regression-in-action.html":
-        ("../../case-study-logistic-regression-in-action.html#notebook", "Back to the book", "Chapter 101 · Case Study: Logistic Regression in Action"),
+        ("../../case-study-logistic-regression-in-action.html#notebook", "Back to the book", "Chapter 104 · Case Study: Logistic Regression in Action"),
     "case-study-logistic-regression-in-action--take-it-further.html":
-        ("../../case-study-logistic-regression-in-action.html#challenges", "Back to the book", "Chapter 101 · Take It Further"),
+        ("../../case-study-logistic-regression-in-action.html#challenges", "Back to the book", "Chapter 104 · Take It Further"),
     "case-study-forecasting-daily-bike-share-demand.html":
-        ("../../case-study-forecasting-daily-bike-share-demand.html#notebook", "Back to the book", "Chapter 102 · Case Study: Forecasting Daily Bike-Share Demand"),
+        ("../../case-study-forecasting-daily-bike-share-demand.html#notebook", "Back to the book", "Chapter 105 · Case Study: Forecasting Daily Bike-Share Demand"),
     "case-study-forecasting-daily-bike-share-demand--take-it-further.html":
-        ("../../case-study-forecasting-daily-bike-share-demand.html#challenges", "Back to the book", "Chapter 102 · Take It Further"),
+        ("../../case-study-forecasting-daily-bike-share-demand.html#challenges", "Back to the book", "Chapter 105 · Take It Further"),
     "case-study-predicting-medical-charges.html":
-        ("../../case-study-predicting-medical-charges.html#notebook", "Back to the book", "Chapter 103 · Case Study: Predicting Medical Charges"),
+        ("../../case-study-predicting-medical-charges.html#notebook", "Back to the book", "Chapter 106 · Case Study: Predicting Medical Charges"),
     "case-study-predicting-medical-charges--take-it-further.html":
-        ("../../case-study-predicting-medical-charges.html#challenges", "Back to the book", "Chapter 103 · Take It Further"),
+        ("../../case-study-predicting-medical-charges.html#challenges", "Back to the book", "Chapter 106 · Take It Further"),
     "bayesian-inference-in-practice.html":
         ("../../bayesian-inference-in-practice.html#notebook", "Back to the book", "Chapter 142 · Bayesian Inference in Practice"),
     "bayesian-inference-in-practice--solutions.html":
