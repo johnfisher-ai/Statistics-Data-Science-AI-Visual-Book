@@ -11,16 +11,21 @@ pages. Public repo, published to GitHub Pages on every push to `main`.
 
 These have each cost real time when broken. They are not preferences.
 
-- **Never push.** The author pushes with `bash scripts/push_to_github.sh "message"` and reviews
-  chapter by chapter. Commit freely; pushing is the author's.
-- **Never `git commit --amend`, rebase, or rewrite history.** Always make a new follow-up commit.
-  The author pushes out of band, so treat every existing commit as possibly published. This has
-  bitten twice. Recovery without a force push: `git fetch`, `git reset --soft origin/main`,
-  re-commit the delta.
+- **Push to `main` once the checks pass.** Decided October 27, 2026, replacing the rule that
+  Claude never pushes. Claude Code sessions commit and push straight to `main`, one commit per
+  chapter or round of edits, and the author reads each change on the live site. The workflow, the
+  writing rules and the checks are in the private companion repository
+  `johnfisher-ai/visual-book-notes`. Read its CLAUDE.md and the files it lists first. If a push to
+  `main` is refused, push to a branch named for the work and tell the author.
+- **Never `git commit --amend`, rebase, force-push or rewrite history.** Always make a new
+  follow-up commit, and undo a pushed change with `git revert`. Treat every existing commit as
+  published. Recovery for a local commit that went wrong: `git fetch`,
+  `git reset --soft origin/main`, re-commit the delta.
 - **No `Co-Authored-By` trailer** on commits.
 - **The repo is PUBLIC.** Never store or use the GitHub password. The saleable PDF lives outside
   this repo.
-- **On resume:** `git log --oneline -5` and confirm with the author what is already pushed.
+- **On resume:** `git log --oneline -5`. A cloud session clones from GitHub, so everything in
+  it is already pushed. The author pushes any edits made on his own computer before a session.
 
 ---
 
@@ -36,7 +41,7 @@ These have each cost real time when broken. They are not preferences.
 | `assets/img/*.png` | Chapter and report figures. |
 | `assets/css/`, `assets/js/` | `book.css`, `chapter.css`, `quiz.css`, `report.css`, `quiz.js`. |
 | `toc.html` | **The manifest.** Single source of truth for structure. |
-| `scripts/` | `push_to_github.sh`, `apply_chapter_nav.py`, `inject_notebook_backlinks.py`. |
+| `scripts/` | `apply_chapter_nav.py`, `inject_notebook_backlinks.py`, `check_links.py`, `build_notebook_html.sh`, and `push_to_github.sh` (the author's old manual push, unused by sessions). |
 
 The repo root **is** the `book/` folder. A `book/` segment inside any URL is a dead link.
 Source material (raw images, reference books, sample data) lives in the parent workspace
@@ -87,6 +92,8 @@ page `<h1>`. Change one, change all three.
   cutesy filler adverbs, and stacked negative parallelism ("not X, it's Y"). Keep real idioms a
   person actually says. Read the intro and closing paragraphs for the essay-contest ring before
   committing.
+- **The 12 writing rules** in the companion repository's CLAUDE.md apply to all new and edited
+  prose here, alongside the rules in this section.
 - **Keep `$` and `~` out of notebook markdown prose.** Two `$` on a line render as MathJax; two
   `~` render as strikethrough. Write "338,000 dollars" and "about 0.89". Both are fine inside
   code cells and plot titles.
@@ -119,8 +126,11 @@ Build → execute → verify → render → wire.
 5. **Re-inject backlinks**: `python3 scripts/inject_notebook_backlinks.py`. Rendering strips the
    "Back to the book" card. The script's `MAP` must gain an entry for every new notebook.
 
-In practice you can skip 4 and 5 locally: the deploy workflow re-renders any changed `.ipynb`
-and re-injects backlinks automatically. It does **not** execute, so step 2 is still yours.
+Always do 4 and 5, and commit the rendered HTML in the same commit as its notebook. The deploy
+re-renders only the notebooks a push changes and publishes the committed HTML for all the others,
+so HTML left uncommitted goes back to its old version at the next push that doesn't touch that
+notebook. The October 16 commit changed 199 notebooks without their HTML, and their rendered pages
+were committed on October 27. The deploy does **not** execute, so step 2 is always yours.
 
 **Kernel:** `python3 -m ipykernel install --user --name nbtest-py` if missing. System python3
 has pandas, numpy, matplotlib, seaborn, scipy, scikit-learn, statsmodels, nbformat, nbclient,
@@ -199,3 +209,7 @@ no British spellings                 · except the protected cases listed above
 ```
 
 Current baseline: 345 notebooks, 700 plots, 0 errors, 205 chapters, 86 reports, 134 datasets.
+
+The companion repository's `tools/checks/run.sh` runs these checks on the changed pages, along with
+the HTML validator, axe and the naming scan. Its punch list records the October 27 baseline for
+the checks the book doesn't pass yet.
