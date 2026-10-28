@@ -99,6 +99,11 @@ page `<h1>`. Change one, change all three.
   code cells and plot titles.
 - Per-part theme colour lives only in inline SVG colours, the notebook hero gradient, and
   `rw-card` colours. Global header chrome is fixed book-wide.
+- **Text contrast.** Small text on the light pages needs 4.5:1, so color it with the tokens in
+  `chapter.css`: `--ink-faint` for the faintest grey, the `--c-cyan-text`, `--c-green-text` and
+  `--c-amber-text` shades for accents, and a plain `<a>` for a link, which `--link` colors and
+  underlines. The book's cyan `#00d4ff` is for the dark hero and panels only. Check a new color
+  with axe before committing.
 
 ---
 
