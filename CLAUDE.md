@@ -78,7 +78,8 @@ page `<h1>`. Change one, change all three.
   - `summarise` in `chapters/r-for-statistics.html` — the dplyr function name, one instance
     inside live R code.
   - `grey` in `case-study-ames-housing-prices` and its notebook — merging `grey` and `gray` in
-    an `exterior_color` column **is** the cleaning lesson.
+    an `exterior_color` column **is** the cleaning lesson. `case-study-predicting-ames-house-prices`
+    repeats the same step in its notebook's code.
   - `cancelled` in `case-study-multi-file-and-datetime-eda` — a status **data value** the code
     standardizes on and asserts against.
   - `GREY` in notebook code — a matplotlib colour constant (`GREY = "#94a3b8"`). Also `Greys`
