@@ -189,7 +189,7 @@ MAP = {
     "levels-of-measurement--solutions.html":
         ("../../levels-of-measurement.html#quiz", "Back to the book", "Chapter 5 · Take the quiz &amp; aim for 100%"),
     "population-vs-sample-parameter-vs-statistic.html":
-        ("../../population-vs-sample-parameter-vs-statistic.html#notebook", "Back to the book", "Chapter 6 · Population vs. Sample"),
+        ("../../population-vs-sample-parameter-vs-statistic.html#notebook", "Back to the book", "Chapter 6 · Population vs. Sample &amp; Parameter vs. Statistic"),
     "population-vs-sample-parameter-vs-statistic--solutions.html":
         ("../../population-vs-sample-parameter-vs-statistic.html#quiz", "Back to the book", "Chapter 6 · Take the quiz &amp; aim for 100%"),
     "math-refresher-for-statistics.html":
@@ -309,7 +309,7 @@ MAP = {
     "random-variables-and-expectation--solutions.html":
         ("../../random-variables-and-expectation.html#quiz", "Back to the book", "Chapter 36 · Take the quiz &amp; aim for 100%"),
     "probability-by-simulation.html":
-        ("../../probability-by-simulation.html#notebook", "Back to the book", "Chapter 37 · Probability by Simulation (Monte Carlo)"),
+        ("../../probability-by-simulation.html#notebook", "Back to the book", "Chapter 37 · Probability by Simulation"),
     "probability-by-simulation--solutions.html":
         ("../../probability-by-simulation.html#quiz", "Back to the book", "Chapter 37 · Take the quiz &amp; aim for 100%"),
     "discrete-distributions.html":
@@ -649,7 +649,7 @@ MAP = {
     "capstone-judges-product-rankings.html":
         ("../../capstone-judges-product-rankings.html#notebook", "Back to the book", "Chapter 172 · Kendall's Tau: Two Judges' Rankings"),
     "capstone-pain-relief-two-treatments.html":
-        ("../../capstone-pain-relief-two-treatments.html#notebook", "Back to the book", "Chapter 173 · Mann-Whitney U: Two Pain Treatments"),
+        ("../../capstone-pain-relief-two-treatments.html#notebook", "Back to the book", "Chapter 173 · Mann-Whitney U: Comparing Two Pain Treatments"),
     "capstone-service-ratings-before-after.html":
         ("../../capstone-service-ratings-before-after.html#notebook", "Back to the book", "Chapter 174 · Wilcoxon Signed-Rank: Service Ratings Before &amp; After"),
     "capstone-store-ratings-across-locations.html":
@@ -681,7 +681,7 @@ MAP = {
     "capstone-credit-card-fraud.html":
         ("../../capstone-credit-card-fraud.html#notebook", "Back to the book", "Chapter 191 · Imbalanced Classification: Credit Card Fraud"),
     "capstone-churn-prediction-explainability.html":
-        ("../../capstone-churn-prediction-explainability.html#notebook", "Back to the book", "Chapter 192 · Churn Prediction and Who Is Worth Contacting"),
+        ("../../capstone-churn-prediction-explainability.html#notebook", "Back to the book", "Chapter 192 · Churn Prediction and Explainability"),
     "capstone-gradient-boosting-regression.html":
         ("../../capstone-gradient-boosting-regression.html#notebook", "Back to the book", "Chapter 193 · Gradient Boosting for Tabular Regression"),
     "capstone-pca-survey-battery.html":

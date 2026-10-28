@@ -68,7 +68,11 @@ silently corrupts the previous chapter's manifest entry. The tell is `apply_chap
 reporting the wrong chapter count. Always assert the manifest slug count is unchanged.
 
 A chapter title lives in **three** places: the `PARTS` `t:` field, the page `<title>`, and the
-page `<h1>`. Change one, change all three.
+page `<h1>`. Change one, change all three. All 205 have agreed since October 28, when the capstones' question
+headings were replaced by their titles. The same words also appear in the page's `og:title` and
+`twitter:title`, the neighbors' previous and next cards, the reports' chapter line and the notebook
+backlink labels in `scripts/inject_notebook_backlinks.py` and the rendered notebook pages, so change
+those with it.
 
 ---
 
