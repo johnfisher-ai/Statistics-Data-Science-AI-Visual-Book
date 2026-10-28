@@ -178,6 +178,12 @@ code (one two-panel figure at `figsize=(12.6, 4.4)`, or 2×2 at `(12.6, 8.2)`) �
 `**Left:** … **Right:** …`. Choose the technique to fit the data and foreshadow the finding.
 Never print a `describe()` dump; put the quantiles on the picture. Never in the reports.
 
+27 of the 41 capstone notebooks have a step named First look. The other 14, the older testing and
+sampling capstones, already plot the data before testing under their own step names ("Visualize
+first", "Explore before testing"), and John decided on October 28 to leave them as they are. The
+A/B test design's First look reads only what was recorded before assignment, because its plan
+forbids reading the outcome before the health check.
+
 ---
 
 ## Standing author requests
