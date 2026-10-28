@@ -118,7 +118,9 @@ Cite numbers from executed output, never from draft prose.
 Build → execute → verify → render → wire.
 
 1. **Build** the `.ipynb` (a builder script, or edit the JSON directly).
-2. **Execute** with `nbclient`, kernel `nbtest-py`, cwd `chapters/notebooks`.
+2. **Execute** with `nbclient`, cwd `chapters/notebooks`, on the Colab replica kernel `nb-colabsim`
+   (file 3 of the companion repository builds it), so the saved outputs are what a Colab reader
+   gets. A cell whose printed text already matches keeps its saved output.
 3. **Verify** every prose claim against the printed output, and **look at every figure** at its
    true rendered width.
 4. **Render**: `python3 -m nbconvert --to html --template lab --output-dir html <name>.ipynb`
@@ -169,7 +171,8 @@ Never print a `describe()` dump; put the quantiles on the picture. Never in the 
 ## Standing author requests
 
 1. A **"<topic> in Machine Learning & AI"** section (table plus research callout).
-2. A **real Excel dataset** in `data/`, three sheets, with a `.rw-card` and a download button.
+2. A **realistic Excel dataset** in `data/`, three sheets, with a `.rw-card` and a download button.
+   The datasets are written for the book, so label them realistic or teaching data, never real.
 3. **Library-first notebooks.** statsmodels, scipy, scikit-learn over hand-rolled computation.
    Show a formula once for teaching, then the one-line library call.
 4. **Visual-first.** Chapters carry 2+ editable inline SVGs; notebooks carry plenty of plots.
