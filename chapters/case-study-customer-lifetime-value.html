@@ -187,21 +187,21 @@
     <div class="step-h"><span class="sn">6&#8211;7</span><h3>Gradient-boosted trees, cross-validated, then scored on held-out customers</h3></div>
     <p>A <code>HistGradientBoostingRegressor</code>, scikit-learn's fast cousin of XGBoost and LightGBM, cross-validates to
        an R-squared around <strong>0.83</strong> on the training set, so the signal is real. On the 25% of customers it
-       never saw, it explains about <strong>86% of the variance</strong> (R-squared 0.857) with an average error of just
-       <strong>298 dollars</strong>, less than a third of the baseline, cutting the average error by <strong>69%</strong>.</p>
+       never saw, it explains about <strong>86% of the variance</strong> (R-squared 0.865) with an average error of just
+       <strong>293 dollars</strong>, less than a third of the baseline, cutting the average error by <strong>70%</strong>.</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
-      <svg viewBox="0 0 680 200" width="100%" font-family="Inter, sans-serif" aria-label="A bar chart comparing average prediction error: the baseline is off by 977 dollars, the gradient-boosted model by only 298 dollars">
-        <text x="340" y="22" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Average error (MAE): the model beats the baseline by 69%</text>
+      <svg viewBox="0 0 680 200" width="100%" font-family="Inter, sans-serif" aria-label="A bar chart comparing average prediction error: the baseline is off by 977 dollars, the gradient-boosted model by only 293 dollars">
+        <text x="340" y="22" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Average error (MAE): the model beats the baseline by 70%</text>
         <line x1="150" y1="155" x2="640" y2="155" stroke="#1a2138" stroke-width="1.1"/>
         <!-- baseline bar: 977 -> height 110 -->
         <rect x="220" y="45" width="80" height="110" rx="4" fill="#94a3b8"/>
         <text x="260" y="38" text-anchor="middle" font-size="13" fill="#475569" font-weight="800">$977</text>
         <text x="260" y="173" text-anchor="middle" font-size="9.5" fill="#1a2138" font-weight="700">Baseline</text>
         <text x="260" y="187" text-anchor="middle" font-size="8" fill="#8b94b3">predict the mean</text>
-        <!-- model bar: 298 -> height 34 -->
-        <rect x="440" y="121" width="80" height="34" rx="4" fill="#4338ca"/>
-        <text x="480" y="114" text-anchor="middle" font-size="13" fill="#3730a3" font-weight="800">$298</text>
+        <!-- model bar: 293 -> height 33 -->
+        <rect x="440" y="122" width="80" height="33" rx="4" fill="#4338ca"/>
+        <text x="480" y="115" text-anchor="middle" font-size="13" fill="#3730a3" font-weight="800">$293</text>
         <text x="480" y="173" text-anchor="middle" font-size="9.5" fill="#1a2138" font-weight="700">Boosted trees</text>
         <text x="480" y="187" text-anchor="middle" font-size="8" fill="#8b94b3">HistGradientBoosting</text>
         <text x="90" y="90" font-size="9" fill="#8b94b3">MAE</text>
@@ -211,7 +211,7 @@
 
     <figure class="nb-fig">
       <img src="../assets/img/case-study-customer-lifetime-value--eval.png" alt="A scatter of predicted versus actual lifetime value for held-out customers, clustered tightly along the diagonal for ordinary customers and looser for the rare high-value whales">
-      <figcaption><span class="cap-t">From the notebook &#183; Step 7</span><br>Predicted versus actual on customers the model never saw. Points hug the diagonal, tightest for the many ordinary customers and looser for the rare whales, exactly the footprint of a skewed target. R-squared 0.86, MAE 298 dollars.</figcaption>
+      <figcaption><span class="cap-t">From the notebook &#183; Step 7</span><br>Predicted versus actual on customers the model never saw. Points hug the diagonal, tightest for the many ordinary customers and looser for the rare whales, exactly the footprint of a skewed target. R-squared 0.86, MAE 293 dollars.</figcaption>
     </figure>
   </section>
 
@@ -221,8 +221,9 @@
     <p>A good score can still hide a biased model, so we check the residuals. They are <strong>centered near zero</strong>
        (no systematic over- or under-prediction), but their spread <strong>widens for high predictions</strong>: the model
        is dollar-precise on ordinary customers and fuzzier on whales, the classic footprint of a skewed target. That is
-       fine for ranking; if we needed a precise figure per whale, we would model <em>log</em> value or quote a prediction
-       interval (both explored in the Take It Further notebook).</p>
+       fine for ranking. If we needed a precise figure per whale, a prediction interval would at least say how unsure each
+       one is. Modeling <em>log</em> value, the usual cure for skew, does not help here. The Take It Further notebook finds
+       it trims the error on ordinary customers and makes the whales' error worse.</p>
 
     <p>Then the payoff: <span class="term">SHAP</span> attributes each prediction to its features and, averaged, ranks what
        moves value most. <strong>Order frequency</strong> and <strong>average order value</strong> dominate, together they
@@ -240,14 +241,14 @@
     <div class="section-eyebrow"><div class="num">5</div><h2>From Prediction to Decision, and the Memo (Steps 10&#8211;12)</h2></div>
     <p>The point of the model is an action. Ranking the held-out customers by <strong>predicted</strong> value and taking
        the top 10% captures a large share of the <strong>actual</strong> value: those customers average about
-       <strong>4,402 dollars</strong> against an overall <strong>1,525</strong>. A retention budget aimed there, rather than
+       <strong>4,396 dollars</strong> against an overall <strong>1,525</strong>. A retention budget aimed there, rather than
        sprayed evenly, is where the model pays for itself, and because the ranking is SHAP-explainable, each offer can be
        tailored to that customer's value drivers.</p>
 
     <div class="writeup">
       <h3>Memo to the marketing team</h3>
       <p>We built a model that predicts each customer's next-12-month value from their behavior. On customers it had never
-         seen, it is accurate to within about <strong>298 dollars on average</strong>, roughly a third of the error of
+         seen, it is accurate to within about <strong>293 dollars on average</strong>, roughly a third of the error of
          guessing the average, and it explains about <strong>86%</strong> of the variation in value.</p>
       <h4>What drives value</h4>
       <p>The biggest levers are how <strong>often</strong> and how <strong>much</strong> customers order, followed by how
@@ -288,7 +289,7 @@
       <h3>🎓 Key Takeaways</h3>
       <ul>
         <li><span class="ck">✓</span><span><strong>A dollar target is regression</strong>: judge it by MAE and RMSE against a baseline, not by "accuracy".</span></li>
-        <li><span class="ck">✓</span><span><strong>Always beat a baseline</strong>: predicting the mean was off by 977 dollars; the model cut that to 298, a 69% reduction.</span></li>
+        <li><span class="ck">✓</span><span><strong>Always beat a baseline</strong>: predicting the mean was off by 977 dollars; the model cut that to 293, a 70% reduction.</span></li>
         <li><span class="ck">✓</span><span><strong>One leakage-safe pipeline</strong>: the ColumnTransformer and model together mean preprocessing is fit only on training data.</span></li>
         <li><span class="ck">✓</span><span><strong>Diagnose the residuals</strong>: near-zero bias but wider spread on whales, the honest footprint of a skewed target.</span></li>
         <li><span class="ck">✓</span><span><strong>Explain, then act</strong>: SHAP names the drivers (frequency, order value, recency, tenure) and the ranking targets the top decile, where value concentrates.</span></li>
@@ -424,7 +425,7 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
       q: "How does the model turn into a decision?",
       options: ["By reporting R-squared", "By ranking customers on predicted value and focusing retention on the top decile, where value concentrates", "By deleting low-value customers", "By retraining daily"],
       answer: 1,
-      explain: "Ranking by predicted value and targeting the top 10% (who average about 4,402 dollars versus 1,525 overall) is where the model pays for itself."
+      explain: "Ranking by predicted value and targeting the top 10% (who average about 4,396 dollars versus 1,525 overall) is where the model pays for itself."
     }
   ];
 </script>
