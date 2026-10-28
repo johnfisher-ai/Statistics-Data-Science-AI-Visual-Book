@@ -194,7 +194,7 @@
        nine-digit identifiers or the hour of the day. A text column becomes Python objects, one per row, even when it repeats
        the same six city names for millions of rows. Store the hour as an 8-bit integer and the city as a
        <strong>category</strong>, which keeps integer codes plus one small lookup table, and the footprint collapses. In the
-       notebook this one step takes the ride logs from <strong>2.70 MB to 0.80 MB</strong>, a <strong>70 percent</strong>
+       notebook this one step takes the ride logs from <strong>5.77 MB to 0.80 MB</strong>, an <strong>86 percent</strong>
        saving, with identical numbers coming out the other end.</p>
 
     <p><strong>Store columns, not rows.</strong> A CSV is text laid out row by row, so reading one column means reading every
@@ -202,8 +202,8 @@
        statistics in the footer. Two things follow. The file shrinks, because a column of repeated city names compresses far
        better than the same values scattered through rows. And you can read two columns out of eleven without touching the
        rest, which is called <strong>column pruning</strong>. On the 500,000-row file in the notebook, Parquet is
-       <strong>4.7 times smaller</strong> (6.4 MB against 30.2 MB), and reading just two columns is about
-       <strong>32 times faster</strong> than reading the CSV.</p>
+       <strong>4.7 times smaller</strong> (6.4 MB against 30.2 MB), and reading just two columns is more than
+       <strong>ten times faster</strong> than reading the CSV.</p>
 
     <p><strong>Partition on what you filter by.</strong> Split the data into folders by a column you query constantly, such as
        date, and a query for one day can skip every other folder before reading a byte. Engines call this
@@ -342,18 +342,20 @@
 
     <p>The file opens in Excel without complaint, and that is deliberate. Nothing here needs a cluster; the point is that the
        <em>techniques</em> are what scale, and you can learn all of them at a size you can still check by eye. The notebook
-       inflates the logs to <strong>500,000 rows</strong> (30.2 MB on disk, about 54 MB once loaded) to make the streaming and
+       inflates the logs to <strong>500,000 rows</strong> (30.2 MB on disk, about 115 MB once loaded) to make the streaming and
        storage results honest.</p>
 
     <ul class="rw-find">
       <li><span class="ck">●</span> <strong>Types first.</strong> Categories and right-sized numbers cut the footprint from
-          <strong>2.70 MB to 0.80 MB</strong>, a 3.4x reduction, with identical results.</li>
+          <strong>5.77 MB to 0.80 MB</strong>, a 7.2x reduction, with identical results.</li>
       <li><span class="ck">●</span> <strong>Streaming works.</strong> The 500,000-row file was aggregated while holding at
-          most <strong>5.4 MB</strong> in memory at any moment, and the totals matched the full-file answer exactly.</li>
+          most <strong>11.5 MB</strong> in memory at any moment, and the totals matched the full-file answer exactly.</li>
       <li><span class="ck">●</span> <strong>Columnar wins big.</strong> Parquet was <strong>4.7x smaller</strong> than the
-          CSV, and reading the two columns actually needed took <strong>0.005 seconds against 0.170</strong>.</li>
-      <li><span class="ck">●</span> <strong>Eight cores did not buy eight times the speed.</strong> A bootstrap of 3,200
-          resamples went from 0.93 to 0.36 seconds, a <strong>2.6x</strong> speedup.</li>
+          CSV, and reading the two columns actually needed was <strong>more than ten times faster</strong> than reading the whole
+          CSV. The exact times depend on the machine.</li>
+      <li><span class="ck">●</span> <strong>Eight workers did not buy eight times the speed.</strong> On the four-core machine that
+          made the notebook's saved run, eight workers ran a bootstrap of 3,200 resamples about <strong>1.5 times</strong>
+          faster than one. On Colab's two cores, starting the workers can cost more than this small job saves.</li>
       <li><span class="ck">●</span> <strong>The skew is severe.</strong> Metro City is <strong>46.1 percent</strong> of all
           rides, so partitioning by city leaves one worker with <strong>2.8x the average</strong> load. Salting the key into
           four pieces brought the largest partition down to <strong>11.7 percent</strong>, with the revenue totals
@@ -619,7 +621,7 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
       explain: "Mapping is independent per record and reducing is cheap once data has arrived; the shuffle is the network step."
     },
     {
-      q: "Eight workers gave only a 2.6x speedup on the bootstrap. The best explanation is…",
+      q: "Eight workers gave only about a 1.5x speedup on the bootstrap. The best explanation is…",
       options: ["The code is wrong", "Coordination overhead plus a serial fraction, exactly what Amdahl's law predicts", "Bootstrapping cannot be parallelized", "The dataset is too small to matter"],
       answer: 1,
       explain: "Splitting work, starting workers, and shipping data all cost time, and any serial portion caps the achievable speedup."
