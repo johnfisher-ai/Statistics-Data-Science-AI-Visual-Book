@@ -732,9 +732,19 @@ TABLE_ALIGN_CSS = (
     '</style>'
 )
 
+# The book's site icon. nbconvert's template carries none, so a rendered page gets it here.
+ICON_LINKS = ('<link rel="icon" href="../../../assets/img/favicon.svg" type="image/svg+xml">\n'
+              '<link rel="apple-touch-icon" href="../../../assets/img/apple-touch-icon.png">')
+
 def inject(path, href, kicker, title):
     html = open(path, encoding="utf-8").read()
+    added_icon = 'rel="icon"' not in html
+    if added_icon:
+        html = html.replace("</head>", ICON_LINKS + "\n</head>", 1)
     if 'class="book-backlink"' in html:
+        if added_icon:
+            open(path, "w", encoding="utf-8").write(html)
+            return "already had link, added icon"
         return "already had link"
     # left-align tables (inject the style once, before </head>)
     if 'id="book-table-align"' not in html:
