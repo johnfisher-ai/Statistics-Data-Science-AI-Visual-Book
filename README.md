@@ -1,7 +1,7 @@
 # Statistics, Data Science and AI: A Visual Handbook
 
-A visual, clickable handbook on statistics and data science — HTML chapter pages paired with
-runnable Python notebooks. By **John Fisher**.
+A visual, clickable handbook on statistics, data science and AI, in 205 HTML chapter pages, 195 of them
+paired with a runnable Python notebook. By **John Fisher**.
 
 🌐 **Live site:** https://johnfisher-ai.github.io/Statistics-Data-Science-AI-Visual-Book/
 
@@ -10,36 +10,49 @@ runnable Python notebooks. By **John Fisher**.
 ## How readers use it
 
 1. **Read** a chapter (static HTML, works anywhere).
-2. **View the notebook** — a rendered HTML page with all code *and outputs*, instantly, no install.
-3. **Open in Colab** — run and edit the code live in the browser (a Google login is needed only to *run*;
-   viewing is free). Readers get their own throwaway copy — the original in this repo is never changed.
-4. **Download / view on GitHub** — grab the raw `.ipynb` or read it on GitHub.
+2. **View the notebook**, a rendered HTML page with all the code *and its outputs*, with nothing to install.
+3. **Open in Colab** to run and edit the code in the browser. A Google login is needed only to *run* it,
+   and each reader gets a throwaway copy, so the original in this repository never changes.
+4. **Download or view on GitHub** to get the raw `.ipynb`.
 
 ## Project structure
 
 ```
 .
 ├── index.html                  # Title page
-├── toc.html                    # Table of contents (flip chapters live via the AVAILABLE set)
-├── assets/css/                 # book.css (global) + chapter.css (chapter layout)
+├── introduction.html           # How the book works
+├── toc.html                    # Contents, and the manifest: PARTS sets the order, AVAILABLE what is published
+├── infographics*.html          # Printable visual reviews of several parts
 ├── chapters/
-│   ├── ch01.html               # Chapter pages (inline SVG graphics — fully editable)
+│   ├── <slug>.html             # The 205 chapter pages, named by slug, with inline SVG figures
 │   └── notebooks/
-│       ├── ch01_what_is_statistics.ipynb   # Source notebooks (outputs pre-executed)
-│       └── html/                            # Rendered HTML (auto-built; what "View" links to)
-├── scripts/build_notebook_html.sh          # Local notebook → HTML renderer
-├── requirements.txt
-└── .github/workflows/deploy.yml            # Auto-render notebooks + deploy to Pages on push
+│       ├── <slug>.ipynb        # Companion notebooks, saved with their outputs
+│       └── html/               # The rendered notebooks that "View Notebook" opens
+├── reports/                    # A plain-language brief and a technical report for each capstone
+├── data/                       # The datasets (.xlsx and .csv), all written for the book
+├── assets/                     # css/, js/ and img/, the chapter and report figures
+├── scripts/                    # Chapter numbering, notebook backlinks, link checks, notebook rendering
+├── requirements.txt            # The libraries the notebooks import
+└── .github/workflows/          # deploy.yml publishes to Pages; check-links.yml checks every link
 ```
+
+Chapter numbers are computed from the order of `PARTS` in `toc.html`, so inserting a chapter
+renumbers everything after it. `python3 scripts/apply_chapter_nav.py` then re-stamps the numbers
+on every page, and `--check` reports drift without changing anything.
 
 ## Local preview
 
-Just open `index.html` in a browser. To re-render notebooks after editing them:
+Open `index.html` in a browser. To render a notebook after editing it:
 
 ```bash
 pip install -r requirements.txt
-bash scripts/build_notebook_html.sh
+python3 -m nbconvert --to html --template lab --output-dir chapters/notebooks/html chapters/notebooks/<slug>.ipynb
+python3 scripts/inject_notebook_backlinks.py
 ```
+
+The last step adds the "Back to the book" card that rendering strips. `bash scripts/build_notebook_html.sh`
+renders all 345 notebooks the same way. Rendering doesn't run the code, so a notebook shows the outputs
+saved in it. Run it first if you changed its code.
 
 ## Checking links
 
@@ -63,7 +76,7 @@ that leaves a link pointing at nothing.
 
 ## Publishing
 
-See **[PUBLISHING.md](PUBLISHING.md)** for first-time setup and the per-chapter workflow.
+See **[PUBLISHING.md](PUBLISHING.md)** for how a change reaches the site and how to add or revise a chapter.
 
 ---
 

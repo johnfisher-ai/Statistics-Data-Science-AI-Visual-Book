@@ -1,80 +1,80 @@
-# Publishing Guide
+# Publishing guide
 
-Everything needed to get the book online and keep it updated.
+How a change reaches the live site, and how to add or revise a chapter.
 
 - **GitHub user:** `johnfisher-ai`
-- **Repository:** `Statistics-Data-Science-AI-Visual-Book`
-- **Repo root = this `book/` folder** (so `index.html` is served at the site root)
-- **Live URL (after setup):** https://johnfisher-ai.github.io/Statistics-Data-Science-AI-Visual-Book/
+- **Repository:** `Statistics-Data-Science-AI-Visual-Book`, whose root is the book folder, so `index.html` is served at the site root
+- **Live site:** https://johnfisher-ai.github.io/Statistics-Data-Science-AI-Visual-Book/
 
-> ⚠️ Keep the repo **Public** and do **not** add reviewers as collaborators. That combination is what
-> gives you full read/write while reviewers can only view/run/copy in Colab — never alter your original.
-
----
-
-## One-time setup
-
-### 1. Create the empty repo on GitHub
-Go to https://github.com/new and create **`Statistics-Data-Science-AI-Visual-Book`**, **Public**,
-with **no** README/.gitignore (this folder already has them).
-
-### 2. Authenticate git (pick ONE — password no longer works)
-
-**Option A — GitHub CLI (easiest):**
-```bash
-brew install gh        # if not installed
-gh auth login          # choose GitHub.com → HTTPS → login in browser
-```
-
-**Option B — Personal Access Token (PAT):**
-Create a token at https://github.com/settings/tokens (scope: `repo`). When git asks for a password
-during push, paste the **token** instead. (Username = `johnfisher-ai`.)
-
-### 3. Push this folder
-Run from inside the `book/` folder:
-```bash
-git push -u origin main
-```
-(The local repo, `main` branch, and `origin` remote are already configured — see "Initial commit" below.)
-
-### 4. Turn on GitHub Pages
-In the repo: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-The included workflow (`.github/workflows/deploy.yml`) then renders the notebooks and deploys automatically.
-First deploy takes ~1–2 minutes; the live URL appears under the Actions run and in Settings → Pages.
+> Keep the repository **public**, and don't add reviewers as collaborators. Readers can then view,
+> run and copy any notebook in Colab, and none of them can change the original.
 
 ---
 
-## Per-chapter workflow (every time you add/update content)
+## How the site is published
 
-1. **Write** the chapter HTML (`chapters/chNN.html`) and notebook (`chapters/notebooks/chNN_*.ipynb`).
-2. **Execute the notebook** so outputs are saved into the `.ipynb` (open it and Run All, or it's
-   pre-executed when generated). The "View" page shows whatever outputs are saved in the file.
-3. **Add Colab/View/Download buttons** to the chapter page, pointing at:
-   ```
-   View:    notebooks/html/chNN_<slug>.html
-   Colab:   https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/chNN_<slug>.ipynb
-   GitHub:  https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/chNN_<slug>.ipynb
-   ```
-4. **Flip the chapter live** in `toc.html`: add its number to `const AVAILABLE = new Set([1, ...]);`
-   and restore the "Next" link on the previous chapter page.
-   - **TOC badges (transient — reset every push cycle):** a published chapter never shows the planning ★ "New".
-     If you *revised an already-published chapter's content* this cycle, add its number to
-     `const UPDATED_CHAPTERS = new Set([...])` so it shows a temporary "✦ Updated" badge. **Clear
-     `UPDATED_CHAPTERS` back to `new Set([])` on the very next push cycle** so the badge doesn't linger.
-5. **(Optional) Render locally to preview:** `bash scripts/build_notebook_html.sh`
-   *(Not required for production — the deploy workflow renders notebooks in the cloud.)*
-6. **Commit & push:**
+Every push to `main` runs `.github/workflows/deploy.yml`. It renders the notebooks the push changed,
+adds the "Back to the book" card to each rendered page, and publishes the whole folder to GitHub
+Pages. The rendered HTML of every other notebook is published as it is committed. A deploy takes a
+few minutes, and longer when many notebooks changed.
+
+The deploy doesn't run notebooks, so a notebook page shows the outputs saved in the `.ipynb`. Run a
+notebook top to bottom before committing it. Its saved outputs come from the library versions Colab
+runs, so that a reader who opens it in Colab sees the same numbers the page does.
+
+To render every notebook again, run the workflow by hand from the Actions tab ("Build & Deploy Book
+to GitHub Pages", then "Run workflow"). That is needed when the backlink card in
+`scripts/inject_notebook_backlinks.py` changes design, because the script skips pages that already
+have a card. A second workflow, `.github/workflows/check-links.yml`, fails any push that leaves a
+link pointing at nothing.
+
+Since October 27, 2026, Claude Code sessions commit straight to `main` once the checks pass, one
+commit per chapter or round of edits, and John reads each change on the live site. A change is undone
+with `git revert`, never by rewriting history. `scripts/push_to_github.sh` is the old manual push
+from John's Mac and is no longer needed. The book's `CLAUDE.md` is the technical manual for these
+sessions.
+
+---
+
+## Adding or revising a chapter
+
+1. **Write the page** as `chapters/<slug>.html`. A slug comes from words, never numbers or dates, and
+   never changes once published, because other sites link to chapters by slug.
+2. **Place it in `toc.html`.** Add an entry to `PARTS` where it belongs in reading order, and its slug
+   to `AVAILABLE` to publish it. A chapter in `PARTS` but not in `AVAILABLE` shows as coming soon. A
+   chapter's title lives in three places, the `PARTS` entry, the page's `<title>` and its `<h1>`, so
+   change all three together.
+3. **Renumber.** Chapter numbers come from the order of `PARTS`, so inserting a chapter shifts every
+   number after it. `python3 scripts/apply_chapter_nav.py` re-stamps the numbers on every page. It
+   doesn't change titles or links, so set the previous and next cards on the new chapter and its two
+   neighbors by hand.
+4. **Build and run the notebook**, `chapters/notebooks/<slug>.ipynb`, so its outputs are saved.
+5. **Render it** and add the backlink card:
    ```bash
-   git add -A
-   git commit -m "Add Chapter NN: <title>"
-   git push
+   python3 -m nbconvert --to html --template lab --output-dir chapters/notebooks/html chapters/notebooks/<slug>.ipynb
+   python3 scripts/inject_notebook_backlinks.py
    ```
-   GitHub Actions rebuilds the notebook HTML and redeploys the site automatically.
+   A new notebook needs an entry in that script's `MAP` first. Commit the rendered HTML in the same
+   commit as its notebook. The deploy renders only the notebooks a push changes, so HTML left out of a
+   commit goes back to its old version at the next push that doesn't touch that notebook.
+6. **Link the notebook** from the chapter with three buttons:
+   ```
+   View:    notebooks/html/<slug>.html
+   Colab:   https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/<slug>.ipynb
+   GitHub:  https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/<slug>.ipynb
+   ```
+7. **Check and push.** `python3 scripts/check_links.py` should resolve every link, and
+   `python3 scripts/apply_chapter_nav.py --check` should report no drift. Then commit and push to `main`.
+
+To flag a revised chapter in the contents for one push cycle, add its slug to `UPDATED_CHAPTERS` in
+`toc.html`, which shows a temporary "Updated" badge, and empty the set again at the next push.
 
 ---
 
 ## Notes
-- Notebook HTML in `chapters/notebooks/html/` is committed for convenience, but the workflow regenerates
-  it on every push — so it's always in sync with the `.ipynb`.
-- Reviewers who open a notebook in Colab get an ephemeral copy: they can run, edit, download (`File →
-  Download`), or copy (`File → Save a copy in Drive`), but cannot write back to this repo.
+
+- A reader who opens a notebook in Colab gets a copy of their own. They can run it, edit it, download
+  it (File, Download) or save it to their Drive (File, Save a copy in Drive), and none of that writes
+  back to this repository.
+- The licenses are in [LICENSES.md](LICENSES.md), and the datasets are described in
+  [data/README.md](data/README.md).
