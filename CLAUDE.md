@@ -127,7 +127,9 @@ Build → execute → verify → render → wire.
    (file 3 of the companion repository builds it), so the saved outputs are what a Colab reader
    gets. A cell whose printed text already matches keeps its saved output.
 3. **Verify** every prose claim against the printed output, and **look at every figure** at its
-   true rendered width.
+   true rendered width. The companion repository's `tools/checks/quote_check.py` lists every place
+   the chapter, its reports and the notebook's markdown still quote a number the new run no longer
+   prints. Run the notebook twice first, because a number that changes between runs can't be quoted.
 4. **Render**: `python3 -m nbconvert --to html --template lab --output-dir html <name>.ipynb`
    (`jupyter` is not on PATH; use `python3 -m`).
 5. **Re-inject backlinks**: `python3 scripts/inject_notebook_backlinks.py`. Rendering strips the
@@ -210,6 +212,7 @@ Never print a `describe()` dump; put the quantiles on the picture. Never in the 
 
 ```
 notebooks execute with 0 errors      · every .ipynb has a rendered .html
+quote_check.py lists no stale number · chapters and reports quote what the Colab replica prints
 0 broken local references            · the only expected hit is ${href}, a JS template in toc.html
 chapter count matches AVAILABLE      · apply_chapter_nav.py --check reports 0 drift
 no prose em-dashes                   · entities limited to the six allowed
