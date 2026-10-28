@@ -36,7 +36,7 @@ These have each cost real time when broken. They are not preferences.
 | `chapters/*.html` | The 205 chapter pages. One file per chapter, named by slug. |
 | `chapters/notebooks/*.ipynb` | Companion notebooks. Source of truth. |
 | `chapters/notebooks/html/*.html` | **Generated.** Never hand-edit; rebuilt on deploy. |
-| `data/*.xlsx` | Datasets. Three sheets: `Data`, `Codebook`, `Notes`. |
+| `data/*.xlsx`, `data/*.csv` | Datasets. Most workbooks have three sheets: the data (named `Data` or for its contents), `Codebook` and `Notes`. 25 of the 134 add sheets such as a plan or a `Truth` sheet. |
 | `reports/*.html` | Branded report pages (plain-language brief + technical report). |
 | `assets/img/*.png` | Chapter and report figures. |
 | `assets/css/`, `assets/js/` | `book.css`, `chapter.css`, `quiz.css`, `report.css`, `quiz.js`. |
@@ -179,7 +179,7 @@ Never print a `describe()` dump; put the quantiles on the picture. Never in the 
 ## Standing author requests
 
 1. A **"<topic> in Machine Learning & AI"** section (table plus research callout).
-2. A **realistic Excel dataset** in `data/`, three sheets, with a `.rw-card` and a download button.
+2. A **realistic Excel dataset** in `data/`, with its data, `Codebook` and `Notes` sheets, a `.rw-card` and a download button.
    The datasets are written for the book, so label them realistic or teaching data, never real.
 3. **Library-first notebooks.** statsmodels, scipy, scikit-learn over hand-rolled computation.
    Show a formula once for teaching, then the one-line library call.

@@ -3,13 +3,18 @@
 Every file here was written for this book. They are teaching scenarios, not collected
 observations.
 
-Each `.xlsx` has three sheets:
+Most `.xlsx` files have three sheets, 109 of the 134:
 
 | Sheet | What it holds |
 |---|---|
-| the data | One row per unit of analysis. |
+| the data | One row per unit of analysis, in a sheet named `Data` or named for what it holds. |
 | `Codebook` | Every column: name, type, and what it means. |
 | `Notes` | The scenario, the question it poses, and where the data is deliberately dirty. |
+
+The other 25 add sheets a chapter needs, such as a second table to join, an analysis plan written
+before the data arrived, or a `Truth` sheet holding the values a simulation was built from. Two of
+them, `capstone-commute-mode-by-region.xlsx` and `excel-and-bi-tools--sales-explorer.xlsx`, have no
+`Notes` sheet. The `.csv` files are single tables that the notebooks load directly.
 
 They are generated so a specific method has something honest to work on, and many carry
 planted problems, missing values, impossible readings, duplicate rows, so a chapter can
