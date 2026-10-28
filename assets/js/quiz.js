@@ -81,7 +81,7 @@
         <span class="quiz-progress" id="qprog">0 / ${N} answered</span>
       </div>
       <p class="quiz-sub">Answer the questions, then press <b>Check Answers</b>. You can fix any you miss and
-         check again — your progress is saved automatically, so you can pop back to the chapter anytime.</p>
+         check again. Your progress is saved automatically, so you can pop back to the chapter anytime.</p>
       <div class="quiz-score" id="qscore"></div>
       <form id="qform">`;
 
@@ -107,7 +107,7 @@
         <button type="button" class="btn-check" id="qcheck">Check Answers</button>
         <button type="button" class="btn-reset" id="qreset">Reset</button>
       </div>
-      <p class="quiz-note">Stuck? Scroll back up to review the chapter — your answers stay put.
+      <p class="quiz-note">Stuck? Scroll back up to review the chapter. Your answers stay put.
          Want to work it out in code? Open the <a href="#notebook">companion notebook</a>.</p>
     </div>`;
 
@@ -167,7 +167,7 @@
     score.className = "quiz-score show " + (correct === N ? "pass" : "partial");
     if (correct === N) {
       score.innerHTML = `<span class="qs-emoji">🎉</span>
-        <span class="qs-text"><b>Perfect — ${correct}/${N} (100%)!</b><br>You've got this chapter down. On to the next!</span>`;
+        <span class="qs-text"><b>Perfect, ${correct}/${N} (100%)!</b><br>You've got this chapter down. On to the next!</span>`;
     } else {
       score.innerHTML = `<span class="qs-emoji">💪</span>
         <span class="qs-text"><b>${correct}/${N} correct (${pct}%)</b><br>Review the ones marked in red, adjust your answers, and Check again.</span>`;
