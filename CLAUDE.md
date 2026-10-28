@@ -41,7 +41,7 @@ These have each cost real time when broken. They are not preferences.
 | `assets/img/*.png` | Chapter and report figures. |
 | `assets/css/`, `assets/js/` | `book.css`, `chapter.css`, `quiz.css`, `report.css`, `quiz.js`. |
 | `toc.html` | **The manifest.** Single source of truth for structure. |
-| `scripts/` | `apply_chapter_nav.py`, `inject_notebook_backlinks.py`, `check_links.py`, `build_notebook_html.sh`, and `push_to_github.sh` (the author's old manual push, unused by sessions). |
+| `scripts/` | `apply_chapter_nav.py`, `inject_notebook_backlinks.py`, `check_links.py`, `build_notebook_html.sh`, `build_sitemap.py` (rewrites `sitemap.xml` from the manifest; run it after adding a page), and `push_to_github.sh` (the author's old manual push, unused by sessions). |
 
 The repo root **is** the `book/` folder. A `book/` segment inside any URL is a dead link.
 Source material (raw images, reference books, sample data) lives in the parent workspace

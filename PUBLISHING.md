@@ -63,7 +63,9 @@ sessions.
    Colab:   https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/<slug>.ipynb
    GitHub:  https://github.com/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/<slug>.ipynb
    ```
-7. **Check and push.** `python3 scripts/check_links.py` should resolve every link, and
+7. **Update the sitemap.** `python3 scripts/build_sitemap.py` rewrites `sitemap.xml` from the manifest,
+   which a new chapter, report or notebook needs. `--check` says whether it is out of date.
+8. **Check and push.** `python3 scripts/check_links.py` should resolve every link, and
    `python3 scripts/apply_chapter_nav.py --check` should report no drift. Then commit and push to `main`.
 
 To flag a revised chapter in the contents for one push cycle, add its slug to `UPDATED_CHAPTERS` in

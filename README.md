@@ -23,6 +23,8 @@ paired with a runnable Python notebook. By **John Fisher**.
 ├── introduction.html           # How the book works
 ├── toc.html                    # Contents, and the manifest: PARTS sets the order, AVAILABLE what is published
 ├── infographics*.html          # Printable visual reviews of several parts
+├── 404.html                    # Shown for an address that doesn't exist
+├── sitemap.xml                 # Every published page, for search engines (scripts/build_sitemap.py)
 ├── chapters/
 │   ├── <slug>.html             # The 205 chapter pages, named by slug, with inline SVG figures
 │   └── notebooks/
@@ -31,7 +33,7 @@ paired with a runnable Python notebook. By **John Fisher**.
 ├── reports/                    # A plain-language brief and a technical report for each capstone
 ├── data/                       # The datasets (.xlsx and .csv), all written for the book
 ├── assets/                     # css/, js/ and img/, the chapter and report figures
-├── scripts/                    # Chapter numbering, notebook backlinks, link checks, notebook rendering
+├── scripts/                    # Chapter numbering, notebook backlinks, link checks, rendering, the sitemap
 ├── requirements.txt            # The libraries the notebooks import
 └── .github/workflows/          # deploy.yml publishes to Pages; check-links.yml checks every link
 ```
