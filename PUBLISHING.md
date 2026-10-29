@@ -25,8 +25,9 @@ runs, so that a reader who opens it in Colab sees the same numbers the page does
 To render every notebook again, run the workflow by hand from the Actions tab ("Build & Deploy Book
 to GitHub Pages", then "Run workflow"). A change to `scripts/inject_notebook_backlinks.py` doesn't
 need it, because the script rewrites its card, tab title and link tags on every page each time it
-runs. The deploy pins nbconvert and the libraries that shape its output to the versions sessions
-render with, so a page it renders matches the committed one byte for byte. A second workflow, `.github/workflows/check-links.yml`, fails any push that leaves a
+runs. The deploy pins nbconvert and the libraries that shape its output, and installs no IPython, so
+it highlights code with the plain Python lexer. Sessions render the same way, so a page the deploy
+renders matches the committed one byte for byte. A second workflow, `.github/workflows/check-links.yml`, fails any push that leaves a
 link pointing at nothing.
 
 Since October 27, 2026, Claude Code sessions commit straight to `main` once the checks pass, one
