@@ -39,7 +39,7 @@ These have each cost real time when broken. They are not preferences.
 | `data/*.xlsx`, `data/*.csv` | Datasets. Most workbooks have three sheets: the data (named `Data` or for its contents), `Codebook` and `Notes`. 25 of the 134 add sheets such as a plan or a `Truth` sheet. |
 | `reports/*.html` | Branded report pages (plain-language brief + technical report). |
 | `assets/img/*.png` | Chapter and report figures. |
-| `assets/css/`, `assets/js/` | `book.css`, `chapter.css`, `quiz.css`, `report.css`, `quiz.js`. |
+| `assets/css/`, `assets/js/` | `book.css`, `chapter.css`, `quiz.css`, `report.css`, `quiz.js`, and the dark theme: `theme.css` (**generated**, see House style) and `theme.js`. |
 | `toc.html` | **The manifest.** Single source of truth for structure. |
 | `scripts/` | `apply_chapter_nav.py`, `inject_notebook_backlinks.py`, `check_links.py`, `build_notebook_html.sh`, `build_sitemap.py` (rewrites `sitemap.xml` from the manifest; run it after adding a page), and `push_to_github.sh` (the author's old manual push, unused by sessions). |
 
@@ -109,6 +109,15 @@ those with it.
   `--c-amber-text` shades for accents, and a plain `<a>` for a link, which `--link` colors and
   underlines. The book's cyan `#00d4ff` is for the dark hero and panels only. Check a new color
   with axe before committing.
+- **Two themes.** The chapters, reports, introduction and 404 page follow the reader's device
+  setting, and the switch in the top bar overrides it (October 29). A color a dark page has to
+  change is written `var(--p-bg-ecfdf5, #ecfdf5)`, with the role `fg`, `bg` or `bd`, and the light
+  pages never define these, so they show the original. After writing or editing a page, run the
+  companion repository's `tools/theme/tokenize.py`, which rewrites any new hard-coded color, then
+  `tools/theme/build_theme.py`, which rewrites `assets/css/theme.css`. Never edit `theme.css` by
+  hand. A new page links `theme.css` and then `theme.js` after its other stylesheets, as every
+  chapter's `<head>` does. Figures stay as drawn. `figure`, `.svg-wrap` and `.nb-fig` keep their
+  light panels in the dark theme, so SVG colors need no tokens. Check both themes with axe.
 
 ---
 
@@ -228,6 +237,7 @@ quote_check.py lists no stale number · chapters and reports quote what the Cola
 chapter count matches AVAILABLE      · apply_chapter_nav.py --check reports 0 drift
 no prose em-dashes                   · entities limited to the six allowed
 no British spellings                 · except the protected cases listed above
+theme.css up to date                 · tokenize.py and build_theme.py --check report nothing to do
 ```
 
 Current baseline: 345 notebooks, 700 plots, 0 errors, 205 chapters, 86 reports, 134 datasets.

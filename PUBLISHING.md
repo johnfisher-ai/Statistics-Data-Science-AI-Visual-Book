@@ -39,7 +39,8 @@ sessions.
 ## Adding or revising a chapter
 
 1. **Write the page** as `chapters/<slug>.html`. A slug comes from words, never numbers or dates, and
-   never changes once published, because other sites link to chapters by slug.
+   never changes once published, because other sites link to chapters by slug. Start from an existing
+   chapter's `<head>`, which links the stylesheets and the light and dark themes.
 2. **Place it in `toc.html`.** Add an entry to `PARTS` where it belongs in reading order, and its slug
    to `AVAILABLE` to publish it. A chapter in `PARTS` but not in `AVAILABLE` shows as coming soon. A
    chapter's title lives in three places, the `PARTS` entry, the page's `<title>` and its `<h1>`, so
