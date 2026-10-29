@@ -9,9 +9,8 @@ name: Build & Deploy Book to GitHub Pages
 # published to save time.
 #
 # To force a full re-render at any time, run this workflow manually from the
-# Actions tab. Do that if the backlink card in inject_notebook_backlinks.py
-# ever changes shape: the injector skips pages that already have a card, so
-# existing HTML only picks up a new design when it is rendered again.
+# Actions tab. A change to inject_notebook_backlinks.py needs no re-render:
+# the injector rewrites its card and head tags on every page each run.
 
 on:
   push:
@@ -39,8 +38,13 @@ jobs:
         with:
           python-version: "3.12"
 
+      # Pinned to the versions sessions render with, so a page rendered here is
+      # byte for byte the page committed. Change them together with a re-render.
       - name: Install nbconvert
-        run: pip install --quiet nbconvert
+        run: >-
+          pip install --quiet nbconvert==7.17.2 mistune==3.4.0 pygments==2.21.0
+          jupyterlab_pygments==0.3.0 bleach==6.4.0 tinycss2==1.5.1
+          beautifulsoup4==4.15.0 jinja2==3.1.6 markupsafe==3.0.3 nbformat==5.11.1
 
       - name: Decide which notebooks need rendering
         id: pick
@@ -99,7 +103,7 @@ jobs:
             n=$((n + 1))
           done < /tmp/to_render
           echo "rendered $n notebook(s) of $(ls chapters/notebooks/*.ipynb | wc -l | tr -d ' ')"
-          # Idempotent: re-injects the "Back to the book" card wherever it is missing.
+          # Idempotent: gives every page the current card, head tags and styles.
           python scripts/inject_notebook_backlinks.py
 
       - uses: actions/configure-pages@v5

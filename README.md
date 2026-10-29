@@ -52,7 +52,9 @@ python3 -m nbconvert --to html --template lab --output-dir chapters/notebooks/ht
 python3 scripts/inject_notebook_backlinks.py
 ```
 
-The last step adds the "Back to the book" card that rendering strips. `bash scripts/build_notebook_html.sh`
+The last step adds what rendering leaves out: the card with the way back to the chapter and the
+buttons to open the notebook in Colab, download it or view it on GitHub, the tab title and link tags,
+and the styles that keep the page readable. `bash scripts/build_notebook_html.sh`
 renders all 345 notebooks the same way. Rendering doesn't run the code, so a notebook shows the outputs
 saved in it. Run it first if you changed its code.
 

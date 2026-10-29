@@ -146,8 +146,11 @@ Build → execute → verify → render → wire.
    prints. Run the notebook twice first, because a number that changes between runs can't be quoted.
 4. **Render**: `python3 -m nbconvert --to html --template lab --output-dir html <name>.ipynb`
    (`jupyter` is not on PATH; use `python3 -m`).
-5. **Re-inject backlinks**: `python3 scripts/inject_notebook_backlinks.py`. Rendering strips the
-   "Back to the book" card. The script's `MAP` must gain an entry for every new notebook.
+5. **Re-inject the card**: `python3 scripts/inject_notebook_backlinks.py`. Rendering leaves out the
+   book's card (the way back to the chapter, and Open in Colab, download and GitHub buttons), the tab
+   title and link tags, and the page's contrast and heading fixes. The script's `MAP` must gain an
+   entry for every new notebook. Render with the nbconvert versions `deploy.yml` pins, so the deploy's
+   render matches the committed page.
 
 Always do 4 and 5, and commit the rendered HTML in the same commit as its notebook. The deploy
 re-renders only the notebooks a push changes and publishes the committed HTML for all the others,

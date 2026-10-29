@@ -23,9 +23,10 @@ notebook top to bottom before committing it. Its saved outputs come from the lib
 runs, so that a reader who opens it in Colab sees the same numbers the page does.
 
 To render every notebook again, run the workflow by hand from the Actions tab ("Build & Deploy Book
-to GitHub Pages", then "Run workflow"). That is needed when the backlink card in
-`scripts/inject_notebook_backlinks.py` changes design, because the script skips pages that already
-have a card. A second workflow, `.github/workflows/check-links.yml`, fails any push that leaves a
+to GitHub Pages", then "Run workflow"). A change to `scripts/inject_notebook_backlinks.py` doesn't
+need it, because the script rewrites its card, tab title and link tags on every page each time it
+runs. The deploy pins nbconvert and the libraries that shape its output to the versions sessions
+render with, so a page it renders matches the committed one byte for byte. A second workflow, `.github/workflows/check-links.yml`, fails any push that leaves a
 link pointing at nothing.
 
 Since October 27, 2026, Claude Code sessions commit straight to `main` once the checks pass, one
@@ -50,7 +51,7 @@ sessions.
    doesn't change titles or links, so set the previous and next cards on the new chapter and its two
    neighbors by hand.
 4. **Build and run the notebook**, `chapters/notebooks/<slug>.ipynb`, so its outputs are saved.
-5. **Render it** and add the backlink card:
+5. **Render it** and add the book's card and tags:
    ```bash
    python3 -m nbconvert --to html --template lab --output-dir chapters/notebooks/html chapters/notebooks/<slug>.ipynb
    python3 scripts/inject_notebook_backlinks.py
