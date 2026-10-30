@@ -180,10 +180,11 @@
     </figure>
 
     <h3 style="font-size:1.05rem;margin:1.6rem 0 0.4rem">One strong relationship, and a surprise</h3>
-    <p>A correlation heatmap of the seven numeric features is almost entirely pale, the features are mostly independent,
+    <p>A correlation heatmap of the seven numeric features (drawn here from the cleaned rows; the raw file's values
+differ slightly) is almost entirely pale, the features are mostly independent,
        except for one hot cell: <strong>energy and loudness correlate at r ≈ 0.94</strong>. The surprise is the
-       <code>popularity</code> row: it is near-zero against every audio feature, what makes a song popular here is not
-       its sound.</p>
+       <code>popularity</code> row: it is near-zero against every numeric audio feature, so those features don't explain popularity here.
+The categorical <code>audio_quality</code> does far better (mean popularity 19.3, 26.8 and 40.1 from low to high).</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
       <svg viewBox="0 0 560 330" width="100%" font-family="Inter, sans-serif" aria-label="Correlation heatmap of the seven Spotify audio features">
@@ -264,7 +265,7 @@
         <text x="408" y="120" font-size="8.5" fill="#4a5578">near-duplicate pair:</text>
         <text x="408" y="132" font-size="8.5" fill="#7c3aed" font-weight="700">multicollinearity</text>
         <text x="408" y="284" font-size="8.5" fill="#4a5578">pop row ≈ 0:</text>
-        <text x="408" y="296" font-size="8.5" fill="#4a5578">sound doesn't</text>
+        <text x="408" y="296" font-size="8.5" fill="#4a5578">audio features don't</text>
         <text x="408" y="308" font-size="8.5" fill="#4a5578">explain popularity</text>
         <text x="250" y="324" text-anchor="middle" font-size="8.5" fill="#8b94b3">dnc danceability · eng energy · lou loudness · tmp tempo · val valence · dur duration · pop popularity</text>
       </svg>
@@ -323,9 +324,9 @@
     <div class="section-eyebrow"><div class="num">4</div><h2>Preparing to Model: Outliers, Transform, Scale &amp; Encode</h2></div>
 
     <p><strong>Treat the outliers (see <a href="detecting-and-treating-outliers.html">Detecting &amp; Treating Outliers</a>).</strong> A box plot of <code>duration_ms</code> shows a few tracks running to
-       impossible lengths, one at 18,000,000 ms, five hours. The IQR rule flags a couple dozen long songs, but most are
-       genuine (extended mixes, classical works). Only <strong>three</strong> are physically impossible, so we remove
-       just those errors and keep the real long songs. An outlier rule detects; a human decides.</p>
+       impossible lengths, one at 18,000,000 ms, five hours. The IQR rule flags 19 long songs, but most are genuine extended mixes and long album tracks.
+Only <strong>three</strong>, at 25, 32 and 300 minutes, run past the 10 minutes this file treats as the limit, so
+we remove just those as entry errors and keep the real long songs. An outlier rule detects; a human decides.</p>
 
     <p><strong>Transform the skew (see <a href="transformations.html">Transformations</a>).</strong> Even after the errors are gone, <code>duration</code> has a long
        right tail (skew ≈ +0.93). A natural-log transform straightens it to near-symmetric (skew ≈ +0.04), which steadies
@@ -430,14 +431,15 @@
           <tr><td class="nm">Coeff. of variation <span style="color:var(--ink-faint)">(see <a href="measures-of-dispersion.html">Measures of Dispersion</a>)</span></td><td><strong>23%</strong></td><td><strong>58%</strong></td><td>Popularity is far more variable <em>relative to its mean</em></td></tr>
           <tr><td class="nm">Quartiles Q1 / Q3 <span style="color:var(--ink-faint)">(see <a href="measures-of-position.html">Measures of Position</a>)</span></td><td>101.4 / 134.1</td><td>16.0 / 40.0</td><td>The middle 50% of songs sits here</td></tr>
           <tr><td class="nm">Skewness <span style="color:var(--ink-faint)">(see <a href="shape-of-a-distribution.html">Shape of a Distribution</a>)</span></td><td>+0.65</td><td>+0.55</td><td>Both lean mildly right</td></tr>
-          <tr><td class="nm">Kurtosis <span style="color:var(--ink-faint)">(see <a href="shape-of-a-distribution.html">Shape of a Distribution</a>)</span></td><td><strong>+3.77</strong></td><td>−0.37</td><td>Tempo is sharply peaked (leptokurtic); popularity is flatter</td></tr>
+          <tr><td class="nm">Kurtosis <span style="color:var(--ink-faint)">(see <a href="shape-of-a-distribution.html">Shape of a Distribution</a>)</span></td><td><strong>+3.77</strong></td><td>−0.37</td><td>Tempo's kurtosis comes from two tempos near 290 BPM; popularity is flatter</td></tr>
         </tbody>
       </table>
     </div>
     <p>The standout is the <strong>coefficient of variation</strong>: at 58% versus 23%, songs differ far more in
        popularity than in tempo once you account for their different averages, the kind of comparison a raw standard
-       deviation cannot make across two different units (see <a href="measures-of-dispersion.html">Measures of Dispersion</a>). And tempo's high <strong>kurtosis</strong> says most
-       songs huddle around 118 BPM with a few far-off tails, a shape no single average reveals.</p>
+       deviation cannot make across two different units (see <a href="measures-of-dispersion.html">Measures of Dispersion</a>). And tempo's high <strong>kurtosis</strong> comes from just two tempos, 285 and 299 BPM, far
+out in the tail. Without them it is near zero, so here kurtosis flags two values worth checking. (Many tempos sit at
+exactly 118 only because the missing ones were filled with the median.)</p>
 
     <h3 style="font-size:1.05rem;margin:1.6rem 0 0.4rem">A bar chart for the categories (see <a href="charts-for-categorical-data.html">Charts for Categorical Data</a>)</h3>
     <p>With genres finally standardized, a simple bar chart of counts is trustworthy: the eight genres are reasonably
@@ -533,7 +535,7 @@
       <div><div class="ctitle">A folk belief, tested and rejected</div>
         <p>People often say songs in a major key "sound happier." We can check it directly: grouping
            <code>valence</code> (Spotify's happiness score) by <code>mode</code> gives <strong>0.522 for Major versus
-           0.516 for Minor</strong>, a gap of about 0.006, essentially nothing. In this dataset the folklore does not
+           0.516 for Minor</strong>, a gap of about 0.007, essentially nothing. In this dataset the folklore does not
            hold. Being able to <em>test</em> a claim instead of repeating it is exactly what exploratory analysis buys
            you (see <a href="multivariate-and-specialized-visuals.html">Multivariate &amp; Specialized Visuals</a>).</p></div>
     </div>
@@ -609,9 +611,9 @@
           <p>The companion notebook is the full walkthrough end to end: the first-contact audit, descriptive statistics,
              the popularity histogram, the correlation heatmap and the energy-versus-loudness scatter, then every cleaning
              step (dedup, category standardization, the three missing-value treatments, outlier removal, the log
-             transform, scaling, and one-hot encoding), then a final exploration beat on the clean data, a descriptive
-             measurements table, the genre bar chart, the major-vs-minor folklore check, and the energy-by-genre box
-             plots, finishing at the analysis-ready table. Every cell explains its decision.</p>
+             transform, scaling, and one-hot encoding) up to the analysis-ready table, then a final exploration beat on the
+             clean data, a descriptive measurements table, the genre bar chart, the major-vs-minor folklore check, and the
+             energy-by-genre box plots. Every cell explains its decision.</p>
         </div>
       </div>
       <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
@@ -678,7 +680,7 @@
           <h3>Errors vs genuine extremes</h3>
           <p>Apply the IQR rule to <code>duration_ms</code>. How many rows does it flag, and which are real data errors?
              Remove only the errors and justify keeping the rest.</p>
-          <div class="chint">Hint: fence = Q3 + 1.5·IQR; only the &gt; 10-minute values are impossible.</div>
+          <div class="chint">Hint: fence = Q3 + 1.5·IQR; this file treats the values over 10 minutes as entry errors.</div>
         </div>
       </div>
       <div class="challenge">
@@ -803,7 +805,7 @@ window.addEventListener('scroll', () => {
       explain: "Imputing the target bakes your assumptions into the answer. Because popularity is the outcome, you drop those rows instead, the opposite of how you'd treat a missing feature."
     },
     {
-      q: "duration_ms contains a value of 18,000,000 (5 hours) and the IQR rule flags two dozen long tracks. You should…",
+      q: "duration_ms contains a value of 18,000,000 (5 hours) and the IQR rule flags about 20 long tracks. You should…",
       options: [
         "Delete every flagged row",
         "Keep everything; rules are unreliable",
@@ -811,7 +813,7 @@ window.addEventListener('scroll', () => {
         "Scale the column to hide them"
       ],
       answer: 2,
-      explain: "An outlier rule detects, it does not decide. Inspect the flags: the 3 impossible (multi-hour) values are errors to remove; the genuine long tracks stay (see <a href='detecting-and-treating-outliers.html'>Detecting &amp; Treating Outliers</a>)."
+      explain: "An outlier rule detects, it does not decide. Inspect the flags: the 3 values the file treats as errors (one of them 5 hours) are the ones to remove; the genuine long tracks stay (see <a href='detecting-and-treating-outliers.html'>Detecting &amp; Treating Outliers</a>)."
     },
     {
       q: "energy and loudness correlate at r ≈ 0.94. For a linear model this is…",
