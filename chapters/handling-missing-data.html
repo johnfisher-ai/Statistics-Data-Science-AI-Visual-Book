@@ -158,14 +158,15 @@
     <div class="section-eyebrow"><div class="num">2</div><h2>Detect First, Then Decide on Deletion</h2></div>
     <p>Before any fix: convert hidden codes (<code>-99</code>, <code>"N/A"</code>) to real <code>NaN</code>, then
        count. <code>df.isna().sum()</code> and <code>df.isna().mean()*100</code> tell you how much is missing and
-       where; a missingness heatmap shows whether columns go blank together (a clue toward MAR).</p>
+       where; a missingness heatmap shows whether columns go blank together, a clue to how the
+gaps arose. Gaps in one column that track another column's observed values are evidence against MCAR.</p>
 
     <p>The simplest response is <span class="hl">deletion</span>, and it is the most common mistake:</p>
     <div style="overflow-x:auto" tabindex="0">
       <table class="disp-table">
         <thead><tr><th>Method</th><th>How</th><th>Good</th><th>Risk</th></tr></thead>
         <tbody>
-          <tr><td class="nm">Listwise (complete-case)</td><td><code>df.dropna()</code> drops any row with a gap</td><td>Simple; unbiased under MCAR</td><td>Can discard a LOT of rows; biased under MAR/MNAR</td></tr>
+          <tr><td class="nm">Listwise (complete-case)</td><td><code>df.dropna()</code> drops any row with a gap</td><td>Simple; unbiased under MCAR</td><td>Can discard a LOT of rows<br>Usually biased under MAR/MNAR</td></tr>
           <tr><td class="nm">Pairwise</td><td>Use rows present for each calculation (e.g. <code>df.corr()</code>)</td><td>Keeps more data</td><td>Different stats on different subsamples</td></tr>
           <tr><td class="nm">Drop the column</td><td>Remove a feature that is mostly empty (rule of thumb &gt;50–60%)</td><td>Sheds a near-useless feature</td><td>Threshold is arbitrary; missingness may itself be informative</td></tr>
         </tbody>
@@ -174,9 +175,10 @@
     <div class="callout note">
       <div class="cico">🗑️</div>
       <div><div class="ctitle">"Just drop the NaNs" compounds fast</div>
-        <p>With three columns each only 10% missing, only about 0.9³ ≈ <strong>73%</strong> of rows survive
-           listwise deletion, you can lose a quarter of the data while no single column looks bad. And deletion is
-           unbiased <em>only</em> under MCAR; under MAR or MNAR it systematically distorts your results.</p></div>
+        <p>With three columns each independently 10% missing, only about 0.9³ ≈ <strong>73%</strong> of rows survive
+           listwise deletion, you can lose a quarter of the data while no single column looks bad. And MCAR is the only mechanism under which deletion is
+unbiased for every analysis. Under MAR or MNAR it usually distorts results, though a regression stays unbiased when
+the gaps depend only on its predictors.</p></div>
     </div>
   </section>
 
@@ -288,7 +290,7 @@
       <tbody>
         <tr><td class="nm tx-cyan">Simple imputation</td><td><code>SimpleImputer</code> (mean, median, most-frequent)</td><td>A fast, robust default, median for skewed features</td></tr>
         <tr><td class="nm tx-purple">Model-based imputation</td><td><code>KNNImputer</code>, <code>IterativeImputer</code></td><td>When other features can predict the missing one</td></tr>
-        <tr><td class="nm tx-amber">Missing-indicator</td><td><code>add_indicator=True</code>, or a manual flag column</td><td>When the fact that a value is missing is itself informative (MNAR)</td></tr>
+        <tr><td class="nm tx-amber">Missing-indicator</td><td><code>add_indicator=True</code>, or a manual flag column</td><td>When the fact that a value is missing is itself informative (often, though not only, under MNAR)</td></tr>
       </tbody>
     </table>
 
@@ -296,9 +298,9 @@
       <div class="cico">🤖</div>
       <div><div class="ctitle">Impute inside the pipeline, fit on train only</div>
         <p>Compute the imputation value (the mean, say) on the <strong>training set</strong>, then apply it to the test
-           set, exactly as with scaling. Impute before you split and you leak test information into training. And when
-           data is <strong>missing not at random</strong>, add a missing-indicator, because the missingness carries
-           signal a plain fill would erase.</p></div>
+           set, exactly as with scaling. Impute before you split and you leak test information into training. And when the fact that a value is missing carries signal, as it often
+does when data is <strong>missing not at random</strong>, add a missing-indicator so a model can use it. The flag doesn't correct
+a biased mean, which needs a model of why the values are missing or a sensitivity analysis.</p></div>
     </div>
   </section>
 
@@ -359,7 +361,7 @@
       <ul>
         <li><span class="ck">✓</span><span><strong>The mechanism drives the method</strong>: MCAR (random), MAR (depends on observed data), MNAR (depends on the missing value itself).</span></li>
         <li><span class="ck">✓</span><span><strong>You can't prove the mechanism from data</strong>; MAR vs MNAR needs domain knowledge, so state your assumption.</span></li>
-        <li><span class="ck">✓</span><span><strong>Deletion is unbiased only under MCAR</strong> and compounds fast across columns; under MAR/MNAR it biases results.</span></li>
+        <li><span class="ck">✓</span><span><strong>Deletion is unbiased for every analysis only under MCAR</strong> and compounds fast across columns; under MAR/MNAR it usually biases results.</span></li>
         <li><span class="ck">✓</span><span><strong>Mean imputation shrinks variance</strong>; single imputation understates uncertainty (multiple imputation fixes it); KNN/MICE use other columns.</span></li>
         <li><span class="ck">✓</span><span><strong>Fit imputers on train only</strong> to avoid leakage, and keep a missingness indicator when the gap is informative.</span></li>
       </ul>
@@ -510,7 +512,7 @@ window.addEventListener('scroll', () => {
       explain: "MAR: missingness depends only on OBSERVED data (sex), not on the missing value itself. Imputation that conditions on sex can be approximately unbiased."
     },
     {
-      q: "Listwise deletion (df.dropna()) is unbiased…",
+      q: "Listwise deletion (df.dropna()) is unbiased for every analysis…",
       options: [
         "Always",
         "Only under MCAR",
@@ -518,7 +520,7 @@ window.addEventListener('scroll', () => {
         "Never"
       ],
       answer: 1,
-      explain: "Dropping incomplete rows is unbiased only under MCAR (you just lose power). Under MAR or MNAR it systematically biases results."
+      explain: "Dropping incomplete rows is unbiased for every analysis only under MCAR (you just lose power). Under MAR or MNAR it usually biases results, with exceptions such as a regression whose gaps depend only on its predictors."
     },
     {
       q: "The main problem with mean imputation is that it…",
