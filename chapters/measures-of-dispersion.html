@@ -119,8 +119,9 @@
 
     <p>Sort the data and split it into quarters. <span class="hl">Q1</span> is the 25th percentile,
        <span class="hl">Q3</span> the 75th, and <span class="math" style="font-family:'JetBrains Mono',monospace">IQR = Q3 − Q1</span>.
-       The <span class="term">five-number summary</span> (min, Q1, median, Q3, max) is exactly what a
-       <span class="term">box plot</span> draws:</p>
+       The <span class="term">five-number summary</span> (min, Q1, median, Q3, max) is what a
+       <span class="term">box plot</span> draws, except that a point beyond the 1.5×IQR fences is drawn as a dot
+       and the whisker stops at the furthest point inside them:</p>
 
     <figure style="margin:1.5rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.4rem">
       <svg viewBox="0 0 720 190" width="100%" font-family="Inter, sans-serif" aria-label="Anatomy of a box plot">
@@ -130,7 +131,7 @@
         <line x1="120" y1="62" x2="120" y2="98" stroke="#8b94b3" stroke-width="2"/>
         <line x1="520" y1="62" x2="520" y2="98" stroke="#8b94b3" stroke-width="2"/>
         <!-- box Q1..Q3 -->
-        <rect x="220" y="50" width="200" height="60" rx="4" fill="#e0f7fb" stroke="#0891b2" stroke-width="2"/>
+        <rect x="240" y="50" width="120" height="60" rx="4" fill="#e0f7fb" stroke="#0891b2" stroke-width="2"/>
         <!-- median -->
         <line x1="300" y1="50" x2="300" y2="110" stroke="#7c3aed" stroke-width="3"/>
         <!-- outlier -->
@@ -138,14 +139,14 @@
         <!-- labels -->
         <g font-size="11.5" fill="#1a2138" text-anchor="middle" font-weight="700">
           <text x="120" y="130">Min</text>
-          <text x="220" y="40">Q1</text>
+          <text x="240" y="40">Q1</text>
           <text x="300" y="40" fill="#7c3aed">Median</text>
-          <text x="420" y="40">Q3</text>
-          <text x="520" y="130">Max</text>
+          <text x="360" y="40">Q3</text>
+          <text x="520" y="130">Largest non-outlier</text>
           <text x="640" y="110" fill="#db2777">outlier</text>
         </g>
         <!-- IQR bracket -->
-        <text x="320" y="150" text-anchor="middle" font-size="11" fill="#0891b2" font-weight="700">← IQR (middle 50%) →</text>
+        <text x="300" y="150" text-anchor="middle" font-size="11" fill="#0891b2" font-weight="700">← IQR (middle 50%) →</text>
         <text x="640" y="55" text-anchor="middle" font-size="9.5" fill="#8b94b3">beyond 1.5×IQR</text>
       </svg>
       <figcaption style="text-align:center;font-size:0.8rem;color:var(--ink-faint);margin-top:0.3rem">
@@ -188,7 +189,7 @@
         <p>For a whole <strong>population</strong> you divide the squared deviations by N (giving σ², σ). For a
            <strong>sample</strong> you divide by <strong>n − 1</strong> (giving s², s). The reason: the sample mean
            sits at the center of its own data, so deviations from it run slightly too small. Dividing by the smaller
-           n − 1 (called <strong>Bessel's correction</strong>) nudges the estimate up to undo that bias. With large
+           n − 1 (called <strong>Bessel's correction</strong>) nudges the variance up so that s² is an unbiased estimate of σ² (s itself still runs slightly low). With large
            n the difference is tiny; it matters most for small samples.</p></div>
     </div>
     <p style="font-size:0.9rem;color:var(--ink-faint)">Heads-up on units: if data is in dollars, the variance is in
@@ -239,7 +240,7 @@
       <div class="cico">📐</div>
       <div><div class="ctitle">Two important footnotes</div>
         <p><strong>Chebyshev's rule</strong> works for <em>any</em> shape of data, not just bell curves: at least
-           75% of values lie within 2 SD and at least 89% within 3 SD (looser, but always true). And the SD is the
+           75% of values lie within 2 SD and at least 88.9% (8/9) within 3 SD (looser, but always true). And the SD is the
            unit behind the <strong>z-score</strong>, <span class="math" style="font-family:'JetBrains Mono',monospace">z = (value − mean) / SD</span>,
            which says how many standard deviations from the mean a value is. More on that in the standardization chapter.</p></div>
     </div>
@@ -256,7 +257,7 @@
           <tr><td class="nm tx-cyan">Range</td><td>Max − Min</td><td>A 5-second feel for spread</td><td>Ruined by one outlier</td></tr>
           <tr><td class="nm tx-green">IQR</td><td>Q3 − Q1 (middle 50%)</td><td>Skewed data; box plots</td><td>Ignores the tails entirely</td></tr>
           <tr><td class="nm tx-purple">Std deviation</td><td>√(avg squared deviation)</td><td>Bell-shaped data; most of statistics</td><td>Sensitive to outliers</td></tr>
-          <tr><td class="nm tx-amber">MAD</td><td>Avg of |value − mean|</td><td>An intuitive, robust alternative to SD</td><td>Less tidy mathematically</td></tr>
+          <tr><td class="nm tx-amber">MAD</td><td>Avg of |value − mean|</td><td>An intuitive alternative to SD, less swayed by outliers</td><td>Not truly robust. The robust MAD is the <em>median</em> absolute deviation from the median</td></tr>
           <tr><td class="nm tx-pink">CV</td><td>SD ÷ mean (often ×100%)</td><td>Comparing spread across different units/scales</td><td>Needs positive data with a true zero</td></tr>
         </tbody>
       </table>
@@ -406,7 +407,7 @@
         <div class="cnum">4</div>
         <div class="cbody">
           <h3>Coefficient of variation</h3>
-          <p>Stock A: mean 8%, SD 4%. Stock B: mean 2%, SD 1.5%. Which is <strong>relatively</strong> more variable?</p>
+          <p>Store A sells a mean of 80 units a day with SD 40. Store B sells a mean of 20 with SD 15. Which is <strong>relatively</strong> more variable?</p>
           <div class="chint">Hint: CV = SD ÷ mean; compare the two CVs, not the raw SDs.</div>
         </div>
       </div>
