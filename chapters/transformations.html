@@ -149,9 +149,9 @@
         <text x="150" y="179" text-anchor="middle" font-size="9.5" fill="#4a5578">LEFT skew</text>
         <!-- down arrow + label (right skew) -->
         <g stroke="#059669" stroke-width="2" fill="#059669"><line x1="510" y1="110" x2="510" y2="200"/><path d="M510,205 l-5,-9 l10,0 z"/></g>
-        <text x="510" y="95" text-anchor="middle" font-size="11" fill="#059669" font-weight="800">DOWN</text>
+        <text x="510" y="66" text-anchor="middle" font-size="11" fill="#059669" font-weight="800">DOWN</text>
         <text x="510" y="79" text-anchor="middle" font-size="9.5" fill="#4a5578">pulls in a</text>
-        <text x="510" y="66" text-anchor="middle" font-size="9.5" fill="#4a5578">RIGHT skew</text>
+        <text x="510" y="95" text-anchor="middle" font-size="9.5" fill="#4a5578">RIGHT skew</text>
       </svg>
       <figcaption style="text-align:center;font-size:0.8rem;color:var(--ink-faint);margin-top:0.3rem">
         Right-skewed data (income, counts) goes down the ladder; left-skewed data (ceiling effects) goes up. The
@@ -172,7 +172,7 @@
           <tr><td class="nm">Log (ln / log₁₀)</td><td>Right skew, multiplicative data, wide ranges (income, prices, populations)</td><td>x &gt; 0 (strictly positive)</td><td>Steps = percent change; back-transform with exp. For zeros use <code>log1p</code>.</td></tr>
           <tr><td class="nm">Square root</td><td>Milder right skew; <strong>count / Poisson</strong> data (stabilizes variance)</td><td>x ≥ 0</td><td>Variance ≈ mean for counts, so √ flattens it.</td></tr>
           <tr><td class="nm">Reciprocal (1/x)</td><td>Very heavy right skew; rates (time → speed)</td><td>x ≠ 0</td><td><strong>Reverses the order</strong> of values, flag this.</td></tr>
-          <tr><td class="nm">Square (x²), cubes</td><td><strong>Left</strong> skew (long left tail)</td><td>any sign</td><td>Going up the ladder.</td></tr>
+          <tr><td class="nm">Square (x²), cubes</td><td><strong>Left</strong> skew (long left tail)</td><td>x ≥ 0 for x² (shift first)<br>any sign for x³</td><td>Going up the ladder.</td></tr>
           <tr><td class="nm">Box-Cox</td><td>Auto-pick the best power to normalize</td><td>x &gt; 0</td><td>Chooses λ by maximum likelihood (below).</td></tr>
           <tr><td class="nm">Yeo-Johnson</td><td>Same idea, but data has zeros / negatives</td><td>any real x</td><td>The Box-Cox generalization; sklearn's default.</td></tr>
         </tbody>
@@ -222,7 +222,7 @@
     <div class="callout note">
       <div class="cico">🤖</div>
       <div><div class="ctitle">Why this matters for data science</div>
-        <p>Many classic models assume roughly normal, constant-variance, linear inputs, and a transform is often the
+        <p>Many classic models assume roughly normal, constant-variance errors and a linear relationship, and a transform is often the
            cheapest way to meet those assumptions without abandoning the method. The cost is interpretability and the
            discipline of back-transforming honestly. Used well, a single log can turn a hopeless variable into a
            well-behaved one; used carelessly, it quietly biases every number you report.</p></div>
@@ -251,8 +251,9 @@
       <div><div class="ctitle">Fit the transform on training data, and remember to invert it</div>
         <p>Like scaling and imputation, a power transform is <em>learned</em> (Box-Cox estimates a &#955;), so fit it on
            the training set only. And when you transform the <strong>target</strong>, remember to invert the transform
-           on the predictions, a model trained on <code>log(price)</code> outputs logs, which you must exponentiate back
-           to dollars before anyone reads them.</p></div>
+           on the predictions, a model trained on <code>log(price)</code> outputs logs, which you must exponentiate back to dollars before anyone reads them.
+Exponentiating gives a median-type prediction, below the mean price, so apply a smearing correction (Duan, 1983)
+if you need mean dollars.</p></div>
     </div>
   </section>
 
@@ -260,7 +261,7 @@
   <section id="real-world">
     <div class="section-eyebrow"><div class="num">6</div><h2>Real-World Example: Response Times</h2></div>
     <p>API response times are reliably right-skewed, most requests are fast, a few are slow, and these <strong>500</strong>
-       are no exception (skewness about <strong>1.7</strong>). The companion notebook races four transforms: a
+       are no exception (skewness about <strong>1.7</strong>). The companion notebook races three transforms against the raw column: a
        <strong>log</strong> transform brings the skew almost to zero (about <strong>0.1</strong>), a <strong>Box-Cox</strong>
        does slightly better, a <strong>square root</strong> only helps partway, and the winner turns a lopsided column
        into a near-symmetric one.</p>
@@ -349,7 +350,7 @@
           <h3>Stabilize the variance</h3>
           <p>Make two Poisson groups (mean 5 and mean 100). Show the raw variances track the means, then square-root
              and show they become comparable.</p>
-          <div class="chint">Hint: Poisson variance ≈ mean; √ pulls both toward ~0.25.</div>
+          <div class="chint">Hint: Poisson variance ≈ mean; √ brings both near 0.25 to 0.3 (0.25 is the limit for large means).</div>
         </div>
       </div>
       <div class="challenge">
@@ -507,7 +508,7 @@ window.addEventListener('scroll', () => {
       explain: "By Jensen's inequality, back-transforming a mean of logs gives the geometric mean, biased below the arithmetic mean. Report the median or use a bias correction."
     },
     {
-      q: "Which is a real pitfall when transforming for a machine-learning model?",
+      q: "Which practice leaks test information when transforming for a machine-learning model?",
       options: [
         "Transforms always improve accuracy",
         "Fit the transform's parameters (λ, shift) on the FULL data before splitting",
