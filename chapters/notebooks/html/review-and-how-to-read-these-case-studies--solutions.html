@@ -7995,7 +7995,7 @@ popularity skew: +0.56
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p><strong>Answer:</strong> Three different problems, three different tools. <code>tempo == 0</code> is <strong>missing data in disguise</strong> (Chapter 20): replace the zeros with <code>NaN</code>, then impute. The features span 0–1, −40–0, and tens of thousands, so any distance- or gradient-based model needs <strong>scaling</strong> (Chapter 24). And <code>popularity</code> is <strong>right-skewed</strong>, a candidate for a <strong>transformation</strong> (Chapter 22) or robust summaries. Naming the tool for each symptom is the whole skill this part is reviewing.</p>
+<p><strong>Answer:</strong> Three different problems, three different tools. <code>tempo == 0</code> is <strong>missing data in disguise</strong> (Chapter 20): replace the zeros with <code>NaN</code>, then impute. The features span 0–1, −40–0, and hundreds of thousands and up, so any distance- or gradient-based model needs <strong>scaling</strong> (Chapter 24). And <code>popularity</code> leans only mildly right (skew +0.56), so a <strong>transformation</strong> (Chapter 22) is optional; the strongly skewed <code>duration_ms</code> is the one Chapter 27 log-transforms. Naming the tool for each symptom is the whole skill this part is reviewing.</p>
 </div>
 </div>
 </div>
@@ -8028,9 +8028,10 @@ popularity skew: +0.56
 
 <span class="n">DROP_ABOVE</span> <span class="o">=</span> <span class="mi">80</span>   <span class="c1"># % missing</span>
 <span class="n">to_drop</span>   <span class="o">=</span> <span class="n">miss</span><span class="p">[</span><span class="n">miss</span> <span class="o">&gt;=</span> <span class="n">DROP_ABOVE</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-<span class="n">to_impute</span> <span class="o">=</span> <span class="n">miss</span><span class="p">[</span><span class="n">miss</span> <span class="o">&lt;</span>  <span class="n">DROP_ABOVE</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+<span class="n">to_impute</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">miss</span><span class="p">[</span><span class="n">miss</span> <span class="o">&lt;</span> <span class="n">DROP_ABOVE</span><span class="p">]</span><span class="o">.</span><span class="n">index</span> <span class="k">if</span> <span class="n">c</span> <span class="o">!=</span> <span class="s2">"sale_price"</span><span class="p">]</span>   <span class="c1"># never impute the target</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">drop (or recode to a category):"</span><span class="p">,</span> <span class="n">to_drop</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"impute:"</span><span class="p">,</span> <span class="n">to_impute</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"decide by reason (impute, recode or flag):"</span><span class="p">,</span> <span class="n">to_impute</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"drop rows missing the target: ['sale_price']"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -8050,7 +8051,8 @@ garage_yr_built     4.8
 sale_price          0.5
 
 drop (or recode to a category): ['pool_qc']
-impute: ['fireplace_qual', 'lot_frontage', 'garage_yr_built', 'sale_price']
+decide by reason (impute, recode or flag): ['fireplace_qual', 'lot_frontage', 'garage_yr_built']
+drop rows missing the target: ['sale_price']
 </pre>
 </div>
 </div>
@@ -8063,7 +8065,7 @@ impute: ['fireplace_qual', 'lot_frontage', 'garage_yr_built', 'sale_price']
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p><strong>Answer:</strong> <code>pool_qc</code> is missing for ~99% of homes, the missingness is <strong>informative</strong> (the house simply has no pool), so you either <strong>drop the column</strong> or recode the blanks to a real <code>"None"</code> category, never impute a fake quality. The lightly-missing columns (<code>lot_frontage</code>, <code>fireplace_qual</code>, <code>garage_yr_built</code>) are worth <strong>imputing</strong> (median for the number, <code>"None"</code>/mode for the categories). A simple percentage threshold is a useful first pass, but the deciding question is always <em>why</em> the value is missing (Chapter 20).</p>
+<p><strong>Answer:</strong> <code>pool_qc</code> is missing for ~99% of homes, the missingness is <strong>informative</strong> (the house simply has no pool), so you either <strong>drop the column</strong> or recode the blanks to a real <code>"None"</code> category, never impute a fake quality. Below the threshold, the reason still decides. <code>lot_frontage</code> (16%) is worth <strong>imputing</strong> with the median. A blank <code>fireplace_qual</code> (48%) means no fireplace, so recode it to <code>"None"</code>, and a blank <code>garage_yr_built</code> means no garage, so flag it rather than invent a year. <code>sale_price</code> is the target, so drop those rows rather than impute them. A simple percentage threshold is a useful first pass, but the deciding question is always <em>why</em> the value is missing (Chapter 20).</p>
 </div>
 </div>
 </div>
