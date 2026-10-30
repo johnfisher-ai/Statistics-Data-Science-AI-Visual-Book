@@ -104,23 +104,22 @@
     <div class="section-eyebrow"><div class="num">1</div><h2>Fit &#955;, Check the Signature</h2></div>
     <p>The rate is just the average count: <strong>&#955; &#8776; 12</strong> requests per second. The Poisson's
        fingerprint is that the <em>variance equals the mean</em>, and here the variance is 11.69 against a mean of 12.01,
-       a ratio of 0.97. That near-equality is strong evidence the Poisson is the right model.</p>
+       a ratio of 0.97. That near-equality is what a Poisson predicts, and the notebook's chi-square goodness-of-fit test (22.1 on 17 df, p = 0.18) finds no evidence against the model.</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
-      <svg viewBox="0 0 680 200" width="100%" font-family="Inter, sans-serif" aria-label="Observed requests per second with the fitted Poisson PMF, roughly bell-shaped around 12">
-        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Requests per second: Poisson(&#955; &#8776; 12) tracks the data</text>
+      <svg viewBox="0 0 680 200" width="100%" font-family="Inter, sans-serif" aria-label="The fitted Poisson PMF of requests per second, peaking at 11 and 12 with a longer right tail">
+        <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Requests per second: the fitted Poisson(&#955; &#8776; 12) PMF</text>
         <line x1="50" y1="170" x2="640" y2="170" stroke="#1a2138" stroke-width="1.1"/>
-        <!-- poisson(12) PMF roughly bell, scaled -->
+        <!-- poisson.pmf(k, 12.007) for k = 4..22, scaled so the k = 12 bar is 108 high; bar k starts at x = 160 + 18(k - 5) -->
         <g fill="#d97706" fill-opacity="0.8">
-          <rect x="160" y="150" width="16" height="20"/><rect x="178" y="138" width="16" height="32"/><rect x="196" y="120" width="16" height="50"/>
-          <rect x="214" y="100" width="16" height="70"/><rect x="232" y="82" width="16" height="88"/><rect x="250" y="68" width="16" height="102"/>
-          <rect x="268" y="62" width="16" height="108"/><rect x="286" y="62" width="16" height="108"/><rect x="304" y="68" width="16" height="102"/>
-          <rect x="322" y="80" width="16" height="90"/><rect x="340" y="96" width="16" height="74"/><rect x="358" y="114" width="16" height="56"/>
-          <rect x="376" y="130" width="16" height="40"/><rect x="394" y="144" width="16" height="26"/><rect x="412" y="154" width="16" height="16"/>
-          <rect x="430" y="160" width="16" height="10"/>
+          <rect x="142" y="165.0" width="16" height="5.0"/> <rect x="160" y="158.0" width="16" height="12.0"/> <rect x="178" y="146.0" width="16" height="24.0"/> <rect x="196" y="128.9" width="16" height="41.1"/>
+          <rect x="214" y="108.3" width="16" height="61.7"/> <rect x="232" y="87.6" width="16" height="82.4"/> <rect x="250" y="71.1" width="16" height="98.9"/> <rect x="268" y="62.1" width="16" height="107.9"/>
+          <rect x="286" y="62.0" width="16" height="108.0"/> <rect x="304" y="70.2" width="16" height="99.8"/> <rect x="322" y="84.4" width="16" height="85.6"/> <rect x="340" y="101.5" width="16" height="68.5"/>
+          <rect x="358" y="118.6" width="16" height="51.4"/> <rect x="376" y="133.7" width="16" height="36.3"/> <rect x="394" y="145.8" width="16" height="24.2"/> <rect x="412" y="154.7" width="16" height="15.3"/>
+          <rect x="430" y="160.8" width="16" height="9.2"/> <rect x="448" y="164.7" width="16" height="5.3"/> <rect x="466" y="167.1" width="16" height="2.9"/>
         </g>
-        <line x1="285" y1="50" x2="285" y2="170" stroke="#db2777" stroke-width="1.3" stroke-dasharray="4 3"/>
-        <text x="285" y="44" text-anchor="middle" font-size="9" fill="#db2777" font-weight="800">&#955; = mean = variance &#8776; 12</text>
+        <line x1="294" y1="50" x2="294" y2="170" stroke="#db2777" stroke-width="1.3" stroke-dasharray="4 3"/>
+        <text x="294" y="44" text-anchor="middle" font-size="9" fill="#db2777" font-weight="800">&#955; = mean = variance &#8776; 12</text>
         <text x="345" y="190" text-anchor="middle" font-size="9" fill="#8b94b3">requests per second &#8594;</text>
       </svg>
     </figure>
@@ -149,8 +148,7 @@
 
     <p>A breach above 20 requests per second happens about <strong>1.2%</strong> of the time under the Poisson, close to
        the 1.6% seen in the data. The <strong>99th-percentile</strong> load is about 21 requests per second, the number
-       to provision against. Sizing capacity to the average (12) would leave the system underwater on the worst 1% of
-       seconds; the tail is what matters.</p>
+       to provision against. Sizing capacity to the average (12) would leave the system over capacity in about 43% of seconds (42% under the Poisson), while capacity at the 99th percentile is exceeded in at most 1% of them.</p>
   </section>
 
   <!-- ===== Section 3: why poisson ===== -->
@@ -164,7 +162,7 @@
       <div class="cico">🔬</div>
       <div><div class="ctitle">The binomial becomes Poisson</div>
         <p>In the notebook, a Binomial(100,000, &#955;/100,000), 100,000 users each with a one-in-eight-thousand
-           per-second chance, is indistinguishable from Poisson(&#955;), differing by less than a millionth. "Many
+           per-second chance, is indistinguishable from Poisson(&#955;), differing by at most about 7 millionths (0.000007). "Many
            independent chances, each rare" always collapses to a single rate &#955; that serves as both the mean and the
            variance.</p></div>
     </div>
@@ -205,10 +203,10 @@
       <h3>🎓 Key Takeaways</h3>
       <ul>
         <li><span class="ck">✓</span><span><strong>Counts of arrivals per interval are Poisson</strong>: PMF &#955;<sup>k</sup>e<sup>&#8722;&#955;</sup>/k!, with a single rate &#955;.</span></li>
-        <li><span class="ck">✓</span><span><strong>The signature is mean = variance = &#955;</strong>; here both are about 12 (ratio 0.97), confirming the model.</span></li>
+        <li><span class="ck">✓</span><span><strong>The signature is mean = variance = &#955;</strong>; here both are about 12 (ratio 0.97), consistent with the model.</span></li>
         <li><span class="ck">✓</span><span><strong>Capacity is a tail question</strong>: P(X &gt; 20) &#8776; 1.2% and the 99th-percentile load is about 21 req/s.</span></li>
         <li><span class="ck">✓</span><span><strong>The Poisson is the binomial limit</strong> (large n, small p, np = &#955;): many chances, each rare.</span></li>
-        <li><span class="ck">✓</span><span><strong>Provision to the tail, not the mean</strong>, or the worst 1% of seconds breaches capacity.</span></li>
+        <li><span class="ck">✓</span><span><strong>Provision to the tail</strong>: capacity at the mean (12) is exceeded in about 43% of seconds, capacity at the 99th percentile (21) in at most 1%.</span></li>
       </ul>
     </div>
   </section>
@@ -266,7 +264,7 @@ window.addEventListener('scroll', () => {
       q: "The Poisson's defining signature is that…",
       options: ["The mean is 0", "Mean = variance = λ", "It is symmetric", "It only takes two values"],
       answer: 1,
-      explain: "For a Poisson, the mean and variance are both λ. The data showed mean ≈ variance ≈ 12, confirming the fit."
+      explain: "For a Poisson, the mean and variance are both λ. The data showed mean ≈ variance ≈ 12, consistent with a Poisson."
     },
     {
       q: "λ was estimated from the data as…",
@@ -294,7 +292,7 @@ window.addEventListener('scroll', () => {
     },
     {
       q: "In the notebook, Binomial(100000, λ/100000) compared to Poisson(λ) differed by…",
-      options: ["A lot", "Less than a millionth", "Exactly 0.5", "It could not be computed"],
+      options: ["A lot", "At most about 7 millionths", "Exactly 0.5", "It could not be computed"],
       answer: 1,
       explain: "The two PMFs were essentially identical (max difference ≈ 7×10⁻⁶), demonstrating the binomial-to-Poisson limit."
     }
