@@ -106,8 +106,7 @@
   <section id="linear">
     <div class="section-eyebrow"><div class="num">1</div><h2>Linear Transformations: Shift and Scale</h2></div>
     <p>The simplest transform is linear: <strong>Y = aX + b</strong>. It shifts the mean to a&#956; + b and scales the
-       standard deviation to |a|&#963;, but it does not change the <em>shape</em>, a linear function of a normal is still
-       normal.</p>
+       standard deviation to |a|&#963;, but it keeps the <em>shape</em> (mirrored when a &lt; 0, which flips the sign of the skewness), and a linear function of a normal is still normal.</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
       <svg viewBox="0 0 680 190" width="100%" font-family="Inter, sans-serif" aria-label="A bell curve shifted and widened by a linear transformation">
@@ -154,7 +153,7 @@
       </svg>
     </figure>
 
-    <p>The symmetric input becomes a one-sided, heavy-right-tailed output, with a skewness of about 1.8 in the notebook.
+    <p>The symmetric input becomes a one-sided, heavy-right-tailed output, with a skewness of about 1.8 in the notebook, which uses X ~ Normal(0, 0.5). The skew grows with the spread of X, to about 6.2 when X is standard normal.
        To handle reshaping like this precisely, we need a rule that tracks how a transform stretches and compresses
        probability, the change-of-variables formula.</p>
   </section>
@@ -190,8 +189,7 @@
 
     <p>Probability is conserved: the same mass that sat in a small interval dx now spreads over a wider interval
        dy = |g&#8242;| dx, so the density must drop by the factor |g&#8242;|. For Y = e<sup>X</sup> with X standard normal,
-       the formula gives f<sub>Y</sub>(y) = &#966;(ln y)/y, and the notebook confirms it matches SciPy's lognormal to
-       within 10<sup>&#8722;16</sup>. The 1/y <em>is</em> the Jacobian.</p>
+       the formula gives f<sub>Y</sub>(y) = &#966;(ln y)/y, and the notebook confirms it matches SciPy's lognormal to about 10<sup>&#8722;16</sup>, the size of floating-point rounding. The 1/y <em>is</em> the Jacobian.</p>
   </section>
 
   <!-- ===== Section 4: inverse transform ===== -->
@@ -199,7 +197,7 @@
     <div class="section-eyebrow"><div class="num">4</div><h2>Inverse-Transform Sampling</h2></div>
     <p>One transform is so useful it deserves its own name. If U is uniform on [0, 1], then
        <strong>X = F<sup>&#8722;1</sup>(U)</strong> has cumulative distribution function F. Feeding uniform numbers through
-       an inverse CDF generates samples from <em>any</em> distribution, the engine inside every random sampler.</p>
+       an inverse CDF generates samples from <em>any</em> distribution, one of the basic engines of random sampling. Libraries also use other methods, such as the ziggurat rejection method behind NumPy's normal and exponential samplers and the Box-Muller transform for normals.</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
       <svg viewBox="0 0 680 210" width="100%" font-family="Inter, sans-serif" aria-label="Uniform values on the vertical axis mapped through the inverse CDF to samples on the horizontal axis">
@@ -221,8 +219,7 @@
     </figure>
 
     <p>In the notebook, plain uniforms pushed through the exponential's inverse CDF, X = &#8722;ln(1 &#8722; U), become
-       exponential samples whose mean (0.997) matches the target. This is how a computer's single uniform generator is
-       turned into a sampler for any distribution with an invertible CDF.</p>
+       exponential samples whose mean (0.997) matches the target. This is one way a computer's single uniform generator is turned into a sampler for any distribution with an invertible CDF.</p>
   </section>
 
   <!-- ===== Section 5: ML & AI ===== -->
@@ -248,12 +245,10 @@
       <div class="cico">🤖</div>
       <div><div class="ctitle">Why this matters for AI research</div>
         <p>Generative AI is, to a large degree, applied change-of-variables. <strong>Normalizing flows</strong> build a
-           rich data distribution by chaining many invertible transforms, tracking the Jacobian at each step exactly as in
-           section 3, so they can both sample data and score its exact likelihood. The <strong>reparameterization
+           rich data distribution by chaining many invertible transforms, tracking at each step the absolute Jacobian determinant, the many-dimensional form of section 3's |g&#8242;(x)|, so they can both sample data and score its exact likelihood. The <strong>reparameterization
            trick</strong> writes a random sample as z = &#956; + &#963;&#949; (a transform of fixed noise &#949;), which
            moves the randomness out of the way so gradients can pass through the sampling step, the insight that makes
-           <strong>variational autoencoders</strong> trainable. <strong>Inverse-transform sampling</strong> underlies the
-           random generators every simulation relies on, and humble <strong>log transforms</strong> are the most common
+           <strong>variational autoencoders</strong> trainable. <strong>Inverse-transform sampling</strong> is one of the methods behind the random generators simulations rely on, and humble <strong>log transforms</strong> are the most common
            fix for skewed features. Knowing how a function reshapes a distribution is what lets researchers design models
            that create, rather than merely classify.</p></div>
     </div>
@@ -294,7 +289,7 @@
     <div class="takeaways">
       <h3>🎓 Key Takeaways</h3>
       <ul>
-        <li><span class="ck">✓</span><span><strong>Linear transforms</strong> Y = aX + b shift and scale but keep the shape; a linear function of a normal is normal.</span></li>
+        <li><span class="ck">✓</span><span><strong>Linear transforms</strong> Y = aX + b shift and scale but keep the shape (mirrored when a &lt; 0); a linear function of a normal is normal.</span></li>
         <li><span class="ck">✓</span><span><strong>Nonlinear transforms</strong> reshape entirely: exponentiating a normal gives the skewed lognormal.</span></li>
         <li><span class="ck">✓</span><span><strong>Change of variables</strong>: f<sub>Y</sub>(y) = f<sub>X</sub>(x)/|g&#8242;(x)|; the Jacobian conserves probability under stretching.</span></li>
         <li><span class="ck">✓</span><span><strong>Inverse-transform sampling</strong>: X = F<sup>&#8722;1</sup>(U) turns uniforms into samples from any distribution.</span></li>
