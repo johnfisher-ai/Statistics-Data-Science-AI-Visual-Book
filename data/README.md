@@ -19,14 +19,15 @@ They are generated so a specific method has something honest to work on, and man
 planted problems, missing values, impossible readings, duplicate rows, so a chapter can
 show the cleaning as well as the analysis.
 
-## Two names that mislead
+## Names that mislead
 
-Two files are named after well-known public datasets and **are not those datasets**:
+Three files are named after well-known public datasets and **are not those datasets**:
 
 | File | What it is | The real one |
 |---|---|---|
 | `ames_housing.csv` | Synthetic, 610 rows, 16 columns, renamed schema | De Cock (2011), 2,930 rows, 82 columns |
 | `bike_share.csv` | Synthetic, modeled on the UCI scenario | UCI Bike Sharing, different columns and encoding |
+| `penguins.csv` | Synthetic, 347 rows with 3 duplicates, 10 columns, two of them added for encoding practice | Palmer penguins: Gorman, Williams and Fraser (2014), packaged by Horst, Hill and Gorman (2020), 344 rows |
 
 They borrow the setting because it is familiar, not the data. Results computed here will
 not match published analyses of the originals. If you want the originals, get them from
