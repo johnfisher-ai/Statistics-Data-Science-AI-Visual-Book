@@ -126,7 +126,7 @@
       </svg>
     </figure>
 
-    <p>In the notebook, 2,000 SRS samples of 500 people center exactly on the true mean, with a standard error of
+    <p>In the notebook, 2,000 SRS samples of 500 people center on the true mean ($55,836 against $55,862), with a standard error of
        <strong>$789</strong>. SRS needs a complete list of the population (a <span class="hl">sampling frame</span>) and
        can be costly to reach scattered units, the practical motivation for the methods that follow.</p>
   </section>
@@ -159,7 +159,7 @@
 
     <p>The numbers are striking: stratified sampling cuts the standard error from <strong>$789</strong> to
        <strong>$400</strong>, a <strong>74%</strong> reduction in variance, simply by guaranteeing each region appears in
-       the right proportion. Stratified sampling <em>never</em> does worse than SRS, and the more the strata differ, the
+       the right proportion. With proportional allocation, stratified sampling is essentially <em>never</em> worse than SRS, and the more the strata differ, the
        larger the gain. The cost is that you must know the strata in advance.</p>
   </section>
 
@@ -209,7 +209,7 @@
        cycle.</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
-      <svg viewBox="0 0 680 180" width="100%" font-family="Inter, sans-serif" aria-label="Systematic sampling steps every k units, but a list with a matching cycle yields a biased sample">
+      <svg viewBox="0 0 680 180" width="100%" font-family="Inter, sans-serif" aria-label="Systematic sampling steps every k units, but on a list with a matching cycle one sample can be far off">
         <text x="340" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">Every k-th unit: fine on a shuffled list, dangerous on a cycle</text>
         <!-- random order line -->
         <text x="40" y="48" font-size="8.5" fill="#059669" font-weight="700">random order: every k-th &#8776; SRS (SE $794)</text>
@@ -224,13 +224,12 @@
           <rect x="472" y="120" width="36" height="18" fill="#fecdd3"/><rect x="508" y="120" width="36" height="18" fill="#fda4af"/><rect x="544" y="120" width="36" height="18" fill="#fb7185"/><rect x="580" y="120" width="36" height="18" fill="#e11d48"/>
         </g>
         <g stroke="#1a2138" stroke-width="2"><line x1="58" y1="116" x2="58" y2="142"/><line x1="202" y1="116" x2="202" y2="142"/><line x1="346" y1="116" x2="346" y2="142"/><line x1="490" y1="116" x2="490" y2="142"/></g>
-        <text x="340" y="164" text-anchor="middle" font-size="9" fill="#be123c" font-weight="800">all picks share one value &#8594; estimate $30,000 vs true $60,000</text>
+        <text x="340" y="164" text-anchor="middle" font-size="9" fill="#be123c" font-weight="800">start at unit 1: all picks share one value &#8594; estimate $30,000 vs true $60,000</text>
       </svg>
     </figure>
 
     <p>On a shuffled list the notebook's systematic estimate has a standard error of <strong>$794</strong>, essentially
-       identical to SRS. But on a list that cycles with period k, every selected unit shares the same value and the
-       estimate collapses to <strong>$30,000</strong> against a true <strong>$60,000</strong>. The fix is simple: shuffle
+       identical to SRS. But on a list that cycles with period k, every selected unit shares the same value, and starting at the first unit the estimate collapses to <strong>$30,000</strong> against a true <strong>$60,000</strong>. Across all 200 possible starts the estimates average the truth but run from $30,000 to $90,000, so the method stays unbiased while any single sample is wildly unreliable. The fix is simple: shuffle
        the list, or check it for periodic structure (seasonal data, alternating records) before stepping through it.</p>
   </section>
 
@@ -246,7 +245,7 @@
         <tbody>
           <tr><td class="nm">Simple random sampling</td><td>Random train / test split</td><td>an unbiased estimate of generalization</td></tr>
           <tr><td class="nm">Stratified sampling</td><td>Stratified split &amp; stratified k-fold</td><td>keeps class proportions in every fold, lower-variance metrics</td></tr>
-          <tr><td class="nm">Proportional allocation</td><td>Class-balanced batches</td><td>rare classes still appear each batch</td></tr>
+          <tr><td class="nm">Disproportionate (equal) allocation</td><td>Class-balanced batches</td><td>rare classes appear in every batch<br>estimates for the whole population then need weights</td></tr>
           <tr><td class="nm">Cluster sampling</td><td>Group-aware splits (GroupKFold)</td><td>keeps related rows (same user) together to avoid leakage</td></tr>
           <tr><td class="nm">Systematic sampling</td><td>Strided sampling of streams / logs</td><td>cheap subsampling, watch for periodicity</td></tr>
         </tbody>
@@ -302,7 +301,7 @@
       <ul>
         <li><span class="ck">✓</span><span><strong>Probability sampling</strong> gives every unit a known, non-zero chance of selection, making the sample representative and the error calculable.</span></li>
         <li><span class="ck">✓</span><span><strong>SRS</strong> is the unbiased benchmark (SE $789 here); it needs a full sampling frame.</span></li>
-        <li><span class="ck">✓</span><span><strong>Stratified</strong> sampling cut the SE to $400 (74% less variance) by representing each group in proportion; it never beats worse than SRS.</span></li>
+        <li><span class="ck">✓</span><span><strong>Stratified</strong> sampling cut the SE to $400 (74% less variance) by representing each group in proportion; with proportional allocation it is essentially never worse than SRS.</span></li>
         <li><span class="ck">✓</span><span><strong>Cluster</strong> sampling is cheap but noisy (SE $7,847) because units within a cluster are alike.</span></li>
         <li><span class="ck">✓</span><span><strong>Systematic</strong> sampling matches SRS on a shuffled list but fails on a periodic one; in ML these are train/test splits, stratified k-fold, and group-aware splits.</span></li>
       </ul>
@@ -422,9 +421,9 @@ window.addEventListener('scroll', () => {
     },
     {
       q: "Compared with SRS at the same sample size, stratified sampling…",
-      options: ["Is always worse", "Is never worse, and better when strata differ", "Has the same precision always", "Is biased"],
+      options: ["Is always worse", "Is no worse under proportional allocation, and better when strata differ", "Has the same precision always", "Is biased"],
       answer: 1,
-      explain: "Stratified sampling never has higher variance than SRS; the bigger the differences between strata, the larger the precision gain."
+      explain: "With proportional allocation, stratified sampling essentially never has higher variance than SRS; the bigger the differences between strata, the larger the precision gain. A badly chosen unequal allocation can do worse."
     },
     {
       q: "Cluster sampling tends to have HIGHER variance than SRS because…",
@@ -442,7 +441,7 @@ window.addEventListener('scroll', () => {
       q: "Systematic sampling (every k-th unit) is dangerous when…",
       options: ["The list is randomly ordered", "The list has a hidden cycle whose period matches k", "The sample is large", "k is an even number"],
       answer: 1,
-      explain: "If the ordering repeats with period k, every selected unit can share the same trait, producing a badly biased estimate, the periodicity trap."
+      explain: "If the ordering repeats with period k, every selected unit can share the same trait, so a single sample can be wildly off, the periodicity trap."
     },
     {
       q: "In scikit-learn, passing stratify= to train_test_split corresponds to…",
