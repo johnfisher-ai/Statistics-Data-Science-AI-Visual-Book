@@ -90,8 +90,7 @@
   <section id="intro">
     <p class="lead">A survey is a machine for turning a few hundred answers into a statement about a whole population. It
        only works if two things hold: the sample <span class="hl">represents</span> the population, and the estimate
-       carries an honest <span class="hl">margin of error</span>. Get either wrong and you can confidently report the
-       opposite of the truth, which is exactly what nearly happens here.</p>
+       carries an honest <span class="hl">margin of error</span>. Get either wrong and you can confidently report the wrong answer, and here the raw numbers understate support by about 7 points.</p>
 
     <div class="def-card">
       <div class="sigma">📋</div>
@@ -145,7 +144,7 @@
         </g>
         <g fill="#94a3b8"><text x="180" y="92" font-size="14">&#8594;</text><text x="350" y="92" font-size="14">&#8594;</text><text x="520" y="92" font-size="14">&#8594;</text></g>
       </svg>
-      <figcaption style="font-size:0.85rem;color:var(--ink-soft);margin-top:0.6rem">The whole chapter in one line: a real population becomes a defensible estimate only after the sample is weighted back to it.</figcaption>
+      <figcaption style="font-size:0.85rem;color:var(--ink-soft);margin-top:0.6rem">The whole chapter in one line: a population becomes a defensible estimate only after the sample is weighted back to it.</figcaption>
     </figure>
 
     <div class="rw-card">
@@ -178,8 +177,7 @@
        its stratum population divided by its stratum sample size, the number of real households it represents.</p>
 
     <div class="step-h"><span class="sn">3&#8211;4</span><h3>Collect and inspect</h3></div>
-    <p>Of 1,200 sampled households, about <strong>930 responded (78%)</strong>, and response is roughly uniform across
-       districts, so nonresponse bias is small (the companion notebook quantifies it). Estimates use the respondents,
+    <p>Of 1,200 sampled households, about <strong>930 responded (78%)</strong>, and response is roughly uniform across districts. That keeps the district mix intact, and if nonrespondents within each district resemble respondents, nonresponse bias is small (the Take It Further notebook tests how much it could matter). Estimates use the respondents,
        each carried by its design weight. The small, low-support Oldtown district was over-sampled, so it makes up a
        third of the respondents but under a fifth of the city, the imbalance the weights exist to correct.</p>
   </section>
@@ -245,8 +243,7 @@
        error of about plus or minus 4 points</strong> (roughly 59% to 67%), and the whole interval sits above 50%. One
        subtlety matters: design weights are <em>not</em> frequency counts, so the ordinary weighted-variance formula
        would report an absurdly tight interval. The honest interval uses the <span class="term">design effect</span>:
-       unequal weights shrink the <span class="term">effective sample size</span> from 932 to about 660 (a design effect
-       near 1.4), which widens the band. Ignoring that overstates your precision.</p>
+       unequal weights shrink the <span class="term">effective sample size</span> from 932 to about 660 (a design effect near 1.4), which widens the band. Ignoring that overstates your precision. Kish's effective sample size counts only the cost of unequal weights and ignores the precision stratifying by district buys, so it is slightly conservative here: a stratified bootstrap in the Take It Further notebook gives 59.7% to 66.6%.</p>
 
     <figure class="nb-fig">
       <img src="../assets/img/case-study-designing-and-analyzing-a-survey--estimates.png" alt="A dot-and-interval plot showing the naive estimate and the design-weighted estimate with confidence intervals against the 50 percent majority line; the naive estimate of about 55 percent sits just above the line and the weighted estimate of about 63 percent sits well clear of it">
@@ -254,8 +251,7 @@
     </figure>
 
     <p>Mean satisfaction tells the same story: the naive average understates it at about <strong>3.39</strong>, while the
-       design-weighted mean is <strong>3.62</strong> out of 5 (true value 3.63), with a tight interval. <code>DescrStatsW</code>
-       produced the weighted mean and its interval in one call.</p>
+       design-weighted mean is <strong>3.62</strong> out of 5 (true value 3.63), with a tight interval. <code>DescrStatsW</code> produced the weighted mean and standard deviation, and the interval divides that SD by the Kish effective sample size.</p>
 
     <div class="step-h"><span class="sn">9</span><h3>How big should the next survey be?</h3></div>
     <p>Precision is a design choice you make <em>before</em> collecting data. For a proportion, the sample size for a
@@ -286,8 +282,7 @@
          households on the city register only, and a single satisfaction item is a coarse instrument. None of these
          overturns the majority finding.</p>
       <h4>Recommendation</h4>
-      <p>Proceed with the levy, and size any confirmatory survey at roughly 1,000 completed responses to hold the margin
-         of error near plus or minus 3 points.</p>
+      <p>Proceed with the levy, and size any confirmatory survey at about 1,400 completed responses with the same over-sampled design (about 1,000 under simple random sampling) to hold the margin of error near plus or minus 3 points.</p>
     </div>
   </section>
 
@@ -425,15 +420,15 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
     },
     {
       q: "Why not use the ordinary weighted-variance confidence interval here?",
-      options: ["It is illegal", "Design weights are not frequency counts, so it treats the sample as if it were 50,000 people and reports an absurdly tight interval", "It is too wide", "It ignores the mean"],
+      options: ["It is illegal", "Design weights are not frequency counts, so it treats the sample as if it were tens of thousands of people (the sum of the weights) and reports an absurdly tight interval", "It is too wide", "It ignores the mean"],
       answer: 1,
-      explain: "Treating design weights as case counts inflates the effective n to the population size. A design-based standard error is required."
+      explain: "Treating design weights as case counts inflates the effective n to the sum of the weights, about 38,700 here. A design-based standard error is required."
     },
     {
       q: "The design effect (about 1.4) means…",
       options: ["The survey failed", "Unequal weights shrink the effective sample size (here from 932 to about 660), so the honest interval is wider", "The estimate is biased", "There were 1.4 districts"],
       answer: 1,
-      explain: "Unequal weights cost precision. The Kish effective sample size, not the raw count, drives the margin of error."
+      explain: "Unequal weights cost precision. The Kish effective sample size, not the raw count, drives the margin of error (slightly conservatively here, since it ignores the gain from stratifying)."
     },
     {
       q: "To estimate a proportion to within plus or minus 3 points, the sample size formula uses…",
@@ -445,13 +440,13 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
       q: "Response was about 78% and roughly uniform across districts. The right conclusion is…",
       options: ["Nonresponse can be ignored forever", "Nonresponse bias is small here, but a good report still checks whether respondents differ from nonrespondents", "The survey is invalid", "Weights are unnecessary"],
       answer: 1,
-      explain: "Uniform response means little nonresponse bias, but honesty requires a sensitivity check and, if needed, a post-stratification adjustment."
+      explain: "Uniform response keeps the district mix intact, and if nonrespondents resemble respondents within districts the bias is small, but honesty requires a sensitivity check and, if needed, a post-stratification adjustment."
     },
     {
       q: "The overarching lesson of this case study is…",
       options: ["Bigger samples are always better", "A survey estimate is only trustworthy after weighting the sample back to the population and attaching an honest margin of error", "Never stratify", "Proportions cannot have confidence intervals"],
       answer: 1,
-      explain: "Representative weighting plus an honest interval is the whole game; the raw numbers here would have reported the opposite conclusion."
+      explain: "Representative weighting plus an honest interval is the whole game; the raw numbers here would have understated support by about 7 points and made a popular measure look marginal."
     }
   ];
 </script>
