@@ -164,9 +164,9 @@
       <div class="cico">🔑</div>
       <div><div class="ctitle">Identical is not the same as duplicate</div>
         <p>Two different customers can share a name. Without a <strong>unique key</strong> (email, account ID), you
-           cannot be sure two identical-looking rows are really the same entity. And <code>drop_duplicates()</code>
-           with no <code>subset</code> keeps an arbitrary "first" row, you may instead want the
-           <strong>most complete</strong> record, so sort first or choose the key deliberately.</p></div>
+           cannot be sure two identical-looking rows are really the same entity. And <code>drop_duplicates(subset=key)</code> keeps the
+first row for each key in the current order, which may not be the <strong>most complete</strong> or the most recent
+record, so sort first and choose the key deliberately.</p></div>
     </div>
 
     <h3 style="font-size:1.05rem;color:var(--ink);margin:1.4rem 0 0.4rem">Near-duplicates need more than equality</h3>
@@ -174,7 +174,7 @@
        entity in different clothes, the realm of <span class="term">record linkage</span>. The tool is
        <span class="hl">string similarity</span>:</p>
     <div class="cardgrid cols-3">
-      <div class="ic-card bg-cyan"><h4 class="tx-cyan">Levenshtein</h4><p>Edit distance: how many single-character inserts, deletes, or swaps separate two strings. Often scaled to a 0 to 1 ratio.</p></div>
+      <div class="ic-card bg-cyan"><h4 class="tx-cyan">Levenshtein</h4><p>Edit distance: how many single-character insertions, deletions, or substitutions separate two strings. Often scaled to a 0 to 1 ratio.</p></div>
       <div class="ic-card bg-purple"><h4 class="tx-purple">Jaro-Winkler</h4><p>A 0 to 1 score that rewards a shared prefix. Strong for short strings and names.</p></div>
       <div class="ic-card bg-amber"><h4 class="tx-amber">Jaccard (tokens)</h4><p>Word-set overlap, order-independent. Good when word order varies.</p></div>
     </div>
@@ -227,7 +227,7 @@
           <tr><td class="nm">Casing</td><td><code>s.str.lower()</code> / <code>.str.title()</code></td><td>Unify before <code>groupby</code> or groups split</td></tr>
           <tr><td class="nm">Leading/trailing space</td><td><code>s.str.strip()</code></td><td>"Acme " ≠ "Acme"; invisible in print</td></tr>
           <tr><td class="nm">Inconsistent categories</td><td><code>s.replace({variant: canonical})</code></td><td><code>replace</code> leaves unmatched as-is; <code>map</code> turns them to <code>NaN</code></td></tr>
-          <tr><td class="nm">Dates (mixed)</td><td><code>pd.to_datetime(s, errors="coerce")</code></td><td>Bad values become <code>NaT</code>; target ISO 8601</td></tr>
+          <tr><td class="nm">Dates (mixed)</td><td><code>pd.to_datetime(s, format="mixed", errors="coerce")</code></td><td>Bad values become <code>NaT</code><br>Without <code>format="mixed"</code>, pandas 2 and later read every value in the first value's format, and valid dates in other formats become <code>NaT</code> too<br>Target ISO 8601</td></tr>
           <tr><td class="nm">Numbers as text</td><td>strip <code>$</code>,<code>,</code> then <code>pd.to_numeric(..., errors="coerce")</code></td><td>Count what you coerced to <code>NaN</code></td></tr>
           <tr><td class="nm">ZIP / IDs</td><td>keep as string; <code>s.str.zfill(5)</code></td><td>Reading as int drops leading zeros (<code>02134</code>)</td></tr>
         </tbody>
@@ -302,7 +302,7 @@
       <div class="cico">🤖</div>
       <div><div class="ctitle">Deduplicate before you split</div>
         <p>The order is not optional: remove duplicates <strong>before</strong> you split into train and test. Dedup
-           after splitting, and copies of the same row can end up on both sides, the single most common cause of a model
+           after splitting, and copies of the same row can end up on both sides, a common cause of a model
            that scores beautifully in testing and fails in production.</p></div>
     </div>
   </section>
@@ -317,8 +317,8 @@
 
     <div class="rw-card">
       <div class="rw-tag">📂 Dataset · finding-and-removing-duplicates-and-inconsistencies--duplicate_contacts.xlsx</div>
-      <p style="margin:0.5rem 0 0">One row per contact (with duplicates): <code>record_id</code> (a row id, not a
-        person key), <code>full_name</code> (sometimes re-cased or padded), <code>email</code> (the reliable identity
+      <p style="margin:0.5rem 0 0">One row per contact (with duplicates): <code>record_id</code> (copied onto each
+        duplicate, so here it matches one person), <code>full_name</code> (sometimes re-cased or padded), <code>email</code> (the reliable identity
         key), <code>city</code>, and <code>signup_year</code>. It mixes exact and near-duplicates on purpose.</p>
       <div class="ex-files">
         <a class="ex-file xls" href="../data/finding-and-removing-duplicates-and-inconsistencies--duplicate_contacts.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 207 rows</small></a>
@@ -334,7 +334,7 @@
         <div class="nb-body">
           <h3>Bring it to life in Python</h3>
           <p>The companion notebook drops exact duplicates with <code>subset</code> and <code>keep</code>, standardizes
-             a six-spelling category column down to two, coerces messy dates and text-numbers, scores near-duplicates
+             an eight-spelling category column down to two, coerces messy dates and text-numbers, scores near-duplicates
              with a dependency-free similarity ratio, and runs a <code>validate()</code> rule checker.</p>
         </div>
       </div>
@@ -532,7 +532,7 @@ window.addEventListener('scroll', () => {
         "Because they are in different columns"
       ],
       answer: 1,
-      explain: "drop_duplicates only catches exact matches. Near-duplicates (different spelling/punctuation) require fuzzy matching like Levenshtein or Jaro-Winkler."
+      explain: "drop_duplicates only catches exact matches. Standardizing case and punctuation catches this pair, and spelling variants need fuzzy matching like Levenshtein or Jaro-Winkler."
     },
     {
       q: "The main risk of an overly loose fuzzy-matching threshold is…",
