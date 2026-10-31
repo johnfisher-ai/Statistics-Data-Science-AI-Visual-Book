@@ -126,7 +126,7 @@
   <section id="map">
     <div class="section-eyebrow"><div class="num">2</div><h2>The Decision Map</h2></div>
     <p>Here is the entire toolbox on one page. Find your row by outcome type, group count, and design; the rightmost
-       column names the test (and its rank-based fallback when assumptions fail).</p>
+       column names the test (and its fallback, usually rank-based, when assumptions fail).</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
       <svg viewBox="0 0 680 200" width="100%" font-family="Inter, sans-serif" aria-label="A decision tree: start with outcome type, then number of groups and design, leading to the named test">
@@ -152,14 +152,14 @@
 
     <div style="overflow-x:auto" tabindex="0">
       <table class="disp-table">
-        <thead><tr><th>Outcome</th><th>Groups</th><th>Design</th><th>Test (rank-based fallback)</th></tr></thead>
+        <thead><tr><th>Outcome</th><th>Groups</th><th>Design</th><th>Test (fallback)</th></tr></thead>
         <tbody>
           <tr><td class="nm">Numeric</td><td>1 vs a value</td><td>&#8212;</td><td>one-sample t-test</td></tr>
           <tr><td class="nm">Numeric</td><td>2</td><td>independent</td><td>two-sample (Welch) t-test &nbsp;(Mann-Whitney)</td></tr>
           <tr><td class="nm">Numeric</td><td>2</td><td>paired</td><td>paired t-test &nbsp;(Wilcoxon signed-rank)</td></tr>
           <tr><td class="nm">Numeric</td><td>3+</td><td>independent</td><td>one-way ANOVA &nbsp;(Kruskal-Wallis)</td></tr>
           <tr><td class="nm">Proportion</td><td>1</td><td>&#8212;</td><td>one-proportion z-test</td></tr>
-          <tr><td class="nm">Proportion</td><td>2</td><td>independent</td><td>two-proportion z-test &nbsp;(chi-square)</td></tr>
+          <tr><td class="nm">Proportion</td><td>2</td><td>independent</td><td>two-proportion z-test &nbsp;(Fisher's exact)</td></tr>
           <tr><td class="nm">Categorical</td><td>2 variables</td><td>&#8212;</td><td>chi-square test of independence</td></tr>
         </tbody>
       </table>
@@ -177,15 +177,18 @@
         <thead><tr><th>Check</th><th>If it holds</th><th>If it fails</th></tr></thead>
         <tbody>
           <tr><td class="nm">Roughly normal (or n &#8805; ~30)?</td><td>t-test / ANOVA</td><td>Mann-Whitney / Kruskal-Wallis</td></tr>
-          <tr><td class="nm">Heavy skew or outliers?</td><td>mean-based test OK</td><td>rank-based test (robust)</td></tr>
+          <tr><td class="nm">Free of heavy skew and outliers?</td><td>mean-based test OK</td><td>rank-based test (robust)</td></tr>
           <tr><td class="nm">Expected counts &#8805; ~5 per cell?</td><td>chi-square</td><td>exact test (e.g. Fisher's)</td></tr>
-          <tr><td class="nm">Data paired?</td><td>paired test (more power)</td><td>do not treat as independent</td></tr>
+          <tr><td class="nm">Data paired?</td><td>paired test on the differences</td><td>independent-samples test</td></tr>
         </tbody>
       </table>
     </div>
 
-    <p>When in doubt, the <span class="hl">rank-based test is the safe default</span>: it costs only a little power if the
-       data really were normal, and stays valid when they are not. And always pair the verdict with an effect size and a
+    <p>When in doubt, a <span class="hl">rank-based test is a sound fallback</span>: it costs only a little power if the
+       data really were normal, and its p-value stays valid when they are not. It answers a slightly different question,
+       though. It asks whether values in one group tend to run higher than in the other, and it compares medians only
+       when the groups' distributions share a shape. For a question about means, Welch's t-test or a bootstrap interval is the
+       better tool. And always pair the verdict with an effect size and a
        confidence interval, the lesson of the <a href="significance-p-values-and-errors.html">Significance, p-values &amp; Errors</a> chapter, so significance is never confused with importance.</p>
   </section>
 
@@ -211,7 +214,7 @@
           <tr><td class="nm">Did BP drop within patients?</td><td>paired numeric</td><td>paired t-test</td><td>drop &#8776; 9 mmHg, p &#8776; 10&#8315;&#8308;&#8312;</td><td>yes</td></tr>
           <tr><td class="nm">New vs standard BP drop?</td><td>2 independent numeric</td><td>two-sample (Welch) t</td><td>11.6 vs 6.3, p &#8776; 10&#8315;&#8313;</td><td>yes</td></tr>
           <tr><td class="nm">Satisfaction by treatment?</td><td>2 categoricals</td><td>chi-square</td><td>p &#8776; 0.27</td><td>no</td></tr>
-          <tr><td class="nm">Wait time by clinic?</td><td>3 groups numeric</td><td>ANOVA / Kruskal</td><td>p &#8776; 0.59</td><td>no</td></tr>
+          <tr><td class="nm">Wait time by clinic?</td><td>3 groups, skewed</td><td>Kruskal-Wallis</td><td>p &#8776; 0.33 (ANOVA 0.59)</td><td>no</td></tr>
         </tbody>
       </table>
     </div>
@@ -232,9 +235,9 @@
       <table class="disp-table">
         <thead><tr><th>ML question</th><th>Data shape</th><th>Test to reach for</th></tr></thead>
         <tbody>
-          <tr><td class="nm">Model A vs B on the same folds</td><td>paired numeric scores</td><td>paired t / Wilcoxon signed-rank</td></tr>
+          <tr><td class="nm">Model A vs B on the same folds</td><td>paired numeric scores</td><td>paired t (CV-corrected) / Wilcoxon signed-rank</td></tr>
           <tr><td class="nm">Conversion of variant A vs B</td><td>two proportions</td><td>two-proportion z-test</td></tr>
-          <tr><td class="nm">Accuracy across 4 architectures</td><td>3+ numeric groups</td><td>ANOVA / Kruskal + post-hoc</td></tr>
+          <tr><td class="nm">Accuracy of 4 architectures on the same folds</td><td>3+ blocked numeric scores</td><td>repeated-measures ANOVA / Friedman + post-hoc</td></tr>
           <tr><td class="nm">Feature vs target (categorical)</td><td>two categoricals</td><td>chi-square</td></tr>
           <tr><td class="nm">Skewed latency: A vs B</td><td>2 groups, heavy tail</td><td>Mann-Whitney U</td></tr>
         </tbody>
@@ -245,10 +248,13 @@
       <div class="cico">🤖</div>
       <div><div class="ctitle">Why this matters for AI research</div>
         <p>Rigorous ML evaluation is mostly test selection in disguise. Comparing two models on shared folds is
-           <strong>paired</strong>; comparing conversion rates is a <strong>two-proportion</strong> problem; benchmarking
-           several models is an <strong>ANOVA-plus-post-hoc</strong> problem; and skewed metrics like latency or loss push
-           you toward the <strong>rank-based</strong> twins. Picking the wrong test, for instance treating shared-fold
-           scores as independent, can erase a real improvement or manufacture a fake one. The decision map is the
+           <strong>paired</strong>, and comparing conversion rates is a <strong>two-proportion</strong> problem.
+           Benchmarking several models on the same folds calls for a <strong>repeated-measures</strong> test
+           (repeated-measures ANOVA or Friedman, plus a post-hoc), and skewed metrics like latency or loss push you toward
+           the <strong>rank-based</strong> twins. Picking the wrong test, for instance treating shared-fold
+           scores as independent, can erase a real improvement or manufacture a fake one. Even the paired t-test overstates significance on k-fold
+           scores, because the folds share training data, which is why Nadeau and Bengio (2003) proposed a corrected
+           resampled t-test. The decision map is the
            checklist that keeps "model B is better" an honest claim.</p></div>
     </div>
   </section>
@@ -289,8 +295,8 @@
       <ul>
         <li><span class="ck">✓</span><span><strong>Four questions</strong> pick the test: outcome type, number of groups, paired vs independent, and assumptions.</span></li>
         <li><span class="ck">✓</span><span><strong>Numeric</strong> &#8594; t / ANOVA (or Mann-Whitney / Kruskal-Wallis); <strong>categorical</strong> &#8594; z for proportions / chi-square.</span></li>
-        <li><span class="ck">✓</span><span><strong>When assumptions fail</strong> (skew, outliers, ordinal), switch to the rank-based twin, the safe default.</span></li>
-        <li><span class="ck">✓</span><span><strong>Worked example</strong>: the framework chose four tests on one clinic dataset; the new treatment won, satisfaction and wait time did not differ.</span></li>
+        <li><span class="ck">✓</span><span><strong>When assumptions fail</strong> (skew, outliers, ordinal), switch to the rank-based twin, which asks whether one group tends to run higher.</span></li>
+        <li><span class="ck">✓</span><span><strong>Worked example</strong>: the framework chose four tests on one clinic dataset; the new treatment won, satisfaction and wait time showed no significant difference.</span></li>
         <li><span class="ck">✓</span><span><strong>In ML/AI</strong>: model comparison is test selection, shared folds are paired, rates are two-proportion, skewed metrics go rank-based.</span></li>
       </ul>
     </div>
@@ -420,7 +426,7 @@ window.addEventListener('scroll', () => {
       q: "Comparing two conversion RATES (yes/no) between groups uses…",
       options: ["A paired t-test", "A two-proportion z-test (or chi-square)", "ANOVA", "Wilcoxon"],
       answer: 1,
-      explain: "Two yes/no rates from two groups is a two-proportion z-test, equivalent to a 2×2 chi-square."
+      explain: "Two yes/no rates from two groups is a two-proportion z-test, equivalent to a 2×2 chi-square without Yates' correction (z² = χ²)."
     },
     {
       q: "In the clinic example, comparing the new vs standard treatment's BP drop used…",
