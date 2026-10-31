@@ -95,16 +95,14 @@
       <div class="def-body">
         The <span class="def-kw">bootstrap</span> resamples your data <span class="def-kw">with replacement</span>, many
         times, recomputing the statistic on each resample. The spread of those values is the
-        <span class="def-kw">standard error</span>, and their 2.5th/97.5th percentiles form a 95%
-        <span class="def-kw">confidence interval</span>, for any statistic you can compute.
+        <span class="def-kw">standard error</span>, and their 2.5th/97.5th percentiles form an approximate 95% <span class="def-kw">confidence interval</span> for most statistics you can compute, provided the data are independent draws that represent the population.
       </div>
     </div>
 
     <div class="callout key">
       <div class="cico">🔁</div>
       <div><div class="ctitle">One loop, any statistic</div>
-        <p>The same three lines, resample, recompute, read off the percentiles, give a confidence interval for the mean,
-           the median, a correlation, or anything else. No new theory required.</p></div>
+        <p>The same three lines, resample, recompute, read off the percentiles, give a confidence interval for the mean, the median, a correlation and most other smooth statistics, with no new derivation. The sample maximum or minimum is the classic failure, because no resample can exceed the sample's own extremes, and percentile intervals run a little narrow in small or heavy-tailed samples.</p></div>
     </div>
   </section>
 
@@ -151,10 +149,8 @@
        reassuring sanity check.</p>
 
     <p>The percentile method is the easy default, but it can be slightly off when the statistic's distribution is skewed.
-       The library-first, more accurate choice is <span class="term">BCa</span> (bias-corrected and accelerated), one call
-       away in <code>scipy.stats.bootstrap(data, statistic, method="BCa")</code>. The companion notebook reports the BCa
-       interval next to the percentile one for the median salary, on this 300-row sample they match almost exactly, but
-       BCa is the safer default on small or heavily skewed samples.</p>
+       The library-first, more accurate choice is <span class="term">BCa</span> (bias-corrected and accelerated), one call away in <code>scipy.stats.bootstrap((data,), statistic, method="BCa")</code> (BCa is the default method). The companion notebook reports the BCa
+       interval next to the percentile one for the median salary, for this median they match exactly, because the correction terms come out near zero, but BCa is the safer default on small or heavily skewed samples.</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
       <svg viewBox="0 0 680 160" width="100%" font-family="Inter, sans-serif" aria-label="A bootstrap distribution with the central 95 percent shaded between the 2.5th and 97.5th percentiles">
@@ -169,8 +165,7 @@
     </figure>
 
     <p>In the notebook the bootstrap percentile interval for the mean is <strong>[47.18, 52.17]</strong> against the
-       t-interval's <strong>[47.10, 52.24]</strong>, essentially identical. A method that reproduces the formula where a
-       formula exists is exactly the kind you can trust where one does not.</p>
+       t-interval's <strong>[47.10, 52.24]</strong>, essentially identical. A method that reproduces the formula where a formula exists earns trust where deriving one would be hard.</p>
   </section>
 
   <!-- ===== Section 3: where it wins ===== -->
@@ -184,8 +179,8 @@
         <thead><tr><th>Statistic</th><th>Formula CI?</th><th>Bootstrap?</th></tr></thead>
         <tbody>
           <tr><td class="nm">Mean</td><td>yes (t-interval)</td><td>yes (and agrees)</td></tr>
-          <tr><td class="nm">Median</td><td>no simple one</td><td>yes, easily</td></tr>
-          <tr><td class="nm">Percentile (e.g. 90th)</td><td>no</td><td>yes</td></tr>
+          <tr><td class="nm">Median</td><td>no simple standard-error formula<br>an exact order-statistic interval exists</td><td>yes, easily</td></tr>
+          <tr><td class="nm">Percentile (e.g. 90th)</td><td>order-statistic interval, rarely taught</td><td>yes</td></tr>
           <tr><td class="nm">Correlation</td><td>awkward / approximate</td><td>yes</td></tr>
           <tr><td class="nm">Ratio, trimmed mean, &#8230;</td><td>rarely</td><td>yes, same loop</td></tr>
         </tbody>
@@ -202,13 +197,11 @@
   <section id="realworld">
     <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: Median Salary</h2></div>
     <p>An HR team exports <strong>300 employee salaries</strong>. Pay is right-skewed, a few high earners pull the mean up,
-       so the <em>median</em> is the fairer "typical pay" summary. But the median has no neat CI formula, exactly the case
-       the bootstrap was built for.</p>
+       so the <em>median</em> is the fairer "typical pay" summary. The median has no neat standard-error formula, the kind of case the bootstrap was built for (an exact interval from order statistics exists too, and the notebook prints it alongside).</p>
 
     <div class="rw-card">
       <div class="rw-tag">📂 Dataset · resampling-and-simulation--salaries.xlsx</div>
-      <p style="margin:0.5rem 0 0">One row per employee with <code>annual_salary</code>, <code>department</code>, and
-        <code>years_experience</code>.</p>
+      <p style="margin:0.5rem 0 0">One row per employee with <code>annual_salary</code>, <code>department</code>, and <code>years_experience</code>, a realistic teaching dataset written for the book.</p>
       <div class="ex-files">
         <a class="ex-file xls" href="../data/resampling-and-simulation--salaries.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 300 employees</small></a>
       </div>
@@ -225,7 +218,7 @@
     </div>
 
     <p>The median is about <strong>$107,650</strong>, with a bootstrap 95% interval of roughly <strong>$101,000 to
-       $111,000</strong>, a defensible "typical pay" range that no textbook formula could provide. Because the data is
+       $111,000</strong>, a defensible "typical pay" range, and the exact order-statistic interval, $100,700 to $111,100, agrees closely. Because the data is
        right-skewed (skewness 0.85), the mean ($111,251) sits above the median; reporting the median <em>with</em> a
        bootstrap interval is the honest, robust summary. The bootstrap turned an awkward statistic into a routine one.</p>
   </section>
@@ -296,7 +289,7 @@
       <ul>
         <li><span class="ck">✓</span><span><strong>The bootstrap</strong> resamples the data with replacement and recomputes the statistic; the spread is the SE.</span></li>
         <li><span class="ck">✓</span><span><strong>Percentile CI</strong>: the 2.5th and 97.5th percentiles of the bootstrap statistics form a 95% interval.</span></li>
-        <li><span class="ck">✓</span><span><strong>It reproduces the t-interval</strong> for the mean and works for statistics with no formula (median, percentile, correlation).</span></li>
+        <li><span class="ck">✓</span><span><strong>It reproduces the t-interval</strong> for the mean and extends to statistics whose standard error is hard to derive (median, percentile, correlation).</span></li>
         <li><span class="ck">✓</span><span><strong>Worked example</strong>: median salary $107,650 with a bootstrap 95% interval of about $101k&#8211;$111k, where no formula exists.</span></li>
         <li><span class="ck">✓</span><span><strong>In ML/AI</strong>: bootstrap CIs on metrics, bagging/random forests, and permutation importance are all resampling.</span></li>
       </ul>
@@ -425,9 +418,9 @@ window.addEventListener('scroll', () => {
     },
     {
       q: "For the salary data, why report the MEDIAN with a bootstrap interval rather than the mean?",
-      options: ["Medians are always better", "Pay is right-skewed, so the median is the fairer summary, and it has no formula CI", "The mean cannot be computed", "Bootstraps only work on medians"],
+      options: ["Medians are always better", "Pay is right-skewed, so the median is the fairer summary, and the bootstrap gives its CI without a derivation", "The mean cannot be computed", "Bootstraps only work on medians"],
       answer: 1,
-      explain: "Right-skew pulls the mean above the median; the median is more robust, and the bootstrap supplies its missing CI."
+      explain: "Right-skew pulls the mean above the median; the median is more robust, and the bootstrap supplies its CI without a standard-error formula."
     },
     {
       q: "In a random forest, each tree is trained on…",
