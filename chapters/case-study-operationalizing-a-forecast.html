@@ -74,7 +74,7 @@
       <span>Chapter 140</span>
     </div>
     <h1>Case Study: <span class="accent">Operationalizing a Forecast</span></h1>
-    <p class="dek">A forecast is not a one-time number, it is a service that must be kept alive. This closing case study takes a
+    <p class="dek">A forecast is not a one-time number, it is a service that must be kept alive. This case study takes a
        demand forecaster to production: package it, serve it, schedule refreshes, and monitor for drift, then watches a
        set-and-forget forecast rot after a regime shift while a scheduled pipeline stays fresh.</p>
     <div class="hero-meta">
@@ -106,10 +106,10 @@
 
     <div class="callout key">
       <div class="cico">&#128260;</div>
-      <div><div class="ctitle">Set-and-forget vs scheduled: a 10&#215; difference</div>
-        <p>The same Holt-Winters model, deployed two ways. A one-time forecast, never refreshed, rots to about <strong>28%
+      <div><div class="ctitle">Set-and-forget against a scheduled refit</div>
+        <p>The same Holt-Winters model, deployed two ways. A one-time forecast, never refreshed, rots to about <strong>28.5%
            MAPE</strong> after a mid-2021 business expansion. A <strong>scheduled monthly refit</strong>, watched by a drift
-           monitor, stays near <strong>3%</strong>. The gap is not the model, it is whether anyone kept it fresh.</p></div>
+           monitor, misses for two months and then averages near <strong>3%</strong> again, almost nine times better. The gap is not the model, it is whether anyone kept it fresh.</p></div>
     </div>
   </section>
 
@@ -251,12 +251,12 @@
     </figure>
 
     <figure class="nb-fig">
-      <img src="../assets/img/case-study-operationalizing-a-forecast--monitor.png" alt="Rolling 12-month MAPE: the set-and-forget champion climbs from 3% to 28% and breaches the 10% floor at a trigger point, while the scheduled refit stays near 3%">
+      <img src="../assets/img/case-study-operationalizing-a-forecast--monitor.png" alt="Rolling 12-month MAPE: the set-and-forget champion climbs from 3% past 30% and breaches the 10% floor at a trigger point, while the scheduled refit peaks near 7% and falls back to about 2%">
       <figcaption><span class="cap-t">From the notebook · Steps 6&#8211;7</span><br>
         <strong>The two lines split violently.</strong> Both pipelines start near 3% MAPE. After the shift, the
-        <strong>set-and-forget</strong> forecast (red), still projecting the old trajectory, climbs to about <strong>28%</strong>
-        and breaches the 10% accuracy floor, that breach is the <strong>retraining trigger</strong>. The scheduled refit
-        (blue) barely bumps and recovers. Monitoring is what turns a silent decay into an alarm.</figcaption>
+        <strong>set-and-forget</strong> forecast (red), still projecting the old trajectory, breaches the 10% accuracy floor and climbs
+        past <strong>30%</strong>, and that breach is the <strong>retraining trigger</strong>. The scheduled refit (blue)
+        peaks near 7%, under the floor, and recovers. Monitoring is what turns a silent decay into an alarm.</figcaption>
     </figure>
 
     <div class="step-h"><span class="sn">7&#8211;8</span><h3>Detect the drift, then diagnose it</h3></div>
@@ -264,8 +264,9 @@
       <img src="../assets/img/case-study-operationalizing-a-forecast--setforget.png" alt="The set-and-forget forecast, made once at deploy, keeps the old trajectory and diverges from the actual demand after the shift">
       <figcaption><span class="cap-t">From the notebook · Step 8</span><br>
         <strong>Set-and-forget rots.</strong> The champion forecast, made once at deployment and never updated, holds the old
-        trajectory while actual demand steps up and steepens, so the gap only widens. Diagnosing it shows demand jumped about
-        <strong>56%</strong> and stayed there, a <strong>persistent regime change</strong>, not a one-off shock. Waiting
+        trajectory while actual demand steps up and steepens, so the gap only widens. Diagnosing it shows demand stepped up about
+        <strong>30%</strong> in July 2021 and stayed there, and with the steeper trend the months after the shift average
+        <strong>56%</strong> above the two years before, a <strong>persistent regime change</strong>, not a one-off shock. Waiting
         cannot fix a stale model against a permanent shift; only retraining on the new data can.</figcaption>
     </figure>
   </section>
@@ -285,10 +286,11 @@
     </figure>
 
     <figure class="nb-fig">
-      <img src="../assets/img/case-study-operationalizing-a-forecast--summary.png" alt="Grouped bars of pre-shift and post-shift MAPE: the set-and-forget champion jumps to 28% post-shift while the scheduled refit stays near 3%">
+      <img src="../assets/img/case-study-operationalizing-a-forecast--summary.png" alt="Grouped bars of pre-shift and post-shift MAPE: the set-and-forget champion jumps to 28.5% post-shift while the scheduled refit stays near 3%">
       <figcaption><span class="cap-t">From the notebook · Step 10</span><br>
         <strong>Same model, opposite outcome.</strong> Pre-shift, both pipelines are near 3%. Post-shift, the set-and-forget
-        forecast rots to about <strong>28%</strong> while the scheduled, monitored one holds near <strong>3%</strong>. The
+        forecast rots to about <strong>28.5%</strong> while the scheduled, monitored one averages about <strong>3%</strong>,
+        after two months near 22% while it absorbs the break. The
         only difference is that one is operationalized and the other is not.</figcaption>
     </figure>
 
@@ -314,15 +316,15 @@
 
       <h4>The decisions we made, and why</h4>
       <ul>
-        <li><span class="ck">✓</span><span>We <strong>did not ship a one-time forecast</strong>. A forecast made once and left alone would have gone badly stale after the mid-2021 expansion, its error near 28%. So we refit it every month.</span></li>
+        <li><span class="ck">✓</span><span>We <strong>did not ship a one-time forecast</strong>. A forecast made once and left alone would have gone badly stale after the mid-2021 expansion, its error near 28.5%. So we refit it every month.</span></li>
         <li><span class="ck">✓</span><span>We <strong>monitor its accuracy</strong>. A rolling accuracy check watches for drift; if error crosses a floor, an alarm fires so we can investigate a possible regime change.</span></li>
         <li><span class="ck">✓</span><span>We <strong>served it as a shared endpoint</strong>, so the dashboard, the app, and the order system all consume the same, always-current forecast.</span></li>
       </ul>
 
       <h4>What it is worth, in plain terms</h4>
-      <p>Keeping the forecast fresh held its error near <strong>3%</strong> straight through a major business change that
-        would have pushed a set-and-forget forecast to about <strong>28%</strong>, a roughly ten-fold difference in accuracy,
-        from operations alone.</p>
+      <p>Keeping the forecast fresh brought its error back to about <strong>3%</strong> within three months of a major
+        business change that pushed a set-and-forget forecast to about <strong>28.5%</strong>, almost nine times worse, from
+        operations alone.</p>
 
       <h4>The bottom line</h4>
       <p><strong>A forecast is a living service, not a one-off number. We package it, serve it, refit it on a schedule, and
@@ -358,7 +360,7 @@
         <li><span class="ck">✓</span><span><strong>Schedule the refresh</strong>: refitting on the latest data each period is the single most important forecasting-ops habit.</span></li>
         <li><span class="ck">✓</span><span><strong>Monitor rolling accuracy</strong>: it turns a silent decay into an alarm; a floor breach is the retraining trigger.</span></li>
         <li><span class="ck">✓</span><span><strong>Diagnose drift</strong>: a persistent regime shift needs retraining, not patience; a one-off shock does not.</span></li>
-        <li><span class="ck">✓</span><span><strong>Set-and-forget vs scheduled</strong>: same model, 28% vs 3% MAPE after a shift, the difference is operations.</span></li>
+        <li><span class="ck">✓</span><span><strong>Set-and-forget vs scheduled</strong>: same model, about 28.5% against 3.3% MAPE after a shift, and the difference is operations.</span></li>
       </ul>
     </div>
   </section>
@@ -383,7 +385,7 @@
       <div class="challenge"><div class="cnum">4</div><div class="cbody">
         <h3>Retraining cadence</h3>
         <p>Compare refitting monthly, quarterly, and yearly; add a triggered policy.</p>
-        <div class="chint">Hint: more frequent (or triggered) recovers faster.</div></div></div>
+        <div class="chint">Hint: count refits too, since a trigger can match monthly accuracy with far fewer.</div></div></div>
       <div class="challenge"><div class="cnum">5</div><div class="cbody">
         <h3>Backtest the pipeline</h3>
         <p>Replay the whole scheduled pipeline over history as a rolling-origin CI test.</p>
@@ -413,10 +415,11 @@
 
   <div class="callout key" style="margin-top:2rem">
     <div class="cico">🏁</div>
-    <div><div class="ctitle">Forecasting Case Study complete</div>
-      <p>That closes <strong>the Forecasting Case Study</strong>, five end-to-end projects from a
-         first forecast to a monitored production service. You have now taken time series from decomposition all the way to a
-         living, self-refreshing forecast that drives real decisions.</p></div>
+    <div><div class="ctitle">One project left in this part</div>
+      <p>Five of <strong>the Forecasting Case Study's</strong> six projects have now taken a series from decomposition to a
+         first forecast and on to a monitored production service. The last, <a href="case-study-forecasting-with-drivers.html">Case
+         Study: Forecasting with Drivers</a>, feeds known drivers such as the weather, promotions and the holiday calendar
+         into the forecast with SARIMAX.</p></div>
   </div>
 
   <nav class="chapter-nav" aria-label="Previous and next chapter">
@@ -455,13 +458,13 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
       q: "Why does a set-and-forget forecast rot after the mid-2021 shift?",
       options: ["It was never accurate", "It keeps projecting the old trajectory while demand permanently jumped to a new regime", "The data was deleted", "Forecasts always fail"],
       answer: 1,
-      explain: "A forecast made once and never updated describes the old world; after a regime change its error climbs (to ~28% here)."
+      explain: "A forecast made once and never updated describes the old world; after a regime change its error climbs (to about 28.5% here)."
     },
     {
       q: "The single most important forecasting-ops habit is…",
       options: ["Bigger models", "Scheduling a periodic refit on the latest data so the model absorbs change automatically", "Never retraining", "Forecasting only one step"],
       answer: 1,
-      explain: "A scheduled refit (e.g., monthly) keeps the forecaster current; here it held MAPE near 3% through the shift."
+      explain: "A scheduled refit (e.g., monthly) keeps the forecaster current. Here it missed for two months at the shift and then held MAPE near 3%."
     },
     {
       q: "Monitoring rolling forecast accuracy is valuable because…",
@@ -471,7 +474,7 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
     },
     {
       q: "The regime shift was diagnosed as a persistent change rather than a shock because…",
-      options: ["It happened once", "Demand jumped over 70% and stayed there, a new level and trend, so retraining, not patience, is the fix", "The forecast recovered on its own", "It was a data error"],
+      options: ["It happened once", "Demand stepped up about 30% and stayed there, with a steeper trend, so retraining, not patience, is the fix", "The forecast recovered on its own", "It was a data error"],
       answer: 1,
       explain: "A one-off spike reverts; a persistent level/trend change is a new regime that only retraining on new data cures."
     },
@@ -489,7 +492,7 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
     },
     {
       q: "The overall lesson of the chapter is…",
-      options: ["Accuracy is all that matters", "A forecast is a living service; the 28%-vs-3% gap after a shift came from operations, not the model", "Never deploy forecasts", "Bigger models never drift"],
+      options: ["Accuracy is all that matters", "A forecast is a living service; the 28.5%-vs-3% gap after a shift came from operations, not the model", "Never deploy forecasts", "Bigger models never drift"],
       answer: 1,
       explain: "Same model, two deployments: the operationalized one stayed accurate. Keeping a forecast fresh is the whole game."
     }

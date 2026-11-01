@@ -8104,7 +8104,7 @@ a run of actuals falling OUTSIDE the interval is an early drift warning, even be
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>rolling    window: recovery (3 mo after shift) 8.3%  |  full post-shift 4.6%
+<pre>rolling    window: recovery (3 mo after shift) 8.3%  |  full post-shift 4.5%
 trade-off: ROLLING adapts faster right after the break; EXPANDING is steadier once the shift is absorbed
 </pre>
 </div>
@@ -8145,14 +8145,16 @@ trade-off: ROLLING adapts faster right after the break; EXPANDING is steadier on
 <div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">cadence</span><span class="p">(</span><span class="n">every</span><span class="p">):</span>
-    <span class="n">out</span><span class="o">=</span><span class="p">[];</span> <span class="n">model</span><span class="o">=</span><span class="n">refit_forecast</span><span class="p">(</span><span class="n">s</span><span class="p">[:</span><span class="n">DEPLOY</span><span class="p">]);</span> <span class="n">last</span><span class="o">=</span><span class="n">DEPLOY</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">FLOOR</span> <span class="o">=</span> <span class="mf">10.0</span>   <span class="c1"># the contract's accuracy floor, in percent</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">cadence</span><span class="p">(</span><span class="n">every</span><span class="p">,</span> <span class="n">trigger</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="n">out</span><span class="o">=</span><span class="p">[];</span> <span class="n">model</span><span class="o">=</span><span class="n">refit_forecast</span><span class="p">(</span><span class="n">s</span><span class="p">[:</span><span class="n">DEPLOY</span><span class="p">]);</span> <span class="n">last</span><span class="o">=</span><span class="n">DEPLOY</span><span class="p">;</span> <span class="n">refits</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">prev</span><span class="o">=</span><span class="mf">0.0</span>
     <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">DEPLOY</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)):</span>
-        <span class="k">if</span> <span class="n">m</span><span class="o">-</span><span class="n">last</span><span class="o">&gt;=</span><span class="n">every</span><span class="p">:</span> <span class="n">model</span><span class="o">=</span><span class="n">refit_forecast</span><span class="p">(</span><span class="n">s</span><span class="p">[:</span><span class="n">m</span><span class="p">]);</span> <span class="n">last</span><span class="o">=</span><span class="n">m</span>
-        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">forecast</span><span class="p">(</span><span class="n">m</span><span class="o">-</span><span class="n">last</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">m</span><span class="o">-</span><span class="n">last</span><span class="p">]))</span>
-    <span class="k">return</span> <span class="n">ape</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">DEPLOY</span><span class="p">:],</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">out</span><span class="p">))[</span><span class="n">s</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">DEPLOY</span><span class="p">:]</span><span class="o">&gt;=</span><span class="s1">'2021-08'</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
-<span class="k">for</span> <span class="n">every</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">12</span><span class="p">]:</span> <span class="nb">print</span><span class="p">(</span><span class="s1">'refit every </span><span class="si">%2d</span><span class="s1"> months: post-shift MAPE </span><span class="si">%.1f%%</span><span class="s1">'</span> <span class="o">%</span> <span class="p">(</span><span class="n">every</span><span class="p">,</span> <span class="n">cadence</span><span class="p">(</span><span class="n">every</span><span class="p">)))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">'more frequent refits recover faster; the best policy is often TRIGGERED (refit when the monitor alarms)'</span><span class="p">)</span>
+        <span class="n">alarm</span> <span class="o">=</span> <span class="n">trigger</span> <span class="ow">and</span> <span class="n">prev</span> <span class="o">&gt;</span> <span class="n">FLOOR</span> <span class="ow">and</span> <span class="n">m</span> <span class="o">&gt;</span> <span class="n">last</span>        <span class="c1"># last month's error broke the floor</span>
+        <span class="k">if</span> <span class="n">m</span><span class="o">-</span><span class="n">last</span><span class="o">&gt;=</span><span class="n">every</span> <span class="ow">or</span> <span class="n">alarm</span><span class="p">:</span> <span class="n">model</span><span class="o">=</span><span class="n">refit_forecast</span><span class="p">(</span><span class="n">s</span><span class="p">[:</span><span class="n">m</span><span class="p">]);</span> <span class="n">last</span><span class="o">=</span><span class="n">m</span><span class="p">;</span> <span class="n">refits</span><span class="o">+=</span><span class="mi">1</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">forecast</span><span class="p">(</span><span class="n">m</span><span class="o">-</span><span class="n">last</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">m</span><span class="o">-</span><span class="n">last</span><span class="p">]);</span> <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="p">);</span> <span class="n">prev</span> <span class="o">=</span> <span class="n">ape</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">m</span><span class="p">],</span> <span class="n">f</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ape</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">DEPLOY</span><span class="p">:],</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">out</span><span class="p">))[</span><span class="n">s</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">DEPLOY</span><span class="p">:]</span><span class="o">&gt;=</span><span class="s1">'2021-08'</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">refits</span>
+<span class="k">for</span> <span class="n">every</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">12</span><span class="p">]:</span> <span class="nb">print</span><span class="p">(</span><span class="s1">'refit every </span><span class="si">%2d</span><span class="s1"> months:            post-shift MAPE </span><span class="si">%.1f%%</span><span class="s1">  (</span><span class="si">%2d</span><span class="s1"> refits)'</span> <span class="o">%</span> <span class="p">((</span><span class="n">every</span><span class="p">,)</span><span class="o">+</span><span class="n">cadence</span><span class="p">(</span><span class="n">every</span><span class="p">)))</span>
+<span class="k">for</span> <span class="n">every</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span><span class="mi">12</span><span class="p">]:</span> <span class="nb">print</span><span class="p">(</span><span class="s1">'every </span><span class="si">%2d</span><span class="s1"> months + on an alarm:    post-shift MAPE </span><span class="si">%.1f%%</span><span class="s1">  (</span><span class="si">%2d</span><span class="s1"> refits)'</span> <span class="o">%</span> <span class="p">((</span><span class="n">every</span><span class="p">,)</span><span class="o">+</span><span class="n">cadence</span><span class="p">(</span><span class="n">every</span><span class="p">,</span> <span class="n">trigger</span><span class="o">=</span><span class="kc">True</span><span class="p">)))</span>
 </pre></div>
 </div>
 </div>
@@ -8165,23 +8167,42 @@ trade-off: ROLLING adapts faster right after the break; EXPANDING is steadier on
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>refit every  1 months: post-shift MAPE 3.3%
+<pre>refit every  1 months:            post-shift MAPE 3.3%  (47 refits)
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>refit every  3 months: post-shift MAPE 4.2%
+<pre>refit every  3 months:            post-shift MAPE 4.3%  (15 refits)
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>refit every  6 months: post-shift MAPE 7.3%
-refit every 12 months: post-shift MAPE 8.2%
-more frequent refits recover faster; the best policy is often TRIGGERED (refit when the monitor alarms)
+<pre>refit every  6 months:            post-shift MAPE 7.3%  ( 7 refits)
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>refit every 12 months:            post-shift MAPE 8.2%  ( 3 refits)
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>every  6 months + on an alarm:    post-shift MAPE 3.2%  ( 9 refits)
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>every 12 months + on an alarm:    post-shift MAPE 4.1%  ( 5 refits)
 </pre>
 </div>
 </div>
@@ -8194,7 +8215,7 @@ more frequent refits recover faster; the best policy is often TRIGGERED (refit w
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>Refit cadence trades cost against freshness. Refitting <strong>every month</strong> recovers fastest from the shift; a slow <strong>annual</strong> cadence leaves the forecast stale for many months. In practice the best of both is <strong>triggered</strong> retraining, refit on the schedule but also immediately whenever the drift monitor alarms, so a sudden regime change does not wait for the next calendar slot.</p>
+<p>Refit cadence trades cost against freshness. Of the calendar policies, refitting <strong>every month</strong> recovers fastest (3.3% after the shift, with 47 refits), and a slow <strong>annual</strong> cadence leaves the forecast stale for months (8.2%). <strong>Triggered</strong> retraining refits on the calendar and also as soon as a month's error breaks the 10% floor. A six-month calendar with that trigger reaches 3.2% with only 9 refits, and even the annual calendar drops to 4.1% with 5, because a sudden regime change no longer waits for the next calendar slot.</p>
 </div>
 </div>
 </div>
@@ -8253,7 +8274,7 @@ a full replay of the pipeline on history is the CI test you run BEFORE shipping 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>Before shipping any change to the pipeline, replay it over all of history with a <strong>rolling-origin backtest</strong>: refit and one-step-forecast at every month, exactly as production would. Its average MAPE (about 3%, with a single spike at the shift) is the pipeline's honest track record, and rerunning it after any code change is the <strong>continuous-integration test</strong> for a forecasting service.</p>
+<p>Before shipping any change to the pipeline, replay it over all of history with a <strong>rolling-origin backtest</strong>: refit and one-step-forecast at every month, exactly as production would. Its average MAPE (about 3.6%, with spikes near 23% and 22% in the two months the shift hit) is the pipeline's honest track record, and rerunning it after any code change is the <strong>continuous-integration test</strong> for a forecasting service.</p>
 </div>
 </div>
 </div>
@@ -8279,7 +8300,7 @@ a full replay of the pipeline on history is the CI test you run BEFORE shipping 
 <li><strong>Automate drift detection</strong> with a change-point (CUSUM) test, do not rely on a human watching a chart.</li>
 <li><strong>Monitor interval coverage</strong> too: a run of actuals outside the band is an early warning.</li>
 <li><strong>Pick the retraining window</strong>: a rolling (recent-only) window recovers faster after a regime shift.</li>
-<li><strong>Choose a cadence</strong>: frequent or, better, triggered retraining recovers fastest.</li>
+<li><strong>Choose a cadence</strong>: a six-month calendar plus an alarm trigger matched monthly refits with 9 refits in place of 47.</li>
 <li><strong>Backtest the whole pipeline</strong> with rolling-origin as the CI test before you deploy a change.</li>
 </ul>
 </div>
