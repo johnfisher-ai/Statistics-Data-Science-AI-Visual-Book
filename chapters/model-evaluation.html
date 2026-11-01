@@ -73,8 +73,8 @@
     <h1>Model <span class="accent">Evaluation</span></h1>
     <p class="dek">A model has learned by minimizing a loss, but a low loss is not the same as a good model. This chapter is
        how to judge one honestly: why accuracy is a trap on imbalanced data, the confusion matrix and the precision-recall
-       trade-off, the ROC curve and AUC, and the regression metrics MAE, MSE, RMSE, and R-squared, all on a fraud-detection
-       table.</p>
+       trade-off, the ROC curve and AUC, and the regression metrics MAE, MSE, RMSE, and R-squared, the classification metrics on a
+       fraud-detection table and the regression metrics on a small simulated regression.</p>
     <div class="hero-meta">
       <div class="m">⏱️ <b>~19 min</b>&nbsp;read</div>
       <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
@@ -178,30 +178,33 @@
        threshold from the cost of a miss versus a false alarm.</p>
 
     <p>The notebook makes "by cost" concrete instead of hand-wavy: charge <strong>$500</strong> for a missed fraud and
-       <strong>$10</strong> to review a false alarm, then sweep every threshold and add up the bill. Expected cost bottoms
-       out near a threshold of <strong>0.02</strong> (about <strong>$2,900</strong> on the test set), roughly
-       <strong>7&#215; cheaper</strong> than blindly using 0.5 (about $20,170). The optimal threshold is simply the one
-       that minimizes expected cost, a business calculation, not a statistical default.</p>
+       <strong>$10</strong> to review a false alarm, then sweep every threshold and add up the bill. The sweep runs on out-of-fold predictions for the training rows,
+       so the test set stays out of the choice, and the cost falls lowest at a threshold of <strong>0.02</strong>, the
+       same value the costs give directly, 10 / (10 + 500). On the test set that threshold costs about
+       <strong>$2,900</strong>, roughly <strong>7&#215; cheaper</strong> than blindly using 0.5 (about $20,170). It is
+       also a policy of reviewing a lot of traffic, since it flags 66% of the test transactions, and flagging every
+       transaction would cost only a little more, $3,920. The optimal threshold is the one that minimizes expected cost, a
+       business calculation, not a statistical default.</p>
 
     <p>To compare models <em>independently of any threshold</em>, use the <span class="term">ROC curve</span> and its area,
        <span class="term">AUC</span>.</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
-      <svg viewBox="0 0 600 300" width="100%" font-family="Inter, sans-serif" aria-label="An ROC curve plotting true-positive rate against false-positive rate; it bows toward the top-left corner and the shaded area beneath it is the AUC of about 0.81, well above the diagonal that marks a random model at 0.5">
+      <svg viewBox="0 0 600 300" width="100%" font-family="Inter, sans-serif" aria-label="The notebook's ROC curve for the gradient-boosting model, plotting true-positive rate against false-positive rate; it bows toward the top-left corner and the shaded area beneath it is the AUC of about 0.81, well above the diagonal that marks a random model at 0.5">
         <text x="300" y="20" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">ROC curve: the area beneath is the AUC</text>
         <line x1="80" y1="250" x2="520" y2="250" stroke="#94a3b8" stroke-width="1"/>
         <line x1="80" y1="46" x2="80" y2="250" stroke="#94a3b8" stroke-width="1"/>
         <text x="300" y="284" text-anchor="middle" font-size="9" fill="#4a5578" font-weight="700">false positive rate &#8594;</text>
         <text x="44" y="148" text-anchor="middle" font-size="9" fill="#4a5578" font-weight="700" transform="rotate(-90 44 148)">true positive rate</text>
-        <!-- shaded AUC -->
-        <path d="M80,250 C130,150 210,86 320,66 C400,54 470,50 520,48 L520,250 Z" fill="#c7d2fe" fill-opacity="0.45"/>
+        <!-- shaded AUC: the gradient-boosting model's test-set ROC curve from the notebook -->
+        <polygon points="80.0,250.0 80.0,246.5 80.0,236.1 84.5,236.1 84.5,229.1 86.7,229.1 86.7,225.6 89.0,225.6 89.0,218.7 91.2,218.7 91.2,208.2 92.3,208.2 92.3,197.8 93.5,197.8 93.5,194.3 94.6,194.3 94.6,190.8 99.1,190.8 99.1,187.3 100.2,187.3 100.2,183.8 101.3,183.8 101.3,180.3 103.6,180.3 103.6,176.9 112.6,176.9 112.6,173.4 113.7,173.4 113.7,169.9 124.9,169.9 124.9,166.4 126.0,166.4 126.0,162.9 131.6,162.9 131.6,159.4 136.1,159.4 136.1,152.5 144.0,152.5 144.0,149.0 147.3,149.0 147.3,145.5 150.7,145.5 150.7,142.0 156.3,142.0 156.3,138.6 164.2,138.6 164.2,135.1 170.9,135.1 170.9,131.6 172.0,131.6 172.0,128.1 175.4,128.1 175.4,124.6 176.5,124.6 176.5,121.1 179.9,121.1 179.9,117.7 186.6,117.7 186.6,114.2 190.0,114.2 190.0,110.7 192.2,110.7 192.2,107.2 194.5,107.2 194.5,103.7 195.6,103.7 195.6,100.2 201.2,100.2 201.2,96.8 204.6,96.8 204.6,93.3 215.8,93.3 215.8,89.8 225.9,89.8 225.9,86.3 228.2,86.3 228.2,82.8 232.7,82.8 232.7,79.3 234.9,79.3 234.9,75.9 239.4,75.9 239.4,72.4 267.4,72.4 267.4,68.9 268.6,68.9 268.6,65.4 329.2,65.4 329.2,61.9 347.1,61.9 347.1,58.4 348.3,58.4 348.3,55.0 349.4,55.0 349.4,51.5 352.8,51.5 355.0,51.5 377.4,51.5 379.7,51.5 424.6,51.5 426.8,51.5 426.8,48.0 476.2,48.0 478.5,48.0 479.6,48.0 483.0,48.0 487.4,48.0 489.7,48.0 503.2,48.0 505.4,48.0 520.0,48.0 520,250" fill="#c7d2fe" fill-opacity="0.45"/>
         <!-- ROC curve -->
-        <path d="M80,250 C130,150 210,86 320,66 C400,54 470,50 520,48" fill="none" stroke="#4338ca" stroke-width="2.6"/>
+        <polyline points="80.0,250.0 80.0,246.5 80.0,236.1 84.5,236.1 84.5,229.1 86.7,229.1 86.7,225.6 89.0,225.6 89.0,218.7 91.2,218.7 91.2,208.2 92.3,208.2 92.3,197.8 93.5,197.8 93.5,194.3 94.6,194.3 94.6,190.8 99.1,190.8 99.1,187.3 100.2,187.3 100.2,183.8 101.3,183.8 101.3,180.3 103.6,180.3 103.6,176.9 112.6,176.9 112.6,173.4 113.7,173.4 113.7,169.9 124.9,169.9 124.9,166.4 126.0,166.4 126.0,162.9 131.6,162.9 131.6,159.4 136.1,159.4 136.1,152.5 144.0,152.5 144.0,149.0 147.3,149.0 147.3,145.5 150.7,145.5 150.7,142.0 156.3,142.0 156.3,138.6 164.2,138.6 164.2,135.1 170.9,135.1 170.9,131.6 172.0,131.6 172.0,128.1 175.4,128.1 175.4,124.6 176.5,124.6 176.5,121.1 179.9,121.1 179.9,117.7 186.6,117.7 186.6,114.2 190.0,114.2 190.0,110.7 192.2,110.7 192.2,107.2 194.5,107.2 194.5,103.7 195.6,103.7 195.6,100.2 201.2,100.2 201.2,96.8 204.6,96.8 204.6,93.3 215.8,93.3 215.8,89.8 225.9,89.8 225.9,86.3 228.2,86.3 228.2,82.8 232.7,82.8 232.7,79.3 234.9,79.3 234.9,75.9 239.4,75.9 239.4,72.4 267.4,72.4 267.4,68.9 268.6,68.9 268.6,65.4 329.2,65.4 329.2,61.9 347.1,61.9 347.1,58.4 348.3,58.4 348.3,55.0 349.4,55.0 349.4,51.5 352.8,51.5 355.0,51.5 377.4,51.5 379.7,51.5 424.6,51.5 426.8,51.5 426.8,48.0 476.2,48.0 478.5,48.0 479.6,48.0 483.0,48.0 487.4,48.0 489.7,48.0 503.2,48.0 505.4,48.0 520.0,48.0" fill="none" stroke="#4338ca" stroke-width="2.2" stroke-linejoin="round"/>
         <!-- diagonal -->
         <line x1="80" y1="250" x2="520" y2="48" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="5 4"/>
         <text x="300" y="168" text-anchor="middle" font-size="9" fill="#64748b" transform="rotate(-25 300 168)">random model (AUC 0.5)</text>
-        <text x="360" y="120" text-anchor="middle" font-size="12" fill="#3730a3" font-weight="800">AUC &#8776; 0.81</text>
-        <text x="360" y="136" text-anchor="middle" font-size="8" fill="#4a5578">ranks a random fraud above a random legit 81% of the time</text>
+        <text x="430" y="192" text-anchor="middle" font-size="12" fill="#3730a3" font-weight="800">AUC &#8776; 0.81</text>
+        <text x="430" y="208" text-anchor="middle" font-size="8" fill="#4a5578">ranks a random fraud above a random legit 81% of the time</text>
         <text x="96" y="240" font-size="7.5" fill="#64748b">strict threshold</text>
         <text x="470" y="66" font-size="7.5" fill="#64748b">loose threshold</text>
       </svg>
@@ -329,7 +332,7 @@
   <!-- ===== Challenges ===== -->
   <section id="challenges">
     <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
-    <p>Five short challenges on the fraud table. Try them with scikit-learn before checking the solutions.</p>
+    <p>Five short challenges, the first four on the fraud table and the last on a small simulated regression. Try them with scikit-learn before checking the solutions.</p>
     <div class="challenges">
       <div class="challenge"><div class="cnum">1</div><div class="cbody">
         <h3>Accuracy vs a do-nothing baseline</h3>
