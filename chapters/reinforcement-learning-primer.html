@@ -173,16 +173,18 @@
     <p><span class="term">Q-learning</span> keeps a table of <span class="term">action-values</span> Q(state, action):
        an estimate of the return from taking that action, then behaving well afterward. Every experience nudges the table
        toward reality with a single rule, move Q(s,a) a little toward <span class="hl">reward + gamma &#215; (best Q of the
-       next state)</span>. Run enough episodes and the estimates converge, no model of the world required.</p>
+       next state)</span>. Given enough exploration (every state-action pair tried again and again) and a learning rate that shrinks over
+       time, the estimates converge to the true values, no model of the world required.</p>
 
     <p>In our 5&#215;5 GridWorld, a <strong>random agent averages a return of about -10</strong> (it blunders into the
        trap). After a few hundred episodes of Q-learning the same agent scores about <strong>+9</strong>, and the table it
-       built encodes a clean <span class="term">policy</span>: in every cell, take the highest-value action.</p>
+       built encodes a <span class="term">policy</span>, the greedy rule of taking the highest-value action in every
+       cell.</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.4rem 1.2rem;text-align:center">
       <svg viewBox="0 0 360 340" width="360" style="max-width:100%" font-family="Inter, sans-serif" aria-label="The learned GridWorld policy: from the start cell, arrows flow along the top row and down the right column to the goal, steering around the trap and walls">
         <defs><marker id="pa" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#4338ca"/></marker></defs>
-        <text x="180" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">The learned policy: best action in every cell</text>
+        <text x="180" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">The learned policy: the greedy action in every cell</text>
         <rect x="40" y="34" width="56" height="56" fill="#ffffff" stroke="#e2e8f0"/>
         <rect x="96" y="34" width="56" height="56" fill="#ffffff" stroke="#e2e8f0"/>
         <rect x="152" y="34" width="56" height="56" fill="#ffffff" stroke="#e2e8f0"/>
@@ -220,14 +222,14 @@
         <line x1="221" y1="62" x2="251" y2="62" stroke="#4338ca" stroke-width="2.4" marker-end="url(#pa)"/>
         <line x1="292" y1="47" x2="292" y2="77" stroke="#4338ca" stroke-width="2.4" marker-end="url(#pa)"/>
         <line x1="68" y1="133" x2="68" y2="103" stroke="#4338ca" stroke-width="2.4" marker-end="url(#pa)"/>
-        <line x1="124" y1="133" x2="124" y2="103" stroke="#4338ca" stroke-width="2.4" marker-end="url(#pa)"/>
+        <line x1="109" y1="118" x2="139" y2="118" stroke="#4338ca" stroke-width="2.4" marker-end="url(#pa)"/>
         <line x1="180" y1="133" x2="180" y2="103" stroke="#4338ca" stroke-width="2.4" marker-end="url(#pa)"/>
         <line x1="292" y1="103" x2="292" y2="133" stroke="#4338ca" stroke-width="2.4" marker-end="url(#pa)"/>
         <line x1="68" y1="159" x2="68" y2="189" stroke="#4338ca" stroke-width="2.4" marker-end="url(#pa)"/>
-        <line x1="124" y1="159" x2="124" y2="189" stroke="#4338ca" stroke-width="2.4" marker-end="url(#pa)"/>
+        <line x1="139" y1="174" x2="109" y2="174" stroke="#4338ca" stroke-width="2.4" marker-end="url(#pa)"/>
         <line x1="292" y1="159" x2="292" y2="189" stroke="#4338ca" stroke-width="2.4" marker-end="url(#pa)"/>
         <line x1="68" y1="215" x2="68" y2="245" stroke="#4338ca" stroke-width="2.4" marker-end="url(#pa)"/>
-        <line x1="180" y1="215" x2="180" y2="245" stroke="#4338ca" stroke-width="2.4" marker-end="url(#pa)"/>
+        <line x1="165" y1="230" x2="195" y2="230" stroke="#4338ca" stroke-width="2.4" marker-end="url(#pa)"/>
         <line x1="221" y1="230" x2="251" y2="230" stroke="#4338ca" stroke-width="2.4" marker-end="url(#pa)"/>
         <line x1="292" y1="215" x2="292" y2="245" stroke="#4338ca" stroke-width="2.4" marker-end="url(#pa)"/>
         <line x1="53" y1="286" x2="83" y2="286" stroke="#4338ca" stroke-width="2.4" marker-end="url(#pa)"/>
@@ -238,8 +240,10 @@
     </figure>
 
     <p>The arrows form a flow that runs along the top row and down the far column, threading past the trap and walls to the
-       goal, a route <em>nobody programmed</em>. The matching value function (highest near the goal, lowest by the trap)
-       and this policy are two views of the same learned knowledge.</p>
+       goal, a route <em>nobody programmed</em>. The matching value function is highest near the goal and along that
+       route, and lowest in the lower-left cells the agent rarely visited, whose estimates have barely moved from zero.
+       Off the route a few arrows are not yet the best move, because 600 episodes with 10% exploration leave those cells
+       under-explored. The value function and the policy are two views of the same learned knowledge.</p>
   </section>
 
   <!-- ===== Section 4: REAL-WORLD ===== -->
@@ -265,15 +269,15 @@
       <table class="disp-table">
         <thead><tr><th>Strategy</th><th>How it explores</th><th>Result</th></tr></thead>
         <tbody>
-          <tr><td class="nm">Pure greedy</td><td>never, always shows the current best</td><td>can lock onto a loser forever</td></tr>
+          <tr><td class="nm">Pure greedy</td><td>never, always shows the current best</td><td>showed AD1, the second-worst ad, to all 4,000 visitors</td></tr>
           <tr><td class="nm">Epsilon-greedy</td><td>random 10% of the time</td><td>finds AD2, sent it ~82% of traffic</td></tr>
-          <tr><td class="nm">UCB</td><td>favors options it is uncertain about</td><td>finds AD2 fast, explores smartly</td></tr>
+          <tr><td class="nm">UCB</td><td>favors options it is uncertain about</td><td>with c = 0.3, finds AD2 and sent it ~74% of traffic</td></tr>
         </tbody>
       </table>
     </div>
 
-    <p>Pure greedy is a cautionary tale: commit to whatever looked best after a few noisy clicks and you may never gather
-       the evidence to know better. A little <strong>exploration</strong>, random (epsilon-greedy) or uncertainty-driven
+    <p>Pure greedy is a cautionary tale. Every estimate starts at zero, so it shows the first ad, and because it never
+       tries the others it never gathers the evidence that AD2 is better. A little <strong>exploration</strong>, random (epsilon-greedy) or uncertainty-driven
        (UCB), pays a small short-term cost to find the truly best ad, then exploits it. This same trade-off drives A/B
        testing, recommendation, and clinical-trial design.</p>
   </section>
@@ -300,7 +304,8 @@
       <div class="cico">🤖</div>
       <div><div class="ctitle">Why this matters for AI research</div>
         <p>Reinforcement learning is how AI systems learn to <strong>act</strong>, not just predict. It powered the
-           superhuman game players (AlphaGo, AlphaZero) that first showed machines could out-plan people, and it drives
+           superhuman game players AlphaGo and AlphaZero, which mastered Go, a game long thought out of reach for
+           computers, and it drives
            robotics and control, where the goal is a sequence of good decisions rather than a single label. Most visibly
            today, <strong>RLHF</strong>, reinforcement learning from human feedback, is a key step in aligning large
            language models: the model's helpful, harmless responses are shaped by a reward signal learned from human
