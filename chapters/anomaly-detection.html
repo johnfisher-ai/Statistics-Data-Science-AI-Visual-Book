@@ -206,18 +206,20 @@
       <div class="rw-tag">📂 Dataset · anomaly-detection--sensors.xlsx</div>
       <p style="margin:0.5rem 0 0">590 machines with <code>temperature</code>, <code>vibration</code>,
         <code>pressure</code>, and <code>rotation_rpm</code>. About 5% are faulty. A <code>label</code> column gives the
-        ground truth, used <strong>only to score</strong> the detectors, never to train them.</p>
+        ground truth. It <strong>scores</strong> the detectors, and in the demos it also sets their contamination rate,
+        which the label-free budget and gap rules below replace. A realistic teaching dataset written for the book.</p>
       <div class="ex-files">
         <a class="ex-file xls" href="../data/anomaly-detection--sensors.xlsx" download>📊 Download dataset &nbsp;<small>Excel · 590 machines</small></a>
       </div>
     </div>
 
-    <p>Running all four detectors on the same data lays bare the central truth of the field, <strong>no single method wins
-       on every anomaly type</strong>:</p>
+    <p>Running all four detectors on the same data shows that <strong>each detector catches what its assumptions
+       fit</strong>. Mahalanobis catches both kinds here, because the normal machines form the near-Gaussian, linearly
+       correlated cloud it assumes, and it would lose that edge on curved or multi-group data:</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
       <svg viewBox="0 0 640 250" width="100%" font-family="Inter, sans-serif" aria-label="A grid showing which detector catches which anomaly type: z-score catches obvious but not subtle; Mahalanobis catches both; Isolation Forest catches obvious but not subtle; LOF catches subtle but not the obvious cluster">
-        <text x="320" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">No free lunch: which detector catches which anomaly</text>
+        <text x="320" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">Which detector catches which anomaly</text>
         <!-- column headers -->
         <text x="360" y="58" text-anchor="middle" font-size="10" fill="#3730a3" font-weight="700">obvious</text>
         <text x="360" y="72" text-anchor="middle" font-size="8" fill="#8b94b3">(univariate)</text>
@@ -260,9 +262,11 @@
       </table>
     </div>
 
-    <p>The practical move: choose by the anomaly you most fear, or <strong>combine</strong> complementary detectors (flag
-       if any fires, which pushed recall to 1.00 here) and tune the <span class="term">contamination</span> threshold to
-       trade false alarms against misses.</p>
+    <p>The practical move is to choose by how well each method's assumptions fit your data and the anomaly you most
+       fear. <strong>Combining</strong> detectors (flag if any fires) helps when their blind spots differ, at the price of
+       more false alarms. Here the elliptic envelope already catches all 30 on its own, so adding LOF to it keeps recall
+       at 1.00 and cuts precision to 0.65. The <span class="term">contamination</span> threshold then trades false alarms
+       against misses.</p>
 
     <p><strong>Setting the threshold when you have no labels.</strong> Every detector above was handed
        <code>contamination = y.mean()</code>, the true anomaly rate, which you only know here because it is a teaching
@@ -314,7 +318,7 @@
           <h3>Detect anomalies in Python</h3>
           <p>The companion notebook hunts machine faults with the <strong>z-score</strong>, <strong>Mahalanobis</strong>
              (EllipticEnvelope), <strong>Isolation Forest</strong>, and <strong>LOF</strong>, scores each with recall and
-             precision, and shows head-to-head why no single detector wins, each cell explained.</p>
+             precision, and shows head-to-head that each detector catches what its assumptions fit, each cell explained.</p>
         </div>
       </div>
       <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
@@ -343,7 +347,7 @@
         <li><span class="ck">✓</span><span><strong>z-score</strong> (univariate) is simple but blind to anomalies that live in the relationship between features.</span></li>
         <li><span class="ck">✓</span><span><strong>Mahalanobis / EllipticEnvelope</strong> accounts for correlation, excellent when data is roughly Gaussian.</span></li>
         <li><span class="ck">✓</span><span><strong>Isolation Forest</strong> assumes nothing and scales, the default; <strong>LOF</strong> catches locally-odd points.</span></li>
-        <li><span class="ck">✓</span><span><strong>No single detector wins</strong>, match the method to the anomaly you fear, or combine detectors and tune the threshold.</span></li>
+        <li><span class="ck">✓</span><span><strong>The winner depends on the data</strong>: match the method's assumptions to the data and the anomaly you fear, or combine detectors and tune the threshold.</span></li>
       </ul>
     </div>
   </section>
@@ -483,9 +487,9 @@ window.addEventListener('scroll', () => {
     },
     {
       q: "The key practical lesson of the chapter is that…",
-      options: ["Isolation Forest always wins", "No single detector catches every anomaly type, match the method to the anomaly or combine detectors", "z-score is always enough", "Accuracy is the best metric"],
+      options: ["Isolation Forest always wins", "Which detector wins depends on whether the data fit its assumptions, so match the method to the data and the anomaly", "z-score is always enough", "Accuracy is the best metric"],
       answer: 1,
-      explain: "Each method has a blind spot; choose by the anomaly you fear, or combine complementary detectors."
+      explain: "Each method assumes something about normal data. Mahalanobis caught all 30 here because the normal machines form a near-Gaussian cloud, and on curved or multi-group data it would lose that edge."
     }
   ];
 </script>
