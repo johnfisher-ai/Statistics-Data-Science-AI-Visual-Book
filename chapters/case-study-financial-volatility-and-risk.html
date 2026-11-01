@@ -89,8 +89,8 @@
 
   <section id="intro">
     <p class="lead">Most of this part forecast the <span class="hl">level</span> of a series. Financial returns break that
-       mold: their <em>direction</em> is essentially <span class="hl">unpredictable</span>, so no ARIMA will beat a coin
-       flip on tomorrow's move. Yet their <span class="hl">risk</span>, the size of the moves, is highly forecastable,
+       mold: their <em>direction</em> is close to <span class="hl">unpredictable</span> from their own past (a lag-1
+       autocorrelation of only &#8722;0.04), so an ARIMA has almost nothing to work with on tomorrow's move. Yet their <span class="hl">risk</span>, the size of the moves, is highly forecastable,
        because volatility <span class="hl">clusters</span>. This chapter turns that forecastable volatility into a concrete
        risk number: <span class="hl">Value-at-Risk</span>.</p>
 
@@ -108,7 +108,7 @@
       <div class="cico">&#9888;&#65039;</div>
       <div><div class="ctitle">Value-at-Risk, in one sentence</div>
         <p>The <strong>1-day 99% VaR</strong> is the loss you expect to <strong>exceed on only 1 day in 100</strong>. On a
-           $1,000,000 position it will come out near <strong>$25,800</strong> here, a single, backtested, forward-looking
+           $1,000,000 position it will come out near <strong>$25,200</strong> here, a single, backtested, forward-looking
            number a desk can plan and set limits against.</p></div>
     </div>
   </section>
@@ -212,7 +212,7 @@
       <figcaption><span class="cap-t">From the notebook · Step 3</span><br>
         <strong>Big moves cluster.</strong> The returns wander around zero with no trend, but their <em>size</em> comes in
         waves, quiet spells, then bursts of large swings (including a crisis stretch). That is <strong>volatility
-        clustering</strong>: the direction is unpredictable, but the risk has memory, which is exactly what makes it
+        clustering</strong>: the direction has almost no memory, but the risk does, which is exactly what makes it
         forecastable.</figcaption>
     </figure>
 
@@ -274,15 +274,15 @@
         <text x="600" y="132" text-anchor="middle" font-size="7.6" fill="#64748b">gains &#8594;</text>
         <text x="80" y="132" text-anchor="middle" font-size="7.6" fill="#64748b">&#8592; losses</text>
         <rect x="470" y="44" width="196" height="40" rx="9" fill="#f0f9ff" stroke="#7dd3fc"/>
-        <text x="568" y="61" text-anchor="middle" font-size="8.4" fill="#075985" font-weight="800">1-day 99% VaR &#8776; 2.6%</text>
-        <text x="568" y="76" text-anchor="middle" font-size="7.8" fill="#0369a1">= $25,800 on a $1M position</text>
+        <text x="568" y="61" text-anchor="middle" font-size="8.4" fill="#075985" font-weight="800">1-day 99% VaR &#8776; 2.5%</text>
+        <text x="568" y="76" text-anchor="middle" font-size="7.8" fill="#0369a1">= $25,200 on a $1M position</text>
       </svg>
     </figure>
 
     <div class="step-h"><span class="sn">9</span><h3>Turn volatility into a dollar figure</h3></div>
-    <p>VaR converts the volatility forecast into money: take today's GARCH volatility, scale it by the <strong>1% quantile of
+    <p>VaR converts the volatility forecast into money: take GARCH's volatility forecast for tomorrow, scale it by the <strong>1% quantile of
        the Student-t</strong> (which respects the fat tails), and multiply by the position. The 1-day 99% VaR comes out near
-       <strong>2.6% = $25,800</strong> on the million-dollar position, the loss the desk should be prepared to exceed only a
+       <strong>2.5% = $25,200</strong> on the million-dollar position, the loss the desk should be prepared to exceed only a
        couple of times a year.</p>
 
     <div class="step-h"><span class="sn">10</span><h3>Backtest the number</h3></div>
@@ -292,8 +292,9 @@
         <strong>A VaR is only credible if it is backtested.</strong> The blue threshold moves with the estimated risk,
         deepening in the crisis and tightening in the calm. Counting the days the actual loss breached it gives about
         <strong>1.2%</strong>, close to the promised 1% (a formal Kupiec test in Take It Further confirms it passes). The
-        violations are <em>scattered</em>, not bunched, exactly what a well-calibrated, time-varying VaR should produce; a
-        constant-volatility VaR would pile all its breaches into the crisis.</figcaption>
+        violations are spread across the first four years, with none in the calm final year. A constant VaR set from the
+        full-sample volatility does worse on the count (18 breaches, 1.43%) with a similar spread by year, so GARCH's edge
+        here is a rate closer to 1% and a threshold that moves with the risk.</figcaption>
     </figure>
   </section>
 
@@ -303,15 +304,17 @@
 
     <div class="step-h"><span class="sn">11</span><h3>What leads the stock?</h3></div>
     <p>Risk is not only about one stock in isolation. A <strong>Granger causality</strong> test shows the <strong>market
-       Granger-causes the stock</strong> (its past helps predict the stock's returns, p &lt; 0.001) but not the reverse. That
-       is a <strong>systemic</strong> channel: a broad market shock is an early warning for this position, a reason to watch
-       market volatility as a leading risk indicator. As always, Granger is predictive precedence, not proof of cause.</p>
+       Granger-causes the stock</strong> (yesterday's market return helps predict today's stock return, p &lt; 0.001) but
+       not the reverse at the 5% level. The effect is about 0.22 of yesterday's market move, clearly significant yet small,
+       since the two lags explain under 4% of the daily variation. So the direction is slightly predictable from the market,
+       and a sharp market fall is a mild warning for the next day. The test is about returns, so it says nothing directly
+       about volatility. As always, Granger is predictive precedence, not proof of cause.</p>
 
     <div class="step-h"><span class="sn">12</span><h3>Deploy a daily risk report</h3></div>
-    <p>In production the risk function reruns each afternoon: refit GARCH on the latest returns, read today's conditional
+    <p>In production the risk function reruns each afternoon: refit GARCH on the latest returns, forecast tomorrow's
        volatility, and publish the VaR. The plain-English report writes itself, <em>&#8220;we could lose more than about
-       $25,800 tomorrow with 1% probability; risk is near normal now, but a market shock would raise it fast.&#8221;</em>
-       That single, backtested, forward-looking number, with the market as an early warning, is what turns a wall of returns
+       $25,200 tomorrow with 1% probability; risk is a little below its long-run level, and a big move would raise it fast.&#8221;</em>
+       That single, backtested, forward-looking number, with the market's lead as a mild warning, is what turns a wall of returns
        into a decision. The full write-up is below.</p>
   </section>
 
@@ -335,13 +338,14 @@
       </ul>
 
       <h4>The headline number</h4>
-      <p>On a $1,000,000 position, the <strong>1-day 99% Value-at-Risk is about $25,800</strong>: on a normal day the loss
-        stays under that, but roughly two or three times a year you should expect to lose more. The market is a
-        <strong>leading indicator</strong>, when it lurches, this stock tends to follow, so watch it as an early warning.</p>
+      <p>On a $1,000,000 position, the <strong>1-day 99% Value-at-Risk is about $25,200</strong>: on a normal day the loss
+        stays under that, but roughly two or three times a year you should expect to lose more. The market
+        <strong>leads this stock a little</strong>. The day after a market move the stock tends to repeat about a fifth of
+        it, so a sharp market fall is a mild early warning.</p>
 
       <h4>The bottom line</h4>
-      <p><strong>You cannot forecast the return, but you can forecast the risk. Today that risk is about $25,800 of daily
-        Value-at-Risk, it rises fast in turbulent stretches, and a market shock is the earliest sign of trouble. Set limits
+      <p><strong>You can barely forecast the return, but you can forecast the risk. Today that risk is about $25,200 of daily
+        Value-at-Risk, it rises fast in turbulent stretches, and a sharp market fall is a mild early warning. Set limits
         against the number, and refresh it every day.</strong></p>
     </div>
   </section>
@@ -369,11 +373,11 @@
     <div class="takeaways">
       <h3>🎓 Key Takeaways</h3>
       <ul>
-        <li><span class="ck">✓</span><span><strong>Forecast risk, not direction</strong>: returns are unpredictable in the mean, but volatility clusters and is forecastable.</span></li>
+        <li><span class="ck">✓</span><span><strong>Forecast risk, not direction</strong>: returns are close to unpredictable in the mean, but volatility clusters and is forecastable.</span></li>
         <li><span class="ck">✓</span><span><strong>Honor the stylized facts</strong>: fat tails (kurtosis ~6.3) and variance memory, confirmed by an ARCH-LM test.</span></li>
         <li><span class="ck">✓</span><span><strong>GARCH with Student-t</strong>: persistence ~0.98 means turbulence lingers; the fat-tailed distribution sizes the extremes right.</span></li>
-        <li><span class="ck">✓</span><span><strong>VaR must be backtested</strong>: the 1-day 99% VaR (~$25,800 on $1M) was breached about 1.2% of days, near the 1% target.</span></li>
-        <li><span class="ck">✓</span><span><strong>The market leads the stock</strong>: a Granger test flags a systemic early-warning channel to watch.</span></li>
+        <li><span class="ck">✓</span><span><strong>VaR must be backtested</strong>: the 1-day 99% VaR (~$25,200 on $1M) was breached about 1.2% of days, near the 1% target.</span></li>
+        <li><span class="ck">✓</span><span><strong>The market leads the stock a little</strong>: yesterday's market return predicts a small, significant part of today's stock return.</span></li>
       </ul>
     </div>
   </section>
@@ -408,7 +412,7 @@
     <div class="nb-cta" style="display:block">
       <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
         <div class="nb-ic">📓</div>
-        <div class="nb-body"><h3>All five, worked in a companion notebook</h3><p>A second notebook, <strong>Take It Further</strong>, rebuilds the model from <a href="volatility-and-advanced-models.html">Volatility &amp; Advanced Models</a> and works every extension with explanations, normal versus Student-t VaR, the Kupiec backtest, Expected Shortfall, a GJR-GARCH test for the leverage effect, and multi-day VaR versus the square-root rule.</p></div>
+        <div class="nb-body"><h3>All five, worked in a companion notebook</h3><p>A second notebook, <strong>Take It Further</strong>, rebuilds this chapter's GARCH model and works every extension with explanations, normal versus Student-t VaR, the Kupiec backtest, Expected Shortfall, a GJR-GARCH test for the leverage effect, and multi-day VaR versus the square-root rule.</p></div>
       </div>
       <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
         <a class="btn btn-primary" href="notebooks/html/case-study-financial-volatility-and-risk--take-it-further.html">📓 View Notebook (code &amp; outputs)</a>
@@ -504,9 +508,9 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
     },
     {
       q: "The Granger test showing the market leads the stock is useful because…",
-      options: ["It predicts exact prices", "It flags a systemic early-warning channel, market shocks precede trouble for this stock", "It proves causation", "It replaces the VaR"],
+      options: ["It predicts exact prices", "Yesterday's market move carries a small, real signal about this stock's next move", "It proves causation", "It replaces the VaR"],
       answer: 1,
-      explain: "Market returns Granger-cause the stock's, so watching market volatility gives an early warning. Granger is precedence, not proof of cause."
+      explain: "Market returns Granger-cause the stock's, so a sharp market fall is a mild warning for the next day. The test is about returns rather than volatility, and Granger is precedence, not proof of cause."
     }
   ];
 </script>
