@@ -8139,13 +8139,15 @@ each seasonality removes real error; you need BOTH to reach the best accuracy
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">statsmodels.tsa.ar_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">AutoReg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">statsmodels.tsa.stattools</span><span class="w"> </span><span class="kn">import</span> <span class="n">acf</span>
 <span class="n">ols</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">OLS</span><span class="p">(</span><span class="n">train</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">design</span><span class="p">(</span><span class="n">train</span><span class="o">.</span><span class="n">index</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
 <span class="n">resid</span> <span class="o">=</span> <span class="n">train</span><span class="o">.</span><span class="n">values</span> <span class="o">-</span> <span class="n">ols</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">design</span><span class="p">(</span><span class="n">train</span><span class="o">.</span><span class="n">index</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
 <span class="n">lb_ols</span> <span class="o">=</span> <span class="n">acorr_ljungbox</span><span class="p">(</span><span class="n">resid</span><span class="p">,</span> <span class="n">lags</span><span class="o">=</span><span class="p">[</span><span class="mi">14</span><span class="p">])[</span><span class="s1">'lb_pvalue'</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 <span class="n">ar</span> <span class="o">=</span> <span class="n">AutoReg</span><span class="p">(</span><span class="n">resid</span><span class="p">,</span> <span class="n">lags</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
 <span class="n">lb_ar</span> <span class="o">=</span> <span class="n">acorr_ljungbox</span><span class="p">(</span><span class="n">ar</span><span class="o">.</span><span class="n">resid</span><span class="p">,</span> <span class="n">lags</span><span class="o">=</span><span class="p">[</span><span class="mi">14</span><span class="p">])[</span><span class="s1">'lb_pvalue'</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 <span class="nb">print</span><span class="p">(</span><span class="s1">'plain harmonic-regression residual Ljung-Box p = </span><span class="si">%.3f</span><span class="s1"> (some autocorrelation left)'</span> <span class="o">%</span> <span class="n">lb_ols</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">'after modeling the errors with an AR(3):        p = </span><span class="si">%.3f</span><span class="s1"> (now white noise)'</span> <span class="o">%</span> <span class="n">lb_ar</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'residual autocorrelation, lags 1-14:'</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">acf</span><span class="p">(</span><span class="n">resid</span><span class="p">,</span> <span class="n">nlags</span><span class="o">=</span><span class="mi">14</span><span class="p">)[</span><span class="mi">1</span><span class="p">:],</span> <span class="mi">3</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'after modeling the errors with an AR(3):        p = </span><span class="si">%.3f</span><span class="s1"> (no significant autocorrelation left)'</span> <span class="o">%</span> <span class="n">lb_ar</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -8159,7 +8161,9 @@ each seasonality removes real error; you need BOTH to reach the best accuracy
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>plain harmonic-regression residual Ljung-Box p = 0.031 (some autocorrelation left)
-after modeling the errors with an AR(3):        p = 0.179 (now white noise)
+residual autocorrelation, lags 1-14: [ 0.015 -0.053 -0.039 -0.019 -0.053  0.036  0.036  0.041 -0.01  -0.033
+ -0.005 -0.037  0.05   0.031]
+after modeling the errors with an AR(3):        p = 0.179 (no significant autocorrelation left)
 </pre>
 </div>
 </div>
@@ -8172,7 +8176,7 @@ after modeling the errors with an AR(3):        p = 0.179 (now white noise)
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>The harmonic regression captures the seasonality but leaves mild <strong>day-to-day autocorrelation</strong> (yesterday's error carries into today). <strong>Dynamic regression</strong>, the deterministic features plus an <strong>AR model on the residual errors</strong>, mops that up: the residuals go from mildly autocorrelated (p about 0.03) to clean white noise (p about 0.18). It tightens short-horizon forecasts and is the natural upgrade once the seasonality is handled.</p>
+<p>The harmonic regression captures the seasonality but leaves mild <strong>autocorrelation</strong> spread thinly across the first two weeks of lags (lag 1 is only 0.015, and none of the first fourteen exceeds about 0.05). <strong>Dynamic regression</strong>, the deterministic features plus an <strong>AR model on the residual errors</strong>, mops that up: the Ljung-Box p-value goes from about 0.03 to about 0.18, so no significant autocorrelation is left. It is the natural upgrade once the seasonality is handled.</p>
 </div>
 </div>
 </div>
@@ -8200,13 +8204,13 @@ after modeling the errors with an AR(3):        p = 0.179 (now white noise)
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">hits</span><span class="o">=</span><span class="n">tot</span><span class="o">=</span><span class="mi">0</span>
-<span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span><span class="o">-</span><span class="mi">150</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span><span class="o">-</span><span class="mi">30</span><span class="p">,</span> <span class="mi">15</span><span class="p">):</span>
+<span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span><span class="o">-</span><span class="mi">150</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span><span class="o">-</span><span class="mi">30</span><span class="p">,</span> <span class="mi">30</span><span class="p">):</span>       <span class="c1"># four separate 30-day windows, so no day counts twice</span>
     <span class="n">tr</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:</span><span class="n">o</span><span class="p">];</span> <span class="n">m</span><span class="o">=</span><span class="n">sm</span><span class="o">.</span><span class="n">OLS</span><span class="p">(</span><span class="n">tr</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">design</span><span class="p">(</span><span class="n">tr</span><span class="o">.</span><span class="n">index</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
     <span class="n">pr</span><span class="o">=</span><span class="n">m</span><span class="o">.</span><span class="n">get_prediction</span><span class="p">(</span><span class="n">design</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">o</span><span class="p">:</span><span class="n">o</span><span class="o">+</span><span class="mi">30</span><span class="p">],</span><span class="nb">len</span><span class="p">(</span><span class="n">tr</span><span class="p">)))</span><span class="o">.</span><span class="n">summary_frame</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
     <span class="n">act</span><span class="o">=</span><span class="n">s</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">o</span><span class="p">:</span><span class="n">o</span><span class="o">+</span><span class="mi">30</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
     <span class="n">hits</span><span class="o">+=</span><span class="nb">int</span><span class="p">(((</span><span class="n">act</span><span class="o">&gt;=</span><span class="n">pr</span><span class="p">[</span><span class="s1">'obs_ci_lower'</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span><span class="o">&amp;</span><span class="p">(</span><span class="n">act</span><span class="o">&lt;=</span><span class="n">pr</span><span class="p">[</span><span class="s1">'obs_ci_upper'</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">());</span> <span class="n">tot</span><span class="o">+=</span><span class="nb">len</span><span class="p">(</span><span class="n">act</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s1">'actuals inside the 95</span><span class="si">%%</span><span class="s1"> interval: </span><span class="si">%d</span><span class="s1"> of </span><span class="si">%d</span><span class="s1"> = </span><span class="si">%.0f%%</span><span class="s1">'</span> <span class="o">%</span> <span class="p">(</span><span class="n">hits</span><span class="p">,</span> <span class="n">tot</span><span class="p">,</span> <span class="mi">100</span><span class="o">*</span><span class="n">hits</span><span class="o">/</span><span class="n">tot</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">'close to 95</span><span class="si">%%</span><span class="s1"> -&gt; the interval is well calibrated for capacity planning'</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'a 95</span><span class="si">%%</span><span class="s1"> band should hold about </span><span class="si">%.0f</span><span class="s1"> of </span><span class="si">%d</span><span class="s1">'</span> <span class="o">%</span> <span class="p">(</span><span class="mf">0.95</span><span class="o">*</span><span class="n">tot</span><span class="p">,</span> <span class="n">tot</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -8219,8 +8223,8 @@ after modeling the errors with an AR(3):        p = 0.179 (now white noise)
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>actuals inside the 95% interval: 234 of 240 = 98%
-close to 95%% -&gt; the interval is well calibrated for capacity planning
+<pre>actuals inside the 95% interval: 117 of 120 = 98%
+a 95% band should hold about 114 of 120
 </pre>
 </div>
 </div>
@@ -8233,7 +8237,7 @@ close to 95%% -&gt; the interval is well calibrated for capacity planning
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>A prediction interval is a staffing promise: about 95% of actual days should land inside it. <strong>Backtesting the coverage</strong> confirms the band is honest, if only 80% fell inside, the grid team would be caught short too often. Near 95% means the interval is safe to plan reserve capacity against.</p>
+<p>A prediction interval is a staffing promise: about 95% of actual days should land inside it. <strong>Backtesting the coverage</strong> checks that promise. If only 80% fell inside, the grid team would be caught short too often. Here 117 of 120 days landed inside, a little more than the 114 a 95% band would hold and within what chance allows over 120 days, so the band is honest and, if anything, errs slightly wide for reserve planning.</p>
 </div>
 </div>
 </div>
@@ -8259,8 +8263,8 @@ close to 95%% -&gt; the interval is well calibrated for capacity planning
 <li><strong>Choose the Fourier order</strong> by AIC / holdout: enough harmonics to trace the annual curve, no more.</li>
 <li><strong>Rolling-origin backtesting</strong> confirms the accuracy is stable, not one lucky split.</li>
 <li><strong>Each seasonality earns its place</strong>: dropping the weekly or yearly term measurably hurts.</li>
-<li><strong>Dynamic regression</strong> adds an AR term to clean the leftover day-to-day autocorrelation.</li>
-<li><strong>Interval coverage</strong> near 95% means the band is trustworthy for capacity planning.</li>
+<li><strong>Dynamic regression</strong> adds an AR term on the errors, and the small leftover autocorrelation stops being significant.</li>
+<li><strong>Interval coverage</strong> of 117 in 120 held-out days says the band is honest, erring slightly wide.</li>
 </ul>
 </div>
 </div>
