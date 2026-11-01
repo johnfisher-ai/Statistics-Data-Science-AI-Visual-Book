@@ -194,7 +194,7 @@
       <p style="margin:0.5rem 0 0">One row per card transaction with <code>amount</code>, <code>hour</code>,
         <code>txns_last_hour</code>, <code>merchant_category</code>, <code>foreign_transaction</code>,
         <code>card_present</code>, <code>account_age_days</code>, <code>distance_from_home_km</code>, and the target
-        <code>is_fraud</code>, of which only about 4% are 1.</p>
+        <code>is_fraud</code>, of which only about 4% are 1. A realistic teaching dataset written for the book.</p>
       <div class="ex-files">
         <a class="ex-file xls" href="../data/credit_card_fraud.csv" download>📊 Download dataset &nbsp;<small>CSV · 9,030 rows</small></a>
       </div>
@@ -243,7 +243,8 @@
     <div class="step-h"><span class="sn">5</span><h3>Visualize where fraud hides</h3></div>
     <p>Fraud is rare but not random, it has a fingerprint. It is several times more common on <strong>foreign</strong> and
        <strong>card-not-present</strong> transactions, and it rises steeply with the transaction <strong>amount</strong>
-       (and, in the notebook, with late-night hours, high velocity, and distance from home).</p>
+       The notebook also prints a night-time peak, 7.5% fraud between midnight and 6 a.m. against 2.7% the rest of the day,
+       though its model enters the hour as a single straight-line term and cannot capture that peak.</p>
 
     <figure class="nb-fig">
       <img src="../assets/img/case-study-fraud-detection--signal.png" alt="Three charts: class imbalance, fraud rate by transaction type, fraud rate by amount">
@@ -334,12 +335,12 @@
        the whole transaction while a false alarm costs a few dollars of review, the default 0.5 is far too conservative.</p>
 
     <figure class="nb-fig">
-      <img src="../assets/img/case-study-fraud-detection--threshold.png" alt="Total cost versus decision threshold, with the cost-optimal threshold near 0.08">
+      <img src="../assets/img/case-study-fraud-detection--threshold.png" alt="Total cost on the training folds versus decision threshold, with the cost-optimal threshold at 0.05">
       <figcaption><span class="cap-t">From the notebook · Step 10</span><br>
-        <strong>The cost-optimal cutoff is far below 0.5.</strong> Each point is the total cost on the test set at that
-        threshold, counting a missed fraud as the transaction amount and a false alarm as $5. The curve bottoms out around
-        <strong>0.08</strong>, not 0.5. Moving the cutoff there lifts recall from <strong>0.15 to about 0.67</strong>,
-        catching four times as much fraud, at the price of more false alarms the review team can absorb. This threshold,
+        <strong>The cost-optimal cutoff is far below 0.5.</strong> Each point is the total cost at that threshold on
+        out-of-fold predictions for the training rows, so the test set plays no part in the choice, counting a missed fraud
+        as the transaction amount and a false alarm as $5. The curve bottoms out at <strong>0.05</strong>, not 0.5. On the
+        test set that cutoff lifts recall from <strong>0.15 to 0.74</strong>, catching about five times as much fraud, at the price of more false alarms the review team can absorb. This threshold,
         not the algorithm, is the real business dial.</figcaption>
     </figure>
 
@@ -352,7 +353,7 @@
         <strong>foreign</strong> and <strong>card-not-present</strong> transactions, high <strong>velocity</strong> (many
         transactions per hour), <strong>electronics/travel</strong> merchants, large <strong>amounts</strong>, and distance
         from home. Bars to the <strong>left (green)</strong> mark safe transactions, older accounts and everyday merchants
-        like groceries. Every driver matches how real fraud behaves, a sign the model learned genuine patterns.</figcaption>
+        like groceries. These are the patterns built into this teaching dataset, and the model recovered them.</figcaption>
     </figure>
 
     <div class="step-h"><span class="sn">11</span><h3>Deploy the model</h3></div>
@@ -384,8 +385,8 @@
       </ul>
 
       <h4>How good is it, in plain terms</h4>
-      <p>Tuned to cost, the tool catches roughly <strong>two-thirds of all fraud</strong> while holding only a small slice
-        of transactions for review, a dial the bank can turn tighter or looser depending on how many alerts its team can
+      <p>Tuned to cost, the tool catches about <strong>three-quarters of all fraud</strong> while holding about 18% of
+        transactions for review, roughly six alerts for each fraud caught, a dial the bank can turn tighter or looser depending on how many alerts its team can
         handle. It is not perfect (no fraud model is), but it turns an impossible manual task into a focused, high-value
         review queue.</p>
 
