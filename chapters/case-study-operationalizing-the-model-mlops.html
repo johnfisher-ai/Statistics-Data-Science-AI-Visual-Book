@@ -198,9 +198,9 @@
         <code>month</code> (0 = the training window, 1 to 18 = live), with <code>tenure_months</code>,
         <code>monthly_usage_gb</code>, <code>support_tickets</code>, <code>add_ons</code>, <code>monthly_charges</code>,
         <code>price_increase</code>, and the <code>churned</code> outcome that arrived later. A market shift starting month 7
-        drives both data drift and concept drift.</p>
+        drives both data drift and concept drift. A realistic teaching dataset written for the book.</p>
       <div class="ex-files">
-        <a class="ex-file xls" href="../data/model_monitoring.csv" download>📊 Download dataset &nbsp;<small>CSV · 14,800 rows</small></a>
+        <a class="ex-file xls" href="../data/model_monitoring.csv" download>📊 Download dataset &nbsp;<small>CSV · 14,815 rows (15 duplicates)</small></a>
       </div>
     </div>
   </section>
@@ -239,9 +239,9 @@
        visible.</p>
 
     <figure class="nb-fig">
-      <img src="../assets/img/case-study-operationalizing-the-model-mlops--decay.png" alt="Rolling monthly AUC of the champion declining from about 0.77 to about 0.53">
+      <img src="../assets/img/case-study-operationalizing-the-model-mlops--decay.png" alt="Rolling monthly AUC of the champion declining from about 0.75 to about 0.53">
       <figcaption><span class="cap-t">From the notebook · Step 5</span><br>
-        <strong>Models decay silently.</strong> The champion holds around <strong>0.77</strong> for six months, then slides
+        <strong>Models decay silently.</strong> The champion holds around <strong>0.75</strong> for six months, then slides
         through the market shock to about <strong>0.53</strong>, no better than a coin flip, and stays there. Nothing
         errored, no exception was thrown; the model just quietly stopped working as the world changed. Rolling metrics are
         what turn an invisible problem into a visible one.</figcaption>
@@ -371,7 +371,8 @@
 
     <p><strong>Shadow</strong> mode scores live traffic without acting on it; a <strong>canary</strong> routes a small slice
        (here 20%) to the challenger and compares. In the notebook's canary, the challenger arm scores 0.79 against the
-       champion's 0.50, so we widen it. A <strong>rollback rule</strong> stays armed throughout: if the new model
+       champion's 0.50, so we widen it (the demo reads those labels at once, and with the two-month label delay the comparison
+       would come two months later). A <strong>rollback rule</strong> stays armed throughout: if the new model
        underperforms, traffic reverts to the versioned champion automatically. Finally, <strong>governance</strong> closes
        the loop: the promoted challenger becomes the new champion (v2.0), it scores fresh customers correctly under the new
        relationship, and monitoring begins again. The loop never ends.</p>
@@ -429,7 +430,7 @@
       <h3>🎓 Key Takeaways</h3>
       <ul>
         <li><span class="ck">✓</span><span><strong>Deployment is the halfway point</strong>: a model in production is a living system that must be packaged, served, logged, and watched.</span></li>
-        <li><span class="ck">✓</span><span><strong>Models decay silently</strong>: the champion slid from 0.77 to 0.53 with no error, only rolling metrics revealed it.</span></li>
+        <li><span class="ck">✓</span><span><strong>Models decay silently</strong>: the champion slid from about 0.75 to 0.53 with no error, only rolling metrics revealed it.</span></li>
         <li><span class="ck">✓</span><span><strong>Watch inputs, not just performance</strong>: PSI flagged drift at month 7, two months before the accuracy drop could be confirmed.</span></li>
         <li><span class="ck">✓</span><span><strong>Diagnose before fixing</strong>: a flipped coefficient meant concept drift, so retraining, not recalibration, was the cure.</span></li>
         <li><span class="ck">✓</span><span><strong>Retrain, validate, roll out safely</strong>: a challenger on fresh data (0.74 vs 0.53), promoted via canary with a rollback armed, and the loop restarts.</span></li>
@@ -460,7 +461,7 @@
         <div class="chint">Hint: train a challenger on the stale old regime.</div></div></div>
       <div class="challenge"><div class="cnum">5</div><div class="cbody">
         <h3>When is it safe to promote?</h3>
-        <p>Run the challenger in shadow and find the month it overtakes the champion.</p>
+        <p>Run the challenger in shadow on months it never trained on and compare it with the champion.</p>
         <div class="chint">Hint: score both on each month, look for the crossover.</div></div></div>
     </div>
 
@@ -488,11 +489,10 @@
 
   <div class="callout key" style="margin-top:2rem">
     <div class="cico">🏁</div>
-    <div><div class="ctitle">ML Case Study complete, up next</div>
-      <p>That closes <strong>the ML Case Study</strong>, seven end-to-end projects from a first
-         model to a self-renewing production system. Next the book turns to data that moves through time.
-         <strong>Components of a Time Series</strong> opens <strong>Time Series &amp; Forecasting</strong> with trend, seasonality, cycles,
-         and stationarity.</p></div>
+    <div><div class="ctitle">Up next</div>
+      <p>We kept one model healthy in production. The last case study in this part,
+         <strong>Customer Lifetime Value</strong>, predicts how much each customer will be worth over the relationship,
+         before the book turns to data that moves through time.</p></div>
   </div>
 
   <nav class="chapter-nav" aria-label="Previous and next chapter">
@@ -540,7 +540,7 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
       explain: "Rule of thumb: below 0.1 stable, 0.1 to 0.25 watch, above 0.25 significant drift. And PSI needs no labels."
     },
     {
-      q: "The champion's AUC fell from 0.77 to 0.53 with no error thrown. The lesson is…",
+      q: "The champion's AUC fell from about 0.75 to 0.53 with no error thrown. The lesson is…",
       options: ["Models never fail", "Models can fail silently, so you must monitor them, not assume they keep working", "Always use a bigger model", "Accuracy is unimportant"],
       answer: 1,
       explain: "Nothing crashed; the model just stopped working as the market shifted. Monitoring is what makes silent failure visible."
