@@ -114,7 +114,7 @@
       <div><div class="ctitle">Where the value is really made</div>
         <p>The model is the easy part. The decisions that matter come <em>after</em> it: <strong>Step 5</strong> catches a
            data leak that fakes a 0.99 AUC; <strong>Step 7</strong> shows accuracy would lead you to help nobody; and
-           <strong>Step 8</strong> sets the threshold where the money is, exactly where accuracy is worst.</p></div>
+           <strong>Step 8</strong> sets the threshold where the money is, far from where accuracy is best.</p></div>
     </div>
   </section>
 
@@ -195,7 +195,7 @@
       <p style="margin:0.5rem 0 0">One row per employee with <code>age</code>, <code>tenure_years</code>,
         <code>monthly_salary</code>, <code>satisfaction</code>, <code>work_life_balance</code>, <code>overtime</code>,
         <code>num_promotions</code>, <code>years_since_promotion</code>, <code>commute_km</code>, <code>job_role</code>, a
-        <strong>leaky</strong> <code>exit_process_started</code>, and the target <code>attrition</code> (about 19% left).</p>
+        <strong>leaky</strong> <code>exit_process_started</code>, and the target <code>attrition</code> (about 19% left). A realistic teaching dataset written for the book.</p>
       <div class="ex-files">
         <a class="ex-file xls" href="../data/employee_attrition.csv" download>📊 Download dataset &nbsp;<small>CSV · 4,020 rows</small></a>
       </div>
@@ -212,7 +212,7 @@
        conversation is cheap. Keeping that <em>decision</em> in view is what makes every later choice right or wrong.</p>
 
     <div class="step-h"><span class="sn">2</span><h3>Collect the data</h3></div>
-    <p>A standard HR export, one row per employee with the usual signals, and one column that will turn out to be a trap.</p>
+    <p>A table of the kind an HR system exports (a realistic teaching dataset written for the book), one row per employee with the usual signals, and one column that will turn out to be a trap.</p>
 
     <div class="step-h"><span class="sn">3</span><h3>Inspect the data</h3></div>
     <p>About <strong>19% of employees left</strong>, so predicting "stays" for everyone is already <strong>81%
@@ -222,8 +222,8 @@
 
     <div class="step-h"><span class="sn">4</span><h3>Clean the data</h3></div>
     <p>Light cleaning (dedupe, impute a few missing values), and one deliberate exclusion: <code>exit_process_started</code>
-       is <strong>left out of the features</strong>. The offboarding process is only started <em>after</em> someone resigns,
-       so for a current employee it is always 0. Using it would build a model that looks brilliant in testing and is useless
+       is <strong>left out of the features</strong>. The offboarding process mostly starts <em>after</em> someone resigns
+       (92% of those flagged left), so a current employee who has not resigned would almost always show 0. Using it would build a model that looks brilliant in testing and is useless
        in production, the definition of a leak.</p>
   </section>
 
@@ -314,11 +314,13 @@
        $1,500, and retention keeping about half of would-be leavers), the profit-maximizing cutoff is nowhere near 0.5.</p>
 
     <figure class="nb-fig">
-      <img src="../assets/img/case-study-from-model-to-decision--decision.png" alt="Business value and accuracy versus decision threshold; value peaks near 0.38 where accuracy is low">
+      <img src="../assets/img/case-study-from-model-to-decision--decision.png" alt="Business value and accuracy on the training folds versus decision threshold; value peaks at 0.30, where accuracy is low">
       <figcaption><span class="cap-t">From the notebook · Step 8</span><br>
-        <strong>Accuracy and value point in opposite directions.</strong> The business-value curve (indigo) peaks around a
-        threshold of <strong>0.38</strong>, catching most at-risk employees. But the accuracy line (amber, dashed) <em>rises</em>
-        toward the right, exactly where value collapses, and is highest when you flag no one and create zero value. The
+        <strong>Accuracy and value point in opposite directions.</strong> The business-value curve (indigo), computed on
+        out-of-fold predictions for the training rows so the test set stays out of the choice, peaks at a threshold of
+        <strong>0.30</strong>. On the test set that cutoff catches 89% of leavers but flags 66% of employees. The accuracy
+        line (amber, dashed) <em>rises</em> toward the right, where value collapses, and is highest when almost no one is
+        flagged and almost no value is created. The
         chapter in one picture: <strong>set the threshold by the decision's economics, never by accuracy.</strong></figcaption>
     </figure>
 
@@ -330,9 +332,10 @@
       <figcaption><span class="cap-t">From the notebook · Step 9</span><br>
         <strong>Insight, not just a score.</strong> Low <strong>satisfaction</strong> and poor <strong>work-life
         balance</strong> are the strongest departure signals, followed by a long time <strong>since the last
-        promotion</strong>, a long <strong>commute</strong>, and <strong>overtime</strong>, while higher salary and tenure
-        hold people. This points HR at the <em>levers</em>, career progression, workload, flexibility, that reduce attrition
-        at the source, not just a list of who to chase.</figcaption>
+        promotion</strong> and a long <strong>commute</strong>, while higher salary and tenure go with staying (the chart
+        shows the numeric features). These are associations in past data, so they point HR at factors worth testing,
+        career progression, workload and flexibility among them, and an experiment would show whether changing them reduces
+        attrition.</figcaption>
     </figure>
 
     <div class="step-h"><span class="sn">10&#8211;12</span><h3>Deploy, monitor, and communicate</h3></div>
@@ -360,14 +363,15 @@
       <h4>The decisions we made, and why</h4>
       <ul>
         <li><span class="ck">✓</span><span>We <strong>threw out a column that looked magically predictive</strong>. It recorded the start of the exit paperwork, which only happens <em>after</em> someone has already quit, so it would have made the tool look perfect in testing and useless in real life. Spotting that trap ("leakage") was the most important step.</span></li>
-        <li><span class="ck">✓</span><span>We <strong>refused to judge the tool on plain accuracy</strong>. Because only about one in six people leave, a tool that says "nobody will leave" is right 81% of the time while helping no one. We measured how many actual leavers it catches instead.</span></li>
+        <li><span class="ck">✓</span><span>We <strong>refused to judge the tool on plain accuracy</strong>. Because only about one in five people leave, a tool that says "nobody will leave" is right 81% of the time while helping no one. We measured how many actual leavers it catches instead.</span></li>
         <li><span class="ck">✓</span><span>We <strong>chose how aggressively to flag people using money</strong>, since losing an employee costs far more than a conversation, it pays to reach out to more people, even at the cost of some false alarms.</span></li>
       </ul>
 
       <h4>How good is it, in plain terms</h4>
       <p>The tool is meaningfully better than guessing at spotting who is likely to leave (though people are hard to
-        predict, so it is not close to perfect). Used at the right sensitivity, it catches most would-be leavers while HR
-        contacts only a manageable slice of the workforce.</p>
+        predict, so it is not close to perfect). Used at the right sensitivity, it catches most would-be leavers, but at the
+        profit-maximizing cutoff HR contacts about two-thirds of the workforce, so whether outreach capacity can stretch
+        that far is part of the decision.</p>
 
       <h4>The big idea</h4>
       <p>The hard part of this project was not building the model, it was <em>evaluating</em> it honestly.
@@ -403,7 +407,7 @@
         <li><span class="ck">✓</span><span><strong>Hunt for leakage first</strong>: a feature known only after the outcome inflated AUC from an honest 0.76 to a fake 0.99.</span></li>
         <li><span class="ck">✓</span><span><strong>Compare models fold by fold</strong>: logistic beat the ensembles in all five CV folds, a consistent, real edge, and it is simpler.</span></li>
         <li><span class="ck">✓</span><span><strong>Pick the metric that matches the decision</strong>: accuracy ranked "do nothing" first while catching zero leavers.</span></li>
-        <li><span class="ck">✓</span><span><strong>Set the threshold by economics</strong>: business value peaked near 0.38, exactly where accuracy was worst.</span></li>
+        <li><span class="ck">✓</span><span><strong>Set the threshold by economics</strong>: business value peaked at a threshold of 0.30, far from where accuracy is best.</span></li>
         <li><span class="ck">✓</span><span><strong>Interpret and communicate</strong>: the drivers point to real levers, and a one-paragraph summary turns the model into a decision people will act on.</span></li>
       </ul>
     </div>
@@ -516,7 +520,7 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
       explain: "Optimizing accuracy would ship the do-nothing model; recall, PR-AUC, and business value are the right lenses."
     },
     {
-      q: "The business-value curve peaked near a threshold of 0.38, where accuracy was low. This shows…",
+      q: "The business-value curve peaked at a threshold of 0.30, where accuracy was low. This shows…",
       options: ["Accuracy and value always agree", "The decision should be set by the cost of each error, not by accuracy", "0.5 is always best", "The model is broken"],
       answer: 1,
       explain: "Because a departure costs far more than a conversation, the value-maximizing cutoff sits well below 0.5."
@@ -525,7 +529,7 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
       q: "Interpreting the model showed the top attrition drivers were…",
       options: ["Age and job role", "Low satisfaction, poor work-life balance, and time since last promotion", "The employee id", "Random noise"],
       answer: 1,
-      explain: "These point HR at real levers, career progression, workload, flexibility, that reduce attrition at the source."
+      explain: "These are associations in past data, so they point HR at factors worth testing, career progression, workload and flexibility among them."
     },
     {
       q: "Why deploy with a holdout control group?",
