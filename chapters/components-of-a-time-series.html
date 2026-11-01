@@ -91,7 +91,7 @@
        loss. A <span class="hl">time series</span> breaks that assumption: the observations arrive <span class="hl">in
        order</span>, and each one leans on the ones before it. That memory is both the challenge and the opportunity. The
        first skill is to <span class="hl">decompose</span> a series into its parts, and to check whether it is
-       <span class="hl">stationary</span>, the property nearly every forecasting model assumes.</p>
+       <span class="hl">stationary</span>, the property ARIMA-family models assume (after differencing).</p>
 
     <div class="def-card">
       <div class="sigma">&#8987;</div>
@@ -198,8 +198,8 @@
        are built on that assumption, and most raw series violate it.</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
-      <svg viewBox="0 0 700 208" width="100%" font-family="Inter, sans-serif" aria-label="A non-stationary series has a mean that trends upward; differencing it, replacing each value with its change, gives a stationary series with a flat mean, the same shape as white noise">
-        <text x="350" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">Differencing turns a trending series into a stationary one</text>
+      <svg viewBox="0 0 700 208" width="100%" font-family="Inter, sans-serif" aria-label="A non-stationary series has a mean that trends upward; differencing it, replacing each value with its change, removes the trend, so the ADF test rejects a unit root, though the yearly season remains">
+        <text x="350" y="20" text-anchor="middle" font-size="12" fill="#1a2138" font-weight="800">Differencing removes the trend</text>
         <!-- non-stationary -->
         <rect x="20" y="38" width="270" height="140" rx="10" fill="#fef2f2" stroke="#fecaca"/>
         <text x="155" y="56" text-anchor="middle" font-size="9.3" fill="#b91c1c" font-weight="800">Non-stationary (raw)</text>
@@ -216,18 +216,20 @@
         <defs><marker id="s3a" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#0284c7"/></marker></defs>
         <!-- stationary -->
         <rect x="414" y="38" width="270" height="140" rx="10" fill="#ecfdf5" stroke="#a7f3d0"/>
-        <text x="549" y="56" text-anchor="middle" font-size="9.3" fill="#047857" font-weight="800">Stationary (differenced)</text>
+        <text x="549" y="56" text-anchor="middle" font-size="9.3" fill="#047857" font-weight="800">Differenced</text>
         <line x1="430" y1="110" x2="670" y2="110" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3 3"/>
         <polyline points="434,104 448,120 462,98 476,116 490,102 504,122 518,96 532,114 546,104 560,120 574,100 588,116 602,106 616,120 630,98 644,114 658,104" fill="none" stroke="#059669" stroke-width="1.8"/>
-        <text x="549" y="150" text-anchor="middle" font-size="7.5" fill="#065f46">flat mean, constant spread &#8594; ADF p &#8776; 0.02</text>
-        <text x="549" y="164" text-anchor="middle" font-size="7.3" fill="#047857">the same shape as white noise</text>
+        <text x="549" y="150" text-anchor="middle" font-size="7.5" fill="#065f46">trend removed &#8594; ADF rejects a unit root (p &#8776; 0.02)</text>
+        <text x="549" y="164" text-anchor="middle" font-size="7.3" fill="#047857">the yearly season is still there</text>
       </svg>
     </figure>
 
-    <p>The formal check is the <strong>Augmented Dickey-Fuller (ADF) test</strong>: a small p-value (below 0.05) says
-       stationary. Our raw sales series fails badly (<strong>p about 0.90</strong>) because its mean climbs.
+    <p>The formal check is the <strong>Augmented Dickey-Fuller (ADF) test</strong>: its null hypothesis is a unit root, so a small p-value
+       (below 0.05) is evidence for stationarity and a large one means a unit root cannot be ruled out. Our raw sales series
+       cannot reject it (<strong>p about 0.90</strong>), as its climbing mean leads you to expect.
        <strong>Differencing</strong>, replacing each value with its change from the month before, strips the trend, and the
-       differenced series passes (<strong>p about 0.02</strong>). That &#8220;difference until stationary&#8221; step is the
+       differenced series rejects a unit root (<strong>p about 0.02</strong>). It still carries the yearly season (its
+       autocorrelation at lag 12 is 0.46). That &#8220;difference until stationary&#8221; step is the
        <strong>I</strong> (integrated) in ARIMA, which the next chapter builds on. Seasonal patterns get their own
        <strong>seasonal difference</strong> at the season's lag.</p>
 
@@ -242,18 +244,18 @@
   <!-- ===== §4 real-world ===== -->
   <section id="realworld">
     <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: Six Years of Online Sales</h2></div>
-    <p>The companion notebook works a real monthly series end to end, decomposing it, testing stationarity, and reading its
+    <p>The companion notebook works a realistic teaching series end to end, decomposing it, testing stationarity, and reading its
        autocorrelation, all with <strong>statsmodels</strong>.</p>
 
     <div class="rw-card">
       <div class="rw-tag">📂 Dataset · components-of-a-time-series--monthly_retail_sales.xlsx</div>
       <p style="margin:0.5rem 0 0">Monthly sales for a growing online store, <strong>72 observations</strong> from January
         2018 to December 2023. Two columns: <code>month</code> (the calendar month) and <code>sales</code> (total dollars).
-        A clean, compact series with all four components on display.</p>
+        A clean, compact series with all four components on display, written for the book.</p>
       <ul class="rw-find">
         <li><span class="ck">&#9679;</span><strong>Trend:</strong> sales grow about <strong>$284 a month</strong> (roughly $3,400 a year); the first-year average near $22,000 rises to about $37,000 by the last year.</li>
         <li><span class="ck">&#9679;</span><strong>Seasonality:</strong> a 12-month pattern peaking in <strong>December (about +$6,300)</strong> and bottoming in January (about -$3,800).</li>
-        <li><span class="ck">&#9679;</span><strong>Stationarity:</strong> the raw series is non-stationary (ADF <strong>p &#8776; 0.90</strong>); after one difference it is stationary (<strong>p &#8776; 0.02</strong>).</li>
+        <li><span class="ck">&#9679;</span><strong>Stationarity:</strong> the raw series cannot reject a unit root (ADF <strong>p &#8776; 0.90</strong>); after one difference the test rejects one (<strong>p &#8776; 0.02</strong>), though the season remains.</li>
       </ul>
       <div class="ex-files">
         <a class="ex-file xls" href="../data/components-of-a-time-series--monthly_retail_sales.xlsx" download>📊 Download dataset &nbsp;<small>XLSX · 72 months</small></a>
@@ -432,13 +434,13 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
       q: "A stationary time series has…",
       options: ["A constant mean and variance over time, with no trend or seasonality", "Exactly zero values", "A strong upward trend", "More than 100 observations"],
       answer: 0,
-      explain: "Stationarity means the statistical behavior does not depend on when you look. Most forecasting models assume it."
+      explain: "Stationarity means the statistical behavior does not depend on when you look. ARIMA-family models assume it, after differencing."
     },
     {
       q: "The raw sales series had ADF p about 0.90 and its first difference about 0.02. This means…",
-      options: ["Both are stationary", "The raw series is non-stationary; differencing made it stationary", "The raw series is stationary", "Differencing made it worse"],
+      options: ["Both are stationary", "The raw series shows no evidence against a unit root; after differencing the test rejects one", "The raw series is stationary", "Differencing made it worse"],
       answer: 1,
-      explain: "A large ADF p-value means non-stationary; differencing removed the trend and the small p-value confirms stationarity."
+      explain: "The ADF null is a unit root. A large p-value means we cannot reject it, and the small p-value after differencing rejects it, which is evidence for stationarity."
     },
     {
       q: "White noise is…",
