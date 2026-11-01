@@ -209,7 +209,7 @@
        predict negative demand); the right family is Poisson.</p>
 
     <div class="step-h"><span class="sn">2</span><h3>Collect the data</h3></div>
-    <p>A CSV pull from the bike-system database. As always, other sources (SQL, an API, a spreadsheet) would use the same
+    <p>A CSV pull from the bike-system database (a realistic teaching dataset written for the book). As always, other sources (SQL, an API, a spreadsheet) would use the same
        one-line pandas readers, then land in a DataFrame.</p>
 
     <div class="step-h"><span class="sn">3</span><h3>Inspect the data</h3></div>
@@ -513,8 +513,8 @@
 
     <p>The remedy is the <span class="term">negative binomial</span>, which adds a dispersion parameter so variance can
        exceed the mean. It is a spectacular improvement here, the <strong>AIC drops from about 183,000 to 11,000</strong>.
-       VIFs are ~1 (no multicollinearity), and the negative-binomial forecast tracks actual demand closely (pseudo-R&#178;
-       &#8776; 0.66):</p>
+       VIFs are ~1 for temperature, humidity and wind (no multicollinearity among the weather inputs), and the negative-binomial forecast tracks typical days well and underpredicts the busiest ones (deviance
+       pseudo-R&#178; &#8776; 0.66):</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
       <svg viewBox="0 0 680 320" width="100%" font-family="Inter, sans-serif" aria-label="Predicted versus actual daily rentals cluster along the diagonal, showing the negative-binomial model predicts demand well">
@@ -782,7 +782,7 @@
     <div class="step-h"><span class="sn">10</span><h3>Interpret the results</h3></div>
     <figure class="nb-fig">
       <img src="../assets/img/case-study-forecasting-daily-bike-share-demand--overdispersion.png" alt="Overdispersion diagnostic and the count model demand forecast">
-      <figcaption><span class="cap-t">From the notebook &#183; Step 10</span><br>The variance-versus-mean overdispersion check (why negative binomial beats plain Poisson here) alongside the fitted demand forecast.</figcaption>
+      <figcaption><span class="cap-t">From the notebook &#183; Step 9</span><br>The variance-versus-mean overdispersion check (why negative binomial beats plain Poisson here) alongside predicted versus actual demand.</figcaption>
     </figure>
     <p>Exponentiating each coefficient gives a <span class="term">rate ratio</span>, the multiplier on expected demand:</p>
 
@@ -832,7 +832,7 @@
         <line x1="562.1" y1="182.9" x2="562.1" y2="190.9" stroke="#059669" stroke-width="2"/>
         <circle cx="546.8" cy="186.9" r="4.2" fill="#059669" stroke="#fff"/>
         <text x="523" y="190" text-anchor="end" font-size="8.4" fill="#059669" font-weight="800">1.10</text>
-        <text x="140" y="213" text-anchor="end" font-size="9" fill="#1a2138" font-weight="700">+5&#176;C warmer</text>
+        <text x="140" y="213" text-anchor="end" font-size="9" fill="#1a2138" font-weight="700">+5&#176;C near 14&#176;C</text>
         <line x1="582.8" y1="210.3" x2="599.8" y2="210.3" stroke="#059669" stroke-width="2.4"/>
         <line x1="582.8" y1="206.3" x2="582.8" y2="214.3" stroke="#059669" stroke-width="2"/>
         <line x1="599.8" y1="206.3" x2="599.8" y2="214.3" stroke="#059669" stroke-width="2"/>
@@ -842,11 +842,11 @@
     </figure>
 
     <p><span class="hl">Weather rules demand.</span> A <strong>heavy-rain day sees only ~25%</strong> of clear-day
-       rentals, light rain about half. Warmth helps (<strong>+33% for every 5&#176;C</strong>), working days run ~10%
-       busier than weekends, and holidays ~40% quieter. A concrete forecast: a warm, clear working day predicts about
+       rentals, light rain about half. Warmth helps (<strong>+33% for 5&#176;C near the typical 14&#176;C</strong>, less in warm weather because the curve bends), working
+       days run ~10% busier than weekends, and holidays ~43% quieter than ordinary working days. A concrete forecast: a warm, clear working day predicts about
        <strong>3,000 rentals</strong>.</p>
-    <p><b>Actionable:</b> scale bikes and staff down on forecast rain and cold, up on warm clear working days, and treat
-       holidays like weekends. The forecast feeds straight into the next day's rebalancing plan.</p>
+    <p><b>Actionable:</b> scale bikes and staff down on forecast rain and cold, up on warm clear working days, and plan
+       holidays below even a weekend. The forecast feeds straight into the next day's rebalancing plan.</p>
 
     <div class="step-h"><span class="sn">11</span><h3>Deploy the model</h3></div>
     <p><span class="term">Persist</span> the model and cleaning as one pipeline; <span class="term">score daily</span> by
@@ -864,13 +864,14 @@
       <p><strong>What we did.</strong> We took two years of daily rental records, cleaned them (removed duplicate days and
         a few unusable rows, fixed inconsistent labels, filled a handful of missing weather readings, standardized the
         dates), and built a formula that predicts how many bikes will be rented on a given day.</p>
-      <p><strong>How good is it?</strong> It explains about <strong>two-thirds</strong> of the day-to-day swing in demand
-        and tracks actual rentals closely, reporting a sensible range rather than a single number.</p>
+      <p><strong>How good is it?</strong> It explains about <strong>two-thirds</strong> of the deviance in daily demand
+        (a likelihood-based measure that runs above the ordinary R&#178;), tracks typical days well and underpredicts the
+        busiest ones, so a forecast should come with a range.</p>
       <p><strong>What drives demand:</strong></p>
       <ul>
         <li><span class="ck">✓</span><span><strong>Weather</strong> above all, a rainy day can cut rentals by up to 75%.</span></li>
-        <li><span class="ck">✓</span><span><strong>Temperature</strong>, warmer days are busier (about +33% per 5&#176;C).</span></li>
-        <li><span class="ck">✓</span><span><strong>The calendar</strong>, working days beat weekends; holidays are quiet.</span></li>
+        <li><span class="ck">✓</span><span><strong>Temperature</strong>, warmer days are busier (about +33% per 5&#176;C in mild weather, less when it is already warm).</span></li>
+        <li><span class="ck">✓</span><span><strong>The calendar</strong>, working days beat weekends, and holidays are quieter than either.</span></li>
       </ul>
       <p><strong>A note on method.</strong> Daily counts bounce around far more than a simple model expects, so we used
         one built for that (a "negative binomial"), which makes the forecast's confidence honest.</p>
@@ -902,7 +903,7 @@
       <h3>🎓 Key Takeaways</h3>
       <ul>
         <li><span class="ck">✓</span><span><strong>Counts need a count model</strong>: Poisson regression (log link) predicts a non-negative rate; ordinary regression can predict negative demand.</span></li>
-        <li><span class="ck">✓</span><span><strong>Coefficients exponentiate to rate ratios</strong>: heavy rain &#215;0.25, +5&#176;C &#215;1.33, working day &#215;1.10.</span></li>
+        <li><span class="ck">✓</span><span><strong>Coefficients exponentiate to rate ratios</strong>: heavy rain &#215;0.25, +5&#176;C &#215;1.33 near 14&#176;C, working day &#215;1.10.</span></li>
         <li><span class="ck">✓</span><span><strong>Overdispersion is the count-model pitfall</strong>: the variance-to-mean ratio and Pearson chi-square / df flagged it (in the hundreds).</span></li>
         <li><span class="ck">✓</span><span><strong>The negative binomial is the fix</strong>: it let variance exceed the mean and cut the AIC from ~183,000 to ~11,000, honest error bars, same rate ratios.</span></li>
         <li><span class="ck">✓</span><span><strong>Same 12-step method</strong> as the other case studies, only the model family (and its diagnostic) changed for a count outcome.</span></li>
@@ -924,9 +925,9 @@
         <p>Refit without the squared temperature term and compare AIC; is the curvature worth keeping?</p>
         <div class="chint">Hint: lower AIC wins; check the fitted temp-response shape.</div></div></div>
       <div class="challenge"><div class="cnum">3</div><div class="cbody">
-        <h3>Cross-validate the forecast</h3>
-        <p>Use 5-fold CV to estimate out-of-sample accuracy and confirm the model is not overfit.</p>
-        <div class="chint">Hint: <code>PoissonRegressor</code> with <code>cross_val_score</code>.</div></div></div>
+        <h3>Test the forecast on a later year</h3>
+        <p>Train on 2011, score 2012 with the same R&#178;, and confirm the model is not overfit.</p>
+        <div class="chint">Hint: split by date, never at random, so the model cannot peek at the future.</div></div></div>
       <div class="challenge"><div class="cnum">4</div><div class="cbody">
         <h3>Weekend vs weekday profiles</h3>
         <p>Test whether weather hurts weekend demand more than weekday demand (an interaction).</p>
@@ -940,7 +941,7 @@
     <div class="nb-cta" style="display:block">
       <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
         <div class="nb-ic">📓</div>
-        <div class="nb-body"><h3>All five, worked in a companion notebook</h3><p>A second notebook, <strong>Take It Further</strong>, recaps this chapter's model and then works every one of these five extensions with visuals and explanations, the Poisson-vs-NB standard errors, the temperature curve, cross-validation, a weekend-weather interaction, and a week-ahead forecast, closing with a plain-English summary.</p></div>
+        <div class="nb-body"><h3>All five, worked in a companion notebook</h3><p>A second notebook, <strong>Take It Further</strong>, recaps this chapter's model and then works every one of these five extensions with visuals and explanations, the Poisson-vs-NB standard errors, the temperature curve, a test on a later year, a weekend-weather interaction, and a week-ahead forecast, closing with a plain-English summary.</p></div>
       </div>
       <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
         <a class="btn btn-primary" href="notebooks/html/case-study-forecasting-daily-bike-share-demand--take-it-further.html">📓 View Notebook (code &amp; outputs)</a>
@@ -1029,10 +1030,10 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
       explain: "A rate ratio of 0.25 multiplies expected demand by 0.25, roughly a 75% reduction."
     },
     {
-      q: "Season came out non-significant once temperature was in the model because…",
-      options: ["Season never matters", "Temperature already captures most of the seasonal effect", "The data were wrong", "Season is categorical"],
+      q: "Season stayed significant in the negative-binomial model even with temperature in it. This suggests…",
+      options: ["Temperature explains nothing", "Season carries information about demand beyond temperature", "The data were wrong", "Season is categorical"],
       answer: 1,
-      explain: "Temperature and season are highly related, so temperature absorbs the seasonal signal, a familiar 'held constant' effect."
+      explain: "Season and temperature overlap, but season still shifts demand at a given temperature, so both earn their place in the model."
     },
     {
       q: "Switching from Poisson to negative binomial mostly changed…",
