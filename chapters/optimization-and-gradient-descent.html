@@ -188,7 +188,8 @@
 
     <p>The notebook runs all three. A rate that is <strong>too small</strong> (0.02) inches toward the answer and wastes
        time; a <strong>good</strong> rate (0.3) descends fast and settles; a rate that is <strong>too large</strong> (1.05)
-       overshoots the bottom every step so the loss oscillates and <span class="hl">explodes to infinity</span> (a
+       overshoots the bottom every step, so the parameters swing from side to side of the bowl, each swing wider than the
+       last, and the loss climbs at every step until it <span class="hl">explodes to infinity</span> (a
        divergence you can watch shoot up on a log scale, reaching 10<sup>16</sup> in the challenges). There is no universal
        value, so it is the first thing to tune, and <span class="term">learning-rate schedules</span> that start larger and
        shrink over time capture the best of both worlds.</p>
@@ -213,10 +214,13 @@
 
     <p>In the notebook, batch descent gives a clean curve, SGD's is jumpy but drops quickly, and mini-batch splits the
        difference, exactly how neural networks train on data far too large to fit in memory. On top of this sit smarter
-       <span class="term">optimizers</span>. <span class="term">Momentum</span> accumulates a running average of past
-       gradients (a ball gaining speed downhill) to power through narrow valleys; <span class="term">Adam</span> adds a
-       <strong>per-parameter adaptive step size</strong>, making it robust to badly-scaled features. Both reach the bottom
-       in noticeably fewer steps than plain GD, which is why <span class="hl">Adam is the default optimizer for deep
+       <span class="term">optimizers</span>. <span class="term">Momentum</span> accumulates a running sum of past
+       gradients (a ball gaining speed downhill) to power through narrow valleys, and <span class="term">Adam</span> adds a
+       <strong>per-parameter adaptive step size</strong>, making it robust to badly-scaled features. In the notebook's
+       race, run with a small step size of 0.01 on standardized sales, momentum gets within 0.01 of the minimum in 13
+       steps and Adam (with its own step size of 0.1) in 10, while plain GD is still short of it after 60. With a larger
+       step on a well-scaled problem plain GD can keep up, so the advantage depends on the setting. Adaptive steps that
+       cope with badly-scaled problems are why <span class="hl">Adam is the default optimizer for deep
        learning</span>.</p>
   </section>
 
@@ -243,7 +247,7 @@
         <tbody>
           <tr><td class="nm">Gradient descent (from scratch)</td><td>mean squared error</td><td>w = 54.9, b = 139.0 (matches least squares exactly)</td></tr>
           <tr><td class="nm"><code>SGDRegressor</code></td><td>squared error, by SGD</td><td>R&#178; = 0.95 on sales</td></tr>
-          <tr><td class="nm"><code>SGDClassifier(loss="log_loss")</code></td><td>log loss (cross-entropy)</td><td>97.6% accuracy on <code>hit</code></td></tr>
+          <tr><td class="nm"><code>SGDClassifier(loss="log_loss")</code></td><td>log loss (cross-entropy)</td><td>97.6% accuracy on <code>hit</code> (on its training data)</td></tr>
         </tbody>
       </table>
     </div>
@@ -323,7 +327,7 @@
       <h3>🎓 Key Takeaways</h3>
       <ul>
         <li><span class="ck">✓</span><span><strong>Training = minimizing a loss</strong>: the loss surface is a bowl, and gradient descent slides to the bottom.</span></li>
-        <li><span class="ck">✓</span><span><strong>Step opposite the gradient</strong>, scaled by the learning rate; for a convex loss this reaches the exact optimum.</span></li>
+        <li><span class="ck">✓</span><span><strong>Step opposite the gradient</strong>, scaled by the learning rate; for a convex loss and a small enough learning rate this reaches the global minimum.</span></li>
         <li><span class="ck">✓</span><span><strong>The learning rate is the key knob</strong>: too small crawls, too large diverges; schedules help.</span></li>
         <li><span class="ck">✓</span><span><strong>SGD and mini-batches</strong> estimate the gradient from a sample so training scales to huge data; <strong>momentum and Adam</strong> converge faster.</span></li>
         <li><span class="ck">✓</span><span><strong>The same loop trains everything</strong>: scikit-learn's SGD and every neural network (via backpropagation) are gradient descent, scaled up.</span></li>
@@ -457,10 +461,10 @@ window.addEventListener('scroll', () => {
       explain: "Adam combines momentum with adaptive step sizes, converging fast and robustly; it is the go-to deep-learning optimizer."
     },
     {
-      q: "For a convex loss (like linear or logistic regression's), gradient descent converges to…",
-      options: ["A random point", "The global minimum, matching the closed-form solution", "The maximum", "Never converges"],
+      q: "For a convex loss like linear regression's, and a small enough learning rate, gradient descent converges to…",
+      options: ["A random point", "The global minimum, which for linear regression matches the closed-form solution", "The maximum", "Never converges"],
       answer: 1,
-      explain: "A convex bowl has a single bottom, so following the gradient reaches the exact optimum, the notebook matched least squares to the decimal."
+      explain: "A convex bowl has a single bottom, so following the gradient with a small enough step reaches it, and the notebook matched least squares to the decimal. Too large a step diverges even on a convex bowl, as the 1.05 rate shows. Logistic regression's loss is convex too, but it has no closed-form solution to match."
     },
     {
       q: "In deep learning, the gradient of the loss with respect to every weight is computed by…",
