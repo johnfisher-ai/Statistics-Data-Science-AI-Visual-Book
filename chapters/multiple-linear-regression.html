@@ -163,8 +163,8 @@
     </figure>
 
     <p>Weight dominates. The origin effects are real and modest. But <span class="hl">horsepower and displacement have
-       intervals that cross zero</span>, not because they do not affect mpg, but because they are so entangled with weight
-       that the model cannot give them separate credit. That is your first sight of multicollinearity, diagnosed in
+       intervals that cross zero</span>, and these data cannot say whether they add little beyond weight or are so
+       entangled with weight that the model cannot give them separate credit. That is your first sight of multicollinearity, diagnosed in
        Section 3. One more guardrail: use <span class="term">adjusted R&#178;</span>, not plain R&#178;, to compare models,
        because plain R&#178; can only rise when you add predictors, even useless ones.</p>
   </section>
@@ -205,8 +205,8 @@
     <p>Here Europe is the reference; Japan sits about 1.4 mpg above it and the USA about 1.7 below, at any weight. When
        the effect of one predictor <em>depends</em> on another, you need an <span class="term">interaction term</span>
        (<code>weight * C(origin)</code>), which lets each group have its own slope, non-parallel lines. Test it before you
-       trust it: in this dataset the interaction is not significant (p &#8776; 0.20), so parallel lines are the honest
-       description, adding the interaction would just fit noise.</p>
+       trust it: in this dataset neither interaction term is significant (p &#8776; 0.20 and 0.73), so the data give no
+       evidence that the slopes differ, and the simpler parallel-line model is kept.</p>
   </section>
 
   <!-- ===== Section 3: multicollinearity ===== -->
@@ -243,7 +243,8 @@
        displacement are all measuring "how big is the engine and body," so displacement's VIF is 13. The
        <span class="hl">remedies are simple</span>: drop the most redundant predictor, combine them into one index, or use
        <span class="term">ridge regression</span> (see the <a href="regularization-and-flexible-models.html">Regularization &amp; Flexible Models</a> chapter), which is built for exactly this. Crucially,
-       multicollinearity does not bias predictions, if you only care about forecasting mpg, you can ignore it. It only
+       multicollinearity does not bias predictions, so if you only care about forecasting mpg you can ignore it, as long as
+       new cars share the training data's pattern among the predictors. It only
        muddies the <em>interpretation</em> of individual coefficients.</p>
   </section>
 
@@ -571,7 +572,7 @@
         <thead><tr><th>Predictor</th><th>Coefficient</th><th>p-value</th><th>Reading (others held constant)</th></tr></thead>
         <tbody>
           <tr><td class="nm">weight</td><td>&#8722;0.0074 mpg/lb</td><td>&lt;0.001</td><td>heavier cars use more fuel, the dominant driver</td></tr>
-          <tr><td class="nm">horsepower</td><td>&#8722;0.014</td><td>0.19</td><td>"not significant", a multicollinearity artifact</td></tr>
+          <tr><td class="nm">horsepower</td><td>&#8722;0.014</td><td>0.19</td><td>"not significant", entangled with weight, or little effect beyond it</td></tr>
           <tr><td class="nm">displacement</td><td>&#8722;0.002</td><td>0.78</td><td>"not significant", entangled with weight and power</td></tr>
           <tr><td class="nm">origin = Japan</td><td>+1.5 mpg</td><td>0.001</td><td>Japanese cars average 1.5 mpg more than European</td></tr>
           <tr><td class="nm">origin = USA</td><td>&#8722;1.7 mpg</td><td>&lt;0.001</td><td>US cars average 1.7 mpg less than European</td></tr>
@@ -598,11 +599,13 @@
       </table>
     </div>
 
-    <p>Dropping displacement and horsepower barely moves the fit (adjusted R&#178; 0.902 to 0.901) but makes the weight
-       coefficient stable and its interval tight, exactly what VIF told us to expect.</p>
+    <p>Dropping displacement and horsepower barely moves the fit (adjusted R&#178; 0.902 to 0.901) but makes the
+       weight coefficient stable and its interval tight, as the high VIFs suggested. The reduced slope answers a different
+       question, though. It holds only origin constant, so it also carries what goes with heavier cars, such as bigger
+       engines.</p>
 
-    <p><b>Step 5, interpret and predict.</b> Read the surviving coefficients "holding the others constant", each pound of
-       weight costs about 0.008 mpg, and Japanese cars average 1.4 mpg more (US cars 1.7 mpg less) than European. Then
+    <p><b>Step 5, interpret and predict.</b> Read the surviving coefficients holding the others in the model constant. At
+       the same origin, each extra pound of weight goes with about 0.008 mpg less, and Japanese cars average 1.4 mpg more (US cars 1.7 mpg less) than European. Then
        predict by plugging into the fitted line:</p>
 
     <div style="background:var(--panel);border:1px solid var(--line);border-left:4px solid #ea580c;border-radius:10px;padding:0.8rem 1rem;margin:1rem 0;text-align:center;color:var(--ink);font-size:1.02rem">
@@ -877,7 +880,7 @@
         <div class="chint">Hint: read <code>.params</code> and phrase it per one-pound change.</div></div></div>
       <div class="challenge"><div class="cnum">2</div><div class="cbody">
         <h3>R&#178; vs adjusted R&#178;</h3>
-        <p>Add a column of pure random noise as a predictor; watch R&#178; rise but adjusted R&#178; fall.</p>
+        <p>Add a column of pure random noise as a predictor; watch R&#178; rise while adjusted R&#178; usually falls.</p>
         <div class="chint">Hint: compare <code>.rsquared</code> and <code>.rsquared_adj</code> before and after.</div></div></div>
       <div class="challenge"><div class="cnum">3</div><div class="cbody">
         <h3>Dummy variables &amp; reference level</h3>
@@ -995,7 +998,7 @@ window.addEventListener('scroll', () => {
       q: "Multicollinearity mainly harms…",
       options: ["Predictions", "The interpretation and stability of individual coefficients (not prediction accuracy)", "The residuals", "The sample size"],
       answer: 1,
-      explain: "Collinearity inflates coefficient standard errors but does not bias predictions; it muddies interpretation."
+      explain: "Collinearity inflates coefficient standard errors but does not bias predictions for cases like the training data; it muddies interpretation."
     },
     {
       q: "Two predictors are so collinear that both look insignificant, yet R&#178; is high. Best first move?",
