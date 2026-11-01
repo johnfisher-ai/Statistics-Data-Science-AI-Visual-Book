@@ -8122,8 +8122,9 @@ actor-critic combines both: an actor (policy) guided by a critic (value) -&gt; P
 <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span> <span class="n">pref</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">BASE</span> <span class="o">+</span> <span class="s1">'deep-rl-and-applications--preferences.xlsx'</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="s1">'Data'</span><span class="p">)</span>
 <span class="n">F</span><span class="o">=</span><span class="p">[</span><span class="s1">'helpfulness'</span><span class="p">,</span><span class="s1">'factuality'</span><span class="p">,</span><span class="s1">'conciseness'</span><span class="p">,</span><span class="s1">'safety'</span><span class="p">]</span>
 <span class="n">Xc</span><span class="o">=</span><span class="n">pref</span><span class="p">[[</span><span class="sa">f</span><span class="s1">'chosen_</span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s1">'</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">F</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="p">;</span> <span class="n">Xr</span><span class="o">=</span><span class="n">pref</span><span class="p">[[</span><span class="sa">f</span><span class="s1">'rejected_</span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s1">'</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">F</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span>
-<span class="n">X</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">Xc</span><span class="o">-</span><span class="n">Xr</span><span class="p">,</span> <span class="n">Xr</span><span class="o">-</span><span class="n">Xc</span><span class="p">]);</span> <span class="n">y</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">Xc</span><span class="p">)),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">Xc</span><span class="p">))])</span>
-<span class="n">Xtr</span><span class="p">,</span><span class="n">Xte</span><span class="p">,</span><span class="n">ytr</span><span class="p">,</span><span class="n">yte</span><span class="o">=</span><span class="n">train_test_split</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">test_size</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span><span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">D</span><span class="o">=</span><span class="n">Xc</span><span class="o">-</span><span class="n">Xr</span>                                   <span class="c1"># one row per comparison</span>
+<span class="n">idx_tr</span><span class="p">,</span><span class="n">idx_te</span><span class="o">=</span><span class="n">train_test_split</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">D</span><span class="p">)),</span><span class="n">test_size</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span><span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>   <span class="c1"># hold out whole comparisons</span>
+<span class="n">Xtr</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">D</span><span class="p">[</span><span class="n">idx_tr</span><span class="p">],</span><span class="o">-</span><span class="n">D</span><span class="p">[</span><span class="n">idx_tr</span><span class="p">]]);</span> <span class="n">ytr</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">r_</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">idx_tr</span><span class="p">)),</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">idx_tr</span><span class="p">))]</span>
 <span class="n">rm</span><span class="o">=</span><span class="n">LogisticRegression</span><span class="p">(</span><span class="n">fit_intercept</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">C</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">Xtr</span><span class="p">,</span><span class="n">ytr</span><span class="p">)</span>
 <span class="n">w</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="n">rm</span><span class="o">.</span><span class="n">coef_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">)))</span>
 <span class="nb">print</span><span class="p">(</span><span class="s1">'learned reward weights:'</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span>
@@ -8140,7 +8141,7 @@ actor-critic combines both: an actor (policy) guided by a critic (value) -&gt; P
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>learned reward weights: {'helpfulness': np.float64(1.11), 'factuality': np.float64(1.36), 'conciseness': np.float64(0.74), 'safety': np.float64(1.53)}
+<pre>learned reward weights: {'helpfulness': np.float64(1.28), 'factuality': np.float64(1.42), 'conciseness': np.float64(0.8), 'safety': np.float64(1.75)}
 most valued feature: safety
 </pre>
 </div>
@@ -8154,7 +8155,7 @@ most valued feature: safety
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p><strong>Solution.</strong> The reward model recovers that <strong>safety</strong> and <strong>factuality</strong> carry the most weight, learned only from pairwise human choices, never from the hidden true weights. This is reward modeling, stage two of RLHF.</p>
+<p><strong>Solution.</strong> The reward model recovers that <strong>safety</strong> and <strong>factuality</strong> carry the most weight, learned only from pairwise choices, never from the hidden true weights. This is reward modeling, stage two of RLHF.</p>
 </div>
 </div>
 </div>
@@ -8181,8 +8182,8 @@ most valued feature: safety
 <div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">margin</span> <span class="o">=</span> <span class="n">Xte</span> <span class="o">@</span> <span class="n">rm</span><span class="o">.</span><span class="n">coef_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-<span class="n">acc</span> <span class="o">=</span> <span class="p">(</span><span class="n">margin</span><span class="p">[</span><span class="n">yte</span><span class="o">==</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">margin</span> <span class="o">=</span> <span class="n">D</span><span class="p">[</span><span class="n">idx_te</span><span class="p">]</span> <span class="o">@</span> <span class="n">rm</span><span class="o">.</span><span class="n">coef_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">acc</span> <span class="o">=</span> <span class="p">(</span><span class="n">margin</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
 <span class="nb">print</span><span class="p">(</span><span class="s1">'held-out pairs ranked correctly = </span><span class="si">%.2f</span><span class="s1">'</span> <span class="o">%</span> <span class="n">acc</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -8196,7 +8197,7 @@ most valued feature: safety
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>held-out pairs ranked correctly = 0.84
+<pre>held-out pairs ranked correctly = 0.81
 </pre>
 </div>
 </div>
@@ -8209,7 +8210,7 @@ most valued feature: safety
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p><strong>Solution.</strong> The reward model assigns the human-preferred response a higher score about 84% of the time, that scalar reward is exactly what PPO then optimizes the language model to maximize, closing the RLHF loop.</p>
+<p><strong>Solution.</strong> The reward model assigns the preferred response a higher score in most held-out comparisons (the share printed above), that scalar reward is exactly what PPO then optimizes the language model to maximize, closing the RLHF loop.</p>
 </div>
 </div>
 </div>
