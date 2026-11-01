@@ -197,7 +197,7 @@
         <code>credit_score</code>, <code>employment_length</code> (text!), <code>debt_to_income</code>,
         <code>revolving_util</code>, <code>num_credit_lines</code>, <code>loan_amount</code>, <code>home_ownership</code>,
         <code>loan_purpose</code>, <code>age</code>, a protected <code>group</code> (A/B), and the target
-        <code>defaulted</code>. Deliberately messy.</p>
+        <code>defaulted</code>. Deliberately messy, a realistic teaching dataset written for the book.</p>
       <div class="ex-files">
         <a class="ex-file xls" href="../data/loan_applications.csv" download>📊 Download dataset &nbsp;<small>CSV · 5,235 rows</small></a>
       </div>
@@ -215,8 +215,8 @@
        which fair-lending laws such as the ECOA forbid discriminating on.</p>
 
     <div class="step-h"><span class="sn">2</span><h3>Collect the data</h3></div>
-    <p>A raw export from the loan-origination system, one row per application, straight from the source and not yet
-       cleaned.</p>
+    <p>A raw file of the kind a loan-origination system exports, one row per application and not yet cleaned (a
+       realistic teaching dataset written for the book).</p>
 
     <div class="step-h"><span class="sn">3</span><h3>Inspect the data</h3></div>
     <p>The file fights back: <code>annual_income</code> is text with dollar signs and 'n/a'; <code>employment_length</code>
@@ -272,9 +272,10 @@
     <figure class="nb-fig">
       <img src="../assets/img/case-study-loan-default-risk--models.png" alt="ROC-AUC comparison of logistic regression, random forest, and gradient boosting">
       <figcaption><span class="cap-t">From the notebook · Step 7</span><br>
-        <strong>Here, flexibility earns its place.</strong> Unlike the earlier chapters, the non-linear structure of credit
-        risk (the sharp jumps at low credit scores and high debt ratios) lets <strong>Gradient Boosting</strong> edge ahead
-        at <strong>ROC-AUC 0.74</strong>, versus 0.73 for logistic regression. An AUC in the low 0.70s is normal and useful
+        <strong>Here, flexibility earns its place.</strong> Unlike the earlier chapters, <strong>Gradient Boosting</strong> edges
+        ahead on this test split, at <strong>ROC-AUC 0.74</strong> versus 0.73 for logistic regression, a small margin
+        consistent with the non-linear shape of credit risk (default drops once scores pass about 660 and rises at high debt
+        ratios). An AUC in the low 0.70s is normal and useful
         for credit; default is genuinely hard to predict. We take the boosted model forward, and because it is a tree model,
         SHAP can explain it exactly.</figcaption>
     </figure>
@@ -318,7 +319,7 @@
         <!-- features -->
         <rect x="20" y="46" width="150" height="66" rx="11" fill="#eef2ff" stroke="#c7d2fe"/>
         <text x="95" y="70" text-anchor="middle" font-size="10" fill="#3730a3" font-weight="800">Features</text>
-        <text x="95" y="86" text-anchor="middle" font-size="8" fill="#4a5578">income, credit history</text>
+        <text x="95" y="86" text-anchor="middle" font-size="8" fill="#4a5578">credit lines, credit score, DTI</text>
         <text x="95" y="99" text-anchor="middle" font-size="7.5" fill="#b45309">(correlate with group)</text>
         <!-- model -->
         <rect x="255" y="46" width="150" height="66" rx="11" fill="#dbe4ff" stroke="#4338ca"/>
@@ -328,7 +329,7 @@
         <rect x="490" y="46" width="170" height="66" rx="11" fill="#fef2f2" stroke="#dc2626"/>
         <text x="575" y="70" text-anchor="middle" font-size="10" fill="#b91c1c" font-weight="800">Unequal outcomes &#9888;</text>
         <text x="575" y="86" text-anchor="middle" font-size="8" fill="#b91c1c">Group B denied more</text>
-        <text x="575" y="99" text-anchor="middle" font-size="7.5" fill="#b91c1c">= disparate impact</text>
+        <text x="575" y="99" text-anchor="middle" font-size="7.5" fill="#b91c1c">= possible disparate impact</text>
         <path d="M170,79 L255,79" stroke="#3730a3" stroke-width="1.8" marker-end="url(#f124)"/>
         <path d="M405,79 L490,79" stroke="#dc2626" stroke-width="1.8" marker-end="url(#f124b)"/>
         <defs>
@@ -351,9 +352,12 @@
       <img src="../assets/img/case-study-loan-default-risk--fairness.png" alt="Denial rate by group and creditworthy applicants wrongly denied by group">
       <figcaption><span class="cap-t">From the notebook · Step 9</span><br>
         <strong>The outcomes are not equal.</strong> <strong>Left</strong>, Group B is denied at <strong>16%</strong> versus
-        <strong>9%</strong> for Group A. <strong>Right</strong>, and more tellingly, <em>creditworthy</em> Group B applicants
+        <strong>10%</strong> for Group A (9.5%). <strong>Right</strong>, and more tellingly, <em>creditworthy</em> Group B applicants
         (who would not default) are wrongly denied more often, <strong>7% versus 5%</strong>, an <strong>equal-opportunity</strong>
-        gap. The approval ratio (0.93) happens to clear the legal four-fifths rule, but that gap is a real harm. The lesson:
+        gap. Group B also defaults more often in this data, so part of the denial gap reflects outcomes. The approval ratio
+        (0.93) clears the four-fifths rule, a screening rule of thumb from US employment-selection guidelines that fair-lending
+        reviews borrow, and the equal-opportunity gap is too small to tell from noise on 1,297 test applicants (p = 0.29), so it
+        calls for monitoring on more data. The lesson:
         a model can be blind to the protected attribute and still discriminate, so you must <strong>measure fairness
         explicitly</strong>, and treat mitigation (reweighting, per-group thresholds, proxy audits) as a deliberate,
         governed choice.</figcaption>
@@ -386,7 +390,7 @@
       <ul>
         <li><span class="ck">✓</span><span>We spent real effort <strong>cleaning the file first</strong>, incomes and job histories arrived as text ("$53,096", "10+ years"), which a computer cannot do math on until it is converted. This was fully half the work.</span></li>
         <li><span class="ck">✓</span><span>We <strong>made every decision explainable</strong>. For each applicant the tool lists the exact factors behind the score, which the law requires a lender to give anyone it turns down.</span></li>
-        <li><span class="ck">✓</span><span>We <strong>checked the tool for fairness</strong>, even though it never sees an applicant's group. It turned out to deny one group somewhat more, including some who would have repaid, because factors like income quietly stand in for the group. We measured this rather than assume it away.</span></li>
+        <li><span class="ck">✓</span><span>We <strong>checked the tool for fairness</strong>, even though it never sees an applicant's group. It turned out to deny one group somewhat more, including some who would have repaid, partly because factors like credit score and the number of credit lines stand in for the group, and partly because that group defaulted more often in the data. We measured this rather than assume it away.</span></li>
       </ul>
 
       <h4>How good is it, in plain terms</h4>
@@ -529,10 +533,10 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
       explain: "A fixed loan is easy for a high earner and hard for a low earner; the ratio expresses that directly."
     },
     {
-      q: "Gradient boosting beat logistic regression here mainly because…",
-      options: ["It is always better", "Credit risk is non-linear (sharp jumps at low scores and high debt), which trees capture", "It needs no data", "Logistic regression cannot classify"],
+      q: "Gradient boosting edged past logistic regression on this test split. The likeliest reason is that…",
+      options: ["It is always better", "Credit risk has non-linear effects (default drops once scores pass about 660 and rises at high debt ratios), which trees can capture", "It needs no data", "Logistic regression cannot classify"],
       answer: 1,
-      explain: "Unlike the earlier chapters, the non-linear structure let the flexible model edge ahead (ROC-AUC ~0.74)."
+      explain: "The flexible model edged ahead slightly (ROC-AUC 0.740 against 0.733 on one test split), consistent with non-linear effects; the margin is small."
     },
     {
       q: "What does a SHAP waterfall plot provide for a single applicant?",
@@ -542,7 +546,7 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
     },
     {
       q: "The model never used the protected 'group'. Why can it still be unfair?",
-      options: ["It cannot be unfair", "Other features (income, credit history) correlate with the group and act as proxies", "Because of a bug", "Because SHAP adds bias"],
+      options: ["It cannot be unfair", "Other features (credit lines, credit score, debt-to-income) correlate with the group and act as proxies", "Because of a bug", "Because SHAP adds bias"],
       answer: 1,
       explain: "Disparity enters through correlated features, so 'fairness through unawareness' does not guarantee equal outcomes."
     },
