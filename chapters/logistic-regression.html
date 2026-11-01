@@ -304,7 +304,7 @@
        risk.</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
-      <svg viewBox="0 0 680 214" width="100%" font-family="Inter, sans-serif" aria-label="An odds-ratio forest plot on a log scale: credit score is protective with an odds ratio below 1, debt-to-income raises the odds above 1, and loan amount sits at 1 (no effect)">
+      <svg viewBox="0 0 680 214" width="100%" font-family="Inter, sans-serif" aria-label="An odds-ratio forest plot on a log scale: credit score is protective with an odds ratio below 1, debt-to-income raises the odds above 1, and loan amount's interval straddles 1 (inconclusive)">
         <text x="340" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">Odds ratios: how each factor multiplies the odds of default</text>
         <text x="340" y="37" text-anchor="middle" font-size="9" fill="#4a5578">OR &lt; 1 lowers the odds (protective); OR &gt; 1 raises them; the line at 1 is no effect</text>
         <line x1="441.1" y1="54" x2="441.1" y2="176" stroke="#1a2138" stroke-width="1.2" stroke-dasharray="4 3"/>
@@ -336,8 +336,8 @@
     <p>Scaling makes them concrete. Each additional <strong>50 points of credit score multiplies the odds of default by
        0.40</strong>, a 60% reduction, while each <strong>0.1 rise in debt-to-income multiplies them by 1.65</strong>.
        Loan amount's interval straddles 1, so it earns no conclusion. Just as with linear regression, plotting the
-       coefficients (here as odds ratios on a log scale) with their confidence intervals separates the real drivers from
-       the noise at a glance.</p>
+       coefficients (here as odds ratios on a log scale) with their confidence intervals separates the predictors with a clear association from
+       those without at a glance.</p>
   </section>
 
   <!-- ===== Section 3: thresholds, evaluation, and failure modes ===== -->
@@ -408,12 +408,12 @@
     </div>
 
     <p><b>Step 1, check the data.</b> Before fitting, confirm the outcome really tracks the predictors. The default rate
-       falls steadily as credit score rises:</p>
+       falls steeply through the lower credit-score bands, then levels off:</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
-      <svg viewBox="0 0 680 250" width="100%" font-family="Inter, sans-serif" aria-label="A bar chart of default rate by credit-score band, falling steadily from low scores to high scores, showing credit score is a strong predictor and motivating the S-curve model">
-        <text x="340" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">Step 1: explore. Default rate falls steadily as credit score rises</text>
-        <text x="340" y="37" text-anchor="middle" font-size="9" fill="#4a5578">A clear, monotonic signal, credit score should be a strong predictor in the model</text>
+      <svg viewBox="0 0 680 250" width="100%" font-family="Inter, sans-serif" aria-label="A bar chart of default rate by credit-score band, falling steeply from 65% in the lowest band to about 10% by 689 and then leveling off between 8% and 12%, showing credit score is a strong predictor and motivating the S-curve model">
+        <text x="340" y="20" text-anchor="middle" font-size="12.5" fill="#1a2138" font-weight="800">Step 1: explore. Default rate falls steeply, then levels off</text>
+        <text x="340" y="37" text-anchor="middle" font-size="9" fill="#4a5578">A strong signal in the lower bands, so credit score should be a strong predictor in the model</text>
         <line x1="56" y1="58" x2="56" y2="192" stroke="#1a2138" stroke-width="1.1"/>
         <line x1="56" y1="192" x2="654" y2="192" stroke="#1a2138" stroke-width="1.1"/>
         <rect x="74.9" y="75.5" width="61.8" height="116.5" fill="#ea580c" opacity="0.8"/>
@@ -439,7 +439,7 @@
       </svg>
     </figure>
 
-    <p>The relationship is strong and monotonic, so credit score should be a powerful predictor. Note also that the
+    <p>The relationship is strong, falling from 65% to about 10% by a score of 689 and then holding between 8% and 12%, so credit score should be a powerful predictor. Note also that the
        classes are <em>imbalanced</em>, only 29% of loans default, which will matter when we choose a decision threshold.</p>
 
     <p><b>Step 2, fit.</b> We fit <code>logit("default ~ credit_score + dti + loan_amount", loans)</code> by maximum
@@ -451,7 +451,7 @@
 
     <p><b>Step 4, check the conditions.</b> Logistic regression has its own hazards: <em>perfect separation</em> (no
        predictor here splits the classes cleanly, so the fit converges) and <em>class imbalance</em> (the 29% default
-       rate means plain accuracy will mislead). Both are handled at the threshold, next.</p>
+       rate means plain accuracy will mislead). Imbalance is handled at the threshold, next.</p>
 
     <p><b>Step 5, interpret, predict, and decide.</b> A logistic model outputs a probability; <em>you</em> choose the
        threshold that turns it into a yes/no call. First, how the probability is computed, plug a profile into the linear
@@ -469,8 +469,8 @@
       <table class="disp-table">
         <thead><tr><th>Threshold</th><th>Accuracy</th><th>Precision</th><th>Recall (defaults caught)</th><th>Use when</th></tr></thead>
         <tbody>
-          <tr><td class="nm">0.50 (default)</td><td>0.81</td><td>0.71</td><td>0.56</td><td>false alarms are costly</td></tr>
-          <tr><td class="nm">0.30 (cautious)</td><td>0.74</td><td>0.54</td><td>0.75</td><td>missing a default is costly</td></tr>
+          <tr><td class="nm">0.50 (default)</td><td>0.80</td><td>0.71</td><td>0.56</td><td>false alarms are costly</td></tr>
+          <tr><td class="nm">0.30 (cautious)</td><td>0.74</td><td>0.53</td><td>0.75</td><td>missing a default is costly</td></tr>
         </tbody>
       </table>
     </div>
@@ -515,7 +515,7 @@
 
     <p>Neither threshold is "correct." A lender who loses far more on a missed default than on a declined good customer
        should move the threshold down, trading precision for recall. The statistics give you the honest trade-off curve;
-       <span class="hl">the decision is yours to make on the costs.</span> Note too that the naive 0.5 accuracy of 0.81 is
+       <span class="hl">the decision is yours to make on the costs.</span> Note too that the naive 0.5 accuracy of 0.80 is
        barely above the 0.71 you would get by approving everyone, exactly why recall and AUC, not accuracy, are the
        metrics that matter under imbalance.</p>
   </section>
@@ -590,7 +590,7 @@
       <h3>🎓 Key Takeaways</h3>
       <ul>
         <li><span class="ck">✓</span><span><strong>Logistic regression predicts a probability</strong> by modeling the log-odds through the sigmoid; it is fit by maximum likelihood, not least squares.</span></li>
-        <li><span class="ck">✓</span><span><strong>Exponentiate a coefficient to get an odds ratio</strong>: &gt;1 raises the odds, &lt;1 is protective, and a CI spanning 1 means no effect.</span></li>
+        <li><span class="ck">✓</span><span><strong>Exponentiate a coefficient to get an odds ratio</strong>: &gt;1 raises the odds, &lt;1 is protective, and a CI spanning 1 means the data can't rule out no effect.</span></li>
         <li><span class="ck">✓</span><span><strong>You choose the threshold</strong>; the confusion matrix, precision/recall, and the ROC/AUC describe the trade-off across all of them.</span></li>
         <li><span class="ck">✓</span><span><strong>Mind imbalance and separation</strong>: judge by recall/AUC not accuracy, and cure perfect separation with regularized (penalized) logistic regression.</span></li>
         <li><span class="ck">✓</span><span><strong>Worked example</strong>: +50 credit points cut default odds to 0.40&#215;; lowering the threshold from 0.5 to 0.3 raised recall from 0.56 to 0.75 (AUC 0.82).</span></li>
