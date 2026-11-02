@@ -306,10 +306,11 @@
       <div class="cico">📉</div>
       <div><div class="ctitle">Do not trust a single headline metric</div>
         <p>When the world shifts, different metrics can move in different directions and mislead you. In the case below, the
-           model's raw <strong>recall went up</strong> after the shift, which looks like good news, purely because the event it
-           predicts became more common. Meanwhile accuracy fell and the probabilities became miscalibrated. Watch a
-           <strong>proper score</strong> like the Brier score, which is not flattered by a change in the base rate, alongside
-           input drift. One number is never the whole picture.</p></div>
+           model's raw <strong>recall went up</strong> after the shift, which looks like good news. It rose because the shifted
+           inputs (longer distances, heavier courier loads) pushed far more orders over the cutoff, so the model flagged about
+           half of all orders as late, up from about a sixth. Meanwhile accuracy fell and the probabilities became miscalibrated. Watch a
+           <strong>proper score</strong> like the Brier score, which rewards calibrated probabilities, alongside input drift,
+           and compare it with the score of always guessing the base rate, since that baseline moves when the base rate does. One number is never the whole picture.</p></div>
     </div>
   </section>
 
@@ -347,7 +348,7 @@
           <strong>0.727</strong> before the shift toward <strong>0.67</strong>, and the Brier score worsens from
           <strong>0.192</strong> to about <strong>0.20</strong>: the probabilities are now miscalibrated.</li>
       <li><span class="ck">●</span> <strong>A single metric would have fooled you.</strong> Raw recall actually
-          <em>rose</em> after the shift, because late orders became common, not because the model improved. The proper score
+          <em>rose</em> after the shift because the model flagged far more orders as late, not because it improved. The proper score
           and the input drift told the truth.</li>
       <li><span class="ck">●</span> <strong>Retraining closes the loop.</strong> Refitting on recent weeks 6 to 9 and testing
           on the unseen weeks 10 to 12 lifts mean accuracy from <strong>0.689 to 0.735</strong>, cuts the Brier score from
@@ -361,7 +362,7 @@
        clever model, is what keeps machine learning working in the real world.</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
-      <svg viewBox="0 0 700 250" width="100%" font-family="Inter, sans-serif" aria-label="A two-line monitoring chart across weeks 7 to 12. The input drift PSI is near zero at week 7 then spikes above the 0.2 threshold from week 8 onward, while model accuracy is high at week 7 then drops after week 8. A marker at week 10 shows retraining lifting accuracy back up.">
+      <svg viewBox="0 0 700 250" width="100%" font-family="Inter, sans-serif" aria-label="A two-line monitoring chart across weeks 7 to 12. The input drift PSI is near zero at week 7 then spikes above the 0.2 threshold from week 8 onward, while the frozen model's accuracy is highest at week 7, drops after week 8 and partly rebounds in week 10. A green line from week 10 shows the retrained model scoring 0.74 on weeks 10 to 12.">
         <text x="350" y="18" text-anchor="middle" font-size="11.5" fill="#1a2138" font-weight="800">The production loop, week by week</text>
 
         <!-- axes -->
@@ -383,19 +384,19 @@
 
         <!-- accuracy line: high then drop, recover at wk10 via retrain. scale: acc 0.66->y185, 0.75->y120 -->
         <text x="118" y="112" font-size="8.5" fill="#2563eb" font-weight="800">accuracy (frozen)</text>
-        <polyline points="107,120 196,155 285,156 463,164 552,172" fill="none" stroke="#2563eb" stroke-width="2.4"/>
-        <g fill="#2563eb"><circle cx="107" cy="120" r="3.2"/><circle cx="196" cy="155" r="3.2"/><circle cx="285" cy="156" r="3.2"/><circle cx="463" cy="164" r="3.2"/><circle cx="552" cy="172" r="3.2"/></g>
+        <polyline points="107,136.6 196,170.6 285,171.3 374,144.6 463,167.7 552,179.9" fill="none" stroke="#2563eb" stroke-width="2.4"/>
+        <g fill="#2563eb"><circle cx="107" cy="136.6" r="3.2"/><circle cx="196" cy="170.6" r="3.2"/><circle cx="285" cy="171.3" r="3.2"/><circle cx="374" cy="144.6" r="3.2"/><circle cx="463" cy="167.7" r="3.2"/><circle cx="552" cy="179.9" r="3.2"/></g>
 
-        <!-- retrain recovery marker at wk10 -->
-        <circle cx="374" cy="120" r="4" fill="#16a34a"/>
-        <path d="M374 160 L374 128" stroke="#16a34a" stroke-width="1.8" stroke-dasharray="3 2" marker-end="url(#up)"/>
-        <defs><marker id="up" markerWidth="8" markerHeight="8" refX="4" refY="6" orient="auto"><path d="M4 0 L8 8 L0 8 z" fill="#16a34a"/></marker></defs>
-        <text x="384" y="116" font-size="8.5" fill="#166534" font-weight="800">retrain &#8594; recover</text>
-        <text x="384" y="127" font-size="7.5" fill="#166534">accuracy back to 0.74</text>
+        <!-- retrained challenger, scored on weeks 10 to 12 together -->
+        <line x1="374" y1="130.8" x2="552" y2="130.8" stroke="#16a34a" stroke-width="2.6"/>
+        <circle cx="374" cy="130.8" r="4" fill="#16a34a"/>
+        <text x="384" y="116" font-size="8.5" fill="#166534" font-weight="800">retrained model</text>
+        <text x="384" y="127" font-size="7.5" fill="#166534">0.74 on weeks 10 to 12 (frozen: 0.69)</text>
       </svg>
       <figcaption style="font-size:0.78rem;color:var(--ink-soft);margin-top:0.9rem;line-height:1.55">
         The input-drift PSI (purple) spikes past its threshold the moment the expansion launches, before any labels exist. The
-        frozen model's accuracy (blue) sags in the weeks after. Retraining on recent data (green) lifts it back. Watching the
+        frozen model's accuracy (blue) falls after the shift, with a partial rebound in week 10. A model retrained on recent data
+        (green) scores 0.74 on weeks 10 to 12, against 0.69 for the frozen one. Watching the
         inputs is what turns a lagging alarm into a leading one.
       </figcaption>
     </figure>
@@ -607,9 +608,9 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
     },
     {
       q: "In the delivery example, the frozen model's recall ROSE after the shift. Why was that misleading?",
-      options: ["Recall is always unreliable", "Late orders became far more common, so recall rose even as accuracy fell and calibration worsened", "The model was actually improving", "Recall measures speed"],
+      options: ["Recall is always unreliable", "The shifted inputs pushed far more orders over the cutoff, so recall rose even as accuracy fell and calibration worsened", "The model was actually improving", "Recall measures speed"],
       answer: 1,
-      explain: "A single metric can move with the base rate; a proper score like the Brier score, plus input drift, told the real story."
+      explain: "The model flagged about half of all orders as late instead of a sixth, which lifts recall without making the model better. A proper score like the Brier score, plus input drift, told the real story."
     },
     {
       q: "Concept drift differs from data drift in that…",
