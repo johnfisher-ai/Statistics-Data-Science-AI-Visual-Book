@@ -7944,7 +7944,7 @@ B         58.15            0.36                  6.23            0.49
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Step-2-%C2%B7-Selection-rate-and-the-80%25-rule-(demographic-parity)">Step 2 · Selection rate and the 80% rule (demographic parity)<a class="anchor-link" href="#Step-2-%C2%B7-Selection-rate-and-the-80%25-rule-(demographic-parity)">¶</a></h2><p>The most basic fairness question: does the model approve the two groups at similar rates? Demographic parity asks for equal selection rates. The US 'four-fifths rule' flags a problem when the disadvantaged group's rate is below 80 percent of the advantaged group's.</p>
+<h2 id="Step-2-%C2%B7-Selection-rate-and-the-80%25-rule-(demographic-parity)">Step 2 · Selection rate and the 80% rule (demographic parity)<a class="anchor-link" href="#Step-2-%C2%B7-Selection-rate-and-the-80%25-rule-(demographic-parity)">¶</a></h2><p>The most basic fairness question: does the model approve the two groups at similar rates? Demographic parity asks for equal selection rates. The US 'four-fifths rule', a rule of thumb from federal employment-selection guidelines, flags possible adverse impact for review when the disadvantaged group's rate is below 80 percent of the advantaged group's.</p>
 </div>
 </div>
 </div>
@@ -8052,7 +8052,7 @@ false positive rate (approved | would default) A 62.8%   B 17.8%
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Step-4-%C2%B7-Calibration:-the-twist">Step 4 · Calibration: the twist<a class="anchor-link" href="#Step-4-%C2%B7-Calibration:-the-twist">¶</a></h2><p>Here is what makes fairness hard. Check calibration: for each group, does the average predicted probability match the actual repayment rate? If it does, the model's scores are honest for both groups, and yet, as we just saw, it still approves them unequally. A model can be perfectly calibrated and still fail demographic parity.</p>
+<h2 id="Step-4-%C2%B7-Calibration:-the-twist">Step 4 · Calibration: the twist<a class="anchor-link" href="#Step-4-%C2%B7-Calibration:-the-twist">¶</a></h2><p>Here is what makes fairness hard. Check calibration: for each group, does the average predicted probability match the actual repayment rate? That is calibration on average. A stricter check asks the same within score bands, so that a 0.3 score means about 30% repay in each group. A model can be calibrated and still, as we just saw, approve the groups unequally.</p>
 </div>
 </div>
 </div>
@@ -8066,7 +8066,11 @@ false positive rate (approved | would default) A 62.8%   B 17.8%
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">cal</span> <span class="o">=</span> <span class="n">te</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"group"</span><span class="p">)</span><span class="o">.</span><span class="n">agg</span><span class="p">(</span><span class="n">mean_predicted</span><span class="o">=</span><span class="p">(</span><span class="s2">"p"</span><span class="p">,</span><span class="s2">"mean"</span><span class="p">),</span> <span class="n">actual_repaid</span><span class="o">=</span><span class="p">(</span><span class="s2">"repaid"</span><span class="p">,</span><span class="s2">"mean"</span><span class="p">))</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">cal</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">The predictions are well-calibrated for BOTH groups, yet selection and error rates differ."</span><span class="p">)</span>
+<span class="n">te_b</span> <span class="o">=</span> <span class="n">te</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">score_band</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">cut</span><span class="p">(</span><span class="n">te</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">.2</span><span class="p">,</span> <span class="mf">.4</span><span class="p">,</span> <span class="mf">.6</span><span class="p">,</span> <span class="mf">.8</span><span class="p">,</span> <span class="mi">1</span><span class="p">]))</span>
+<span class="n">bands</span> <span class="o">=</span> <span class="n">te_b</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">"group"</span><span class="p">,</span> <span class="s2">"score_band"</span><span class="p">],</span> <span class="n">observed</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">agg</span><span class="p">(</span>
+    <span class="n">n</span><span class="o">=</span><span class="p">(</span><span class="s2">"p"</span><span class="p">,</span> <span class="s2">"size"</span><span class="p">),</span> <span class="n">mean_predicted</span><span class="o">=</span><span class="p">(</span><span class="s2">"p"</span><span class="p">,</span> <span class="s2">"mean"</span><span class="p">),</span> <span class="n">actual_repaid</span><span class="o">=</span><span class="p">(</span><span class="s2">"repaid"</span><span class="p">,</span> <span class="s2">"mean"</span><span class="p">))</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">within score bands:"</span><span class="p">);</span> <span class="nb">print</span><span class="p">(</span><span class="n">bands</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">On average the predictions match each group's repayment rate, yet selection and error rates differ."</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">"This is not a bug to fix; it is a mathematical fact about groups with different base rates."</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -8085,7 +8089,20 @@ group
 A               0.588          0.583
 B               0.411          0.395
 
-The predictions are well-calibrated for BOTH groups, yet selection and error rates differ.
+within score bands:
+                    n  mean_predicted  actual_repaid
+group score_band                                    
+A     (0.0, 0.2]    3           0.159          0.000
+      (0.2, 0.4]  109           0.333          0.312
+      (0.4, 0.6]  437           0.513          0.519
+      (0.6, 0.8]  479           0.685          0.670
+      (0.8, 1.0]   61           0.836          0.869
+B     (0.0, 0.2]   20           0.167          0.150
+      (0.2, 0.4]  226           0.313          0.257
+      (0.4, 0.6]  224           0.486          0.509
+      (0.6, 0.8]   41           0.657          0.659
+
+On average the predictions match each group's repayment rate, yet selection and error rates differ.
 This is not a bug to fix; it is a mathematical fact about groups with different base rates.
 </pre>
 </div>
@@ -8099,7 +8116,7 @@ This is not a bug to fix; it is a mathematical fact about groups with different 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="Wrap-up">Wrap-up<a class="anchor-link" href="#Wrap-up">¶</a></h3><p>The model never saw the protected attribute, yet it is measurably unfair: it fails the 80% rule and denies deserving group-B applicants far more often. 'Fairness through unawareness' does not work, because the features themselves carry the disadvantage. And the model is simultaneously well-calibrated, which means these fairness notions genuinely conflict. The next notebook confronts that conflict head-on.</p>
+<h3 id="Wrap-up">Wrap-up<a class="anchor-link" href="#Wrap-up">¶</a></h3><p>The model never saw the protected attribute, yet it is measurably unfair: it fails the 80% rule and denies deserving group-B applicants far more often. 'Fairness through unawareness' does not work, because the features themselves carry the disadvantage. And the model is calibrated on average for both groups, with most score bands close (group B's 0.2 to 0.4 band over-predicts, 0.313 against 0.257), which means these fairness notions genuinely conflict. The next notebook confronts that conflict head-on.</p>
 </div>
 </div>
 </div>
