@@ -168,8 +168,9 @@
       </figcaption>
     </figure>
 
-    <p>Three of the four are quick habits. Set a <strong>seed</strong> (<code>np.random.default_rng(42)</code>) and random
-       operations repeat exactly. <strong>Pin the environment</strong> by listing every package at an exact version in a
+    <p>Three of the four are quick habits. Set a <strong>seed</strong> (<code>rng = np.random.default_rng(42)</code>) and the
+       draws from that generator repeat exactly, as long as you pass it, or a <code>random_state</code>, to every library that
+       samples. <strong>Pin the environment</strong> by listing every package at an exact version in a
        <code>requirements.txt</code>, ideally inside a per-project virtual environment. And <strong>hash the data</strong>, a
        short fingerprint of its exact contents, so you can prove later whether it changed. The fourth pillar, versioning the
        code, is big enough to be the rest of this chapter.</p>
@@ -219,8 +220,9 @@
 
     <p>A companion habit lives here too: the <strong><code>.gitignore</code></strong> file, a list of things Git should never
        track. Large data files, generated outputs, and above all <strong>secrets</strong> like API keys and passwords belong
-       out of version control. Notebook 3 shows a <code>.gitignore</code> making a committed secret and a data folder vanish
-       from Git's view, which is a mistake you very much want to prevent, not fix.</p>
+       out of version control. Notebook 3 shows a <code>.gitignore</code> keeping an uncommitted secret and a data folder out
+       of Git's view. It has no effect on a file Git already tracks, which takes <code>git rm --cached</code> to untrack and
+       stays in the history even then, so a committed secret is a mistake you very much want to prevent, not fix.</p>
   </section>
 
   <!-- ===== §3 branching ===== -->
@@ -331,7 +333,7 @@
 
     <p>A developer runs these dozens of times a day almost without thinking. A statistician or data scientist uses the very
        same commands to version analysis scripts, notebooks, and reports, and to sync a project with collaborators through a
-       shared remote. Learn these ten and you are fluent in the language every team, tool, and tutorial speaks.</p>
+       shared remote. Learn these twelve and you are fluent in the language every team, tool, and tutorial speaks.</p>
   </section>
 
   <!-- ===== §5 CI/CD ===== -->
@@ -374,7 +376,7 @@
     </figure>
 
     <p>The pipeline itself is just a file in your repository, so it is versioned like everything else. Here is a minimal
-       <strong>GitHub Actions</strong> workflow that, on every push, sets up Python, installs the pinned dependencies, and runs
+       <strong>GitHub Actions</strong> workflow that, on every push, sets up a fixed Python version, installs the pinned dependencies, and runs
        the test suite.</p>
 
     <div class="gitbox"><div class="cbh">.github/workflows/ci.yml</div><pre tabindex="0"><span class="k">name:</span> tests
@@ -384,6 +386,9 @@
     <span class="k">runs-on:</span> ubuntu-latest          <span class="cmt"># a fresh, clean machine each time</span>
     <span class="k">steps:</span>
       - <span class="k">uses:</span> actions/checkout@v4    <span class="cmt"># get the exact commit</span>
+      - <span class="k">uses:</span> actions/setup-python@v5 <span class="cmt"># the same Python every time</span>
+        <span class="k">with:</span>
+          <span class="k">python-version:</span> "3.12"
       - <span class="k">run:</span> pip install -r requirements.txt   <span class="cmt"># rebuild the pinned environment</span>
       - <span class="k">run:</span> pytest                   <span class="cmt"># rerun the tests; fail loudly if anything broke</span></pre></div>
 
@@ -495,8 +500,9 @@
          (<code>data_hash</code>), the random <code>seed</code>, the environment (<code>python_version</code>,
          <code>sklearn_version</code>), and the <code>accuracy</code> produced. Notebook 5 uses it to prove the point: runs
          that share code, data, and seed give <em>identical</em> accuracy (runs 1 and 2 both score <strong>0.8793</strong>),
-         while the single run that <strong>set no seed</strong> drifts off on its own, the classic reproducibility bug, found
-         in one line.</p>
+         while the single run that <strong>set no seed</strong> can never be repeated, since nothing records which random
+         draws it used. Its accuracy looks ordinary, so only the blank seed column gives it away, the classic reproducibility
+         bug, found in one line.</p>
       <div class="ex-files">
         <a class="ex-file xls" href="../data/reproducibility-and-version-control--experiment-log.xlsx" download>📊 Download dataset <small>xlsx</small></a>
       </div>
@@ -547,7 +553,7 @@
         <li><span class="ck">✓</span><span><strong>The everyday loop lives at the command line</strong>: pull, branch, edit, add, commit, push, open a pull request; and always pull before you push to avoid surprise conflicts.</span></li>
         <li><span class="ck">✓</span><span><strong>CI/CD automates reproducibility</strong>: every push triggers a fresh build, rerun, and test (Jenkins, GitHub Actions, GitLab CI), and only releases when it passes, so a result that cannot be reproduced never ships.</span></li>
         <li><span class="ck">✓</span><span><strong>Git is built into your tools</strong>: VS Code, RStudio, JupyterLab, JetBrains, and even SAS Studio put a graphical front door on the same commands, all pushing to the same shared history.</span></li>
-        <li><span class="ck">✓</span><span><strong>An experiment log makes reproducibility checkable</strong>: record code, data, seed, and environment per run, and identical inputs provably give identical results.</span></li>
+        <li><span class="ck">✓</span><span><strong>An experiment log makes reproducibility checkable</strong>: record code, data, seed, and environment per run, and runs with identical inputs can be checked for identical results.</span></li>
         <li><span class="ck">✓</span><span><strong>ML scales this up</strong> with MLflow, DVC, and Docker, but they only automate the same four pillars. A result no one can rerun is not really a result.</span></li>
       </ul>
     </div>
@@ -596,7 +602,7 @@
   <!-- ===== §7 quiz ===== -->
   <section id="quiz">
     <div class="section-eyebrow"><div class="num">9</div><h2>Quiz: Test Yourself</h2></div>
-    <p>Eight questions on the four pillars, Git basics, branching, and experiment tracking. Answer them, hit
+    <p>Ten questions on the four pillars, Git basics, branching, and experiment tracking. Answer them, hit
        <strong>Check Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
     <div id="quiz-root"></div>
   </section>
@@ -692,7 +698,7 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
       q: "In the experiment log, two runs sharing the same code, data, and seed produced…",
       options: ["Different accuracy", "The identical accuracy, proving the run reproduces", "An error", "No output"],
       answer: 1,
-      explain: "Identical inputs give identical results; runs 1 and 2 both scored 0.8793. The run that set no seed drifted off on its own."
+      explain: "Identical inputs give identical results; runs 1 and 2 both scored 0.8793. The run that set no seed can never be repeated, since nothing records its random draws."
     },
     {
       q: "Tools like MLflow, DVC, and Docker exist mainly to…",

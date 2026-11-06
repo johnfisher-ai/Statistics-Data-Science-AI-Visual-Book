@@ -8035,7 +8035,7 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="DEMO-2-%C2%B7-Which-runs-are-truly-reproducible?">DEMO 2 · Which runs are truly reproducible?<a class="anchor-link" href="#DEMO-2-%C2%B7-Which-runs-are-truly-reproducible?">¶</a></h2><p>A run is reproducible when another run shares its code, data, and seed. Group by those three and, within each group, the accuracy should be identical. If it is, the group reproduces; if not, something unrecorded is leaking in.</p>
+<h2 id="DEMO-2-%C2%B7-Which-runs-are-truly-reproducible?">DEMO 2 · Which runs are truly reproducible?<a class="anchor-link" href="#DEMO-2-%C2%B7-Which-runs-are-truly-reproducible?">¶</a></h2><p>A run is reproducible when another run shares its code, data, and seed. Group by those three and, within each group, the accuracy should be identical. Only a group with two or more runs can show it. If the scores match, the group reproduces; if not, something unrecorded is leaking in.</p>
 </div>
 </div>
 </div>
@@ -8050,8 +8050,10 @@ a.anchor-link {
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">seeded</span> <span class="o">=</span> <span class="n">runs</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">"seed"</span><span class="p">])</span>
 <span class="n">grp</span> <span class="o">=</span> <span class="n">seeded</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">"git_commit"</span><span class="p">,</span><span class="s2">"data_hash"</span><span class="p">,</span><span class="s2">"seed"</span><span class="p">])</span><span class="o">.</span><span class="n">accuracy</span><span class="o">.</span><span class="n">agg</span><span class="p">(</span><span class="n">runs</span><span class="o">=</span><span class="s2">"count"</span><span class="p">,</span> <span class="n">distinct_scores</span><span class="o">=</span><span class="s2">"nunique"</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">grp</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">every group has exactly one distinct score:"</span><span class="p">,</span> <span class="p">(</span><span class="n">grp</span><span class="o">.</span><span class="n">distinct_scores</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">())</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"so identical (code, data, seed) always reproduces the identical result."</span><span class="p">)</span>
+<span class="n">rep</span> <span class="o">=</span> <span class="n">grp</span><span class="p">[</span><span class="n">grp</span><span class="o">.</span><span class="n">runs</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">]</span>
+<span class="n">same</span> <span class="o">=</span> <span class="p">(</span><span class="n">rep</span><span class="o">.</span><span class="n">distinct_scores</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">groups with a repeat run: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">rep</span><span class="p">)</span><span class="si">}</span><span class="s2"> of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">grp</span><span class="p">)</span><span class="si">}</span><span class="s2">; each has exactly one distinct score: </span><span class="si">{</span><span class="n">same</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">same</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">"so in this log, every repeated (code, data, seed) reproduced its result."</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -8081,8 +8083,8 @@ c4d881     9f86d0    7.0      1                1
 d3c0e9     1a2b3c    7.0      1                1
                      42.0     2                1
 
-every group has exactly one distinct score: True
-so identical (code, data, seed) always reproduces the identical result.
+groups with a repeat run: 5 of 14; each has exactly one distinct score: True
+so in this log, every repeated (code, data, seed) reproduced its result.
 </pre>
 </div>
 </div>
@@ -8095,7 +8097,7 @@ so identical (code, data, seed) always reproduces the identical result.
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="DEMO-3-%C2%B7-Find-the-non-reproducible-run">DEMO 3 · Find the non-reproducible run<a class="anchor-link" href="#DEMO-3-%C2%B7-Find-the-non-reproducible-run">¶</a></h2><p>One run set no seed. Otherwise similar runs then disagree, the classic silent bug. The log makes it findable in one line, where without it you would chase a ghost for hours.</p>
+<h2 id="DEMO-3-%C2%B7-Find-the-non-reproducible-run">DEMO 3 · Find the non-reproducible run<a class="anchor-link" href="#DEMO-3-%C2%B7-Find-the-non-reproducible-run">¶</a></h2><p>One run set no seed, so no one can rerun it and be sure of getting its accuracy again. Its score looks ordinary, inside the range of the seeded runs, so only the blank seed column gives it away, the classic silent bug. The log makes it findable in one line, where without it you would chase a ghost for hours.</p>
 </div>
 </div>
 </div>
@@ -8110,7 +8112,7 @@ so identical (code, data, seed) always reproduces the identical result.
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">culprit</span> <span class="o">=</span> <span class="n">runs</span><span class="p">[</span><span class="n">runs</span><span class="o">.</span><span class="n">seed</span><span class="o">.</span><span class="n">isna</span><span class="p">()]</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">"runs with no seed recorded:"</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">culprit</span><span class="p">[[</span><span class="s2">"run_id"</span><span class="p">,</span><span class="s2">"git_commit"</span><span class="p">,</span><span class="s2">"data_hash"</span><span class="p">,</span><span class="s2">"seed"</span><span class="p">,</span><span class="s2">"accuracy"</span><span class="p">,</span><span class="s2">"note"</span><span class="p">]]</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Lesson: an unset seed is the most common reason 'the same analysis' gives two answers."</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Lesson: an unset seed is a common reason 'the same analysis' gives two answers."</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -8127,7 +8129,7 @@ so identical (code, data, seed) always reproduces the identical result.
  run_id git_commit data_hash  seed  accuracy        note
      14     2f6b7c    9f86d0   NaN    0.8307 no seed set
 
-Lesson: an unset seed is the most common reason 'the same analysis' gives two answers.
+Lesson: an unset seed is a common reason 'the same analysis' gives two answers.
 </pre>
 </div>
 </div>
