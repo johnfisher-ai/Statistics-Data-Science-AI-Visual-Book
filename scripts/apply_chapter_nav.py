@@ -53,7 +53,7 @@ def set_card_num(html, kind):
         return html
     n = num_of[target]
     block = m.group(0)
-    newblock = re.sub(r'(<span class="cn-dir">Chapter )\d+( · '+word+r'</span>)',
+    newblock = re.sub(r'(<span class="cn-dir">Chapter )\d+( (?:·|&#183;) '+word+r'</span>)',
                       lambda mm: mm.group(1)+str(n)+mm.group(2), block, count=1)
     return html[:m.start()] + newblock + html[m.end():]
 
