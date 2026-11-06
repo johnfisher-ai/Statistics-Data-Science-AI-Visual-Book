@@ -129,7 +129,7 @@
         The <span class="def-kw">Wilcoxon signed-rank test</span> is the paired counterpart of Mann-Whitney. It ranks the
         <span class="def-kw">differences by size</span>, ignoring direction, then compares the total rank belonging to
         <span class="def-kw">increases</span> against the total belonging to <span class="def-kw">decreases</span>. It
-        assumes nothing about the shape of the differences.
+        assumes the differences are symmetric under the null and that their sizes can be compared across customers.
       </div>
     </div>
 
@@ -174,8 +174,8 @@
       <figcaption><strong>Left:</strong> ratings shifted upward, and mostly at the top, with the number of customers giving the maximum rating going from 4 to 21. <strong>Right:</strong> the change per customer. The gray bar is the story of this chapter: <strong>31 of 70 customers gave exactly the same rating twice</strong>.</figcaption>
     </figure>
 
-    <p>Twenty-eight customers went up by one, four went up by two, and seven went down by one. Nobody moved more than two
-       points, which is the ceiling the instrument imposes.</p>
+    <p>Twenty-eight customers went up by one, four went up by two, and seven went down by one. Nobody in this sample moved
+       more than two points, though the scale allows changes of up to four.</p>
   </section>
 
   <!-- 3 -->
@@ -194,7 +194,8 @@
     </div>
 
     <p>Wilcoxon's signed-rank test ranks the differences by size and compares the rank total for increases against the rank
-       total for decreases. Nothing about equal spacing is assumed, which suits a rating scale exactly.</p>
+       total for decreases. It does assume that a 1-point change is smaller than a 2-point change wherever on the scale it
+       happens, and that changes are symmetric under the null. Only the sign test, which ignores sizes, assumes neither.</p>
   </section>
 
   <!-- 4 -->
@@ -205,7 +206,7 @@
        silently through a default argument.</p>
 
     <figure class="nb-fig half">
-      <img src="../assets/img/capstone-ratings-matrix.png" alt="A five by five grid of before rating against after rating, with counts in each cell and a dashed diagonal line. Cells on the diagonal, meaning no change, hold 31 customers in total. Most of the off-diagonal mass sits just above the diagonal.">
+      <img src="../assets/img/capstone-ratings-matrix.png" alt="A five by five grid of before rating against after rating, with counts in each cell and a dashed diagonal line. Cells on the diagonal, meaning no change, hold 31 customers in total. Most of the off-diagonal mass sits just to the right of the diagonal, one step higher after than before.">
       <figcaption>Where each customer moved. Everyone on the dashed line gave the identical rating twice, and there are <strong>31 of them</strong>, more than any other single feature of this dataset. The three conventions below disagree about exactly one thing: what to do with that line.</figcaption>
     </figure>
 
@@ -225,13 +226,14 @@
        otherwise.</p>
 
     <div class="goldbox">
-      <span class="gb-tag">Understand it anyway, because it changes the question</span>
-      <p style="margin:0.4rem 0 0">Wilcoxon's original procedure discards the 31 non-movers and tests the 39 who moved, so it
-         answers: <em>among customers whose opinion changed, did it more often improve?</em> Pratt's method keeps them, so it
-         answers: <em>across all customers, did ratings improve?</em> Those are different claims about different populations.
-         With 44 percent of the sample sitting on zero, the second is the one a service manager is asking, which is why it is
-         the one reported here. Whichever you use, <strong>state it and state the n it consumed</strong>. A reader who sees
-         "n = 39" and a reader who sees "n = 70" are being told about different groups of people.</p>
+      <span class="gb-tag">Understand it anyway, because it changes the numbers you report</span>
+      <p style="margin:0.4rem 0 0">All three test the same null, that changes are symmetric about zero, and the zeros sit at
+         the center either way. What differs is the weighting. Wilcoxon's original procedure discards the 31 non-movers and
+         ranks the 39 who moved, so a 1-point change gets rank 18 and a 2-point change 37.5. Pratt's method ranks all 70 first
+         and then drops the zeros' ranks, lifting those to 49 and 68.5, which narrows the gap between small and large changes.
+         The statistic and the p-value move with that choice. Pratt is reported here because its n matches the 70 customers
+         surveyed. Whichever you use, <strong>state it and state the n it consumed</strong>. A reader who sees
+         "n = 39" and a reader who sees "n = 70" deserve to know why.</p>
     </div>
   </section>
 
@@ -298,13 +300,14 @@
     <p>Textbook examples of Wilcoxon usually quote an exact p-value computed by enumerating every possible arrangement of
        signs. This one cannot, and the reason is structural rather than a matter of software settings.</p>
 
-    <p>On a 5-point scale, a change is one point or two points. Across the 39 customers who moved, there are exactly
+    <p>In this sample every change is one point or two. Across the 39 customers who moved, there are exactly
        <strong>two distinct magnitudes</strong>: 35 changes of size 1 and 4 of size 2. The signed-rank procedure ranks by
        magnitude, so those 35 changes all receive the same average rank, as do the 4.</p>
 
     <div class="goldbox">
       <span class="gb-tag">What the software does, and why it is right</span>
-      <p style="margin:0.4rem 0 0">The exact permutation distribution assumes there are no ties, so it does not apply.
+      <p style="margin:0.4rem 0 0">The classical exact tables assume there are no ties, so they do not apply. An exact test conditional on the tied ranks
+         could be computed, but the standard route is the one the software takes.
          <code>scipy</code> detects the ties, assigns average ranks within each tied block, and switches to the normal
          approximation with a tie correction. That is the correct behavior. It is worth recognizing that it happened, rather
          than assuming an exact test was simply not requested, because on coarse scales the tie correction is doing real
@@ -432,8 +435,8 @@
         <text x="44" y="104" font-family="Inter,Segoe UI,sans-serif" font-size="11" fill="#3f3f46">before  41%</text>
         <line x1="140" y1="100" x2="252" y2="100" stroke="#94a3b8" stroke-width="8" stroke-linecap="round"/>
         <text x="44" y="136" font-family="Inter,Segoe UI,sans-serif" font-size="11" fill="#3f3f46">after  56%</text>
-        <line x1="188" y1="132" x2="312" y2="132" stroke="#b45309" stroke-width="8" stroke-linecap="round"/>
-        <rect x="188" y="92" width="64" height="48" fill="#dc2626" opacity="0.16"/>
+        <line x1="206" y1="132" x2="323" y2="132" stroke="#b45309" stroke-width="8" stroke-linecap="round"/>
+        <rect x="206" y="92" width="46" height="48" fill="#dc2626" opacity="0.16"/>
         <text x="194" y="170" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11" fill="#991b1b">the intervals overlap...</text>
         <text x="194" y="192" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="11.5" font-weight="800" fill="#dc2626">"we cannot tell" &#8212; wrong</text>
         <text x="194" y="210" text-anchor="middle" font-family="Inter,Segoe UI,sans-serif" font-size="10.5" font-style="italic" fill="#991b1b">these are the same 70 people twice</text>
@@ -454,7 +457,7 @@
     <p><strong>One more column the analysis had not opened.</strong> The file records <code>visits_per_month</code>. Frequent
        visitors experience a booking change far more often than occasional ones, so it is a natural place to look for a
        difference, and there is not one: visit frequency shows no detectable relationship with how much a rating moved
-       (&#961; = 0.09, p = 0.44), and splitting at the median gives two groups that improved similarly. That is mildly
+       (&#961; = 0.09, p = 0.44), and splitting at the median shows no detectable difference between the two groups (53 percent against 43 percent improved, p = 0.46), though the frequent group has only 17 customers. That is mildly
        reassuring, since a change registering only with people who book weekly would be a narrower win than the headline
        suggests. It does nothing about the missing control group, because whatever else changed during those months affected
        frequent and occasional visitors alike and would leave exactly this trace. <strong>Checking a covariate you happen to
@@ -506,8 +509,8 @@
       <h3>🎓 Key Takeaways</h3>
       <ul>
         <li><span class="ck">✓</span><span><strong>Wilcoxon is the paired rank test</strong>: it ranks differences by size and compares the rank total for increases against the total for decreases.</span></li>
-        <li><span class="ck">✓</span><span><strong>Zeros are a decision, not a detail.</strong> Dropping them tests the 39 who moved; keeping them tests all 70. Different questions, different populations, so state which and state the n.</span></li>
-        <li><span class="ck">✓</span><span><strong>Coarse scales kill the exact test.</strong> With only two distinct change magnitudes, the ranks are heavily tied and the normal approximation with a tie correction is the correct fallback.</span></li>
+        <li><span class="ck">✓</span><span><strong>Zeros are a decision, not a detail.</strong> Dropping them ranks the 39 who moved; Pratt's method ranks all 70. The null is the same but the weights and the p-value differ, so state which and state the n.</span></li>
+        <li><span class="ck">✓</span><span><strong>Coarse scales rule out the classical exact tables.</strong> With only two distinct change magnitudes, the ranks are heavily tied and the normal approximation with a tie correction is the standard fallback.</span></li>
         <li><span class="ck">✓</span><span><strong>The sign test is the honest cross-check.</strong> It assumes almost nothing and still rejected (p = 0.00007), so the conclusion does not depend on the extra assumption Wilcoxon makes.</span></li>
         <li><span class="ck">✓</span><span><strong>Decisive is not the same as large.</strong> p = 0.000048, and yet 44% of customers did not move at all and 10% moved the wrong way.</span></li>
       </ul>
@@ -555,7 +558,7 @@ window.addEventListener('scroll', () => {
       q: "What does the Wilcoxon signed-rank test use from the paired data?",
       options: ["The exact size of every difference", "The ranks of the difference sizes, plus their direction", "Only whether each difference is positive or negative", "The means of the two measurements"],
       answer: 1,
-      explain: "It ranks differences by magnitude and compares the rank total for increases against decreases, so it needs ordering rather than spacing."
+      explain: "It ranks differences by magnitude and compares the rank total for increases against decreases, which assumes the sizes of changes can be compared and are symmetric under the null."
     },
     {
       q: "Thirty-one of seventy customers gave the same rating twice. Why is that a problem for a signed-rank test?",
@@ -564,10 +567,10 @@ window.addEventListener('scroll', () => {
       explain: "The procedure is built on signed magnitudes, and zero has neither a sign nor a size, so every implementation must decide something."
     },
     {
-      q: "How does dropping the zeros change what is being tested?",
-      options: ["It does not change anything, only the p-value", "It shifts the question from 'did ratings improve across all customers' to 'among those who changed, did it more often improve'", "It converts the test into a sign test", "It makes the test one-sided"],
-      answer: 1,
-      explain: "Wilcoxon's original method tested 39 customers; Pratt's tested all 70. Those are claims about different populations."
+      q: "How does dropping the zeros differ from Pratt's method?",
+      options: ["The null hypothesis is the same, but the non-zero changes get different ranks, so the statistic and p-value differ", "It tests a different population with a different null hypothesis", "It converts the test into a sign test", "It makes the test one-sided"],
+      answer: 0,
+      explain: "Both test whether changes are symmetric about zero. Pratt ranks the zeros first, which lifts every non-zero rank and changes the weighting, so state which you used and the n it consumed."
     },
     {
       q: "Why can no transformation fix the non-normality of these differences?",
@@ -577,7 +580,7 @@ window.addEventListener('scroll', () => {
     },
     {
       q: "Why was no exact p-value available?",
-      options: ["The sample was too large to enumerate", "With only two distinct change magnitudes the ranks are heavily tied, and the exact permutation distribution assumes no ties", "scipy does not implement it", "The design was paired rather than independent"],
+      options: ["The sample was too large to enumerate", "With only two distinct change magnitudes the ranks are heavily tied, and the classical exact tables assume no ties", "scipy does not implement it", "The design was paired rather than independent"],
       answer: 1,
       explain: "The software correctly falls back to the normal approximation with a tie correction, which is doing real work on a coarse scale."
     },
