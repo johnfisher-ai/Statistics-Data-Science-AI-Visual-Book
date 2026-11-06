@@ -199,14 +199,15 @@
        file-based engine built into your phone and into Python (this chapter uses it). <strong>PostgreSQL</strong> and
        <strong>MySQL</strong> are the popular open-source servers. <strong>SQL Server</strong> and <strong>Oracle</strong> run
        large enterprises. And cloud warehouses like <strong>BigQuery</strong>, <strong>Snowflake</strong>, and
-       <strong>Redshift</strong> answer SQL over enormous datasets. The dialects differ at the edges; the SELECT you learn here
-       works in all of them.</p>
+       <strong>Redshift</strong> answer SQL over enormous datasets. The core SELECT, WHERE, GROUP BY and JOIN you learn here
+       work in all of them. The dialects differ at the edges, such as row limits (LIMIT, TOP or FETCH FIRST) and date
+       functions (this chapter uses SQLite&#8217;s <code>strftime</code>).</p>
   </section>
 
   <!-- ===== §2 the SELECT ===== -->
   <section id="the-select">
     <div class="section-eyebrow"><div class="num">2</div><h2>The Anatomy of a Query</h2></div>
-    <p>Almost every SQL query is one sentence with up to six clauses, and they are always written in the same order. You will
+    <p>Almost every SQL query is one sentence with up to seven clauses, and they are always written in the same order. You will
        recognize the logic immediately, because it is the same describe-filter-group-sort you have done throughout this book.</p>
 
     <div class="sqlbox"><div class="cbh">the shape of a query</div><pre tabindex="0"><span class="kw">SELECT</span>   columns, and aggregates
@@ -220,7 +221,8 @@
     <p>There is one surprise worth learning early, and it prevents a lot of confusion: SQL does <strong>not run in the order
        you write it</strong>. It reads <code>FROM</code> first to get the rows, filters with <code>WHERE</code>, forms groups,
        filters those with <code>HAVING</code>, and only then evaluates the <code>SELECT</code> list, sorts, and limits. That is
-       why you can filter groups in <code>HAVING</code> but not yet refer to a <code>SELECT</code> alias there.</p>
+       why standard SQL lets you filter groups in <code>HAVING</code> but not yet refer to a <code>SELECT</code> alias there
+       (SQLite and MySQL relax this rule).</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
       <svg viewBox="0 0 700 160" width="100%" font-family="Inter, sans-serif" aria-label="The logical execution order of a SQL query, which differs from the written order. The database runs FROM first, then WHERE, then GROUP BY, then HAVING, then SELECT, then ORDER BY, then LIMIT, shown as a left-to-right pipeline of boxes with arrows.">
@@ -252,8 +254,9 @@
 
     <p>Aggregation is the workhorse. <code>COUNT</code>, <code>SUM</code>, <code>AVG</code>, <code>MIN</code>, and
        <code>MAX</code> collapse many rows to one number, and <code>GROUP BY</code> computes that number for each group. If
-       this feels familiar, it should: <code>SELECT category, SUM(revenue) FROM ... GROUP BY category</code> is the exact SQL
-       twin of <code>df.groupby("category").revenue.sum()</code> from the Python chapter.</p>
+       this feels familiar, it should: <code>SELECT category, SUM(revenue) FROM ... GROUP BY category</code> is the SQL
+       twin of <code>df.groupby("category").revenue.sum()</code> from the Python chapter. The two differ only with missing
+       values, since SQL keeps a NULL key as its own group while pandas drops a missing key by default.</p>
   </section>
 
   <!-- ===== §3 joins ===== -->
@@ -326,7 +329,7 @@
         <text x="86" y="200" font-size="8.5" font-family="ui-monospace,monospace" fill="#e2e8f0"><tspan fill="#5eead4" font-weight="700">FROM</tspan> monthly;</text>
       </svg>
       <figcaption style="font-size:0.78rem;color:var(--ink-soft);margin-top:0.9rem;line-height:1.55">
-        The only new syntax is <code>OVER (...)</code>. With it, <code>SUM</code> becomes a running total, <code>RANK</code>
+        The only new syntax is <code>OVER (...)</code>. With an <code>ORDER BY</code> inside it, <code>SUM</code> becomes a running total, <code>RANK</code>
         numbers rows, <code>PARTITION BY</code> restarts the window per group, and <code>LAG</code> reaches to the previous
         row for period-over-period change.
       </figcaption>
@@ -362,7 +365,7 @@
       </div>
       <div class="nbk">
         <div class="nbk-n">Notebook 3</div><h3>Joins</h3>
-        <p>INNER JOIN on a key, join-then-aggregate for revenue by region and category, LEFT JOIN to find non-matches, and a full four-table join for top customers.</p>
+        <p>INNER JOIN on a key, join-then-aggregate for revenue by region and category, LEFT JOIN to find non-matches, and a three-table join for top customers.</p>
         <div class="nbk-links">
           <a class="b-view" href="notebooks/html/sql-and-databases--3-joins.html">📓 View</a>
           <a class="b-colab" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/sql-and-databases--3-joins.ipynb" target="_blank" rel="noopener">▶ Colab</a>
@@ -458,7 +461,7 @@
         <li><span class="ck">✓</span><span><strong>Almost every query is one sentence</strong>: SELECT, FROM, WHERE, GROUP BY, HAVING, ORDER BY, LIMIT, and it runs FROM-first, not top-down.</span></li>
         <li><span class="ck">✓</span><span><strong>Aggregation is split-apply-combine</strong>: GROUP BY with COUNT/SUM/AVG is the SQL twin of a pandas groupby; WHERE filters rows, HAVING filters groups.</span></li>
         <li><span class="ck">✓</span><span><strong>Joins reassemble split tables</strong> on a shared key: INNER keeps matches, LEFT keeps every left row and marks misses with NULL. A join is a pandas merge in different words.</span></li>
-        <li><span class="ck">✓</span><span><strong>Window functions summarize without collapsing</strong>: OVER turns SUM into a running total, adds rankings with RANK, and compares rows with LAG, all while keeping every row.</span></li>
+        <li><span class="ck">✓</span><span><strong>Window functions summarize without collapsing</strong>: SUM with OVER (ORDER BY ...) gives a running total, adds rankings with RANK, and compares rows with LAG, all while keeping every row.</span></li>
         <li><span class="ck">✓</span><span><strong>The pattern is SQL then Python</strong>: push joins, filters, and aggregation into the database, then read a tidy result into pandas or R to model and plot.</span></li>
         <li><span class="ck">✓</span><span><strong>SQL is central to modern ML and analytics</strong>: features are engineered in SQL, warehouses run it at scale, and dbt made it a version-controlled engineering discipline.</span></li>
       </ul>
@@ -569,7 +572,7 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
       q: "SELECT category, SUM(revenue) FROM t GROUP BY category is the SQL twin of which pandas call?",
       options: ["t.merge(...)", "t.groupby('category').revenue.sum()", "t.sort_values('revenue')", "t.head()"],
       answer: 1,
-      explain: "GROUP BY with an aggregate is split-apply-combine, exactly what a pandas groupby-sum does."
+      explain: "GROUP BY with an aggregate is split-apply-combine, what a pandas groupby-sum does (they differ only in how missing keys are handled)."
     },
     {
       q: "To find customers who have never placed an order, you would use…",
@@ -587,7 +590,7 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
       q: "Which SQL feature gives a running (cumulative) total?",
       options: ["COUNT(*)", "SUM(x) OVER (ORDER BY ...)", "DISTINCT", "LIMIT"],
       answer: 1,
-      explain: "SUM as a window function ordered by time accumulates the total row by row, unlike a plain SUM that returns one number."
+      explain: "SUM as a window function ordered by time accumulates the total, unlike a plain SUM that returns one number. If the time key can repeat, add ROWS UNBOUNDED PRECEDING so tied rows accumulate one at a time."
     },
     {
       q: "What is the recommended division of labor between SQL and pandas?",
