@@ -8115,6 +8115,8 @@ visits per month: min 41, median 292, max 2456
 <span class="n">g</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"district_id"</span><span class="p">)</span><span class="o">.</span><span class="n">ed_visits</span><span class="o">.</span><span class="n">agg</span><span class="p">([</span><span class="s2">"mean"</span><span class="p">,</span> <span class="s2">"var"</span><span class="p">])</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"variance-to-mean ratio across </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="p">)</span><span class="si">}</span><span class="s2"> districts: "</span>
       <span class="sa">f</span><span class="s2">"median </span><span class="si">{</span><span class="p">(</span><span class="n">g</span><span class="p">[</span><span class="s1">'var'</span><span class="p">]</span><span class="o">/</span><span class="n">g</span><span class="p">[</span><span class="s1">'mean'</span><span class="p">])</span><span class="o">.</span><span class="n">median</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">, and Poisson says it should be 1"</span><span class="p">)</span>
+<span class="n">vm</span> <span class="o">=</span> <span class="n">g</span><span class="p">[</span><span class="s1">'var'</span><span class="p">]</span><span class="o">/</span><span class="n">g</span><span class="p">[</span><span class="s1">'mean'</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"   range </span><span class="si">{</span><span class="n">vm</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">vm</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">, with </span><span class="si">{</span><span class="p">(</span><span class="n">vm</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">10</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2"> of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="p">)</span><span class="si">}</span><span class="s2"> districts above 10"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -8132,6 +8134,7 @@ the same thing, per 1,000       median    11.35   range 2.95 to 45.28   skew +1.
 
 district populations run 7,000 to 134,600, a factor of 19
 variance-to-mean ratio across 40 districts: median 16.8, and Poisson says it should be 1
+   range 4.4 to 76.7, with 27 of 40 districts above 10
 </pre>
 </div>
 </div>
@@ -8414,6 +8417,12 @@ standard error inflation against Poisson:
 <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">coverage of the true value:"</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">nm</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">models</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"   </span><span class="si">{</span><span class="n">nm</span><span class="si">:</span><span class="s2">20s</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">cover</span><span class="p">[</span><span class="n">nm</span><span class="p">]</span><span class="si">}</span><span class="s2"> of 5"</span><span class="p">)</span>
+
+<span class="n">a_ml</span> <span class="o">=</span> <span class="n">smf</span><span class="o">.</span><span class="n">negativebinomial</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="n">d</span><span class="o">.</span><span class="n">logpop</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">disp</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">"alpha"</span><span class="p">]</span>
+<span class="n">nb_ml</span> <span class="o">=</span> <span class="n">smf</span><span class="o">.</span><span class="n">glm</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">family</span><span class="o">=</span><span class="n">sm</span><span class="o">.</span><span class="n">families</span><span class="o">.</span><span class="n">NegativeBinomial</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="n">a_ml</span><span class="p">),</span> <span class="n">offset</span><span class="o">=</span><span class="n">d</span><span class="o">.</span><span class="n">logpop</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+<span class="n">cov_ml</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">((</span><span class="n">nb_ml</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="n">t_</span><span class="p">]</span> <span class="o">-</span> <span class="mf">1.96</span><span class="o">*</span><span class="n">nb_ml</span><span class="o">.</span><span class="n">bse</span><span class="p">[</span><span class="n">t_</span><span class="p">])</span> <span class="o">&lt;=</span> <span class="n">tr</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="n">nb_ml</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="n">t_</span><span class="p">]</span> <span class="o">+</span> <span class="mf">1.96</span><span class="o">*</span><span class="n">nb_ml</span><span class="o">.</span><span class="n">bse</span><span class="p">[</span><span class="n">t_</span><span class="p">])</span>
+             <span class="k">for</span> <span class="n">t_</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">TR</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">negative binomial with alpha estimated by maximum likelihood (</span><span class="si">{</span><span class="n">a_ml</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">cov_ml</span><span class="si">}</span><span class="s2"> of 5"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -8437,6 +8446,8 @@ coverage of the true value:
    Poisson              1 of 5
    negative binomial    3 of 5
    cluster-robust       5 of 5
+
+negative binomial with alpha estimated by maximum likelihood (0.087): 3 of 5
 </pre>
 </div>
 </div>
@@ -8450,7 +8461,7 @@ coverage of the true value:
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <p><strong>Poisson's intervals contain the true value once out of five times.</strong> They are not merely optimistic, they are wrong: the deprivation interval is [1.259, 1.265], a width of six thousandths, and the truth is 1.203, nowhere near it.</p>
-<p><strong>The negative binomial is better and still not enough</strong>, at three out of five. This is the part most treatments skip. The negative binomial adds a dispersion parameter and assumes the observations are otherwise independent, and here they are not: the extra variation is <em>between districts</em>, and each district appears 48 times. The model widens the intervals for dispersion while still counting 48 correlated months as 48 independent facts.</p>
+<p><strong>The negative binomial is better and still not enough</strong>, at three out of five. Its dispersion parameter was fixed at 0.045, the value that generated the data, which is the most favorable setting it could have, and estimating it by maximum likelihood gives about 0.087 and the same score. This is the part most treatments skip. The negative binomial adds a dispersion parameter and assumes the observations are otherwise independent, and here they are not: the extra variation is <em>between districts</em>, and each district appears 48 times. The model widens the intervals for dispersion while still counting 48 correlated months as 48 independent facts.</p>
 <p><strong>Cluster-robust standard errors get all five</strong>, because clustering by district is what the dependence actually is. The lesson is not that one estimator is better in general. It is that <strong>the remedy has to match the reason for the excess variation</strong>, and "use a negative binomial" is a reflex rather than a diagnosis.</p>
 </div>
 </div>
@@ -8588,7 +8599,7 @@ per 1,000 residents per month, not the exponential of a coefficient.
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p><strong>Left:</strong> each point is one district's mean monthly count against its variance, on log scales. Poisson asserts they lie on the dashed line. Every district sits an order of magnitude above it, and the negative binomial curve tracks them far better. <strong>Right:</strong> the same four effects under three treatments, against the truth as a dotted line. Poisson's intervals are so narrow they are barely visible and mostly miss; cluster-robust intervals are wide enough to be honest and contain the truth every time.</p>
+<p><strong>Left:</strong> each point is one district's mean monthly count against its variance, on log scales. Poisson asserts they lie on the dashed line. Every district sits above it, most by more than a factor of ten, and the negative binomial curve tracks them far better. <strong>Right:</strong> the same four effects under three treatments, against the truth as a dotted line. Poisson's intervals are so narrow they are barely visible and mostly miss; cluster-robust intervals are wide enough to be honest and contain the truth every time.</p>
 </div>
 </div>
 </div>
@@ -8601,7 +8612,7 @@ per 1,000 residents per month, not the exponential of a coefficient.
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h2 id="Step-10-%C2%B7-Ethics,-bias,-and-limits">Step 10 · Ethics, bias, and limits<a class="anchor-link" href="#Step-10-%C2%B7-Ethics,-bias,-and-limits">¶</a></h2><ul>
 <li><strong>A count without an offset is a model of size.</strong> Population here varies nineteenfold, and omitting the offset reverses the sign on family-doctor supply. Always state what the denominator is and why.</li>
-<li><strong>Test dispersion before believing any standard error.</strong> Pearson chi-square over degrees of freedom took two lines and revealed that every interval in the Poisson output was roughly four times too narrow.</li>
+<li><strong>Test dispersion before believing any standard error.</strong> Pearson chi-square over degrees of freedom took two lines and revealed that every interval in the Poisson output was about six and a half times too narrow (the square root of 42.1), and the clustering by district made the district-level intervals close to forty times too narrow.</li>
 <li><strong>Match the remedy to the cause.</strong> Negative binomial repairs dispersion. Clustering repairs dependence. Here the excess variation was between districts, and only the second treatment produced intervals that covered the truth.</li>
 <li><strong>Report rates, not coefficients.</strong> Commissioners act on visits per 1,000 residents. A rate ratio of 1.26 is not a plan.</li>
 <li><strong>These are associations across districts.</strong> More family doctors is associated with fewer emergency visits at equal deprivation, and that is not a demonstration that hiring one would reduce them. Part XXIX is about what it would take to make that claim.</li>
