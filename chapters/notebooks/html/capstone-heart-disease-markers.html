@@ -8157,7 +8157,7 @@ Disease
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p><strong>Reading the dashboard.</strong> The four panels agree on one story. Age (top-left) shows the clearest separation: diseased patients skew older. The BMI-versus-blood-pressure scatter (top-right) is a single overlapping cloud, the two groups are not separated by either of those markers. The standardized boxplots (bottom-left) put every marker on one scale, and only Age and Cholesterol show a visible gap between the blue and gold boxes. The correlation matrix (bottom-right) makes it numeric: in the <code>Disease</code> row, Age (about 0.55) and Cholesterol (about 0.42) stand out, while every other marker sits near zero. Everything points to two real signals and five quiet markers, which is exactly what the formal screen has to confirm without being fooled by chance.</p>
+<p><strong>Reading the dashboard.</strong> The four panels agree on one story. Age (top-left) shows the clearest separation: diseased patients skew older. The BMI-versus-blood-pressure scatter (top-right) is a single overlapping cloud, the two groups are not separated by either of those markers. The standardized boxplots (bottom-left) put every marker on one scale, and only Age and Cholesterol show a visible gap between the blue and gold boxes. The correlation matrix (bottom-right) makes it numeric: in the <code>Disease</code> row, Age (about 0.56) and Cholesterol (about 0.43) stand out, while every other marker sits near zero. Everything points to two real signals and five quiet markers, which is exactly what the formal screen has to confirm without being fooled by chance.</p>
 </div>
 </div>
 </div>
@@ -8241,7 +8241,7 @@ clean analysis sample: n = 575   (disease 242, healthy 333)
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Step-7-%C2%B7-Assumptions,-briefly">Step 7 · Assumptions, briefly<a class="anchor-link" href="#Step-7-%C2%B7-Assumptions,-briefly">¶</a></h2><p>With a few hundred patients per group, the Central Limit Theorem makes the two-sample <strong>Welch t-test</strong> (unequal variances allowed) trustworthy for each marker, and Welch is the safe default anyway. For any marker that looked skewed we would fall back to the rank-based Mann-Whitney test, but here the choice does not change the verdict, so we report Welch throughout.</p>
+<h2 id="Step-7-%C2%B7-Assumptions,-briefly">Step 7 · Assumptions, briefly<a class="anchor-link" href="#Step-7-%C2%B7-Assumptions,-briefly">¶</a></h2><p>With a few hundred patients per group, the Central Limit Theorem makes the two-sample <strong>Welch t-test</strong> (unequal variances allowed) trustworthy for each marker, and Welch is the safe default anyway. For any marker that looked skewed we would fall back to the rank-based Mann-Whitney test. The screen below runs Mann-Whitney with the same Holm correction as a check, and we report Welch throughout.</p>
 </div>
 </div>
 </div>
@@ -8352,6 +8352,10 @@ Holm fix: a smarter step-down version of Bonferroni, same family-wise guarantee 
 <span class="n">res</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">"cohen_d"</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">show</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">copy</span><span class="p">();</span> <span class="n">show</span><span class="p">[</span><span class="s2">"p_raw"</span><span class="p">]</span> <span class="o">=</span> <span class="n">show</span><span class="o">.</span><span class="n">p_raw</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">x</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">show</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+<span class="c1"># the same screen with the rank-based Mann-Whitney test, as a check on the Welch verdicts</span>
+<span class="n">mw_p</span> <span class="o">=</span> <span class="p">[</span><span class="n">stats</span><span class="o">.</span><span class="n">mannwhitneyu</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">Disease</span><span class="o">==</span><span class="mi">0</span><span class="p">][</span><span class="n">m</span><span class="p">],</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">Disease</span><span class="o">==</span><span class="mi">1</span><span class="p">][</span><span class="n">m</span><span class="p">],</span> <span class="n">alternative</span><span class="o">=</span><span class="s2">"two-sided"</span><span class="p">)</span><span class="o">.</span><span class="n">pvalue</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">res</span><span class="o">.</span><span class="n">marker</span><span class="p">]</span>
+<span class="n">mw_keep</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">marker</span><span class="p">[</span><span class="n">multipletests</span><span class="p">(</span><span class="n">mw_p</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">"holm"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)[</span><span class="mi">0</span><span class="p">]])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Mann-Whitney + Holm keeps:"</span><span class="p">,</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">mw_keep</span><span class="p">),</span> <span class="s2">"| same verdict as Welch + Holm:"</span><span class="p">,</span> <span class="n">mw_keep</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">marker</span><span class="p">[</span><span class="n">res</span><span class="o">.</span><span class="n">holm</span><span class="p">]))</span>
 </pre></div>
 </div>
 </div>
@@ -8375,6 +8379,14 @@ Diastolic_BP     82.0     83.2 1.74e-01    0.115  0.057       False False    Fal
 </pre>
 </div>
 </div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>
+Mann-Whitney + Holm keeps: ['Age', 'Cholesterol'] | same verdict as Welch + Holm: True
+</pre>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -8384,7 +8396,7 @@ Diastolic_BP     82.0     83.2 1.74e-01    0.115  0.057       False False    Fal
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p><strong>Read the table top to bottom.</strong> Ranked by effect size, <strong>Age</strong> (Cohen's d about 1.3) and <strong>Cholesterol</strong> (d about 0.95) are in a different league from the rest, and both clear even the strict Bonferroni bar. Now look at <strong>Systolic_BP</strong>: its raw p-value is below 0.05, so on a naive reading it "matters", yet its effect size is tiny (d about 0.2) and, crucially, it does <strong>not</strong> survive either correction. It is the false alarm the previous step warned about, a marker with no real group difference that crossed 0.05 because we tested seven things. The remaining markers are not significant even before correction.</p>
+<p><strong>Read the table top to bottom.</strong> Ranked by effect size, <strong>Age</strong> (Cohen's d about 1.3) and <strong>Cholesterol</strong> (d about 0.95) are in a different league from the rest, and both clear even the strict Bonferroni bar. Now look at <strong>Systolic_BP</strong>: its raw p-value is below 0.05, so on a naive reading it "matters", yet its effect size is tiny (d about 0.2) and, crucially, it does <strong>not</strong> survive either correction. It is not supported once we correct for testing seven things, which is what a false alarm looks like, though a small real difference would look much the same (its adjusted interval runs from -0.42 to +0.03). The remaining markers are not significant even before correction.</p>
 </div>
 </div>
 </div>
@@ -8515,7 +8527,7 @@ Heart_Rate      -0.10  [ -0.27,  +0.06]  [ -0.33,  +0.12]  crosses zero
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p><strong>The same decision, told a better way.</strong> Systolic blood pressure is the case worth studying. Its ordinary 95 percent interval sits entirely above zero, which is why it looked like a finding. Widen it to the 99.29 percent interval the family of seven tests requires, and it <strong>crosses zero</strong>. Nothing about the data changed; the standard of evidence did, and that marker no longer clears it.</p>
+<p><strong>The same decision, told a better way.</strong> Systolic blood pressure is the case worth studying. Its ordinary 95 percent interval sits entirely below zero, which is why it looked like a finding. Widen it to the 99.29 percent interval the family of seven tests requires, and it <strong>crosses zero</strong>. Nothing about the data changed; the standard of evidence did, and that marker no longer clears it.</p>
 <p>Age and cholesterol are untouched by the widening. Their intervals stay far from zero either way, which is what a robust finding looks like: it does not depend on how generous you are being with the threshold.</p>
 </div>
 </div>
@@ -8573,7 +8585,7 @@ Heart_Rate      -0.10  [ -0.27,  +0.06]  [ -0.33,  +0.12]  crosses zero
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p><strong>The picture of the multiple-comparisons problem.</strong> Each marker shows a thick bar (the ordinary interval) and a thin one (the interval the family of seven demands). For age and cholesterol both bars sit clear of the dashed zero line. For systolic blood pressure the thick bar clears zero and the thin bar does not, which is precisely the false alarm the Holm procedure caught, drawn rather than asserted.</p>
+<p><strong>The picture of the multiple-comparisons problem.</strong> Each marker shows a thick bar (the ordinary interval) and a thin one (the interval the family of seven demands). For age and cholesterol both bars sit clear of the dashed zero line. For systolic blood pressure the thick bar clears zero and the thin bar does not, which is precisely the result the Holm procedure declined to report, drawn rather than asserted.</p>
 </div>
 </div>
 </div>
@@ -8584,7 +8596,7 @@ Heart_Rate      -0.10  [ -0.27,  +0.06]  [ -0.33,  +0.12]  crosses zero
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Step-12-%C2%B7-Interpret-in-plain-language">Step 12 · Interpret in plain language<a class="anchor-link" href="#Step-12-%C2%B7-Interpret-in-plain-language">¶</a></h2><p>Two markers genuinely distinguish diseased from healthy patients in this cohort: <strong>age</strong> and <strong>cholesterol</strong>, both with large, clearly significant differences that survive any correction. <strong>Blood pressure looked significant</strong> on a first pass, which is tempting to believe because we expect blood pressure to matter for heart disease, but it was a <strong>false positive</strong> produced by testing seven markers at once, and it vanishes under correction. The lesson is the method as much as the result: when you screen many variables, correct for it, and read the effect size, not just the p-value.</p>
+<h2 id="Step-12-%C2%B7-Interpret-in-plain-language">Step 12 · Interpret in plain language<a class="anchor-link" href="#Step-12-%C2%B7-Interpret-in-plain-language">¶</a></h2><p>Two markers genuinely distinguish diseased from healthy patients in this cohort: <strong>age</strong> and <strong>cholesterol</strong>, both with large, clearly significant differences that survive any correction. <strong>Blood pressure looked significant</strong> on a first pass, which is tempting to believe because we expect blood pressure to matter for heart disease, but it does not hold up once we account for testing seven markers at once, which is consistent with a <strong>false positive</strong>, so it should not be reported as a finding. The lesson is the method as much as the result: when you screen many variables, correct for it, and read the effect size, not just the p-value.</p>
 </div>
 </div>
 </div>
