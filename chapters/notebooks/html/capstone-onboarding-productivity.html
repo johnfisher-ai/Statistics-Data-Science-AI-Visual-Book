@@ -8290,7 +8290,7 @@ sd Standard = 4.43,  sd New = 7.59  (ratio 1.71x)
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Step-8-%C2%B7-Decide,-and-fix">Step 8 · Decide, and fix<a class="anchor-link" href="#Step-8-%C2%B7-Decide,-and-fix">¶</a></h2><p>Both groups pass the normality check, so a t-test is appropriate. But Levene's and Bartlett's tests both say the <strong>variances are not equal</strong>: the New group is noticeably more spread out (its standard deviation is over 1.7 times the Standard group's). That rules out the classic pooled t-test, whose formula assumes a single shared variance. The fix is not to abandon the t-test, it is to use <strong>Welch's version</strong>, which allows the two groups to have different variances. Welch's t is the safe default for two independent groups, and here it is not optional.</p>
+<h2 id="Step-8-%C2%B7-Decide,-and-fix">Step 8 · Decide, and fix<a class="anchor-link" href="#Step-8-%C2%B7-Decide,-and-fix">¶</a></h2><p>Neither group shows evidence against normality (Shapiro-Wilk p = 0.75 and 0.12, and the Q-Q points stay near the line apart from the tails), and with 52 and 55 hires the t-test copes with mild departures, so a t-test is reasonable. But Levene's and Bartlett's tests both say the <strong>variances are not equal</strong>: the New group is noticeably more spread out (its standard deviation is over 1.7 times the Standard group's). That rules out the classic pooled t-test, whose formula assumes a single shared variance. The fix is not to abandon the t-test, it is to use <strong>Welch's version</strong>, which allows the two groups to have different variances. Welch's t is the safe default for two independent groups, and here it is not optional.</p>
 </div>
 </div>
 </div>
@@ -8303,7 +8303,7 @@ sd Standard = 4.43,  sd New = 7.59  (ratio 1.71x)
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h2 id="Step-9-%C2%B7-Choose-the-test">Step 9 · Choose the test<a class="anchor-link" href="#Step-9-%C2%B7-Choose-the-test">¶</a></h2><ul>
 <li><strong>Primary:</strong> Welch's two-sample t-test (unequal variances).</li>
-<li><strong>Robustness check:</strong> Mann-Whitney U, which assumes neither normality nor equal variance.</li>
+<li><strong>Robustness check:</strong> Mann-Whitney U, a rank-based test that does not assume normality (it compares whole distributions, so it is a cross-check on the direction, not a second estimate of the mean gap).</li>
 <li><strong>Reported alongside:</strong> Cohen's d and the 95% confidence interval for the difference in means.</li>
 </ul>
 </div>
@@ -8342,7 +8342,10 @@ sd Standard = 4.43,  sd New = 7.59  (ratio 1.71x)
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Cohen's d = </span><span class="si">{</span><span class="n">d</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">  (</span><span class="si">{</span><span class="s1">'small'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">d</span><span class="o">&lt;</span><span class="mf">0.5</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'medium'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">d</span><span class="o">&lt;</span><span class="mf">0.8</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'large'</span><span class="si">}</span><span class="s2"> effect)"</span><span class="p">)</span>
 
 <span class="n">u</span><span class="p">,</span> <span class="n">pu</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">mannwhitneyu</span><span class="p">(</span><span class="n">std</span><span class="p">,</span> <span class="n">new</span><span class="p">,</span> <span class="n">alternative</span><span class="o">=</span><span class="s2">"two-sided"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Mann-Whitney U (robustness): U = </span><span class="si">{</span><span class="n">u</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">, p = </span><span class="si">{</span><span class="n">pu</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">  -&gt; same conclusion"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Mann-Whitney U (robustness): U = </span><span class="si">{</span><span class="n">u</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">, p = </span><span class="si">{</span><span class="n">pu</span><span class="si">:</span><span class="s2">.2e</span><span class="si">}</span><span class="s2">  -&gt; "</span>
+      <span class="o">+</span> <span class="p">(</span><span class="s2">"same conclusion"</span> <span class="k">if</span> <span class="p">(</span><span class="n">pu</span> <span class="o">&lt;</span> <span class="mf">0.05</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="n">pw</span> <span class="o">&lt;</span> <span class="mf">0.05</span><span class="p">)</span> <span class="k">else</span> <span class="s2">"conclusions differ"</span><span class="p">))</span>
+<span class="n">slow</span> <span class="o">=</span> <span class="p">(</span><span class="n">new</span> <span class="o">&gt;=</span> <span class="n">std</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"New hires at or above the Standard mean (</span><span class="si">{</span><span class="n">std</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> days): </span><span class="si">{</span><span class="n">slow</span><span class="si">}</span><span class="s2"> of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">new</span><span class="p">)</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">slow</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">new</span><span class="p">)</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -8357,13 +8360,7 @@ sd Standard = 4.43,  sd New = 7.59  (ratio 1.71x)
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>Welch's t-test : t = 3.920,  p = 1.75e-04   &lt;- the one we report
 pooled t-test  : t = 3.866,  p = 1.92e-04   (assumes equal variance; not valid here)
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>
+
 pingouin (Welch):
    T    dof alternative  cohen_d  power
 3.92 87.815   two-sided    0.748  0.969
@@ -8373,6 +8370,7 @@ difference (Standard - New): 4.68 days
 Cohen's d = 0.748  (medium effect)
 
 Mann-Whitney U (robustness): U = 2063.0, p = 8.06e-05  -&gt; same conclusion
+New hires at or above the Standard mean (24.6 days): 13 of 55 (24%)
 </pre>
 </div>
 </div>
@@ -8611,7 +8609,7 @@ balance check: chi-square = 3.46, df = 3, p = 0.326
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="Step-13-%C2%B7-Interpret-in-plain-language">Step 13 · Interpret in plain language<a class="anchor-link" href="#Step-13-%C2%B7-Interpret-in-plain-language">¶</a></h2><p>New hires on the redesigned program reach productivity about <strong>4.7 days sooner</strong> on average (roughly 20 days versus 25). Welch's test says a gap that size is very unlikely to be chance (p well below 0.001), and the 95% confidence interval for the difference, about <strong>2 to 7 days</strong>, stays entirely above zero. The effect size is medium-to-large. So the new program clearly works on average. But the spread is the second headline: the New group is far more variable, so while most hires do better, the program is less consistent, and a few take as long as the old one or longer.</p>
+<h2 id="Step-13-%C2%B7-Interpret-in-plain-language">Step 13 · Interpret in plain language<a class="anchor-link" href="#Step-13-%C2%B7-Interpret-in-plain-language">¶</a></h2><p>New hires on the redesigned program reach productivity about <strong>4.7 days sooner</strong> on average (roughly 20 days versus 25). Welch's test says a gap that size is very unlikely to be chance (p well below 0.001), and the 95% confidence interval for the difference, about <strong>2 to 7 days</strong>, stays entirely above zero. The effect size is medium (d = 0.75). So the New cohort did clearly better on average, and if the two cohorts were comparable when they started, the program is the likely reason. But the spread is the second headline: the New group is far more variable, and about a quarter of New hires took as long as the Standard average or longer.</p>
 </div>
 </div>
 </div>
