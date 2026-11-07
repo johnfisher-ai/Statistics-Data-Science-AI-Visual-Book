@@ -152,7 +152,7 @@
     <figure class="nb-fig">
       <img src="../assets/img/capstone-clustering-firstlook.png"
            alt="Left: box plots of the eight behavioral features on a logarithmic axis, spanning five orders of magnitude from returns rate near 0.07 up to annual spend near 650. Right: an eight by eight correlation heat map, with annual spend correlating 0.72 with visits per year and 0.65 with average basket, and average basket correlating minus 0.49 with discount share.">
-      <figcaption><strong>Left:</strong> a log axis is the only way to fit all eight columns onto one picture, and that is the finding. On the linear scale k-means works with, the top row dwarfs the rest. <strong>Right:</strong> several columns already carry the same information. Standardizing fixes the first problem and does nothing about the second.</figcaption>
+      <figcaption><strong>Left:</strong> a log axis is the only way to fit all eight columns onto one picture, and that is the finding. On the linear scale k-means works with, the bottom row, annual spend, dwarfs the rest. <strong>Right:</strong> several columns already carry the same information. Standardizing fixes the first problem and does nothing about the second.</figcaption>
     </figure>
 
     <div class="table-scroll" tabindex="0">
@@ -166,8 +166,8 @@
     </div>
 
     <p>The clusters account for <strong>95 percent</strong> of the variation in spend and <strong>7 percent</strong> of
-       the variation in how much a customer shops online. Clusters 1 and 2 are indistinguishable on every behavioral
-       column and differ only in size of wallet.</p>
+       the variation in how much a customer shops online. Clusters 1 and 2 have the same discount, return and online
+       shares and differ in spend and the columns that go with it, visits and basket size.</p>
 
     <p>This is not a segmentation. It is a ranking of customers by spend with four names on it, and a sort would have
        produced it faster.</p>
@@ -291,10 +291,11 @@
        useful one: a plan that assigns every customer to a segment and a treatment is planning for a base that does
        not exist.</p>
 
-    <p>Cluster 2 is the interesting failure. Its profile is unremarkable and its response rate of 0.126 is
-       indistinguishable from the 0.185 base rate. It is a dense patch of the continuum rather than a group, and it is
+    <p>Cluster 2 is the interesting failure. Its profile is middling on every column and its response rate of 0.126
+       sits close to the 0.144 of the accounts DBSCAN declined to classify. It is a dense patch of the continuum rather than a group, and it is
        exactly the kind of thing that gets a name and a budget if nobody checks. <strong>The clue was available
-       without the answer key</strong>: it did not separate anything.</p>
+       without the answer key</strong>, in how closely it resembles those unclassified accounts. Response alone would not
+       have singled it out, since cluster 1 responds at 0.100.</p>
 
     <p>Note also how sensitive DBSCAN is to its radius. At 0.7 it finds two clusters and calls 92 percent noise; at
        1.5 it merges everything into one. That parameter does the same job k does, and it is chosen the same way: by
@@ -332,8 +333,9 @@
     <p>Everything the external check said turns out to be right and everything the internal indices said turns out to
        be wrong. Three further things are worth noting.</p>
 
-    <p><strong>DBSCAN's noise fraction was 55.4 percent against a true 54.5.</strong> It identified the size of the
-       unstructured middle to within a percentage point without being told there was one.</p>
+    <p><strong>DBSCAN's noise fraction was 55.4 percent against a true 54.5.</strong> The match is partly luck. The noise
+       includes 682 of the 862 loyal high spenders, 850 middle accounts were put in clusters, and only 2,251 of the 3,101
+       middle accounts (73 percent) are labeled noise. At a radius of 1.1 the noise share is 15.4 percent.</p>
 
     <p><strong>Ward beat k-means at every k from three to six.</strong> The true segments are not equally sized or
        equally spread, and k-means prefers clusters that are.</p>
@@ -444,7 +446,7 @@
     <div class="rw-card">
       <span class="rw-tag">Read the reports &amp; get the data</span>
       <p style="margin:0.45rem 0 0"><strong>The dataset</strong>
-         (<code>capstone-clustering-choosing-k.xlsx</code>) holds 6,190 loyalty accounts with a duplicated export
+         (<code>capstone-clustering-choosing-k.xlsx</code>) holds 6,190 rows for 6,000 loyalty accounts, realistic teaching data written for the book, with a duplicated export
          block, net-refund accounts recorded as negative spend, unmigrated join dates coded as &#8722;1, a held-back
          campaign response, and a sealed answer key. Two written reports accompany it: a
          <strong>plain-language brief</strong> for the marketing director, and a <strong>technical report</strong>
@@ -466,7 +468,7 @@
         <li><span class="ck">&#10003;</span><span><strong>Uniform random data produces a silhouette curve with a maximum.</strong> Every method returns clusters, including on data that has none.</span></li>
         <li><span class="ck">&#10003;</span><span><strong>Silhouette and stability both chose two.</strong> Stability was above 0.98 for every k from two to five, so it could not tell them apart.</span></li>
         <li><span class="ck">&#10003;</span><span><strong>A held-out campaign variable chose four</strong>, doubling the response spread at the fourth split and adding 0.011 at the fifth.</span></li>
-        <li><span class="ck">&#10003;</span><span><strong>DBSCAN found 55 percent of the base in no segment</strong>, against a true 54.5, which was the answer nobody asked for.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>DBSCAN left 55 percent of the base in no segment</strong>, close to the true 54.5, though the two sets overlap only in part.</span></li>
       </ul>
     </div>
   </section>
@@ -544,9 +546,9 @@ window.addEventListener('scroll', () => {
     },
     {
       q: "One of DBSCAN's four dense regions (cluster 2, n = 819) turned out to be drawn entirely from the unstructured middle. What signal would have flagged it without the answer key?",
-      options: ["Its size", "Its response rate of 0.126, which is indistinguishable from the 0.185 base rate, so it separates nothing", "Its low average basket", "Its density"],
+      options: ["Its size", "How closely it resembles the accounts DBSCAN left unclassified, with a response rate of 0.126 against their 0.144 and a middling profile on every column", "Its low average basket", "Its density"],
       answer: 1,
-      explain: "The same external check that chose k also audits individual clusters. A group that does not separate the held-out variable is a dense patch of a continuum, and it is exactly what gets a name and a budget if nobody looks."
+      explain: "The same external evidence that chose k also audits individual clusters. Response alone does not single this one out, since cluster 1 responds at 0.100, but a group that looks like the unclassified accounts on every measure is a dense patch of a continuum, and it is exactly what gets a name and a budget if nobody looks."
     },
     {
       q: "Agreement with the answer key was 0.32 at k = 2 and 0.85 at k = 4 for k-means, and 0.92 at k = 4 for Ward. What is the general lesson about internal validity indices?",
