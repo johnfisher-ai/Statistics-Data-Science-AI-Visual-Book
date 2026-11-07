@@ -8087,6 +8087,8 @@ C8 EXCLUSIONS: duplicate records, systolic BP of 0 (cuff fault) and heart rate o
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">d</span> <span class="o">=</span> <span class="n">raw</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s2">"patient_id"</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"raw rows                </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"after the duplicate extract </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  blood pressures of 0    </span><span class="si">{</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">systolic_bp</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  heart rates of 999      </span><span class="si">{</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">heart_rate</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">999</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 <span class="n">d</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">systolic_bp</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"systolic_bp"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>      <span class="c1"># cuff fault, not a blood pressure</span>
 <span class="n">d</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">heart_rate</span> <span class="o">==</span> <span class="mi">999</span><span class="p">,</span> <span class="s2">"heart_rate"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>      <span class="c1"># monitor sentinel</span>
 <span class="n">d</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">"systolic_bp"</span><span class="p">,</span> <span class="s2">"heart_rate"</span><span class="p">])</span>
@@ -8112,6 +8114,8 @@ C8 EXCLUSIONS: duplicate records, systolic BP of 0 (cuff fault) and heart rate o
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>raw rows                9,060
 after the duplicate extract 9,000
+  blood pressures of 0    34
+  heart rates of 999      28
 after voiding vitals sentinels 8,938
 
 troponin assay not run  138   kept, with an indicator
@@ -8196,7 +8200,7 @@ event rate              3.94%   (352 events in 8,938 presentations)
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p><strong>What this shows.</strong> Under four percent of these patients have an event, so any score is looking for a small group inside a large one. Troponin and age separate the two groups most clearly, and the classic risk factors separate them a good deal less than their reputation suggests: prior heart attack, smoking and diabetes all sit below a third of a standard deviation.</p>
+<p><strong>What this shows.</strong> Under four percent of these patients have an event, so any score is looking for a small group inside a large one. Troponin and age separate the two groups most clearly, and the classic risk factors separate them a good deal less than their reputation suggests: prior heart attack and smoking sit below a third of a standard deviation, and diabetes only just above it.</p>
 <p>The last block is worth reading carefully, because it is a check that came back clean. Patients whose troponin was never ordered turn out to look like everyone else: same median age, an event rate of 3.6 percent against 3.9, and a standardized difference of essentially zero. That does not make the decision in Step 2 wrong. It is the reason the decision was worth making rather than assuming, because had those 138 people differed, dropping them would have quietly changed who the score is for.</p>
 </div>
 </div>
@@ -8294,7 +8298,7 @@ event rate              3.94%   (352 events in 8,938 presentations)
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <p><strong>Top left:</strong> the two distributions are shifted but they share most of their range, which is what a realistic clinical marker looks like. A score built on it will rank patients usefully and will not sort them into safe and unsafe. <strong>Top right:</strong> the oldest band runs several times the risk of the youngest and is still in single figures.</p>
-<p><strong>Bottom left:</strong> age and troponin do most of the separating. Note where <code>trop missing</code> sits, at almost exactly zero: the patients whose assay was never ordered look like everyone else, which is a check that came back clean rather than a non-event. Had they differed, dropping them in Step 2 would have quietly changed who the score is for. <strong>Bottom right:</strong> the classic risk factors, each on its own. Every one of them roughly doubles the event rate and ECG ischemia nearly triples it, and yet the highest bar on the panel is under nine percent. Having the marker is a long way from having the event.</p>
+<p><strong>Bottom left:</strong> age and troponin do most of the separating. Note where <code>trop missing</code> sits, at almost exactly zero: the patients whose assay was never ordered look like everyone else, which is a check that came back clean rather than a non-event. Had they differed, dropping them in Step 2 would have quietly changed who the score is for. <strong>Bottom right:</strong> the classic risk factors, each on its own. Prior heart attack and diabetes roughly double the event rate, smoking and male sex raise it by about half, and ECG ischemia nearly triples it, and yet the highest bar on the panel is under nine percent. Having the marker is a long way from having the event.</p>
 <p>That is the setting for everything that follows: the decision is never between certain and impossible, it is about where to put a threshold when most people above it will turn out to have been fine.</p>
 </div>
 </div>
@@ -8575,6 +8579,11 @@ It is the wrong summary for any decision where the two errors differ in cost.
 <span class="n">extra_caught</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="s2">"model B, inflated"</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">res</span><span class="p">[</span><span class="s2">"model A, calibrated"</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Model B admits </span><span class="si">{</span><span class="n">extra_adm</span><span class="si">}</span><span class="s2"> more patients and catches </span><span class="si">{</span><span class="n">extra_caught</span><span class="si">}</span><span class="s2"> more events:"</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"   </span><span class="si">{</span><span class="n">extra_adm</span><span class="o">/</span><span class="n">extra_caught</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> extra admissions per extra event caught."</span><span class="p">)</span>
+<span class="n">extra_unnec</span> <span class="o">=</span> <span class="n">extra_adm</span> <span class="o">-</span> <span class="n">extra_caught</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"   </span><span class="si">{</span><span class="n">extra_unnec</span><span class="si">}</span><span class="s2"> of them had no event, </span><span class="si">{</span><span class="n">extra_unnec</span><span class="o">/</span><span class="n">extra_caught</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> unnecessary admissions per extra event,"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"   where the threshold allows </span><span class="si">{</span><span class="n">RATIO</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Youden's index weighs a missed event at (1 - p)/p = </span><span class="si">{</span><span class="p">(</span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">yte</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span><span class="o">/</span><span class="n">yte</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> unnecessary admissions,"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"a ratio set by the prevalence that nobody chose."</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -8596,6 +8605,11 @@ threshold = 1/(1+40) = 0.0244, so admit above 2.4% risk
 
 Model B admits 951 more patients and catches 18 more events:
    53 extra admissions per extra event caught.
+   933 of them had no event, 51.8 unnecessary admissions per extra event,
+   where the threshold allows 40.
+
+Youden's index weighs a missed event at (1 - p)/p = 24.4 unnecessary admissions,
+a ratio set by the prevalence that nobody chose.
 </pre>
 </div>
 </div>
@@ -8608,7 +8622,7 @@ Model B admits 951 more patients and catches 18 more events:
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p><strong>Model B misses nothing, and that is not the good news it looks like.</strong> It buys those eighteen events at fifty-three extra admissions each. The clinicians said forty. <strong>A miscalibrated model does not become more cautious, it silently applies a different threshold than the one the clinical team chose</strong>, and nobody in the room knows the trade-off has been changed.</p>
+<p><strong>Model B misses nothing, and that is not the good news it looks like.</strong> It buys those eighteen events with 933 admissions of patients who had no event, about fifty-two for each event caught. The clinicians said forty. <strong>A miscalibrated model does not become more cautious, it silently applies a different threshold than the one the clinical team chose</strong>, and nobody in the room knows the trade-off has been changed.</p>
 <p>That is the practical damage calibration error does. It does not show up as a worse ranking. It shows up as a rule that no longer implements the decision it was asked to implement.</p>
 </div>
 </div>
@@ -8642,6 +8656,8 @@ Model B admits 951 more patients and catches 18 more events:
     <span class="n">nb_all</span> <span class="o">=</span> <span class="n">yte</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">-</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">yte</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span><span class="o">*</span><span class="p">(</span><span class="n">t_</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">t_</span><span class="p">))</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">t_</span><span class="si">:</span><span class="s2">&gt;10.4f</span><span class="si">}{</span><span class="n">net_benefit</span><span class="p">(</span><span class="n">pA</span><span class="p">,</span><span class="n">yte</span><span class="p">,</span><span class="n">t_</span><span class="p">)</span><span class="si">:</span><span class="s2">&gt;10.4f</span><span class="si">}{</span><span class="n">net_benefit</span><span class="p">(</span><span class="n">pB</span><span class="p">,</span><span class="n">yte</span><span class="p">,</span><span class="n">t_</span><span class="p">)</span><span class="si">:</span><span class="s2">&gt;10.4f</span><span class="si">}</span><span class="s2">"</span>
           <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">nb_all</span><span class="si">:</span><span class="s2">&gt;12.4f</span><span class="si">}{</span><span class="mf">0.0</span><span class="si">:</span><span class="s2">&gt;12.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">cross</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">t_</span> <span class="k">for</span> <span class="n">t_</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.20</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">)</span> <span class="k">if</span> <span class="n">net_benefit</span><span class="p">(</span><span class="n">pB</span><span class="p">,</span> <span class="n">yte</span><span class="p">,</span> <span class="n">t_</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">model B's net benefit first falls below zero at a threshold of </span><span class="si">{</span><span class="n">cross</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -8661,6 +8677,8 @@ Model B admits 951 more patients and catches 18 more events:
     0.0700    0.0116    0.0052     -0.0330      0.0000
     0.1000    0.0069    0.0003     -0.0674      0.0000
     0.1500    0.0053   -0.0037     -0.1302      0.0000
+
+model B's net benefit first falls below zero at a threshold of 10.1%
 </pre>
 </div>
 </div>
@@ -8866,7 +8884,7 @@ on the training set it would have looked like a small improvement, every time.
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p><strong>Left:</strong> net benefit across every threshold a clinician might hold. Model A is above model B throughout, and both are above the two trivial strategies in the region that matters. <strong>Right:</strong> the same threshold applied to both models. Model B misses no events and admits 951 more people to do it, which is fifty-three extra admissions for each extra event, against a stated tolerance of forty.</p>
+<p><strong>Left:</strong> net benefit across every threshold a clinician might hold. Model A is above model B throughout, and both are above the two trivial strategies in the region that matters. <strong>Right:</strong> the same threshold applied to both models. Model B misses no events and admits 951 more people to do it, 933 of whom had no event, which is about fifty-two unnecessary admissions for each extra event caught, against a stated tolerance of forty.</p>
 </div>
 </div>
 </div>
@@ -8884,7 +8902,7 @@ on the training set it would have looked like a small improvement, every time.
 <li><strong>Never quote accuracy on an imbalanced outcome.</strong> Sending everybody home scores 96.1 percent here.</li>
 <li><strong>Validate on data the model has never seen, and say so.</strong> A decoy variable with no real effect improves training performance every single time.</li>
 <li><strong>A risk score is not a diagnosis.</strong> It estimates a rate in a group of similar patients, and no individual has a 4 percent event. The score belongs alongside clinical judgment, not in place of it.</li>
-<li><strong>Check who the model works for.</strong> This analysis reports one AUC and one calibration curve for the whole cohort. Performance can differ substantially by age, sex or ethnicity, and a score that is well calibrated on average can be badly calibrated for a subgroup that the average conceals. Capstone 33 takes that up directly.</li>
+<li><strong>Check who the model works for.</strong> This analysis reports one AUC and one calibration curve for the whole cohort. Performance can differ substantially by age, sex or ethnicity, and a score that is well calibrated on average can be badly calibrated for a subgroup that the average conceals. Capstone 41, the fairness audit, takes that up directly.</li>
 </ul>
 </div>
 </div>
