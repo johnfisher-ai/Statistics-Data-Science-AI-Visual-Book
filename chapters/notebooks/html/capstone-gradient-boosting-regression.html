@@ -8643,7 +8643,7 @@ the best of the ten on the test set 7.848, and it ranked 2 on validation
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <p>The search moved validation RMSE by a quarter of a minute from worst configuration to best. On the test window the ten leading configurations are separated by about six seconds, and the one that won on validation beats the library defaults by about five seconds.</p>
 <p>Five seconds is a real improvement and it is not nothing. Set it beside the minute and a half that the fourth engineered feature was worth, and the ordering is clear.</p>
-<p>There is a second point here, about reporting. The score you selected on and the score you did not select on are different numbers, and the first one is optimistic by however much the search exploited the validation window. Quoting the validation figure as the model's accuracy would overstate it.</p>
+<p>There is a second point here, about reporting. The score you selected on and the score you did not select on are different numbers. In general the first is optimistic by however much the search exploited the validation window. Here the test window happened to be the easier one, and the winner scored 7.857 on test against 7.911 on validation, but the validation figure still should not be quoted as the model's accuracy, because it was used to choose.</p>
 <p>The validation winner is carried forward from here, because that is the procedure. Picking the config that happens to do best on the test set would be using the test set to choose, which is the thing the split exists to prevent.</p>
 </div>
 </div>
@@ -8786,8 +8786,8 @@ the best of the ten on the test set 7.848, and it ranked 2 on validation
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <p>The two curves have met. The training error has risen and the test error has fallen until the gap is a fraction of a minute, and the last doubling of the data bought about nine seconds.</p>
-<p><strong>More data will not help, and neither will a more flexible model.</strong> What is left is not error the model could remove with more information about these features; it is variation in the world. Two identical orders from the same restaurant, the same distance, the same minute, genuinely arrive at different times.</p>
-<p>Which changes the question. If the uncertainty cannot be removed, it has to be <strong>communicated</strong>, and that is what the rest of this notebook is about.</p>
+<p><strong>More data of this kind will not help.</strong> The small gap says the model is not short of examples. What is left is error these features cannot explain. Some of it is variation in the world, since two identical orders from the same restaurant, the same distance and the same minute genuinely arrive at different times, and some may be information the table does not hold, as the restaurant history showed. A more flexible model is unlikely to find it, because twenty configurations moved the test error by seconds.</p>
+<p>Which changes the question. If the uncertainty cannot be removed with what we have, it has to be <strong>communicated</strong>, and that is what the rest of this notebook is about.</p>
 </div>
 </div>
 </div>
@@ -8983,6 +8983,8 @@ the best of the ten on the test set 7.848, and it ranked 2 on validation
 <span class="n">padq</span> <span class="o">=</span> <span class="p">(</span><span class="n">p85</span> <span class="o">-</span> <span class="n">pred</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
 <span class="n">flat</span> <span class="o">=</span> <span class="n">pred</span> <span class="o">+</span> <span class="n">padq</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">"OVERALL"</span><span class="p">);</span> <span class="n">policy</span><span class="p">(</span><span class="n">p85</span><span class="p">,</span> <span class="s2">"conditional 85th percentile"</span><span class="p">);</span> <span class="n">policy</span><span class="p">(</span><span class="n">flat</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"flat buffer of </span><span class="si">{</span><span class="n">padq</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> min"</span><span class="p">)</span>
+<span class="n">r85</span><span class="p">,</span> <span class="n">m85</span> <span class="o">=</span> <span class="n">score</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="n">te</span><span class="p">],</span> <span class="n">p85</span><span class="p">);</span> <span class="n">rfl</span><span class="p">,</span> <span class="n">mfl</span> <span class="o">=</span> <span class="n">score</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="n">te</span><span class="p">],</span> <span class="n">flat</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  as forecasts of the delivery time: RMSE </span><span class="si">{</span><span class="n">r85</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> against </span><span class="si">{</span><span class="n">rfl</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, MAE </span><span class="si">{</span><span class="n">m85</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> against </span><span class="si">{</span><span class="n">mfl</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">BY SEGMENT: share of orders arriving after the displayed time"</span><span class="p">)</span>
 <span class="n">segs</span> <span class="o">=</span> <span class="p">[(</span><span class="s2">"off peak, under 3 km"</span><span class="p">,</span>   <span class="p">(</span><span class="o">~</span><span class="n">t</span><span class="o">.</span><span class="n">is_peak</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">distance_km</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">)),</span>
@@ -9017,6 +9019,7 @@ the best of the ten on the test set 7.848, and it ranked 2 on validation
 <pre>OVERALL
   conditional 85th percentile          late  15.0%   padding   6.82 min   cost  10.146
   flat buffer of 6.82 min              late  14.6%   padding   6.82 min   cost  10.488
+  as forecasts of the delivery time: RMSE 10.70 against 10.44, MAE 8.51 against 8.68
 
 BY SEGMENT: share of orders arriving after the displayed time
   segment                       n   +8 flat  matched flat  conditional
@@ -9043,7 +9046,7 @@ BY SEGMENT: share of orders arriving after the displayed time
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <p>Look at the bottom row first. The two policies have almost the same overall late rate, 14.6 percent for the flat buffer against 15.0 for the conditional one. On the headline number they are the same product.</p>
 <p>Now look at the column above it. <strong>The flat buffer keeps its promise to 97 percent of easy orders and breaks it for a quarter of the hard ones.</strong> Its late rate ranges over nearly 22 percentage points across these six segments. The conditional version ranges over less than three.</p>
-<p>That difference is not visible in RMSE, not visible in MAE, and not visible in the overall late rate. It is the difference between a service level and an average of service levels, and it falls on the same customers every time: the ones who live further out, order at dinner time, or order when it is raining.</p>
+<p>The overall late rate barely separates the two, and RMSE and MAE differ by a quarter of a minute or less and disagree about which is better (RMSE 10.70 against 10.44, MAE 8.51 against 8.68). It is the difference between a service level and an average of service levels, and it falls on the same customers every time: the ones who live further out, order at dinner time, or order when it is raining.</p>
 </div>
 </div>
 </div>
@@ -9152,7 +9155,7 @@ BY SEGMENT: share of orders arriving after the displayed time
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p><strong>Left:</strong> the three decisions every tabular project makes, priced in the same units. <strong>Right:</strong> the training and test curves converging, which is what tells you the remaining error is in the world rather than in the model.</p>
+<p><strong>Left:</strong> the three decisions every tabular project makes, priced in the same units. <strong>Right:</strong> the training and test curves converging, which says more data of this kind will not help.</p>
 </div>
 </div>
 </div>
@@ -9182,7 +9185,7 @@ BY SEGMENT: share of orders arriving after the displayed time
 <li><strong>The hierarchy was features, then model family, then hyperparameters</strong>, and the gaps were roughly 100 seconds, 19 seconds and 5 seconds.</li>
 <li><strong>One feature did all of it.</strong> The three engineered features the model could have derived for itself were worth almost nothing; the one built by aggregating other rows was worth a minute and a half.</li>
 <li><strong>Twenty configurations of search separated the top ten by about six seconds on the test set</strong>, and bought about five seconds over the defaults.</li>
-<li><strong>The learning curves met</strong>, so the remaining error is in the world rather than in the model, and the answer is to communicate it rather than to chase it.</li>
+<li><strong>The learning curves met</strong>, so more data of this kind will not help, and what is left is error these features cannot explain. The answer is to communicate it rather than to chase it.</li>
 <li><strong>The residual spread varies by a factor of two and a half</strong> across ordinary operating conditions, and it is predictable.</li>
 <li><strong>A flat buffer and a conditional quantile give the same overall late rate and completely different service.</strong> The flat buffer's late rate ranges over 22 points across segments; the conditional version's under three.</li>
 </ol>

@@ -143,7 +143,7 @@
   <section id="setup">
     <div class="section-eyebrow"><div class="num">1</div><h2>The Baseline, and a Split That Respects Time</h2></div>
 
-    <p>After removing a duplicated export block, 384 cancellations recorded as a delivery time of zero and 211 orders
+    <p>After removing a duplicated export block, 382 cancellations recorded as a delivery time of zero and 208 orders
        with a GPS distance of 999 kilometers, 41,410 orders remain. Mean delivery time is 51.0 minutes with a standard
        deviation of 17.9.</p>
 
@@ -198,8 +198,9 @@
     <div class="embox">
       <span class="gb-tag">The reporting point</span>
       <p style="margin:0.45rem 0 0">The score you selected on and the score you did not select on are different
-         numbers. The validation figure is optimistic by however much the search exploited that window, and quoting it
-         as the model's accuracy overstates it. The honest procedure also means <strong>deploying the validation
+         numbers. The validation figure is usually optimistic by however much the search exploited that window. Here the
+         test window happened to be easier (7.857 against 7.911), but the validation figure was used to choose, so it is
+         not the model's accuracy. The honest procedure also means <strong>deploying the validation
          winner</strong> rather than the configuration that happens to do best on the test set, which would be using
          the test set to choose.</p>
     </div>
@@ -270,9 +271,11 @@
     <p>The curves have met. The training error has risen and the test error has fallen until the gap is a fifth of a
        minute, and the last doubling of the data bought <strong>0.14 minutes</strong>, about nine seconds.</p>
 
-    <p><strong>More data will not help, and neither will a more flexible model.</strong> What is left is not error a
-       model could remove with better use of these features. It is variation in the world: two identical orders from
-       the same restaurant, the same distance, the same minute, genuinely arrive at different times.</p>
+    <p><strong>More data of this kind will not help.</strong> The small gap says the model is not short of examples.
+       What is left is error these features cannot explain. Some of it is variation in the world, since two identical
+       orders from the same restaurant, the same distance and the same minute genuinely arrive at different times, and
+       some may be information the table does not hold, as the restaurant history showed. A more flexible model is
+       unlikely to find it, because twenty configurations moved the test error by seconds.</p>
 
     <p>Which changes the question the project is answering. If the uncertainty cannot be removed, it has to be
        <strong>communicated</strong>, and that is a different piece of work from making the model better.</p>
@@ -307,7 +310,7 @@
 
     <figure class="nb-fig">
       <img src="../assets/img/capstone-eta-quantile.png"
-           alt="Left: a scatter of prediction errors against pending orders per available courier, with a two-standard-deviation envelope drawn on top. The envelope widens from a spread of about 4.8 minutes at the lowest load to about 11.5 at the highest, while the errors stay centered on zero throughout. Right: grouped bars of the share of orders arriving late under a flat 6.8-minute buffer and under the conditional 85th percentile, across six segments, against a dashed 15 percent service target. The flat buffer ranges from 3 percent on easy orders to 25 percent on high-load orders, and the conditional version from 15 to 17.">
+           alt="Left: a scatter of prediction errors against pending orders per available courier, with a two-standard-deviation envelope drawn on top. The envelope widens about two and a half times from the lowest load to the highest (the standard deviation of the error is 4.67 minutes below a load of 0.8 and 11.54 above 2.0), while the errors stay centered on zero throughout. Right: grouped bars of the share of orders arriving late under a flat 6.8-minute buffer and under the conditional 85th percentile, across six segments, against a dashed 15 percent service target. The flat buffer ranges from 3 percent on easy orders to 25 percent on high-load orders, and the conditional version from 15 to 17.">
       <figcaption><strong>Left:</strong> unbiased everywhere, precise only sometimes.
         <strong>Right:</strong> two policies with the same average padding, and completely different service.</figcaption>
     </figure>
@@ -384,7 +387,8 @@
       <div class="rchip"><div class="rk">Segment spread</div><div class="rv">22 pp &#8594; 2.5 pp</div><div class="rd">in the late rate</div></div>
     </div>
 
-    <p>That difference is invisible in RMSE, invisible in MAE, and invisible in the overall late rate. It is the
+    <p>The overall late rate barely separates the two, and RMSE and MAE differ by a quarter of a minute or less and
+       disagree about which is better (RMSE 10.70 against 10.44, MAE 8.51 against 8.68). What separates them is the
        difference between a service level and an average of service levels, and it falls on the same customers every
        time: the ones who live further out, order at dinner time, or order when it is raining.</p>
 
@@ -400,7 +404,7 @@
     <ul class="checklist">
       <li><span class="ck">&#10003;</span><span><strong>Spend the effort in proportion to what it buys.</strong> Here that was 99 seconds, 19 seconds, and 5 seconds, and the usual order of attention is close to the reverse.</span></li>
       <li><span class="ck">&#10003;</span><span><strong>Engineer what the model cannot derive.</strong> A ratio of two present columns is convenience; an aggregate over other rows is information.</span></li>
-      <li><span class="ck">&#10003;</span><span><strong>Quote the test score, not the validation score.</strong> The one you selected on is optimistic by however much the search exploited it, and among the leaders the ranking is noise.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Quote the test score, not the validation score.</strong> The one you selected on is usually optimistic by however much the search exploited it, and among the leaders the ranking is noise.</span></li>
       <li><span class="ck">&#10003;</span><span><strong>Draw the learning curve before buying more data.</strong> It answers a question people usually argue about instead.</span></li>
       <li><span class="ck">&#10003;</span><span><strong>Check the residual spread by segment, not just the residual mean.</strong> Unbiased everywhere is compatible with useless somewhere.</span></li>
       <li><span class="ck">&#10003;</span><span><strong>An average service level is not a service level.</strong> A policy can hit 15 percent overall while failing a quarter of the customers who need it most.</span></li>
@@ -416,7 +420,7 @@
       <table class="disp-table">
         <tr><th>Where it appears</th><th>The same question, in a different costume</th></tr>
         <tr><td class="nm">Inventory and supply chain</td><td>The original newsvendor problem: stock the quantile set by the ratio of stockout cost to holding cost, not the forecast</td></tr>
-        <tr><td class="nm">Capacity and staffing</td><td>Rostering to the mean guarantees being short half the time; the target is a service level, which is a quantile</td></tr>
+        <tr><td class="nm">Capacity and staffing</td><td>Rostering to the mean leaves a team short roughly half the time; the target is a service level, which is a quantile</td></tr>
         <tr><td class="nm">Project estimation</td><td>The reason a schedule slips is that every task was estimated at its mode and summed as if it were a maximum</td></tr>
         <tr><td class="nm">Energy and load forecasting</td><td>Grid operators buy reserve against a high quantile, because the cost of being short is not the cost of being long</td></tr>
         <tr><td class="nm">Any user-facing estimate</td><td>Arrival times, wait times, download times: the displayed number is a promise, and a promise is a quantile</td></tr>
@@ -429,12 +433,14 @@
          pinball loss used here is theirs. <strong>Friedman</strong> gave gradient boosting its modern form in 2001,
          and <strong>Meinshausen</strong>'s quantile regression forests showed how to get a full conditional
          distribution out of an ensemble rather than a single number. The distribution-free alternative is
-         <strong>conformal prediction</strong>, developed by <strong>Vovk, Gammerman and Shafer</strong> and extended
-         to conditional coverage by <strong>Romano, Patterson and Cand&#232;s</strong>, which produces intervals with
-         a guaranteed marginal coverage rate without assuming anything about the error distribution. On the
+         <strong>conformal prediction</strong>, developed by <strong>Vovk, Gammerman and Shafer</strong> and made
+         adaptive by <strong>Romano, Patterson and Cand&#232;s</strong>, whose conformalized quantile regression gives
+         intervals that widen where the data are noisier, with a guaranteed marginal coverage rate when observations
+         are exchangeable and without assuming anything about the error distribution. On the
          model-comparison question, <strong>Grinsztajn and colleagues</strong> assembled the evidence that tree
-         ensembles still lead on tabular data, and <strong>Kadra and colleagues</strong> made the complementary point
-         that most of the reported gains in this literature are smaller than the tuning budgets that produced them.</p>
+         ensembles still lead on tabular data, and <strong>Kadra and colleagues</strong> showed that a heavily regularized
+         simple neural network can match or beat them on many datasets, which says how much such comparisons depend on
+         how carefully each side is tuned.</p>
     </div>
   </section>
 
@@ -466,7 +472,7 @@
       <span class="rw-tag">Read the reports &amp; get the data</span>
       <p style="margin:0.45rem 0 0"><strong>The dataset</strong>
          (<code>capstone-gradient-boosting-regression.xlsx</code>) holds 42,520 orders across 84 days and 140
-         restaurants, with a duplicated export block, cancellations recorded as zero minutes, GPS failures recorded as
+         restaurants, realistic teaching data written for the book, with a duplicated export block, cancellations recorded as zero minutes, GPS failures recorded as
          999 kilometers, and the agreed cost of being late. Two written reports accompany it: a
          <strong>plain-language brief</strong> for the operations lead, and a <strong>technical report</strong>
          covering the comparison, the search and the quantile policy.</p>
@@ -485,7 +491,7 @@
       <ul>
         <li><span class="ck">&#10003;</span><span><strong>Features 99 seconds, model family 19, hyperparameters 5.</strong> The effort usually runs in the other order.</span></li>
         <li><span class="ck">&#10003;</span><span><strong>One feature did all of it.</strong> The three the model could have derived were worth 0.10 minutes between them; the cross-row history was worth 1.56.</span></li>
-        <li><span class="ck">&#10003;</span><span><strong>The learning curves met</strong>, so the remaining error is in the world rather than in the model.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>The learning curves met</strong>, so more data of this kind will not help, and what is left is error these features cannot explain.</span></li>
         <li><span class="ck">&#10003;</span><span><strong>The residual spread varies by a factor of two and a half</strong> across ordinary conditions, and it is predictable in advance.</span></li>
         <li><span class="ck">&#10003;</span><span><strong>Same padding, same overall late rate, 22 points of spread against 2.5.</strong> An average service level is not a service level.</span></li>
       </ul>
@@ -547,15 +553,15 @@ window.addEventListener('scroll', () => {
     },
     {
       q: "The hyperparameter search moved validation RMSE by 0.249 minutes, but the top ten configurations span 0.095 minutes on the test set and the second-ranked one did best. What does that show?",
-      options: ["The search space was too small", "Hyperparameter tuning is worthless", "Among the leading configurations the search is ranking noise, and the validation score is optimistic relative to the test score", "The validation window was too large"],
+      options: ["The search space was too small", "Hyperparameter tuning is worthless", "Among the leading configurations the search is ranking noise, and the score used for choosing should not be quoted as the model's accuracy", "The validation window was too large"],
       answer: 2,
-      explain: "Tuning bought a real five seconds over the defaults. The point is that the differences among the leaders are smaller than the noise, so the validation figure should not be quoted as the model's accuracy."
+      explain: "Tuning bought a real five seconds over the defaults. The point is that the differences among the leaders are smaller than the noise, so the validation figure should not be quoted as the model's accuracy. Selection usually makes it optimistic, though here the test window was easier and the winner scored 7.857 on test against 7.911 on validation."
     },
     {
       q: "Between 17,231 and 34,462 training orders, test RMSE fell from 8.000 to 7.857 and the train-test gap closed to 0.204. What should the team do?",
-      options: ["Collect more orders", "Fit a more flexible model", "Stop trying to reduce the error and start communicating it, because the remaining variation is in the process rather than in the model", "Add regularization"],
+      options: ["Collect more orders", "Shuffle the split so the test window looks like training", "Stop collecting more of the same data and communicate the error that remains, since neither more orders nor the tuning search moved it by more than seconds", "Add regularization"],
       answer: 2,
-      explain: "Converged curves with a small gap mean neither more data nor more flexibility will help. Two identical orders genuinely arrive at different times, and that is a fact about deliveries."
+      explain: "A small gap means more data of this kind will not help, and the tuning search showed little to gain from flexibility. The remaining error is unexplained by these features: some is variation in deliveries, and some may be information the table does not hold."
     },
     {
       q: "Residual bias is near zero in every segment while the residual spread runs from 4.64 minutes off peak to 11.54 at high load. How should that be read?",
