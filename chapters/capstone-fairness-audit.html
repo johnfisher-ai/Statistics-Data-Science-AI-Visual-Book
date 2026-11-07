@@ -100,7 +100,7 @@
       <span>Chapter 204</span>
     </div>
     <h1>A <span class="accent">Fairness Audit</span></h1>
-    <p class="dek">Capstone 41. A care-management model with an AUC of 0.92 enrolls one group at a third of the other's rate. Every fairness check against the label it was trained on comes back clean, and every one of them is looking in the wrong place, because the label is where the problem is.</p>
+    <p class="dek">Capstone 41. A care-management model with an AUC of 0.92 enrolls one group at a third of the other's rate. Calibration against the label it was trained on comes back clean, and looks in the wrong place, because the label is where the problem is.</p>
     <div class="hero-meta">
       <div class="m">&#9201;&#65039; <b>~25 min</b>&nbsp;read</div>
       <div class="m">&#127919; <b>Disparate impact, label bias, the impossibility result</b></div>
@@ -139,7 +139,7 @@
     <div class="resultline">
       <div class="rchip"><div class="rk">Group B, chronic conditions</div><div class="rv">2.10</div><div class="rd">against 1.88 for group A</div></div>
       <div class="rchip"><div class="rk">Group B, cost next year</div><div class="rv">5.1k</div><div class="rd">against 7.0k for group A</div></div>
-      <div class="rchip"><div class="rk">At equal illness, B costs</div><div class="rv">59 to 72%</div><div class="rd">of what A costs</div></div>
+      <div class="rchip"><div class="rk">At 1 to 7 conditions, B costs</div><div class="rv">51 to 72%</div><div class="rd">of what A costs (91% at none)</div></div>
     </div>
 
     <p><strong>Group B carries more chronic conditions and generates less spending.</strong> Those two facts
@@ -223,7 +223,7 @@
 
     <figure class="nb-fig">
       <img src="../assets/img/capstone-fairness-audit.png"
-           alt="Two panels. Left: group B's share of program places under four approaches, 13.2 percent as deployed, 29.9 percent with group-specific thresholds on the cost model, 19.7 percent with the need label, and 29.9 percent with both, against a dashed line at the 29.4 percent panel share. Right: mean chronic conditions by decile of predicted cost risk for each group, with group B's line above group A's across the upper deciles and the gap shaded.">
+           alt="Two panels. Left: group B's share of program places under five approaches, 13.2 percent as deployed, 29.9 percent with group-specific thresholds on the cost model, 11.1 percent with the condition count added to the cost model, 19.4 percent with the need label, and 29.9 percent with both, against a dashed line at the 29.4 percent panel share. Right: mean chronic conditions by decile of predicted cost risk for each group, with group B's line above group A's across the upper deciles and the gap shaded.">
       <figcaption><strong>Left:</strong> who gets a place under each approach. <strong>Right:</strong> at the same
         predicted risk, group B patients carry more chronic conditions. The model is not ranking them lower
         because they are healthier.</figcaption>
@@ -233,7 +233,7 @@
        for them and the model was told to find dollars. <strong>Every patient it treats as equivalent to a group A
        patient is in fact sicker than them</strong>, and the program is allocating on the wrong ordering.</p>
 
-    <p>None of this is visible in accuracy, calibration, or any error rate computed against cost.</p>
+    <p>None of this is visible in accuracy or in calibration against cost. The error rates against cost do show a gap, and read alone it would be put down to group B spending less.</p>
   </section>
 
   <!-- 5 -->
@@ -245,19 +245,21 @@
         <tr><th>Approach</th><th>B/A ratio</th><th>B share of places</th><th>Enrollees truly high-need</th></tr>
         <tr><td class="nm">As deployed, cost label</td><td class="no">0.36</td><td>13.2%</td><td>85.4%</td></tr>
         <tr><td class="nm">Cost label, group-specific thresholds</td><td class="ok">1.02</td><td>29.9%</td><td>85.4%</td></tr>
-        <tr class="hi"><td class="nm">Need label, one threshold</td><td>0.59</td><td>19.7%</td><td class="ok">86.6%</td></tr>
+        <tr><td class="nm">Cost label, condition count added as a feature</td><td class="no">0.30</td><td>11.1%</td><td>85.4%</td></tr>
+        <tr class="hi"><td class="nm">Need label, one threshold</td><td>0.58</td><td>19.4%</td><td class="ok">86.8%</td></tr>
         <tr><td class="nm">Need label, group-specific thresholds</td><td class="ok">1.02</td><td>29.9%</td><td>84.7%</td></tr>
       </table>
     </div>
 
     <p><strong>The two remedies do different jobs and neither does both.</strong></p>
 
-    <p><strong>Changing the label helps most on who gets in.</strong> Training on next year's condition count
-       raises the share of enrollees who are genuinely high-need to 86.6 percent, the best of the four, and lifts
-       group B's ratio from 0.36 to 0.59. It does not reach parity, because the features the model uses, visits
-       and prior cost, carry the same access gap the label did.
-       <span class="hl">You cannot fully repair a label problem through a feature set that has the same
-       problem.</span></p>
+    <p><strong>Changing the label helps most on who gets in.</strong> Training on next year's condition count,
+       with today's count added as a sixth feature, lifts group B's ratio from 0.36 to 0.58 and the share of
+       enrollees who are genuinely high-need from 85.4 to 86.8 percent, 125 of the 144 places against 123. The check
+       row adds the condition count to the cost model alone, and its ratio falls to 0.30, so
+       <span class="hl">the gain comes from the label itself</span>. The need model still
+       falls short of parity. A likely reason, which this audit does not test, is that the visit and prior-cost
+       features carry the same access gap the label did.</p>
 
     <p><strong>Group-specific thresholds deliver parity by construction</strong> and leave targeting where it
        was, because they reorder nobody. They take the same ranking and cut it in two places.</p>
@@ -284,7 +286,7 @@
            alt="Two panels of grouped bars showing the gap between groups on three fairness criteria under three threshold rules. Left panel, targeting high cost: one threshold gives gaps of 0.09, 0.05 and 0.11; equalizing the false-positive rate closes it to 0.00 but opens the precision gap to 0.18; equalizing precision closes that to 0.00 but opens the miss-rate gap to 0.35. Right panel, targeting high need: all gaps are small throughout, at most 0.10 and mostly around 0.03.">
       <figcaption><strong>Left:</strong> on the cost label, closing any one gap opens another.
         <strong>Right:</strong> on the corrected label, the same three rules leave every gap small. The trade-off
-        did not disappear, it shrank by an order of magnitude.</figcaption>
+        did not disappear, it shrank severalfold.</figcaption>
     </figure>
 
     <p><strong>Equalize the false-positive rate and the precision gap widens to 0.18. Equalize precision instead
@@ -428,7 +430,7 @@
       <span class="rw-tag">Read the reports &amp; get the data</span>
       <p style="margin:0.45rem 0 0"><strong>The dataset</strong>
          (<code>capstone-fairness-audit.xlsx</code>) holds 12,000 patients with utilization, chronic conditions,
-         next-year cost and next-year condition count, as the extract arrived: duplicated patients, negative
+         next-year cost and next-year condition count, written for the book as teaching data, as the extract arrived: duplicated patients, negative
          billing adjustments, two impossible ages and a group field with gaps. Two written reports accompany it: a
          <strong>plain-language brief</strong> for the chief medical officer, and a <strong>technical report</strong>
          covering the audit design, the four remedies and the impossibility analysis.</p>
@@ -446,11 +448,11 @@
       <h3>&#127891; Key Takeaways</h3>
       <ul>
         <li><span class="ck">&#10003;</span><span><strong>The model was accurate and the outcome was wrong.</strong> An AUC of 0.920 on cost, and an enrollment ratio of 0.36 against the four-fifths threshold of 0.80.</span></li>
-        <li><span class="ck">&#10003;</span><span><strong>The standard audit passed.</strong> Calibration on cost was close within both groups and where it missed it over-predicted group B's spending, pointing away from harm.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>The calibration check passed.</strong> Calibration on cost was close within both groups and where it missed it over-predicted group B's spending, pointing away from harm.</span></li>
         <li><span class="ck">&#10003;</span><span><strong>At equal predicted risk, group B carried 16 percent more chronic conditions</strong>, rising to 38 percent in the eighth decile. The model ranked them lower because the same illness generates fewer dollars for them.</span></li>
-        <li><span class="ck">&#10003;</span><span><strong>Relabeling improved targeting the most and did not reach parity</strong>, taking high-need enrollees from 85.4 to 86.6 percent and group B's ratio from 0.36 to 0.59, because the features carry the same access gap the label did.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>Relabeling improved targeting the most and did not reach parity</strong>, taking high-need enrollees from 85.4 to 86.8 percent and group B's ratio from 0.36 to 0.58. Adding the condition count to the cost model alone lowered the ratio to 0.30.</span></li>
         <li><span class="ck">&#10003;</span><span><strong>No threshold rule satisfies every criterion.</strong> On the cost label, equalizing the false-positive rate opened a 0.18 precision gap and equalizing precision opened a 0.35 miss-rate gap.</span></li>
-        <li><span class="ck">&#10003;</span><span><strong>The severity of that trade-off was itself a symptom.</strong> On the corrected label every gap fell under 0.033, because the ten-point base-rate difference had been an artifact of measuring need in dollars.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>The severity of that trade-off was itself a symptom.</strong> On the corrected label, once either criterion was equalized every remaining gap fell under 0.033, because the ten-point base-rate difference had been an artifact of measuring need in dollars.</span></li>
       </ul>
     </div>
   </section>
@@ -509,10 +511,10 @@ window.addEventListener('scroll', () => {
       explain: "It answers the natural defense of the model. If group B were simply less ill, they would show fewer conditions at equal predicted risk. They show more."
     },
     {
-      q: "Retraining on next year's condition count raised group B's ratio from 0.36 to 0.59, still short of parity. Why did it not go further?",
-      options: ["The new label is also biased in the same direction, and the features the model uses carry the same access gap", "The model was under-trained", "Condition counts are noisier than costs", "Parity is impossible in principle"],
+      q: "Retraining on next year's condition count raised group B's ratio from 0.36 to 0.58, still short of parity. What is the likeliest reason it did not go further?",
+      options: ["The new label is also recorded through clinical contact, and the features the model uses carry the same access gap, though this audit does not test either", "The model was under-trained", "Condition counts are noisier than costs", "Parity is impossible in principle"],
       answer: 0,
-      explain: "Prior cost, visits and medication counts all reflect utilization, which reflects access. Fixing the label removes one channel of the bias, not all of them."
+      explain: "Adding the condition count to the cost model alone lowered the ratio to 0.30, so the gain came from the label. Prior cost, visits and medication counts all reflect utilization, which reflects access, so fixing the label most likely removes one channel of the bias, not all of them."
     },
     {
       q: "Group-specific thresholds delivered parity but barely improved targeting, while relabeling improved targeting but not parity. What follows?",
@@ -527,7 +529,7 @@ window.addEventListener('scroll', () => {
       explain: "This is the impossibility result proved independently by Kleinberg, Mullainathan and Raghavan and by Chouldechova in 2016. It is arithmetic, and no tuning evades it."
     },
     {
-      q: "On the corrected label every gap fell below 0.033 under the same threshold rules. What explains the difference?",
+      q: "On the corrected label, once either criterion was equalized, every remaining gap fell below 0.033. What explains the difference from the cost label?",
       options: ["The need model is more accurate", "The base rates are much closer on the need label, because the ten-point gap on the cost label was an artifact of measuring illness in dollars", "The corrected label has fewer positives", "Random variation"],
       answer: 1,
       explain: "The impossibility bites in proportion to the base-rate difference. Much of what looked like an unavoidable ethical trade-off had been manufactured by the choice of target."
