@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ch 191 · Imbalanced Classification: Credit Card Fraud — Statistics, Data Science and AI</title>
-  <meta name="description" content="Capstone 29. Three standard answers to class imbalance produce the same ranking to three decimal places.">
+  <meta name="description" content="Capstone 29. Three standard answers to class imbalance produce PR-AUCs within 0.0004 of each other.">
   <meta name="author" content="John Fisher">
   <link rel="canonical" href="https://johnfisher-ai.github.io/Statistics-Data-Science-AI-Visual-Book/chapters/capstone-credit-card-fraud.html">
 
   <meta property="og:type" content="article">
   <meta property="og:site_name" content="Statistics, Data Science and AI: A Visual Handbook">
   <meta property="og:title" content="Imbalanced Classification: Credit Card Fraud · Chapter 191">
-  <meta property="og:description" content="Capstone 29. Three standard answers to class imbalance produce the same ranking to three decimal places.">
+  <meta property="og:description" content="Capstone 29. Three standard answers to class imbalance produce PR-AUCs within 0.0004 of each other.">
   <meta property="og:url" content="https://johnfisher-ai.github.io/Statistics-Data-Science-AI-Visual-Book/chapters/capstone-credit-card-fraud.html">
   <meta property="og:image" content="https://johnfisher-ai.github.io/Statistics-Data-Science-AI-Visual-Book/assets/img/social-card-v2.png">
   <meta property="og:image:width" content="2400">
@@ -19,7 +19,7 @@
 
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Imbalanced Classification: Credit Card Fraud · Chapter 191">
-  <meta name="twitter:description" content="Capstone 29. Three standard answers to class imbalance produce the same ranking to three decimal places.">
+  <meta name="twitter:description" content="Capstone 29. Three standard answers to class imbalance produce PR-AUCs within 0.0004 of each other.">
   <meta name="twitter:image" content="https://johnfisher-ai.github.io/Statistics-Data-Science-AI-Visual-Book/assets/img/social-card-v2.png">
   <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png">
@@ -93,7 +93,7 @@
       <span>Chapter 191</span>
     </div>
     <h1>Imbalanced Classification: <span class="accent">Credit Card</span> Fraud</h1>
-    <p class="dek">Capstone 29. Three standard answers to class imbalance produce the same ranking to three decimal places. Two of them multiply the predicted fraud rate by thirty-six, which makes them useless for the only calculation anybody wanted.</p>
+    <p class="dek">Capstone 29. Three standard answers to class imbalance produce PR-AUCs within 0.0004 of each other. Two of them multiply the predicted fraud rate by thirty-six, which makes them useless for the only calculation anybody wanted.</p>
     <div class="hero-meta">
       <div class="m">&#9201;&#65039; <b>~22 min</b>&nbsp;read</div>
       <div class="m">&#127919; <b>Imbalanced classification</b></div>
@@ -112,7 +112,7 @@
     <div class="brief-card">
       <div class="bh">The brief</div>
       <dl>
-        <dt>Setting</dt><dd>Four months of card transactions from one issuer: 119,556 usable purchases with amount, hour, tenure, recent activity, merchant risk and device signals, of which 318 were confirmed fraudulent.</dd>
+        <dt>Setting</dt><dd>Four months of card transactions, realistic teaching data written for the book: 119,556 usable purchases with amount, hour, tenure, recent activity, merchant risk and device signals, of which 318 were confirmed fraudulent.</dd>
         <dt>The question</dt><dd><strong>Which transactions should be held for an analyst to review, and which should settle?</strong></dd>
         <dt>Why it matters</dt><dd>A held transaction is a customer declined at a checkout. A missed one is money written off. The two errors cost different amounts, and the cost of a miss depends on the transaction, which rules out any threshold chosen from a curve.</dd>
         <dt>What we do</dt><dd>Split by time, find the leak before fitting anything, run a bake-off the linear baseline wins, compare three answers to class imbalance on calibration rather than ranking, derive the threshold from the cost matrix, and check whether the review team's capacity is the constraint everyone assumes it is.</dd>
@@ -168,7 +168,7 @@
        training on days 1 to 90. A random split would let it learn from the future.</p>
 
     <p>The warehouse table carries a column named <code>chargeback_code_filed</code>. It sits alongside the others,
-       it is populated, and it is 96 percent accurate about fraud. Fit with it and see what happens.</p>
+       it is populated, and it marks 96 percent of the frauds and almost no legitimate transactions. Fit with it and see what happens.</p>
 
     <div class="resultline">
       <div class="rchip"><div class="rk">Honest features</div><div class="rv">0.2984</div><div class="rd">PR-AUC, ROC-AUC 0.9604</div></div>
@@ -222,7 +222,8 @@
       </table>
     </div>
 
-    <p><strong>The linear model wins, and the ensembles were not handicapped.</strong> Two genuine interactions sit in
+    <p><strong>The linear model wins at the settings tried.</strong> Each ensemble was fitted once at a reasonable
+       hand-set configuration, with no search, so tuning might close some of the gap. Two genuine interactions sit in
        the data-generating process, a new device on a card-not-present sale and a foreign merchant at three in the
        morning, so there is real non-additive structure for a tree to find. It cannot find it from
        <strong>223 fraudulent transactions</strong>.</p>
@@ -234,7 +235,7 @@
 
     <figure class="nb-fig">
       <img src="../assets/img/capstone-fraud-pr-calib.png"
-           alt="Left: precision-recall curves for the logistic model with interactions, gradient boosting and random forest, with a dotted line at 0.003 marking what a random ranking achieves. The logistic curve is above the others across most of the range. Right: a log-log calibration plot. The untouched model's points follow the diagonal from 0.03 to 3 percent, while the oversampled and class-weighted models sit far to the right of it, predicting between 1 and 60 percent where the observed rate is under a tenth of one percent.">
+           alt="Left: precision-recall curves for the logistic model with interactions, gradient boosting and random forest, with a dotted line at 0.003 marking what a random ranking achieves. The logistic curve is above the others across most of the range. Right: a log-log calibration plot. The untouched model's points sit a little above the diagonal from about 0.005 to 3 percent, while the oversampled and class-weighted models sit far to the right of it, their top tenth predicting about 64 percent where about 3 percent are fraud.">
       <figcaption><strong>Left:</strong> precision against recall, with the base rate visible as a floor. Any model has
         to be read against that dotted line. <strong>Right:</strong> the calibration of the three imbalance remedies,
         on log axes because otherwise the untouched model is a dot at the origin.</figcaption>
@@ -257,7 +258,7 @@
       </table>
     </div>
 
-    <p><strong>The three PR-AUCs agree to three decimal places.</strong> They rank the transactions the same way,
+    <p><strong>The three PR-AUCs agree within 0.0004.</strong> They rank the transactions almost the same way,
        because all three fit the same model to the same information. What resampling and class weights change is not
        the ordering but <em>the base rate the model believes in</em>.</p>
 
@@ -280,9 +281,10 @@
   <section id="threshold">
     <div class="section-eyebrow"><div class="num">5</div><h2>The Threshold Is an Accounting Question</h2></div>
 
-    <p>With a calibrated probability and the cost matrix, the threshold is not chosen, it is computed. For every
-       candidate, add up the analyst time, the customer annoyance and the money written off, and read off the bottom of
-       the curve.</p>
+    <p>With a calibrated probability and the cost matrix, a single threshold can be priced. For every candidate, add up
+       the analyst time, the customer annoyance and the money written off. The threshold itself has to be chosen on the
+       training window, from out-of-fold predictions, so that the test window only scores it, and chosen that way it
+       comes out at 0.101.</p>
 
     <div class="table-scroll" tabindex="0">
       <table class="disp-table">
@@ -290,25 +292,31 @@
         <tr><td class="nm">0.2%</td><td>2,196</td><td>85</td><td>10</td><td>$35,011</td></tr>
         <tr><td class="nm">1%</td><td>887</td><td>67</td><td>28</td><td>$16,976</td></tr>
         <tr><td class="nm">5%</td><td>251</td><td>44</td><td>51</td><td>$10,402</td></tr>
-        <tr class="hi"><td class="nm">8.83% (optimal)</td><td>146</td><td>37</td><td>58</td><td class="yes">$9,975</td></tr>
+        <tr class="hi"><td class="nm">10.1% (chosen on training)</td><td>124</td><td>35</td><td>60</td><td class="yes">$10,381</td></tr>
+        <tr><td class="nm">15%</td><td>79</td><td>30</td><td>65</td><td>$10,417</td></tr>
         <tr><td class="nm">20%</td><td>58</td><td>24</td><td>71</td><td>$11,195</td></tr>
         <tr><td class="nm">40%</td><td>26</td><td>17</td><td>78</td><td>$11,609</td></tr>
       </table>
     </div>
 
-    <p style="font-size:0.92rem;color:var(--p-fg-64748b, #64748b)">The six rows above are a coarse grid; a finer sweep puts the minimum at
-       a threshold of 0.0883 flagging 145 transactions for <strong>$9,959</strong>, which is the figure quoted below.
-       The difference is a single borderline transaction, and it is worth noticing that it barely matters.</p>
+    <p style="font-size:0.92rem;color:var(--p-fg-64748b, #64748b)">The best threshold in hindsight on the test window is 0.0883, at
+       $9,959. Picking it needs the test answers, so it is a ceiling rather than a result.</p>
+
+    <p>The plan said a single threshold was the wrong shape for this cost matrix, because the price of a miss changes
+       with the amount, and the numbers agree. Flag a transaction when its expected loss, p times the amount plus $25,
+       exceeds the expected cost of reviewing it, (1 &#8722; p) times $16. That rule needs no tuning, and it costs
+       <strong>$9,181</strong>, less than any single threshold, including the hindsight one. It works only because the
+       untouched model's probabilities are roughly calibrated.</p>
 
     <div class="resultline">
       <div class="rchip"><div class="rk">Flag nothing</div><div class="rv">$14,476</div><div class="rd">the do-nothing baseline</div></div>
-      <div class="rchip"><div class="rk">Cost-optimal</div><div class="rv">$9,959</div><div class="rd">threshold 0.0883</div></div>
-      <div class="rchip"><div class="rk">Saved</div><div class="rv">31%</div><div class="rd">against doing nothing</div></div>
-      <div class="rchip"><div class="rk">Volume</div><div class="rv">5 a day</div><div class="rd">145 flags in 30 days</div></div>
+      <div class="rchip"><div class="rk">Amount-aware rule</div><div class="rv">$9,181</div><div class="rd">no threshold to tune</div></div>
+      <div class="rchip"><div class="rk">Saved</div><div class="rv">37%</div><div class="rd">against doing nothing</div></div>
+      <div class="rchip"><div class="rk">Volume</div><div class="rv">4 a day</div><div class="rd">128 flags in 30 days</div></div>
     </div>
 
-    <p>Notice that the optimal policy <strong>misses 58 of the 95 frauds</strong> and is still the best available. That
-       sentence is uncomfortable and it is correct: catching those 58 would require flagging thousands of legitimate
+    <p>Notice that the recommended rule <strong>catches 33 of the 95 frauds and misses 62</strong>, and it is still the
+       best available. That sentence is uncomfortable and it is correct: catching the rest would require flagging thousands of legitimate
        transactions, and at $16 each that costs more than the fraud does. A fraud team measured on catch rate will
        reject this answer; a fraud team measured on cost will not.</p>
   </section>
@@ -327,8 +335,8 @@
       <div class="rchip"><div class="rk">Verdict</div><div class="rv">13&#215; worse</div><div class="rd">than having no model</div></div>
     </div>
 
-    <p><strong>Filling the queue is the worst of the three policies.</strong> It catches 93 of the 95 frauds, and 11,900
-       of those 12,000 reviews are of legitimate transactions at $16 each. The cost-optimal policy uses about
+    <p><strong>Filling the queue is the worst of the policies.</strong> It catches 93 of the 95 frauds, and 11,900
+       of those 12,000 reviews are of legitimate transactions at $16 each. The recommended rule uses about
        <strong>one percent</strong> of the available capacity.</p>
 
     <p>That is worth carrying into the operations meeting, because it inverts the usual conversation. The question is
@@ -337,11 +345,11 @@
 
     <figure class="nb-fig">
       <img src="../assets/img/capstone-fraud-cost.png"
-           alt="Left: total cost over 30 days against the flagging threshold, forming a shallow bowl with a minimum near 8.8 percent at about 9,959 dollars, against a dashed line at 14,476 dollars marking the cost of flagging nothing. Right: three bars on a log scale comparing the cost-optimal threshold at 9,959 dollars, flagging nothing at 14,476, and filling the review capacity at 190,667.">
-      <figcaption><strong>Left:</strong> a shallow bowl, which is good news: anything between roughly 4 and 15 percent
-        is close to optimal, so the policy does not depend on getting the threshold exactly right.
-        <strong>Right:</strong> the three candidate policies, on a log scale because otherwise the third one flattens
-        the other two.</figcaption>
+           alt="Left: total cost over 30 days against the flagging threshold, forming a shallow bowl, with the threshold chosen on training marked at 10.1 percent and 10,381 dollars, against a dashed line at 14,476 dollars marking the cost of flagging nothing. Right: four bars on a log scale comparing the amount-aware rule at 9,181 dollars, the threshold chosen on training at 10,381, flagging nothing at 14,476, and filling the review capacity at 190,667.">
+      <figcaption><strong>Left:</strong> a shallow bowl, which is good news. The thresholds of 5, 10.1 and 15 percent
+        all cost between $10,381 and $10,417, so the policy does not depend on getting the threshold exactly right.
+        <strong>Right:</strong> the four candidate policies, on a log scale because otherwise the last one flattens
+        the others.</figcaption>
     </figure>
   </section>
 
@@ -356,9 +364,9 @@
     <div class="table-scroll" tabindex="0">
       <table class="disp-table">
         <tr><th>The earlier case study</th><th>This capstone</th></tr>
-        <tr><td class="nm">Reported ROC-AUC</td><td>Shows why ROC flatters at a 0.3% base rate and reports PR-AUC against it</td></tr>
-        <tr><td class="nm">Used SMOTE, as most tutorials do</td><td>Compares three remedies and finds they rank identically and differ 36-fold on the level</td></tr>
-        <tr><td class="nm">Chose a threshold of 0.5</td><td>Derives it from a cost matrix in which one error's price varies per transaction</td></tr>
+        <tr><td class="nm">Reported ROC-AUC beside PR-AUC and noted that ROC flatters</td><td>Makes PR-AUC the headline and shows how far ROC flatters at a 0.3% base rate</td></tr>
+        <tr><td class="nm">Rebalanced with class weights or SMOTE</td><td>Compares three remedies and finds they rank almost identically and differ 36-fold on the level</td></tr>
+        <tr><td class="nm">Tuned one threshold to a fixed cost per error, on the training folds</td><td>Prices each missed fraud at its own amount, which no single threshold can do</td></tr>
         <tr class="hi"><td class="nm">Used every available column</td><td>Finds the column that could not have existed yet</td></tr>
       </table>
     </div>
@@ -406,9 +414,9 @@
          same case again in 2015 because the field had not listened. On the repair side, <strong>Platt scaling</strong>
          and <strong>isotonic regression</strong> restore a probability after rebalancing, and
          <strong>King and Zeng</strong> give the prior-correction formula for the specific case of a rare-event
-         logistic regression. The broader modern point is made by <strong>Grinsztajn and colleagues</strong>: on
-         tabular data, tree ensembles usually win, but the sample sizes at which they start winning are larger than
-         people assume.</p>
+         logistic regression. <strong>Grinsztajn and colleagues</strong> found that on medium-sized tabular
+         datasets tree ensembles still beat deep neural networks, which makes this capstone's result a reminder that
+         with only a few hundred positives a linear model with the right interactions can beat both.</p>
     </div>
   </section>
 
@@ -457,10 +465,10 @@
     <div class="takeaways">
       <h3>&#127891; Key Takeaways</h3>
       <ul>
-        <li><span class="ck">&#10003;</span><span><strong>The three imbalance remedies rank identically.</strong> PR-AUC 0.2985, 0.2981, 0.2984, and two of them predict 11.5 percent where the truth is 0.32.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>The three imbalance remedies rank almost identically.</strong> PR-AUC 0.2985, 0.2981, 0.2984, and two of them predict 11.5 percent where the truth is 0.32.</span></li>
         <li><span class="ck">&#10003;</span><span><strong>Leakage looks like a triumph.</strong> One warehouse column took PR-AUC from 0.30 to 0.98, and it is filed weeks after the decision.</span></li>
         <li><span class="ck">&#10003;</span><span><strong>The linear baseline won.</strong> Two hand-written interactions beat both ensembles, because 223 positives is not enough for a flexible model.</span></li>
-        <li><span class="ck">&#10003;</span><span><strong>The optimal policy misses 58 of 95 frauds.</strong> Catching them costs more than they are worth, which is uncomfortable and correct.</span></li>
+        <li><span class="ck">&#10003;</span><span><strong>The recommended rule misses 62 of 95 frauds.</strong> Catching them costs more than they are worth, which is uncomfortable and correct.</span></li>
         <li><span class="ck">&#10003;</span><span><strong>Review capacity is not the constraint.</strong> Filling it costs 13 times more than having no model; the best policy uses one percent of it.</span></li>
       </ul>
     </div>
@@ -521,9 +529,9 @@ window.addEventListener('scroll', () => {
     },
     {
       q: "A linear model with two hand-added interactions beat both tree ensembles. Why?",
-      options: ["Trees cannot represent interactions", "The interactions were not really in the data", "With only 223 fraudulent transactions in the training set, flexible models cannot recover structure that a human can name and add directly", "The ensembles were not tuned"],
+      options: ["Trees cannot represent interactions", "The interactions were not really in the data", "With only 223 fraudulent transactions in the training set, flexible models cannot recover structure that a human can name and add directly", "Tree ensembles always lose to logistic regression on tabular data"],
       answer: 2,
-      explain: "The interactions are genuinely in the data-generating process, so the trees were not handicapped. Flexible models need positives rather than rows, and 90,000 transactions containing 223 frauds is a small dataset."
+      explain: "The interactions are genuinely in the data-generating process, so there was structure for the trees to find. Each ensemble ran at one hand-set configuration, so tuning might narrow the gap, but flexible models need positives rather than rows, and 90,000 transactions containing 223 frauds is a small dataset."
     },
     {
       q: "Why can the threshold not be chosen from an ROC or F1 curve here?",
@@ -532,8 +540,8 @@ window.addEventListener('scroll', () => {
       explain: "Every curve-based rule encodes a fixed exchange rate between the two errors. A missed $8 coffee and a missed $2,000 laptop are different mistakes, so the threshold has to be found by computing the actual bill."
     },
     {
-      q: "The cost-optimal policy misses 58 of the 95 frauds. Is that a failure?",
-      options: ["Yes, the model should be retrained", "Yes, the threshold should be lowered", "No: catching those 58 would require flagging thousands of legitimate transactions at $16 each, which costs more than the fraud", "No, because the missed frauds are all small amounts"],
+      q: "The recommended rule misses 62 of the 95 frauds. Is that a failure?",
+      options: ["Yes, the model should be retrained", "Yes, the threshold should be lowered", "No: catching those 62 would require flagging thousands of legitimate transactions at $16 each, which costs more than the fraud", "No, because the missed frauds are all small amounts"],
       answer: 2,
       explain: "It is the correct answer to the question that was asked. A team measured on catch rate will reject it and a team measured on cost will not, which is a conversation to have before the model ships."
     },
