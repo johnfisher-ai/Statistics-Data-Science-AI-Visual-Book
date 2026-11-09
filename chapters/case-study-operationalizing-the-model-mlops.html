@@ -94,7 +94,7 @@
 
   <section id="intro">
     <p class="lead">A model that scores 0.80 in a notebook and a model that keeps working for two years are different
-       achievements. The second one requires <span class="hl">MLOps</span>: the discipline of running a model as a product.
+       achievements. The second one requires <span class="hl">MLOps</span>, the discipline of running a model as a product.
        The reason it is hard has one name, <span class="hl">drift</span>. The data a model meets in production slowly stops
        looking like the data it trained on, and its accuracy quietly rots, with no error message. This chapter follows a
        churn model through 18 months as exactly that happens, and shows the <span class="hl">loop</span> that catches and
@@ -122,8 +122,8 @@
 
   <!-- ===== §1 method ===== -->
   <section id="method">
-    <div class="section-eyebrow"><div class="num">1</div><h2>The 12-Step Method</h2></div>
-    <p>The familiar loop, adapted to the production lifecycle. The companion notebook runs all twelve steps on the 18-month
+    <div class="section-eyebrow"><div class="num">1</div><h2>The 12-step method</h2></div>
+    <p>This is the familiar loop, adapted to the production lifecycle. The companion notebook runs all twelve steps on the 18-month
        log; the sections below tell the story and show the plots.</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
@@ -194,7 +194,7 @@
 
     <div class="rw-card">
       <div class="rw-tag">📂 Dataset · model_monitoring.csv</div>
-      <p style="margin:0.5rem 0 0">A production log of a churn model: one row per customer scored in a given
+      <p style="margin:0.5rem 0 0">A production log of a churn model. Each row is one customer scored in a given
         <code>month</code> (0 = the training window, 1 to 18 = live), with <code>tenure_months</code>,
         <code>monthly_usage_gb</code>, <code>support_tickets</code>, <code>add_ons</code>, <code>monthly_charges</code>,
         <code>price_increase</code>, and the <code>churned</code> outcome that arrived later. A market shift starting month 7
@@ -207,17 +207,17 @@
 
   <!-- ===== §2 deploy ===== -->
   <section id="deploy">
-    <div class="section-eyebrow"><div class="num">2</div><h2>Define, Package, Serve, Log (Steps 1&#8211;4)</h2></div>
+    <div class="section-eyebrow"><div class="num">2</div><h2>Shipping the churn model and logging its scores (steps 1&#8211;4)</h2></div>
 
     <div class="step-h"><span class="sn">1</span><h3>Define the production contract</h3></div>
     <p>Before deploying, write down what must stay true in production: a <strong>performance floor</strong> (retrain if
        rolling AUC falls below 0.65), a <strong>drift threshold</strong> (investigate any feature with PSI above 0.25), a
-       <strong>latency budget</strong>, and, crucially, the <strong>label delay</strong>: churn is only confirmed about two
-       months after we score. That delay is the whole reason the rest of this chapter is hard.</p>
+       <strong>latency budget</strong>, and, crucially, the <strong>label delay</strong> (churn is only confirmed about two
+       months after we score). That delay is the whole reason the rest of this chapter is hard.</p>
 
     <div class="step-h"><span class="sn">2</span><h3>Package the champion</h3></div>
-    <p>The deployable artifact is not just the model, it is the <strong>whole pipeline</strong> (imputer, scaler, classifier)
-       so the exact preprocessing travels with the weights, bundled with <strong>metadata</strong>: a version tag, the
+    <p>The deployable artifact is the <strong>whole pipeline</strong> (imputer, scaler, classifier), so the exact
+       preprocessing travels with the model's weights. It ships bundled with <strong>metadata</strong>: a version tag, the
        training window, the feature list. Versioning is what makes a later rollback possible.</p>
 
     <div class="step-h"><span class="sn">3</span><h3>Serve it</h3></div>
@@ -232,7 +232,7 @@
 
   <!-- ===== §3 monitor/detect ===== -->
   <section id="monitor">
-    <div class="section-eyebrow"><div class="num">3</div><h2>Monitor &amp; Detect Drift (Steps 5&#8211;6)</h2></div>
+    <div class="section-eyebrow"><div class="num">3</div><h2>Watching accuracy fall and the inputs shift (steps 5&#8211;6)</h2></div>
 
     <div class="step-h"><span class="sn">5</span><h3>Monitor performance</h3></div>
     <p>With outcomes attached, we can track the model's accuracy month by month. This is where the silent failure becomes
@@ -243,7 +243,7 @@
       <figcaption><span class="cap-t">From the notebook · Step 5</span><br>
         <strong>Models decay silently.</strong> The champion holds around <strong>0.75</strong> for six months, then slides
         through the market shock to about <strong>0.53</strong>, no better than a coin flip, and stays there. Nothing
-        errored, no exception was thrown; the model just quietly stopped working as the world changed. Rolling metrics are
+        errored and no exception was thrown. The model just quietly stopped working as the world changed. Rolling metrics are
         what turn an invisible problem into a visible one.</figcaption>
     </figure>
 
@@ -256,18 +256,18 @@
       <figcaption><span class="cap-t">From the notebook · Step 6</span><br>
         <strong>The inputs moved.</strong> Support tickets (left) have shifted dramatically since training, PSI far above the
         0.25 alert line, while monthly usage (right) drifted only mildly. As a rule of thumb, PSI below 0.1 is stable, 0.1 to
-        0.25 is a watch, and above 0.25 is significant drift. The key point: this signal is available <em>immediately</em>,
+        0.25 is a watch, and above 0.25 is significant drift. What matters is that this signal is available <em>immediately</em>,
         long before enough churn outcomes exist to measure accuracy.</figcaption>
     </figure>
   </section>
 
   <!-- ===== §4 alert/diagnose ===== -->
   <section id="alert">
-    <div class="section-eyebrow"><div class="num">4</div><h2>Alert &amp; Diagnose (Steps 7&#8211;8)</h2></div>
+    <div class="section-eyebrow"><div class="num">4</div><h2>Raising the alarm and finding the cause (steps 7&#8211;8)</h2></div>
 
     <div class="step-h"><span class="sn">7</span><h3>Alert on the leading signal</h3></div>
-    <p>Here is the central MLOps insight, in one picture: input drift is a <strong>leading</strong> indicator, performance
-       is a <strong>lagging</strong> one.</p>
+    <p>The picture below shows the central MLOps insight, that input drift is a <strong>leading</strong> indicator and
+       performance a <strong>lagging</strong> one.</p>
 
     <figure class="nb-fig">
       <img src="../assets/img/case-study-operationalizing-the-model-mlops--early_warning.png" alt="Support-ticket PSI rising at month 7 while the AUC drop is only confirmable at month 9">
@@ -279,13 +279,13 @@
         bad decisions.</figcaption>
     </figure>
 
-    <div class="step-h"><span class="sn">8</span><h3>Diagnose: data drift or concept drift?</h3></div>
+    <div class="step-h"><span class="sn">8</span><h3>Data drift or concept drift?</h3></div>
     <p>The fix depends on which kind of drift you have. <strong>Data drift</strong> means the inputs moved but the underlying
        relationship holds. <strong>Concept drift</strong> means the relationship itself changed, and only retraining can fix
-       that. Fitting a fresh model on recent data settles it: the coefficient on <code>monthly_usage</code> has
+       that. A fresh model fitted on recent data settles it. The coefficient on <code>monthly_usage</code> has
        <strong>flipped sign</strong> (from about -1.0 to +0.4). Once, disengaged low-usage customers churned; now
-       high-usage customers hit the price increase and leave. The champion's learned rule is <em>backwards</em>, this is
-       concept drift, and retraining is the only cure.</p>
+       high-usage customers hit the price increase and leave. The champion's learned rule is <em>backwards</em>, which makes
+       this concept drift, and retraining is the only cure.</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
       <svg viewBox="0 0 660 250" width="100%" font-family="Inter, sans-serif" aria-label="The MLOps lifecycle drawn as a closed loop that never ends">
@@ -318,11 +318,11 @@
 
   <!-- ===== §5 retrain/rollout ===== -->
   <section id="renew">
-    <div class="section-eyebrow"><div class="num">5</div><h2>Retrain, Validate &amp; Roll Out (Steps 9&#8211;12)</h2></div>
+    <div class="section-eyebrow"><div class="num">5</div><h2>Replacing the champion with a retrained model (steps 9&#8211;12)</h2></div>
 
-    <div class="step-h"><span class="sn">9&#8211;10</span><h3>Retrain a challenger, then validate it</h3></div>
+    <div class="step-h"><span class="sn">9&#8211;10</span><h3>Retrain a challenger and validate it</h3></div>
     <p>The challenger is trained on the <strong>most recent stable window</strong> (months 10 to 12), after the shock
-       settled, training on the whole muddled history would blend two contradictory regimes. Then we prove it works on data
+       settled. Training on the whole muddled history would blend two contradictory regimes. Then we prove it works on data
        neither model has seen.</p>
 
     <figure class="nb-fig">
@@ -342,7 +342,7 @@
         not train on, justifies promotion. A challenger that merely ties is not worth the disruption of a model change.</figcaption>
     </figure>
 
-    <div class="step-h"><span class="sn">11&#8211;12</span><h3>Roll out safely, then govern the loop</h3></div>
+    <div class="step-h"><span class="sn">11&#8211;12</span><h3>Roll out safely and govern the loop</h3></div>
     <p>A safe rollout is gradual, and it is where most production incidents are prevented.</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
@@ -372,15 +372,15 @@
     <p><strong>Shadow</strong> mode scores live traffic without acting on it; a <strong>canary</strong> routes a small slice
        (here 20%) to the challenger and compares. In the notebook's canary, the challenger arm scores 0.79 against the
        champion's 0.50, so we widen it (the demo reads those labels at once, and with the two-month label delay the comparison
-       would come two months later). A <strong>rollback rule</strong> stays armed throughout: if the new model
+       would come two months later). A <strong>rollback rule</strong> stays armed throughout, so if the new model
        underperforms, traffic reverts to the versioned champion automatically. Finally, <strong>governance</strong> closes
-       the loop: the promoted challenger becomes the new champion (v2.0), it scores fresh customers correctly under the new
-       relationship, and monitoring begins again. The loop never ends.</p>
+       the loop. The promoted challenger becomes the new champion (v2.0), it scores fresh customers correctly under the new
+       relationship, and monitoring begins again, in a loop that never ends.</p>
   </section>
 
   <!-- ===== §6 writeup ===== -->
   <section id="writeup-sec">
-    <div class="section-eyebrow"><div class="num">6</div><h2>Govern: the Plain-English Write-Up (Step 12)</h2></div>
+    <div class="section-eyebrow"><div class="num">6</div><h2>A plain-English account of the churn model's upkeep (step 12)</h2></div>
     <div class="writeup">
       <h3>For a non-technical reader</h3>
       <p><strong>What is this?</strong> A worked example of keeping a prediction tool <em>working</em> after it is switched
@@ -389,20 +389,21 @@
 
       <h4>What goes in, and what comes out</h4>
       <p><strong>Inputs:</strong> a running log of every customer the tool scored, plus the features it saw and whether they
-        eventually canceled. <strong>Output:</strong> not a single model, but a <em>routine</em>, a dashboard of health
-        checks and a rule for when to rebuild and re-launch the tool.</p>
+        eventually canceled. <strong>Output:</strong> an ongoing <em>routine</em> built around the model, with a dashboard of
+        health checks and a rule for when to rebuild and re-launch the tool.</p>
 
       <h4>The decisions we made, and why</h4>
       <ul>
-        <li><span class="ck">✓</span><span>We <strong>watched the incoming data, not just the results</strong>. Because we only learn who actually canceled months later, waiting for results would leave us blind. Watching the inputs shift gave us a two-month head start.</span></li>
+        <li><span class="ck">✓</span><span>We <strong>watched the incoming data as well as the results</strong>. Because we only learn who actually canceled months later, waiting for results would leave us blind. Watching the inputs shift gave us a two-month head start.</span></li>
         <li><span class="ck">✓</span><span>We <strong>worked out why it broke</strong>. The tool did not have a bug; the world changed. A price increase flipped the pattern, so customers who used to be safe were now the ones leaving. When the pattern itself changes, the only fix is to rebuild the tool on fresh data.</span></li>
         <li><span class="ck">✓</span><span>We <strong>proved the rebuilt tool was better before trusting it</strong>, and rolled it out to a small slice of customers first, ready to switch back instantly if it disappointed.</span></li>
       </ul>
 
       <h4>The big idea</h4>
       <p>The model was the easy, one-time part. The real work was building the <em>loop</em> that keeps it honest.
-        <strong>In the end: a deployed model is not finished, it is on the clock. The world drifts, so the true deliverable
-        is the closed loop that watches for decay and renews the model, not the model itself.</strong></p>
+        <strong>A deployed model stays on the clock for as long as it runs. The world drifts, so the true deliverable is
+        the closed loop that watches for decay and renews the model, and the model itself is only one piece of that
+        loop.</strong></p>
     </div>
   </section>
 
@@ -411,7 +412,7 @@
     <div class="nb-cta" style="display:block">
       <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
         <div class="nb-ic">🐍</div>
-        <div class="nb-body"><h3>Run the entire lifecycle in Python</h3><p>The companion notebook is the full 12-step MLOps loop: it packages and serves the champion with joblib, logs predictions, tracks rolling AUC as the model decays, computes PSI to detect drift without labels, shows input drift leading performance by two months, diagnoses the concept drift via a flipped coefficient, retrains and validates a challenger, runs a canary with a rollback rule, and promotes v2.0, with every step explained.</p></div>
+        <div class="nb-body"><h3>Run the entire lifecycle in Python</h3><p>The companion notebook runs the full 12-step MLOps loop. It packages and serves the champion with joblib, logs predictions, tracks rolling AUC as the model decays, computes PSI to detect drift without labels, shows input drift leading performance by two months, diagnoses the concept drift via a flipped coefficient, retrains and validates a challenger, runs a canary with a rollback rule, and promotes v2.0, with every step explained.</p></div>
       </div>
       <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
         <a class="btn btn-primary" href="notebooks/html/case-study-operationalizing-the-model-mlops.html">📓 View Notebook (code &amp; outputs)</a>
@@ -427,12 +428,12 @@
   <!-- ===== takeaways ===== -->
   <section id="takeaways">
     <div class="takeaways">
-      <h3>🎓 Key Takeaways</h3>
+      <h3>🎓 In brief</h3>
       <ul>
         <li><span class="ck">✓</span><span><strong>Deployment is the halfway point</strong>: a model in production is a living system that must be packaged, served, logged, and watched.</span></li>
-        <li><span class="ck">✓</span><span><strong>Models decay silently</strong>: the champion slid from about 0.75 to 0.53 with no error, only rolling metrics revealed it.</span></li>
-        <li><span class="ck">✓</span><span><strong>Watch inputs, not just performance</strong>: PSI flagged drift at month 7, two months before the accuracy drop could be confirmed.</span></li>
-        <li><span class="ck">✓</span><span><strong>Diagnose before fixing</strong>: a flipped coefficient meant concept drift, so retraining, not recalibration, was the cure.</span></li>
+        <li><span class="ck">✓</span><span><strong>Models decay silently</strong>: the champion slid from about 0.75 to 0.53 with no error, and only rolling metrics revealed it.</span></li>
+        <li><span class="ck">✓</span><span><strong>Watch inputs as well as performance</strong>: PSI flagged drift at month 7, two months before the accuracy drop could be confirmed.</span></li>
+        <li><span class="ck">✓</span><span><strong>Diagnose before fixing</strong>: a flipped coefficient meant concept drift, so retraining was the cure, since recalibration cannot fix a relationship that has reversed.</span></li>
         <li><span class="ck">✓</span><span><strong>Retrain, validate, roll out safely</strong>: a challenger on fresh data (0.74 vs 0.53), promoted via canary with a rollback armed, and the loop restarts.</span></li>
       </ul>
     </div>
@@ -441,7 +442,7 @@
   <!-- ===== §7 take it further ===== -->
   <section id="challenges">
     <div class="section-eyebrow"><div class="num">7</div><h2>Take It Further</h2></div>
-    <p>Five ways to extend the lifecycle in the notebook:</p>
+    <p>Each extension below takes one stage of the churn model's lifecycle further in the notebook.</p>
     <div class="challenges">
       <div class="challenge"><div class="cnum">1</div><div class="cbody">
         <h3>A second drift test</h3>
@@ -450,7 +451,7 @@
       <div class="challenge"><div class="cnum">2</div><div class="cbody">
         <h3>Watch the model's own output</h3>
         <p>Monitor the distribution of predicted scores over time, a label-free warning.</p>
-        <div class="chint">Hint: compute PSI on <code>predict_proba</code>, not the features.</div></div></div>
+        <div class="chint">Hint: compute PSI on the <code>predict_proba</code> scores instead of the features.</div></div></div>
       <div class="challenge"><div class="cnum">3</div><div class="cbody">
         <h3>How often to retrain?</h3>
         <p>Compare never, monthly, and triggered retraining on cost versus performance.</p>
@@ -462,13 +463,13 @@
       <div class="challenge"><div class="cnum">5</div><div class="cbody">
         <h3>When is it safe to promote?</h3>
         <p>Run the challenger in shadow on months it never trained on and compare it with the champion.</p>
-        <div class="chint">Hint: score both on each month, look for the crossover.</div></div></div>
+        <div class="chint">Hint: score both on each month and look for the crossover.</div></div></div>
     </div>
 
     <div class="nb-cta" style="display:block">
       <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
         <div class="nb-ic">📓</div>
-        <div class="nb-body"><h3>All five, worked in a companion notebook</h3><p>A second notebook, <strong>Take It Further</strong>, rebuilds this chapter's champion and works every extension with visuals and explanations, a KS-test drift check, label-free prediction-drift monitoring, a retraining-cadence comparison, a rollback drill that catches a bad challenger, and a shadow evaluation that pinpoints when to promote, closing with a plain-English summary.</p></div>
+        <div class="nb-body"><h3>Working the drift and rollout extensions in code</h3><p>A second notebook, <strong>Take It Further</strong>, rebuilds this chapter's champion and works every extension with visuals and explanations (a KS-test drift check, label-free prediction-drift monitoring, a retraining-cadence comparison, a rollback drill that catches a bad challenger, and a shadow evaluation that pinpoints when to promote), closing with a plain-English summary.</p></div>
       </div>
       <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
         <a class="btn btn-primary" href="notebooks/html/case-study-operationalizing-the-model-mlops--take-it-further.html">📓 View Notebook (code &amp; outputs)</a>
@@ -480,7 +481,7 @@
 
   <!-- ===== §8 quiz ===== -->
   <section id="quiz">
-    <div class="section-eyebrow"><div class="num">8</div><h2>Quiz: Test Yourself</h2></div>
+    <div class="section-eyebrow"><div class="num">8</div><h2>Test yourself</h2></div>
     <p>Eight questions on deployment, drift, monitoring, and the retraining loop. Answer them, hit <strong>Check
        Answers</strong>, and keep refining until you score 100%. Your progress is saved, so you can hop back to the chapter
        and return anytime.</p>
@@ -531,7 +532,7 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
       q: "Why watch input drift instead of just watching accuracy?",
       options: ["Input drift is easier to plot", "Accuracy needs outcome labels, which arrive late; input drift needs no labels and gives an early warning", "Accuracy never changes", "Input drift is more accurate"],
       answer: 1,
-      explain: "PSI fired at month 7 while the AUC breach was only confirmable at month 9: input drift is the leading indicator."
+      explain: "Input drift is the leading indicator. PSI fired at month 7 and the AUC breach was only confirmable at month 9 because the labels lag."
     },
     {
       q: "PSI (Population Stability Index) above about 0.25 means…",
@@ -541,7 +542,7 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
     },
     {
       q: "The champion's AUC fell from about 0.75 to 0.53 with no error thrown. The lesson is…",
-      options: ["Models never fail", "Models can fail silently, so you must monitor them, not assume they keep working", "Always use a bigger model", "Accuracy is unimportant"],
+      options: ["Models never fail", "Models can fail silently, so you must monitor them instead of assuming they keep working", "Always use a bigger model", "Accuracy is unimportant"],
       answer: 1,
       explain: "Nothing crashed; the model just stopped working as the market shifted. Monitoring is what makes silent failure visible."
     },
@@ -549,11 +550,11 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
       q: "Diagnosing showed the monthly_usage coefficient flipped sign. This is…",
       options: ["A coding bug", "Concept drift: the relationship itself changed, so retraining is the only fix", "Data drift you can rescale away", "Random noise"],
       answer: 1,
-      explain: "Once low-usage customers churned; now high-usage ones do. The learned rule is backwards, only retraining on fresh data cures it."
+      explain: "Once low-usage customers churned; now high-usage ones do. The learned rule is backwards, so only retraining on fresh data cures it."
     },
     {
       q: "Why train the challenger on months 10 to 12 rather than all 18 months?",
-      options: ["To save time", "To learn the new steady state, not blend two contradictory regimes into a muddle", "Because more data is always worse", "To reduce the file size"],
+      options: ["To save time", "To learn the new steady state instead of blending two contradictory regimes into a muddle", "Because more data is always worse", "To reduce the file size"],
       answer: 1,
       explain: "After the shock settled, recent data reflects the new relationship; the full history mixes the old and new regimes."
     },
@@ -567,7 +568,7 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
       q: "The chapter's overall message is…",
       options: ["A trained model is the final deliverable", "A deployed model is on the clock; the real deliverable is the loop that watches for decay and renews it", "Accuracy is all that matters", "Never retrain a model"],
       answer: 1,
-      explain: "The world drifts, so operating a model, monitor, detect, retrain, roll out, is the product, not the one-time model."
+      explain: "The world drifts, so the product is the work of operating a model (monitor, detect, retrain, roll out), and the one-time model is only where it starts."
     }
   ];
 </script>
