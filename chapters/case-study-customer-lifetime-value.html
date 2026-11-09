@@ -89,18 +89,18 @@
 
   <section id="intro">
     <p class="lead">When the thing you want to predict is a <span class="hl">continuous dollar amount</span>, the task is
-       <span class="term">regression</span>, not classification. Customer lifetime value (CLV) is the classic example:
+       <span class="term">regression</span>. Customer lifetime value (CLV) is the classic example. You
        predict the revenue a customer will generate over the next 12 months from what you already know about them, then
        use those predictions to <span class="hl">rank</span> customers and target retention where it earns the most. A good
-       model does two jobs at once, it ranks well, and its <span class="hl">explanations</span> reveal what drives value.</p>
+       model does two jobs at once. It ranks well, and its <span class="hl">explanations</span> reveal what drives value.</p>
 
     <div class="def-card">
       <div class="sigma">🤖</div>
       <div class="def-body">
-        <span class="def-kw">Customer lifetime value</span> is a regression target: a continuous dollar amount per customer.
-        We judge a model not by <span class="def-kw">accuracy</span> (a classification word) but by how many dollars its
-        predictions are off, <span class="def-kw">MAE</span> and <span class="def-kw">RMSE</span>, measured against a
-        simple <span class="def-kw">baseline</span> and explained with <span class="def-kw">SHAP</span>.
+        <span class="def-kw">Customer lifetime value</span> is a regression target, a continuous dollar amount per customer.
+        We judge a model by how many dollars its predictions are off (<span class="def-kw">MAE</span> and
+        <span class="def-kw">RMSE</span>), measured against a simple <span class="def-kw">baseline</span> and explained
+        with <span class="def-kw">SHAP</span>. <span class="def-kw">Accuracy</span> is a classification word and does not apply.
       </div>
     </div>
 
@@ -116,10 +116,10 @@
 
   <!-- ===== §1 the question + data ===== -->
   <section id="setup">
-    <div class="section-eyebrow"><div class="num">1</div><h2>The Business Question, and the Data (Steps 1&#8211;2)</h2></div>
+    <div class="section-eyebrow"><div class="num">1</div><h2>The retention question and the customer table (steps 1&#8211;2)</h2></div>
     <p>Marketing has a fixed retention budget and wants to spend it on the customers most worth keeping. So the question is
-       a regression one: for each of <strong>1,500 customers</strong>, predict their next-year value from their behavior and
-       account. The target, <code>lifetime_value</code>, is a dollar amount; the features are things known today, order
+       a regression one. For each of <strong>1,500 customers</strong>, predict their next-year value from their behavior and
+       account. The target, <code>lifetime_value</code>, is a dollar amount. The features are things known today: order
        frequency and size, recency, tenure, support load, subscription status, and acquisition channel.</p>
 
     <div class="rw-card">
@@ -136,11 +136,11 @@
 
   <!-- ===== §2 explore: the skew ===== -->
   <section id="explore">
-    <div class="section-eyebrow"><div class="num">2</div><h2>Look Before You Model (Step 3)</h2></div>
-    <p>Lifetime value is strongly <strong>right-skewed</strong>: the mean is about <strong>1,612 dollars</strong> but the
-       median is only <strong>1,194</strong> (skew &#8776; 2.8). Most customers are modest, and a few whales are worth ten
-       times the median. That shape drives two decisions: evaluate with <strong>RMSE and MAE</strong> rather than a single
-       average, and reach for a <strong>tree-based</strong> model, which handles skew and non-linearity without a transform.</p>
+    <div class="section-eyebrow"><div class="num">2</div><h2>How lopsided customer value is (step 3)</h2></div>
+    <p>Lifetime value is strongly <strong>right-skewed</strong>, with a mean of about <strong>1,612 dollars</strong> and a
+       median of only <strong>1,194</strong> (skew &#8776; 2.8). Most customers are modest, and a few whales are worth ten
+       times the median. That shape is why we evaluate with <strong>RMSE and MAE</strong> rather than a single
+       average, and why we reach for a <strong>tree-based</strong> model, which handles skew and non-linearity without a transform.</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
       <svg viewBox="0 0 680 240" width="100%" font-family="Inter, sans-serif" aria-label="A right-skewed histogram of customer lifetime value: a tall bar of ordinary customers on the left, a long thin tail of high-value whales stretching right, with the median to the left of the mean">
@@ -180,15 +180,15 @@
 
   <!-- ===== §3 build + evaluate ===== -->
   <section id="build">
-    <div class="section-eyebrow"><div class="num">3</div><h2>Build the Pipeline, and Beat the Baseline (Steps 4&#8211;7)</h2></div>
+    <div class="section-eyebrow"><div class="num">3</div><h2>A pipeline that beats the mean baseline (steps 4&#8211;7)</h2></div>
 
-    <div class="step-h"><span class="sn">4&#8211;5</span><h3>A leakage-safe pipeline, and a bar to clear</h3></div>
+    <div class="step-h"><span class="sn">4&#8211;5</span><h3>A leakage-safe pipeline and a bar to clear</h3></div>
     <p>A <code>ColumnTransformer</code> passes the numeric features straight through and one-hot encodes the single
        categorical column, all <em>inside</em> a <code>Pipeline</code> with the model, so no preprocessing ever sees the
-       test set. Then we set a <strong>baseline</strong>: predict every customer as the training-set mean. That naive rule
-       is off by about <strong>977 dollars</strong> on average. Any real model has to beat it to earn its complexity.</p>
+       test set. Then we set a <strong>baseline</strong> that predicts every customer as the training-set mean. That naive rule
+       is off by about <strong>977 dollars</strong> on average. Any real model has to beat it to justify its complexity.</p>
 
-    <div class="step-h"><span class="sn">6&#8211;7</span><h3>Gradient-boosted trees, cross-validated, then scored on held-out customers</h3></div>
+    <div class="step-h"><span class="sn">6&#8211;7</span><h3>Cross-validating boosted trees and scoring them on held-out customers</h3></div>
     <p>A <code>HistGradientBoostingRegressor</code>, scikit-learn's fast cousin of XGBoost and LightGBM, cross-validates to
        an R-squared around <strong>0.83</strong> on the training set, so the signal is real. On the 25% of customers it
        never saw, it explains about <strong>86% of the variance</strong> (R-squared 0.865) with an average error of just
@@ -215,36 +215,36 @@
 
     <figure class="nb-fig">
       <img src="../assets/img/case-study-customer-lifetime-value--eval.png" alt="A scatter of predicted versus actual lifetime value for held-out customers, clustered tightly along the diagonal for ordinary customers and looser for the rare high-value whales">
-      <figcaption><span class="cap-t">From the notebook &#183; Step 7</span><br>Predicted versus actual on customers the model never saw. Points hug the diagonal, tightest for the many ordinary customers and looser for the rare whales, exactly the footprint of a skewed target. R-squared 0.86, MAE 293 dollars.</figcaption>
+      <figcaption><span class="cap-t">From the notebook &#183; Step 7</span><br>Predicted versus actual on customers the model never saw. Points hug the diagonal, tightest for the many ordinary customers and looser for the rare whales, exactly the footprint of a skewed target, with an R-squared of 0.86 and an MAE of 293 dollars.</figcaption>
     </figure>
   </section>
 
   <!-- ===== §4 diagnose + interpret ===== -->
   <section id="interpret">
-    <div class="section-eyebrow"><div class="num">4</div><h2>Diagnose the Residuals, and Explain the Drivers (Steps 8&#8211;9)</h2></div>
+    <div class="section-eyebrow"><div class="num">4</div><h2>Where the errors grow and what drives value (steps 8&#8211;9)</h2></div>
     <p>A good score can still hide a biased model, so we check the residuals. They are <strong>centered near zero</strong>
-       (no systematic over- or under-prediction), but their spread <strong>widens for high predictions</strong>: the model
+       (no systematic over- or under-prediction), but their spread <strong>widens for high predictions</strong>. The model
        is dollar-precise on ordinary customers and fuzzier on whales, the classic footprint of a skewed target. That is
        fine for ranking. If we needed a precise figure per whale, a prediction interval would at least say how unsure each
        one is. Modeling <em>log</em> value, the usual cure for skew, does not help here. The Take It Further notebook finds
        it trims the error on ordinary customers and makes the whales' error worse.</p>
 
-    <p>Then the payoff: <span class="term">SHAP</span> attributes each prediction to its features and, averaged, ranks what
-       moves value most. <strong>Order frequency</strong> and <strong>average order value</strong> dominate, together they
-       are the spend rate, followed by <strong>recency</strong> and <strong>tenure</strong> (loyalty), then subscription
+    <p>Next, <span class="term">SHAP</span> attributes each prediction to its features and, averaged, ranks what
+       moves value most. <strong>Order frequency</strong> and <strong>average order value</strong> dominate (together they
+       are the spend rate), followed by <strong>recency</strong> and <strong>tenure</strong> (loyalty), then subscription
        and the referral channel. Because SHAP works per customer, you can show exactly why the model values any individual.</p>
 
     <figure class="nb-fig">
       <img src="../assets/img/case-study-customer-lifetime-value--shap.png" alt="A horizontal bar chart of SHAP importance: orders per month and average order value have by far the largest mean impact on the prediction, followed by recency, tenure, subscription, and the referral channel">
-      <figcaption><span class="cap-t">From the notebook &#183; Step 9</span><br>SHAP importance: the mean dollar impact of each feature on the prediction. How <em>often</em> and how <em>much</em> customers order dominate; recency and tenure follow. This is not just a leaderboard, SHAP explains each customer individually, which is what makes a prediction trustworthy.</figcaption>
+      <figcaption><span class="cap-t">From the notebook &#183; Step 9</span><br>SHAP importance is the mean dollar impact of each feature on the prediction. How <em>often</em> and how <em>much</em> customers order dominate; recency and tenure follow. Beyond this ranking, SHAP explains each customer individually, which is what makes a prediction trustworthy.</figcaption>
     </figure>
   </section>
 
   <!-- ===== §5 decide + communicate ===== -->
   <section id="writeup-sec">
-    <div class="section-eyebrow"><div class="num">5</div><h2>From Prediction to Decision, and the Memo (Steps 10&#8211;12)</h2></div>
+    <div class="section-eyebrow"><div class="num">5</div><h2>Targeting the top decile and writing the memo (steps 10&#8211;12)</h2></div>
     <p>The point of the model is an action. Ranking the held-out customers by <strong>predicted</strong> value and taking
-       the top 10% captures a large share of the <strong>actual</strong> value: those customers average about
+       the top 10% captures a large share of the <strong>actual</strong> value, and those customers average about
        <strong>4,396 dollars</strong> against an overall <strong>1,525</strong>. A retention budget aimed there, rather than
        sprayed evenly, is where the model pays for itself, and because the ranking is SHAP-explainable, each offer can be
        tailored to that customer's value drivers.</p>
@@ -257,13 +257,13 @@
       <h4>What drives value</h4>
       <p>The biggest levers are how <strong>often</strong> and how <strong>much</strong> customers order, followed by how
          <strong>recently</strong> they bought and how <strong>long</strong> they have been with us. Subscribers and
-         referred customers are worth more, but that describes who is valuable, not a lever to pull, correlation is not
-         causation.</p>
+         referred customers are worth more, but that tells us who is valuable and gives us no lever to pull, because
+         correlation is not causation.</p>
       <h4>The recommendation</h4>
       <p>Focus retention spend on the top decile by predicted value, who hold a large share of total value, with offers
          tailored to each customer's drivers. Re-check the model as new data arrives, since it assumes behavior stays
          stable.</p>
-      <h4>One caution</h4>
+      <h4>Where the model is least sure</h4>
       <p>Trust the <em>ranking</em> more than the exact dollar figure for whales, where the model is least precise. If a
          per-customer number is needed there, use the log-value model or a prediction interval.</p>
     </div>
@@ -274,7 +274,7 @@
     <div class="nb-cta" style="display:block">
       <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
         <div class="nb-ic">🐍</div>
-        <div class="nb-body"><h3>Run the whole project in Python</h3><p>The companion notebook is the full 12-step regression workflow: it frames the CLV question, explores the skewed target, builds the leakage-safe ColumnTransformer pipeline, sets a mean baseline, cross-validates and fits a HistGradientBoostingRegressor, scores it with RMSE, MAE, and R-squared against the baseline, diagnoses the residuals, interprets the drivers with SHAP, and turns the ranking into a targeting decision, all library-first with scikit-learn and shap.</p></div>
+        <div class="nb-body"><h3>Run the whole project in Python</h3><p>The companion notebook runs the full 12-step regression workflow. It frames the CLV question, explores the skewed target, builds the leakage-safe ColumnTransformer pipeline, sets a mean baseline, cross-validates and fits a HistGradientBoostingRegressor, scores it with RMSE, MAE, and R-squared against the baseline, diagnoses the residuals, interprets the drivers with SHAP, and turns the ranking into a targeting decision, all library-first with scikit-learn and shap.</p></div>
       </div>
       <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
         <a class="btn btn-primary" href="notebooks/html/case-study-customer-lifetime-value.html">📓 View Notebook (code &amp; outputs)</a>
@@ -290,9 +290,9 @@
   <!-- ===== takeaways ===== -->
   <section id="takeaways">
     <div class="takeaways">
-      <h3>🎓 Key Takeaways</h3>
+      <h3>🎓 In brief</h3>
       <ul>
-        <li><span class="ck">✓</span><span><strong>A dollar target is regression</strong>: judge it by MAE and RMSE against a baseline, not by "accuracy".</span></li>
+        <li><span class="ck">✓</span><span><strong>A dollar target is regression</strong>: judge it by MAE and RMSE against a baseline, since "accuracy" belongs to classification.</span></li>
         <li><span class="ck">✓</span><span><strong>Always beat a baseline</strong>: predicting the mean was off by 977 dollars; the model cut that to 293, a 70% reduction.</span></li>
         <li><span class="ck">✓</span><span><strong>One leakage-safe pipeline</strong>: the ColumnTransformer and model together mean preprocessing is fit only on training data.</span></li>
         <li><span class="ck">✓</span><span><strong>Diagnose the residuals</strong>: near-zero bias but wider spread on whales, the honest footprint of a skewed target.</span></li>
@@ -304,7 +304,7 @@
   <!-- ===== take it further ===== -->
   <section id="challenges">
     <div class="section-eyebrow"><div class="num">6</div><h2>Take It Further</h2></div>
-    <p>Five ways to push the model further in the companion notebook:</p>
+    <p>These extensions push the model further, and the companion notebook below works each one.</p>
     <div class="challenges">
       <div class="challenge"><div class="cnum">1</div><div class="cbody">
         <h3>Tame the skew with a log target</h3>
@@ -315,7 +315,7 @@
         <p>Drop linear regression and a random forest into the same pipeline and compare by cross-validated R-squared.</p>
         <div class="chint">Hint: hold preprocessing and the split fixed, change only the estimator.</div></div></div>
       <div class="challenge"><div class="cnum">3</div><div class="cbody">
-        <h3>Prediction intervals, not just points</h3>
+        <h3>Put a range around each prediction</h3>
         <p>Use quantile regression to give each customer a 5&#8211;95% range, then check its coverage.</p>
         <div class="chint">Hint: <code>HistGradientBoostingRegressor(loss="quantile", quantile=...)</code>.</div></div></div>
       <div class="challenge"><div class="cnum">4</div><div class="cbody">
@@ -331,7 +331,7 @@
     <div class="nb-cta" style="display:block">
       <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
         <div class="nb-ic">📓</div>
-        <div class="nb-body"><h3>All five, worked in a companion notebook</h3><p>A second notebook, <strong>Take It Further</strong>, rebuilds this chapter's model and works every extension with visuals and explanations: a log-target comparison, a three-model leaderboard, quantile prediction intervals with a coverage check, a per-customer SHAP explanation, and a targeting-ROI simulation.</p></div>
+        <div class="nb-body"><h3>Every extension worked in a companion notebook</h3><p>A second notebook, <strong>Take It Further</strong>, rebuilds this chapter's model and works every extension with visuals and explanations: a log-target comparison, a three-model leaderboard, quantile prediction intervals with a coverage check, a per-customer SHAP explanation, and a targeting-ROI simulation.</p></div>
       </div>
       <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
         <a class="btn btn-primary" href="notebooks/html/case-study-customer-lifetime-value--take-it-further.html">📓 View Notebook (code &amp; outputs)</a>
@@ -343,7 +343,7 @@
 
   <!-- ===== quiz ===== -->
   <section id="quiz">
-    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <div class="section-eyebrow"><div class="num">7</div><h2>Test yourself</h2></div>
     <p>Eight questions on the regression workflow, from framing and baselines to residuals and SHAP. Answer them, hit
        <strong>Check Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
     <div id="quiz-root"></div>
@@ -387,7 +387,7 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
       q: "Why is predicting customer lifetime value a regression problem?",
       options: ["Because the target has two classes", "Because the target is a continuous dollar amount", "Because we cluster customers", "Because the data is labeled"],
       answer: 1,
-      explain: "Regression predicts a continuous number. CLV is a dollar amount, so we judge it by dollar error (MAE, RMSE), not by classification accuracy."
+      explain: "Regression predicts a continuous number. CLV is a dollar amount, so we judge it by dollar error (MAE, RMSE). Accuracy is a classification measure."
     },
     {
       q: "The baseline predicts every customer as the training-set mean. What is it for?",
@@ -423,7 +423,7 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
       q: "SHAP found order frequency and average order value dominate. The safe way to use that is…",
       options: ["Force every customer to subscribe", "Read it as who is valuable, not a guaranteed lever, since correlation is not causation", "Ignore the other features", "Conclude subscriptions cause value"],
       answer: 1,
-      explain: "The model describes who is valuable. Making a customer subscribe will not automatically create value; SHAP importance is descriptive, not causal."
+      explain: "The model describes who is valuable. SHAP importance is descriptive and says nothing about cause, so making a customer subscribe will not automatically create value."
     },
     {
       q: "How does the model turn into a decision?",
