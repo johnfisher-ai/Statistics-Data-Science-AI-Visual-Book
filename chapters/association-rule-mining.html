@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ch 120 · Association Rule Mining — Statistics, Data Science and AI</title>
-  <meta name="description" content="&quot;Customers who bought this also bought...&quot; Behind that everyday phrase is an unsupervised search through millions of baskets for items that co-occur far more than chance.">
+  <meta name="description" content="&quot;Customers who bought this also bought...&quot; Behind that everyday phrase is an unsupervised search through millions of baskets for items that co-occur far more than chance. We mine grocery transactions with Apriori and FP-Growth, and learn why lift can tell a real pattern from a coincidence when confidence cannot.">
   <meta name="author" content="John Fisher">
   <link rel="canonical" href="https://johnfisher-ai.github.io/Statistics-Data-Science-AI-Visual-Book/chapters/association-rule-mining.html">
 
   <meta property="og:type" content="article">
   <meta property="og:site_name" content="Statistics, Data Science and AI: A Visual Handbook">
   <meta property="og:title" content="Association Rule Mining · Chapter 120">
-  <meta property="og:description" content="&quot;Customers who bought this also bought...&quot; Behind that everyday phrase is an unsupervised search through millions of baskets for items that co-occur far more than chance.">
+  <meta property="og:description" content="&quot;Customers who bought this also bought...&quot; Behind that everyday phrase is an unsupervised search through millions of baskets for items that co-occur far more than chance. We mine grocery transactions with Apriori and FP-Growth, and learn why lift can tell a real pattern from a coincidence when confidence cannot.">
   <meta property="og:url" content="https://johnfisher-ai.github.io/Statistics-Data-Science-AI-Visual-Book/chapters/association-rule-mining.html">
   <meta property="og:image" content="https://johnfisher-ai.github.io/Statistics-Data-Science-AI-Visual-Book/assets/img/social-card-v2.png">
   <meta property="og:image:width" content="2400">
@@ -19,7 +19,7 @@
 
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Association Rule Mining · Chapter 120">
-  <meta name="twitter:description" content="&quot;Customers who bought this also bought...&quot; Behind that everyday phrase is an unsupervised search through millions of baskets for items that co-occur far more than chance.">
+  <meta name="twitter:description" content="&quot;Customers who bought this also bought...&quot; Behind that everyday phrase is an unsupervised search through millions of baskets for items that co-occur far more than chance. We mine grocery transactions with Apriori and FP-Growth, and learn why lift can tell a real pattern from a coincidence when confidence cannot.">
   <meta name="twitter:image" content="https://johnfisher-ai.github.io/Statistics-Data-Science-AI-Visual-Book/assets/img/social-card-v2.png">
   <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png">
@@ -73,7 +73,7 @@
     <h1>Association Rule <span class="accent">Mining</span></h1>
     <p class="dek">"Customers who bought this also bought..." Behind that everyday phrase is an unsupervised search through
        millions of baskets for items that co-occur far more than chance. We mine grocery transactions with Apriori and
-       FP-Growth, and learn why lift, not confidence, tells a real pattern from a coincidence.</p>
+       FP-Growth, and learn why lift can tell a real pattern from a coincidence when confidence cannot.</p>
     <div class="hero-meta">
       <div class="m">⏱️ <b>~18 min</b>&nbsp;read</div>
       <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
@@ -85,10 +85,10 @@
 <main class="reading">
 
   <section id="intro">
-    <p class="lead">There is a retail legend: mine a supermarket's receipts and you find that shoppers who buy
+    <p class="lead">A retail legend says that if you mine a supermarket's receipts, you find that shoppers who buy
        <span class="hl">diapers</span> disproportionately also buy <span class="hl">beer</span> (tired new parents, the story
-       goes). True or not, it captures the goal of <span class="term">association rule mining</span>: discover, with no
-       labels and no target, which items travel together, and how strongly.</p>
+       goes). True or not, it captures the goal of <span class="term">association rule mining</span>, which is to discover, with no
+       labels and no target, which items travel together and how strongly.</p>
 
     <div class="def-card">
       <div class="sigma">⇄</div>
@@ -103,7 +103,7 @@
     <div class="callout key">
       <div class="cico">🗂️</div>
       <div><div class="ctitle">The chapter in one line</div>
-        <p>Mine baskets for "A goes with B" rules: judge each by <strong>support</strong> (common enough?),
+        <p>Mine baskets for "A goes with B" rules, judge each by <strong>support</strong> (common enough?),
            <strong>confidence</strong> (reliable?), and above all <strong>lift</strong> (stronger than chance?), and use
            <strong>Apriori</strong>'s pruning trick, or the faster <strong>FP-Growth</strong>, to find them without checking
            every combination.</p></div>
@@ -112,20 +112,20 @@
 
   <!-- ===== Section 1 ===== -->
   <section id="what">
-    <div class="section-eyebrow"><div class="num">1</div><h2>Market Baskets and Rules</h2></div>
+    <div class="section-eyebrow"><div class="num">1</div><h2>Market baskets and rules</h2></div>
     <p>The input is a pile of <span class="term">transactions</span>, each a set of items bought together. The output is a
        set of <span class="term">rules</span> of the form <span class="hl">antecedent &#8594; consequent</span> ("if a
-       basket has chips and soda, it probably has salsa"). This is <span class="hl">unsupervised</span>: nothing is being
-       predicted or labeled, we are simply describing structure, which items keep company.</p>
+       basket has chips and soda, it probably has salsa"). The task is <span class="hl">unsupervised</span>, since nothing is being
+       predicted or labeled. We are simply describing structure, which items keep company.</p>
 
-    <p>Before mining, receipts (stored as one row per item) are reshaped into a <span class="term">basket matrix</span>: one
-       row per trip, one True/False column per item. Our grocery data becomes a 900-trip by 25-item grid of booleans, the
+    <p>Before mining, receipts (stored as one row per item) are reshaped into a <span class="term">basket matrix</span>, with one
+       row per trip and one True/False column per item. Our grocery data becomes a 900-trip by 25-item grid of booleans, the
        shape every mining algorithm expects.</p>
   </section>
 
   <!-- ===== Section 2 ===== -->
   <section id="metrics">
-    <div class="section-eyebrow"><div class="num">2</div><h2>Support, Confidence &amp; Lift</h2></div>
+    <div class="section-eyebrow"><div class="num">2</div><h2>Support, confidence and lift</h2></div>
     <p>Three metrics turn a co-occurrence into an actionable rule, and getting the difference between them right is the
        whole game.</p>
 
@@ -173,7 +173,7 @@
 
     <p><span class="term">Support</span> is popularity, the fraction of baskets holding the whole itemset. It keeps us
        honest (rare combos are statistically flimsy) and, as we will see, powers the search. <span class="term">Confidence</span>
-       is reliability, given A, how often does B follow? But confidence has a trap: if B is popular, almost any rule
+       is reliability, given A, how often does B follow? But confidence has a trap, because if B is popular, almost any rule
        "&#8230; &#8594; B" scores high. <span class="term">Lift</span> fixes that by dividing confidence by B's baseline
        rate. <strong>Lift &gt; 1</strong> means A and B co-occur more than independence predicts, <strong>= 1</strong> is
        independence, <strong>&lt; 1</strong> means the items repel. A lift is estimated from the sample, so a lift a little
@@ -182,10 +182,10 @@
 
   <!-- ===== Section 3 ===== -->
   <section id="apriori">
-    <div class="section-eyebrow"><div class="num">3</div><h2>Finding Rules: Apriori &amp; FP-Growth</h2></div>
-    <p>With even a few dozen items there are astronomically many possible itemsets, checking every one is hopeless.
-       <span class="term">Apriori</span> escapes the explosion with one elegant observation, the
-       <span class="term">downward-closure principle</span>: <span class="hl">if an itemset is infrequent, every larger set
+    <div class="section-eyebrow"><div class="num">3</div><h2>Finding rules with Apriori and FP-Growth</h2></div>
+    <p>With even a few dozen items there are astronomically many possible itemsets, so checking every one is hopeless.
+       <span class="term">Apriori</span> escapes the explosion with one observation, the
+       <span class="term">downward-closure principle</span>, which says that <span class="hl">if an itemset is infrequent, every larger set
        containing it must be infrequent too</span>. So the moment a set falls below minimum support, Apriori prunes it and
        never looks at any of its supersets.</p>
 
@@ -230,16 +230,16 @@
 
     <p>Because it explores only the survivors, Apriori scans a tiny corner of the space and still finds every frequent
        itemset, here, <strong>61 of them</strong> above 3% support. <span class="term">FP-Growth</span> reaches the
-       <em>same</em> answer by a different route: it compresses the transactions into a tree and reads patterns off it
-       without repeated scans, so it runs much faster on large catalogs. Same rules, better speed, which is why FP-Growth
+       <em>same</em> answer by a different route. It compresses the transactions into a tree and reads patterns off it
+       without repeated scans. The rules come out the same and arrive much faster on large catalogs, which is why FP-Growth
        is the workhorse on real retail data.</p>
   </section>
 
   <!-- ===== Section 4: REAL-WORLD ===== -->
   <section id="realworld">
-    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: Market-Basket Analysis</h2></div>
-    <p>The original and still biggest use of association rules is <span class="hl">market-basket analysis</span>: what to
-       bundle, what to put on adjacent shelves, what to recommend at checkout.</p>
+    <div class="section-eyebrow"><div class="num">4</div><h2>Market-basket analysis</h2></div>
+    <p>The original and still biggest use of association rules is <span class="hl">market-basket analysis</span>, which decides what to
+       bundle, what to put on adjacent shelves and what to recommend at checkout.</p>
 
     <div class="rw-card">
       <div class="rw-tag">📂 Dataset · association-rule-mining--baskets.xlsx</div>
@@ -268,12 +268,12 @@
     <p>The last row is the lesson. Its 37% confidence looks like something, until you remember bread sits in
        <strong>33% of all baskets</strong> anyway. Bananas barely move the needle, so its lift is only 1.10, and a Fisher exact test on its counts (p = 0.46) cannot
        tell it from independence.
-       <strong>Rank by lift, filter by support, then act.</strong> That is market-basket analysis in one sentence.</p>
+       In one sentence, market-basket analysis is to <strong>rank by lift, filter by support, then act</strong>.</p>
   </section>
 
   <!-- ===== Section 5: ML & AI ===== -->
   <section id="ml-ai">
-    <div class="section-eyebrow"><div class="num">5</div><h2>Association Rules in Machine Learning &amp; AI</h2></div>
+    <div class="section-eyebrow"><div class="num">5</div><h2>Association rules in machine learning &amp; AI</h2></div>
     <p>The "what goes with what" question reaches far beyond the grocery aisle.</p>
 
     <div style="overflow-x:auto">
@@ -292,14 +292,14 @@
     <div class="callout key">
       <div class="cico">🤖</div>
       <div><div class="ctitle">Why this matters for AI research</div>
-        <p>Association rules are the original <strong>recommender system</strong>, and their great virtue is being
-           <strong>transparent</strong>: a rule is a plain, auditable "if this then that," not a black box. Modern
+        <p>Association rules are the original <strong>recommender system</strong>, and their great virtue is that they are
+           <strong>transparent</strong>. A rule is a plain, auditable "if this then that," with nothing hidden inside. Modern
            large-scale recommenders have largely moved to <strong>matrix factorization</strong> and
            <strong>neural embeddings</strong> (dimensionality reduction from the <a href="dimensionality-reduction.html">Dimensionality Reduction</a> chapter, applied to users and items), which
-           capture subtler taste than raw co-occurrence. But the association-rule mindset endures: <strong>lift</strong>
+           capture subtler taste than raw co-occurrence. But the association-rule mindset endures, and <strong>lift</strong>
            remains the standard way to ask whether two events are linked or merely both common, a question that surfaces
-           everywhere from A/B analysis to fraud detection to feature discovery. Simple, explainable, and still
-           surprisingly hard to beat for interpretable recommendations.</p></div>
+           everywhere from A/B analysis to fraud detection to feature discovery. Rules stay simple and explainable, and they
+           are still surprisingly hard to beat for interpretable recommendations.</p></div>
     </div>
   </section>
 
@@ -336,12 +336,12 @@
   <!-- ===== Takeaways ===== -->
   <section id="takeaways">
     <div class="takeaways">
-      <h3>🎓 Key Takeaways</h3>
+      <h3>🎓 In brief</h3>
       <ul>
         <li><span class="ck">✓</span><span><strong>Association rules</strong> (A &#8594; B) describe which items co-occur, unsupervised, no target.</span></li>
         <li><span class="ck">✓</span><span><strong>Support</strong> = how common the itemset is; it keeps rules trustworthy and powers the search.</span></li>
         <li><span class="ck">✓</span><span><strong>Confidence</strong> = P(B given A), but it is inflated when B is popular.</span></li>
-        <li><span class="ck">✓</span><span><strong>Lift</strong> = confidence vs B's baseline; <strong>&gt; 1</strong> means more co-occurrence than chance; check the counts before trusting a small lift. Rank by lift.</span></li>
+        <li><span class="ck">✓</span><span><strong>Lift</strong> = confidence vs B's baseline, so <strong>&gt; 1</strong> means more co-occurrence than chance. Rank by lift, and check the counts before trusting a small lift.</span></li>
         <li><span class="ck">✓</span><span><strong>Apriori</strong> prunes with downward closure; <strong>FP-Growth</strong> gets the same rules faster.</span></li>
       </ul>
     </div>
@@ -349,7 +349,7 @@
 
   <!-- ===== Challenges ===== -->
   <section id="challenges">
-    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice challenges</h2></div>
     <p>Five short challenges. Try them with mlxtend before checking the solutions.</p>
     <div class="challenges">
       <div class="challenge"><div class="cnum">1</div><div class="cbody">
@@ -394,7 +394,7 @@
 
   <!-- ===== Quiz ===== -->
   <section id="quiz">
-    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <div class="section-eyebrow"><div class="num">7</div><h2>Test yourself</h2></div>
     <p>Eight quick questions on association rules. Answer them, hit <strong>Check Answers</strong>, and keep refining until
        you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
     <div id="quiz-root"></div>
@@ -441,7 +441,7 @@ window.addEventListener('scroll', () => {
       q: "An association rule A → B says…",
       options: ["A causes B", "Baskets containing A tend to also contain B", "A and B are never together", "B is the label for A"],
       answer: 1,
-      explain: "Rules describe co-occurrence, not causation: if A is in a basket, B tends to be too."
+      explain: "Rules describe co-occurrence and say nothing about causation. If A is in a basket, B tends to be too."
     },
     {
       q: "The support of an itemset is…",
@@ -453,7 +453,7 @@ window.addEventListener('scroll', () => {
       q: "Confidence of A → B is…",
       options: ["P(A)", "The fraction of baskets with A that also contain B", "The fraction of all baskets with B", "Always equal to lift"],
       answer: 1,
-      explain: "Confidence = P(B | A): among baskets containing A, how many also contain B."
+      explain: "Confidence = P(B | A), the share of baskets containing A that also contain B."
     },
     {
       q: "Why can confidence alone be misleading?",
@@ -465,7 +465,7 @@ window.addEventListener('scroll', () => {
       q: "Lift greater than 1 means…",
       options: ["The items repel each other", "B is more likely given A than it is in general, a positive association in these baskets", "The rule is invalid", "A and B are independent"],
       answer: 1,
-      explain: "Lift = confidence / P(B). Above 1 = positive association; 1 = independence; below 1 = negative."
+      explain: "Lift = confidence / P(B). Above 1 is a positive association, 1 is independence, and below 1 is a negative one."
     },
     {
       q: "The Apriori downward-closure principle says…",
