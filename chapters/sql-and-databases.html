@@ -113,14 +113,14 @@
       <div class="def-body">
         <span class="def-kw">SQL</span> (Structured Query Language) is the standard language for <span class="def-kw">relational
         databases</span>, which store data in <span class="def-kw">tables</span> of rows and columns linked by
-        <span class="def-kw">keys</span>. It is <span class="def-kw">declarative</span>: you describe the result you want, and
+        <span class="def-kw">keys</span>. It is <span class="def-kw">declarative</span>, meaning you describe the result you want and
         the database figures out how to produce it.
       </div>
     </div>
 
     <div class="callout key">
       <div class="cico">🧰</div>
-      <div><div class="ctitle">Five runnable notebooks, real SQL</div>
+      <div><div class="ctitle">Runnable notebooks with real SQL</div>
         <p>SQL is a doing skill, so this chapter is a <strong>five-notebook mini-course</strong>: foundations
            (SELECT/WHERE/ORDER BY), aggregation (GROUP BY), joins, window functions, and subqueries with the handoff to
            pandas. Every query runs for real against a small shop database loaded into <strong>SQLite</strong>, which is built
@@ -130,8 +130,8 @@
 
   <!-- ===== §1 relational model ===== -->
   <section id="relational-model">
-    <div class="section-eyebrow"><div class="num">1</div><h2>The Relational Model</h2></div>
-    <p>A relational database stores data in <strong>tables</strong>, each row an record and each column a field. The insight
+    <div class="section-eyebrow"><div class="num">1</div><h2>The relational model</h2></div>
+    <p>A relational database stores data in <strong>tables</strong>, each row a record and each column a field. The insight
        that makes it powerful is to <strong>split data across tables to avoid repeating it</strong>, and to link the tables
        with <strong>keys</strong>. A <strong>primary key</strong> uniquely identifies each row of a table; a
        <strong>foreign key</strong> in another table points back to it. Store each customer once, each product once, and let
@@ -206,7 +206,7 @@
 
   <!-- ===== §2 the SELECT ===== -->
   <section id="the-select">
-    <div class="section-eyebrow"><div class="num">2</div><h2>The Anatomy of a Query</h2></div>
+    <div class="section-eyebrow"><div class="num">2</div><h2>The anatomy of a query</h2></div>
     <p>Almost every SQL query is one sentence with up to seven clauses, and they are always written in the same order. You will
        recognize the logic immediately, because it is the same describe-filter-group-sort you have done throughout this book.</p>
 
@@ -218,7 +218,7 @@
 <span class="kw">ORDER BY</span> a sort key
 <span class="kw">LIMIT</span>    how many rows to return</pre></div>
 
-    <p>There is one surprise worth learning early, and it prevents a lot of confusion: SQL does <strong>not run in the order
+    <p>One surprise is worth learning early, because it prevents a lot of confusion. SQL does <strong>not run in the order
        you write it</strong>. It reads <code>FROM</code> first to get the rows, filters with <code>WHERE</code>, forms groups,
        filters those with <code>HAVING</code>, and only then evaluates the <code>SELECT</code> list, sorts, and limits. That is
        why standard SQL lets you filter groups in <code>HAVING</code> but not yet refer to a <code>SELECT</code> alias there
@@ -247,21 +247,21 @@
         <text x="350" y="126" text-anchor="middle" font-size="8.5" fill="#64748b" font-style="italic">this is why WHERE filters rows and HAVING filters the groups that WHERE's survivors form</text>
       </svg>
       <figcaption style="font-size:0.78rem;color:var(--ink-soft);margin-top:0.9rem;line-height:1.55">
-        Knowing the run order explains the rules: <code>WHERE</code> acts before grouping so it cannot see aggregates, while
+        Knowing the run order explains the rules. <code>WHERE</code> acts before grouping so it cannot see aggregates, while
         <code>HAVING</code> acts after and is made for them. It is the same split-apply-combine you have used all along.
       </figcaption>
     </figure>
 
     <p>Aggregation is the workhorse. <code>COUNT</code>, <code>SUM</code>, <code>AVG</code>, <code>MIN</code>, and
        <code>MAX</code> collapse many rows to one number, and <code>GROUP BY</code> computes that number for each group. If
-       this feels familiar, it should: <code>SELECT category, SUM(revenue) FROM ... GROUP BY category</code> is the SQL
+       this feels familiar, that is because <code>SELECT category, SUM(revenue) FROM ... GROUP BY category</code> is the SQL
        twin of <code>df.groupby("category").revenue.sum()</code> from the Python chapter. The two differ only with missing
        values, since SQL keeps a NULL key as its own group while pandas drops a missing key by default.</p>
   </section>
 
   <!-- ===== §3 joins ===== -->
   <section id="joins">
-    <div class="section-eyebrow"><div class="num">3</div><h2>Joins: The Relational Payoff</h2></div>
+    <div class="section-eyebrow"><div class="num">3</div><h2>Joins put the tables back together</h2></div>
     <p>Splitting data across tables only pays off because you can put it back together. A <strong>JOIN</strong> matches rows
        from two tables on a shared key. The revenue-by-region question is impossible from any single table, but a join from
        line items to orders to customers makes it a few lines of SQL.</p>
@@ -269,30 +269,30 @@
     <table class="ml-table">
       <thead><tr><th style="width:22%">Join type</th><th>What it keeps</th></tr></thead>
       <tbody>
-        <tr><td class="nm">INNER JOIN</td><td>Only rows that match on both sides. The default and most common; drops non-matches.</td></tr>
+        <tr><td class="nm">INNER JOIN</td><td>Only rows that match on both sides. The default and most common. It drops non-matches.</td></tr>
         <tr><td class="nm">LEFT JOIN</td><td>Every row from the left table, plus matches from the right, with NULL where there is none. How you find records with no match, like customers who never ordered.</td></tr>
         <tr><td class="nm">RIGHT / FULL JOIN</td><td>The mirror image, and both sides kept. Less common, and some engines (including SQLite historically) lean on LEFT instead.</td></tr>
       </tbody>
     </table>
 
-    <div class="sqlbox"><div class="cbh">revenue by region: a three-table join</div><pre tabindex="0"><span class="kw">SELECT</span>   c.region, <span class="kw">ROUND</span>(<span class="kw">SUM</span>(oi.revenue), 2) <span class="kw">AS</span> revenue
+    <div class="sqlbox"><div class="cbh">revenue by region across three tables</div><pre tabindex="0"><span class="kw">SELECT</span>   c.region, <span class="kw">ROUND</span>(<span class="kw">SUM</span>(oi.revenue), 2) <span class="kw">AS</span> revenue
 <span class="kw">FROM</span>     order_items oi
 <span class="kw">JOIN</span>     orders    o  <span class="kw">ON</span> oi.order_id   = o.order_id
 <span class="kw">JOIN</span>     customers c  <span class="kw">ON</span> o.customer_id = c.customer_id
 <span class="kw">GROUP BY</span> c.region
 <span class="kw">ORDER BY</span> revenue <span class="kw">DESC</span>;</pre></div>
 
-    <p>A join is the SQL counterpart of a pandas <code>merge</code> and an R <code>dplyr</code> join: same idea, same shared
-       key, different words. Join to reassemble, then <code>GROUP BY</code> to summarize, and you can answer almost any
+    <p>A join is the SQL counterpart of a pandas <code>merge</code> and an R <code>dplyr</code> join, the same idea on the same shared
+       key in different words. Join to reassemble, then <code>GROUP BY</code> to summarize, and you can answer almost any
        cross-table business question. The notebooks run this exact query and several more.</p>
   </section>
 
   <!-- ===== §4 window functions ===== -->
   <section id="window-functions">
-    <div class="section-eyebrow"><div class="num">4</div><h2>Window Functions: Summarize Without Collapsing</h2></div>
+    <div class="section-eyebrow"><div class="num">4</div><h2>Window functions summarize without collapsing</h2></div>
     <p>A <code>GROUP BY</code> reduces each group to a single row, which is exactly what you want for a summary and exactly
-       wrong when you need to <em>keep</em> every row and add a group-wise number beside it. That is what a
-       <strong>window function</strong> does: it computes an aggregate <em>over a window</em> of rows defined by an
+       wrong when you need to <em>keep</em> every row and add a group-wise number beside it. A
+       <strong>window function</strong> does exactly that. It computes an aggregate <em>over a window</em> of rows defined by an
        <code>OVER</code> clause, but returns a value for every row.</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.5rem 1.2rem">
@@ -342,13 +342,13 @@
 
   <!-- ===== notebooks hub ===== -->
   <section id="notebooks">
-    <div class="section-eyebrow"><div class="num" style="background:#0f766e">🐍</div><h2>The Five-Notebook Mini-Course</h2></div>
+    <div class="section-eyebrow"><div class="num" style="background:#0f766e">🐍</div><h2>The notebook mini-course</h2></div>
     <p>Work through these in order. Each loads the shop database into SQLite and runs real SQL, building from a single SELECT
        up to window functions and the handoff to pandas.</p>
 
     <div class="nbgrid">
       <div class="nbk">
-        <div class="nbk-n">Notebook 1</div><h3>SQL Foundations</h3>
+        <div class="nbk-n">Notebook 1</div><h3>SQL foundations</h3>
         <p>The core sentence: SELECT and FROM, WHERE with comparisons, BETWEEN, IN and LIKE, ORDER BY and LIMIT for top-N, DISTINCT, and computed columns.</p>
         <div class="nbk-links">
           <a class="b-view" href="notebooks/html/sql-and-databases--1-foundations.html">📓 View</a>
@@ -357,7 +357,7 @@
       </div>
       <div class="nbk">
         <div class="nbk-n">Notebook 2</div><h3>Aggregation &amp; GROUP BY</h3>
-        <p>COUNT, SUM, AVG, MIN, MAX; grouping by one column and several; the difference between WHERE and HAVING; counting distinct values.</p>
+        <p>The aggregate functions (COUNT, SUM, AVG, MIN, MAX), grouping by one column and by several, the difference between WHERE and HAVING, and counting distinct values.</p>
         <div class="nbk-links">
           <a class="b-view" href="notebooks/html/sql-and-databases--2-aggregation.html">📓 View</a>
           <a class="b-colab" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/sql-and-databases--2-aggregation.ipynb" target="_blank" rel="noopener">▶ Colab</a>
@@ -372,7 +372,7 @@
         </div>
       </div>
       <div class="nbk">
-        <div class="nbk-n">Notebook 4</div><h3>Window Functions</h3>
+        <div class="nbk-n">Notebook 4</div><h3>Window functions</h3>
         <p>SUM OVER for running totals and shares, RANK and ROW_NUMBER, PARTITION BY to rank within groups, and LAG for month-over-month growth.</p>
         <div class="nbk-links">
           <a class="b-view" href="notebooks/html/sql-and-databases--4-window-functions.html">📓 View</a>
@@ -381,14 +381,14 @@
       </div>
       <div class="nbk">
         <div class="nbk-n">Notebook 5</div><h3>Subqueries &amp; pandas</h3>
-        <p>Subqueries and CTEs (the WITH clause) for readable complex logic, then the professional handoff: SQL prepares the data, pandas analyzes and plots it.</p>
+        <p>Subqueries and CTEs (the WITH clause) for readable complex logic, then the professional handoff, where SQL prepares the data and pandas analyzes and plots it.</p>
         <div class="nbk-links">
           <a class="b-view" href="notebooks/html/sql-and-databases--5-subqueries-and-pandas.html">📓 View</a>
           <a class="b-colab" href="https://colab.research.google.com/github/johnfisher-ai/Statistics-Data-Science-AI-Visual-Book/blob/main/chapters/notebooks/sql-and-databases--5-subqueries-and-pandas.ipynb" target="_blank" rel="noopener">▶ Colab</a>
         </div>
       </div>
       <div class="nbk" style="border-color:var(--p-bd-99f6e4, #99f6e4);background:var(--p-bg-f0fdfa, #f0fdfa)">
-        <div class="nbk-n">Solutions</div><h3>Challenge Solutions</h3>
+        <div class="nbk-n">Solutions</div><h3>Challenge solutions</h3>
         <p>Worked answers to the five practice challenges below, from a filtered SELECT through a CTE handed to pandas.</p>
         <div class="nbk-links">
           <a class="b-view" href="notebooks/html/sql-and-databases--solutions.html">📓 View</a>
@@ -400,7 +400,7 @@
     <div class="rw-card">
       <div class="rw-tag">Teaching dataset</div>
       <p style="margin:0.4rem 0 0"><strong>A four-table shop database.</strong> <code>customers</code> (40) and
-         <code>products</code> (12) are lookup tables; <code>orders</code> (600) records who bought when through which channel;
+         <code>products</code> (12) are lookup tables. The <code>orders</code> table (600) records who bought when through which channel,
          and <code>order_items</code> (1,494 lines) holds the quantities, prices, and revenue, linked by
          <code>order_id</code> and <code>product_id</code>. The notebooks load these four sheets into SQLite and query them.
          Running the whole course reproduces the shop's year: <strong>114,592 dollars</strong> of revenue, an average order of
@@ -416,8 +416,8 @@
 
   <!-- ===== §5 SQL in analysis / ML/AI ===== -->
   <section id="ml-ai">
-    <div class="section-eyebrow"><div class="num">5</div><h2>SQL in Data Science, Machine Learning &amp; AI</h2></div>
-    <p>SQL is not a rival to Python and R; it is the stage before them. The professional pattern is to push the heavy joining,
+    <div class="section-eyebrow"><div class="num">5</div><h2>SQL in machine learning &amp; AI</h2></div>
+    <p>SQL is the stage that comes before Python and R. The professional pattern is to push the heavy joining,
        filtering, and aggregating into the database, where the data already lives and the engine is optimized for it, then pull
        a compact, tidy result into pandas or R for modeling and charts. Because you know the pandas verbs, the SQL ones need no
        new concepts.</p>
@@ -437,17 +437,17 @@
     <p>For machine learning, this matters more than it first appears. Real models are trained on features that are almost
        always <strong>engineered in SQL</strong>: a customer's total spend, their order count in the last 90 days, their days
        since last purchase. Computing those at the source and reading the result into a training frame is the daily reality of
-       applied ML. And the modern data stack has only deepened SQL's role: cloud <strong>warehouses</strong> run SQL over
+       applied ML. The modern data stack has only deepened SQL's role. Cloud <strong>warehouses</strong> run SQL over
        petabytes, and tools like <strong>dbt</strong> let analysts build tested, version-controlled transformation pipelines in
        pure SQL, a discipline now called <em>analytics engineering</em>.</p>
 
     <div class="research">
       <div class="rtag">Research note</div>
-      <p style="margin:0.4rem 0 0">SQL rests on a genuine piece of theory: Edgar F. Codd's <strong>relational model</strong>
+      <p style="margin:0.4rem 0 0">SQL rests on a genuine piece of theory, Edgar F. Codd's <strong>relational model</strong>
          (1970), which recast data as mathematical relations and gave querying a rigorous, set-based foundation. That is why
-         the language is <em>declarative</em>, you state <em>what</em> you want and the database's query planner decides
+         the language is <em>declarative</em>. You state <em>what</em> you want, and the database's query planner decides
          <em>how</em> to compute it. Half a century of hardware has changed underneath, yet the same SELECT still runs,
-         because it was built on an abstraction, not an implementation. Few skills in computing have aged so well, which is a
+         because it was built on an abstraction and never tied to one implementation. Few skills in computing have aged so well, which is a
          strong argument for learning it deeply.</p>
     </div>
   </section>
@@ -455,13 +455,13 @@
   <!-- ===== takeaways ===== -->
   <section id="takeaways">
     <div class="takeaways">
-      <h3>🎓 Key Takeaways</h3>
+      <h3>🎓 In brief</h3>
       <ul>
         <li><span class="ck">✓</span><span><strong>Most data lives in relational databases</strong>, stored as tables linked by primary and foreign keys, and queried with SQL, a fifty-year-old, remarkably durable skill.</span></li>
-        <li><span class="ck">✓</span><span><strong>Almost every query is one sentence</strong>: SELECT, FROM, WHERE, GROUP BY, HAVING, ORDER BY, LIMIT, and it runs FROM-first, not top-down.</span></li>
-        <li><span class="ck">✓</span><span><strong>Aggregation is split-apply-combine</strong>: GROUP BY with COUNT/SUM/AVG is the SQL twin of a pandas groupby; WHERE filters rows, HAVING filters groups.</span></li>
+        <li><span class="ck">✓</span><span><strong>Almost every query is one sentence</strong>: SELECT, FROM, WHERE, GROUP BY, HAVING, ORDER BY, LIMIT, and the database runs it FROM-first instead of top-down.</span></li>
+        <li><span class="ck">✓</span><span><strong>Aggregation is split-apply-combine</strong>: GROUP BY with COUNT/SUM/AVG is the SQL twin of a pandas groupby, and WHERE filters rows while HAVING filters groups.</span></li>
         <li><span class="ck">✓</span><span><strong>Joins reassemble split tables</strong> on a shared key: INNER keeps matches, LEFT keeps every left row and marks misses with NULL. A join is a pandas merge in different words.</span></li>
-        <li><span class="ck">✓</span><span><strong>Window functions summarize without collapsing</strong>: SUM with OVER (ORDER BY ...) gives a running total, adds rankings with RANK, and compares rows with LAG, all while keeping every row.</span></li>
+        <li><span class="ck">✓</span><span><strong>Window functions summarize without collapsing</strong>: SUM with OVER (ORDER BY ...) gives a running total, RANK adds rankings, and LAG compares rows, all while keeping every row.</span></li>
         <li><span class="ck">✓</span><span><strong>The pattern is SQL then Python</strong>: push joins, filters, and aggregation into the database, then read a tidy result into pandas or R to model and plot.</span></li>
         <li><span class="ck">✓</span><span><strong>SQL is central to modern ML and analytics</strong>: features are engineered in SQL, warehouses run it at scale, and dbt made it a version-controlled engineering discipline.</span></li>
       </ul>
@@ -470,8 +470,8 @@
 
   <!-- ===== §6 challenges ===== -->
   <section id="challenges">
-    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
-    <p>Five exercises, one per notebook area, on the shop database. Full solutions are in the companion solutions notebook.</p>
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice challenges</h2></div>
+    <p>Each exercise below covers one notebook area and uses the shop database. Full solutions are in the companion solutions notebook.</p>
     <div class="challenges">
       <div class="challenge"><div class="cnum">1</div><div class="cbody">
         <h3>Filter and sort</h3>
@@ -482,7 +482,7 @@
         <p>Total revenue per product id, keeping only products that brought in more than 8,000 dollars.</p>
         <div class="chint">Hint: <code>GROUP BY product_id</code> then <code>HAVING SUM(revenue) &gt; 8000</code>.</div></div></div>
       <div class="challenge"><div class="cnum">3</div><div class="cbody">
-        <h3>Three-table join</h3>
+        <h3>Join across three tables</h3>
         <p>Report revenue by customer segment (Consumer vs Business), joining line items to orders to customers.</p>
         <div class="chint">Hint: two <code>JOIN ... ON</code> clauses, then <code>GROUP BY c.segment</code>.</div></div></div>
       <div class="challenge"><div class="cnum">4</div><div class="cbody">
@@ -510,7 +510,7 @@
 
   <!-- ===== §7 quiz ===== -->
   <section id="quiz">
-    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <div class="section-eyebrow"><div class="num">7</div><h2>Test yourself</h2></div>
     <p>Eight questions on the relational model, SELECT, joins, aggregation, and window functions. Answer them, hit
        <strong>Check Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
     <div id="quiz-root"></div>
@@ -554,7 +554,7 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
       q: "What is SQL and what kind of database does it query?",
       options: ["A spreadsheet formula language", "The standard language for relational databases, which store data in tables linked by keys", "A machine-learning framework", "A plotting library"],
       answer: 1,
-      explain: "SQL (Structured Query Language) queries relational databases: tables of rows and columns linked by primary and foreign keys."
+      explain: "SQL (Structured Query Language) queries relational databases, which hold tables of rows and columns linked by primary and foreign keys."
     },
     {
       q: "In the relational model, a foreign key is…",
