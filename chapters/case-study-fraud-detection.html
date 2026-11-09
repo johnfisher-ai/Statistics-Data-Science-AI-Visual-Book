@@ -93,18 +93,18 @@
 <main class="reading">
 
   <section id="intro">
-    <p class="lead">The <a href="case-study-an-end-to-end-ml-project.html">End-to-End ML Project</a> case study had a near-balanced target. Real fraud is nothing like that: the <span class="hl">positive
-       class is rare</span>, and that single fact rewrites the whole project. The naive instincts, maximize accuracy, use
-       a 0.5 threshold, trust the ROC curve, all quietly fail. Getting fraud detection right is a masterclass in the tools
+    <p class="lead">The <a href="case-study-an-end-to-end-ml-project.html">End-to-End ML Project</a> case study had a near-balanced target. Real fraud is nothing like that. The <span class="hl">positive
+       class is rare</span>, and that single fact rewrites the whole project. Each naive instinct quietly fails, whether it is
+       maximizing accuracy, using a 0.5 threshold or trusting the ROC curve. Getting fraud detection right means learning the tools
        for <span class="hl">imbalanced classification</span>.</p>
 
     <div class="def-card">
       <div class="sigma">&#9888;</div>
       <div class="def-body">
         <span class="def-kw">Imbalanced classification</span> is prediction when one class is far rarer than the other.
-        The fixes: judge by <span class="def-kw">precision, recall, and PR-AUC</span> (not accuracy); rebalance with
-        <span class="def-kw">class weights</span> or <span class="def-kw">SMOTE</span>; and set the
-        <span class="def-kw">decision threshold</span> by the cost of each error, not the default 0.5.
+        The fixes are to judge by <span class="def-kw">precision, recall, and PR-AUC</span> in place of accuracy, to rebalance with
+        <span class="def-kw">class weights</span> or <span class="def-kw">SMOTE</span>, and to set the
+        <span class="def-kw">decision threshold</span> by the cost of each error instead of the default 0.5.
       </div>
     </div>
 
@@ -119,7 +119,7 @@
 
   <!-- ===== §1 method ===== -->
   <section id="method">
-    <div class="section-eyebrow"><div class="num">1</div><h2>The 12-Step Method</h2></div>
+    <div class="section-eyebrow"><div class="num">1</div><h2>Running the 12 steps on a rare target</h2></div>
     <p>The same repeatable loop, now aimed at a rare target. The companion notebook runs all twelve steps; the sections
        below tell the story and show the plots.</p>
 
@@ -203,10 +203,10 @@
 
   <!-- ===== §2 wrangle ===== -->
   <section id="wrangle">
-    <div class="section-eyebrow"><div class="num">2</div><h2>Define, Collect, Inspect, Clean (Steps 1&#8211;4)</h2></div>
+    <div class="section-eyebrow"><div class="num">2</div><h2>Defining the fraud problem and cleaning the log (steps 1&#8211;4)</h2></div>
 
     <div class="step-h"><span class="sn">1</span><h3>Define the objective</h3></div>
-    <p>Flag fraudulent transactions in real time. The two errors are wildly unequal: a <strong>missed fraud</strong> can cost
+    <p>Flag fraudulent transactions in real time. The two errors are wildly unequal. A <strong>missed fraud</strong> can cost
        the full transaction plus chargebacks and lost trust, while a <strong>false alarm</strong> costs a few minutes of
        review or a declined-card annoyance. That cost asymmetry, on top of the data imbalance, shapes every choice.</p>
 
@@ -215,9 +215,9 @@
        streaming warehouse in production.</p>
 
     <div class="step-h"><span class="sn">3</span><h3>Inspect the data</h3></div>
-    <p>The first thing <code>value_counts()</code> reveals is the defining fact: <strong>only ~4% of transactions are
+    <p>The first thing <code>value_counts()</code> reveals is the defining fact, that <strong>only ~4% of transactions are
        fraud</strong>. That rarity means accuracy will be useless, the model will be tempted to ignore fraud entirely, and
-       there are few fraud examples to learn from. There is also routine mess, duplicates, negative amounts, mixed-case
+       there are few fraud examples to learn from. There is also routine mess in the form of duplicates, negative amounts and mixed-case
        merchant labels.</p>
 
     <div class="step-h"><span class="sn">4</span><h3>Clean the data</h3></div>
@@ -238,30 +238,30 @@
 
   <!-- ===== §3 explore ===== -->
   <section id="explore">
-    <div class="section-eyebrow"><div class="num">3</div><h2>Visualize, Transform, Split (Steps 5&#8211;7)</h2></div>
+    <div class="section-eyebrow"><div class="num">3</div><h2>Charting the fraud signal and stratifying the split (steps 5&#8211;7)</h2></div>
 
     <div class="step-h"><span class="sn">5</span><h3>Visualize where fraud hides</h3></div>
-    <p>Fraud is rare but not random, it has a fingerprint. It is several times more common on <strong>foreign</strong> and
-       <strong>card-not-present</strong> transactions, and it rises steeply with the transaction <strong>amount</strong>
+    <p>Fraud is rare, but it leaves a fingerprint. It is several times more common on <strong>foreign</strong> and
+       <strong>card-not-present</strong> transactions, and it rises steeply with the transaction <strong>amount</strong>.
        The notebook also prints a night-time peak, 7.5% fraud between midnight and 6 a.m. against 2.7% the rest of the day,
        though its model enters the hour as a single straight-line term and cannot capture that peak.</p>
 
     <figure class="nb-fig">
       <img src="../assets/img/case-study-fraud-detection--signal.png" alt="Three charts: class imbalance, fraud rate by transaction type, fraud rate by amount">
       <figcaption><span class="cap-t">From the notebook · Step 5</span><br>
-        <strong>The rare class has a fingerprint.</strong> <strong>Left</strong>, the imbalance itself, the fraud bar is a
-        sliver next to legitimate transactions. <strong>Center</strong>, fraud rate by type: <strong>foreign</strong> and
-        <strong>card-not-present</strong> transactions are several times riskier than domestic, card-present ones.
+        <strong>The rare class has a fingerprint.</strong> <strong>Left</strong>, the imbalance itself, with the fraud bar a
+        sliver next to legitimate transactions. <strong>Center</strong>, fraud rate by type shows <strong>foreign</strong> and
+        <strong>card-not-present</strong> transactions several times riskier than domestic, card-present ones.
         <strong>Right</strong>, fraud rate climbs steeply with <strong>amount</strong>. This structure is what lets a model
         separate fraud from noise even though examples are scarce.</figcaption>
     </figure>
 
-    <div class="step-h"><span class="sn">6</span><h3>Transform, inside a pipeline</h3></div>
-    <p>Numeric columns are median-imputed and standardized, the merchant category is one-hot encoded, all inside a
-       <code>Pipeline</code> so the preprocessing is fit on training data only. The same anti-leakage discipline as
+    <div class="step-h"><span class="sn">6</span><h3>Transform inside a pipeline</h3></div>
+    <p>Numeric columns are median-imputed and standardized and the merchant category is one-hot encoded, all inside a
+       <code>Pipeline</code> so the preprocessing is fit on training data only, the same anti-leakage discipline as
        the <a href="case-study-an-end-to-end-ml-project.html">End-to-End ML Project</a> case study.</p>
 
-    <div class="step-h"><span class="sn">7</span><h3>Split, stratified</h3></div>
+    <div class="step-h"><span class="sn">7</span><h3>Split with stratification</h3></div>
     <p>Hold out 25% as a test set, but with <code>stratify=y</code>. With only 4% fraud, an ordinary random split could
        hand the test set far too few fraud cases (or too many) by luck; stratifying forces both train (264 frauds) and
        test (88 frauds) to keep the true 4% rate, so the evaluation is stable.</p>
@@ -269,13 +269,13 @@
 
   <!-- ===== §4 build/validate ===== -->
   <section id="build">
-    <div class="section-eyebrow"><div class="num">4</div><h2>The Accuracy Trap, and Escaping It (Steps 8&#8211;9)</h2></div>
+    <div class="section-eyebrow"><div class="num">4</div><h2>Escaping the accuracy trap (steps 8&#8211;9)</h2></div>
 
-    <div class="step-h"><span class="sn">8</span><h3>Build a baseline, and watch accuracy lie</h3></div>
-    <p>A model that predicts "legitimate" for <em>every</em> transaction scores <strong>96% accuracy</strong>, and catches
-       <strong>zero</strong> fraud. Even a normally-trained logistic regression inherits the bias: 96% accurate, but it
-       misses about <strong>85% of fraud</strong> (recall ~0.15). On rare-event data, accuracy is not just unhelpful, it is
-       actively misleading.</p>
+    <div class="step-h"><span class="sn">8</span><h3>Build a baseline and watch accuracy lie</h3></div>
+    <p>A model that predicts "legitimate" for <em>every</em> transaction scores <strong>96% accuracy</strong> and catches
+       <strong>zero</strong> fraud. Even a normally-trained logistic regression inherits the bias, scoring 96% accurate while it
+       misses about <strong>85% of fraud</strong> (recall ~0.15). On rare-event data a high accuracy score actively misleads,
+       because it looks like success while the model lets most of the fraud through.</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
       <svg viewBox="0 0 680 210" width="100%" font-family="Inter, sans-serif" aria-label="The accuracy trap: of 1000 transactions about 39 are fraud; predicting all legitimate scores 96 percent accuracy but catches zero fraud">
@@ -297,7 +297,7 @@
       </svg>
     </figure>
 
-    <div class="step-h"><span class="sn">9</span><h3>Rebalance, and use the right metrics</h3></div>
+    <div class="step-h"><span class="sn">9</span><h3>Rebalance and use the right metrics</h3></div>
     <p>Two easy fixes make the model care about the rare class. <code>class_weight='balanced'</code> penalizes a missed
        fraud far more heavily; <strong>SMOTE</strong> grows synthetic fraud examples inside the training fold until the
        classes are even. Both lift <strong>recall from ~0.15 to ~0.80</strong>, catching four of five frauds.</p>
@@ -305,9 +305,9 @@
     <figure class="nb-fig">
       <img src="../assets/img/case-study-fraud-detection--metrics.png" alt="Grouped bars of accuracy and recall for baseline, plain, class_weight, and SMOTE models">
       <figcaption><span class="cap-t">From the notebook · Step 8&#8211;9</span><br>
-        <strong>Accuracy hides the story; recall tells it.</strong> Accuracy (gray) barely moves, it is ~0.96 for the
-        do-nothing baseline and the plain model, then <em>drops</em> to ~0.80 once we rebalance. Recall (indigo) is the real
-        signal: <strong>0% caught</strong> for the baseline, a dismal <strong>15%</strong> for the plain model, then a
+        <strong>Rebalancing trades accuracy for recall.</strong> Accuracy (gray) sits at ~0.96 for the
+        do-nothing baseline and the plain model, then <em>drops</em> to ~0.80 once we rebalance. Recall (indigo) carries the real
+        signal, from <strong>0% caught</strong> for the baseline to a dismal <strong>15%</strong> for the plain model, then a
         transformative <strong>~80%</strong> with class weights or SMOTE. We happily trade meaningless accuracy for fraud
         actually caught.</figcaption>
     </figure>
@@ -318,17 +318,17 @@
     <figure class="nb-fig">
       <img src="../assets/img/case-study-fraud-detection--curves.png" alt="ROC curve and precision-recall curve for the fraud model">
       <figcaption><span class="cap-t">From the notebook · Step 9</span><br>
-        <strong>Two ranking views.</strong> <strong>Left</strong>, the ROC curve looks strong (AUC 0.89), the model ranks
-        fraud above legitimate far better than chance, but ROC is over-optimistic under heavy imbalance. <strong>Right</strong>,
-        the precision-recall curve is the honest picture: its baseline is the 4% fraud rate (dashed line), and a
-        <strong>PR-AUC of 0.36</strong> is many times that, real signal, while making the precision-recall trade-off
+        <strong>The ROC and precision-recall views of ranking.</strong> <strong>Left</strong>, the ROC curve looks strong (AUC 0.89), since the model ranks
+        fraud above legitimate far better than chance, though ROC is over-optimistic under heavy imbalance. <strong>Right</strong>,
+        the precision-recall curve gives the honest picture. Its baseline is the 4% fraud rate (dashed line), and a
+        <strong>PR-AUC of 0.36</strong> is many times that, which is real signal, and the curve makes the precision-recall trade-off
         explicit. This is the curve you pick an operating point on.</figcaption>
     </figure>
   </section>
 
   <!-- ===== §5 interpret/deploy ===== -->
   <section id="interpret">
-    <div class="section-eyebrow"><div class="num">5</div><h2>Threshold, Interpret, Deploy (Steps 10&#8211;11)</h2></div>
+    <div class="section-eyebrow"><div class="num">5</div><h2>From alert cutoff to review queue (steps 10&#8211;11)</h2></div>
 
     <div class="step-h"><span class="sn">10</span><h3>Tune the threshold to cost</h3></div>
     <p>The model outputs a probability; the <strong>threshold</strong> turns it into an alert. Because a missed fraud costs
@@ -339,9 +339,9 @@
       <figcaption><span class="cap-t">From the notebook · Step 10</span><br>
         <strong>The cost-optimal cutoff is far below 0.5.</strong> Each point is the total cost at that threshold on
         out-of-fold predictions for the training rows, so the test set plays no part in the choice, counting a missed fraud
-        as the transaction amount and a false alarm as $5. The curve bottoms out at <strong>0.05</strong>, not 0.5. On the
-        test set that cutoff lifts recall from <strong>0.15 to 0.74</strong>, catching about five times as much fraud, at the price of more false alarms the review team can absorb. This threshold,
-        not the algorithm, is the real business dial.</figcaption>
+        as the transaction amount and a false alarm as $5. The curve bottoms out at <strong>0.05</strong>, well below 0.5. On the
+        test set that cutoff lifts recall from <strong>0.15 to 0.74</strong>, catching about five times as much fraud, at the price of more false alarms the review team can absorb. The threshold is
+        the real business dial here, and it moves the result more than the algorithm does.</figcaption>
     </figure>
 
     <p>Because the winning model is a logistic regression, its coefficients read as risk drivers.</p>
@@ -349,11 +349,11 @@
     <figure class="nb-fig">
       <img src="../assets/img/case-study-fraud-detection--drivers.png" alt="Horizontal bar chart of logistic coefficients for fraud risk">
       <figcaption><span class="cap-t">From the notebook · Step 11</span><br>
-        <strong>What raises fraud risk.</strong> Bars to the <strong>right (red)</strong> increase the odds of fraud,
+        <strong>What raises fraud risk.</strong> Bars to the <strong>right (red)</strong> increase the odds of fraud. They are
         <strong>foreign</strong> and <strong>card-not-present</strong> transactions, high <strong>velocity</strong> (many
         transactions per hour), <strong>electronics/travel</strong> merchants, large <strong>amounts</strong>, and distance
-        from home. Bars to the <strong>left (green)</strong> mark safe transactions, older accounts and everyday merchants
-        like groceries. These are the patterns built into this teaching dataset, and the model recovered them.</figcaption>
+        from home. Bars to the <strong>left (green)</strong> mark safe transactions from older accounts and everyday merchants
+        such as groceries. These are the patterns built into this teaching dataset, and the model recovered them.</figcaption>
     </figure>
 
     <div class="step-h"><span class="sn">11</span><h3>Deploy the model</h3></div>
@@ -365,35 +365,35 @@
 
   <!-- ===== §6 writeup ===== -->
   <section id="writeup-sec">
-    <div class="section-eyebrow"><div class="num">6</div><h2>Communicate: the Plain-English Write-Up (Step 12)</h2></div>
+    <div class="section-eyebrow"><div class="num">6</div><h2>Explaining the fraud tool to the bank (step 12)</h2></div>
     <div class="writeup">
-      <h3>For a non-technical reader</h3>
+      <h3>The fraud tool explained for a non-technical reader</h3>
       <p><strong>What is this?</strong> We built a tool that scores each card transaction for how likely it is to be
         fraudulent, so the bank can automatically hold the riskiest ones for a quick review before money moves.</p>
 
-      <h4>What goes in, and what comes out</h4>
-      <p><strong>Inputs:</strong> details the bank already has at the moment of purchase, the amount, the time, how many
+      <h4>What goes in and what comes out</h4>
+      <p><strong>Inputs:</strong> details the bank already has at the moment of purchase. That means the amount, the time, how many
         recent transactions the card has made, the merchant type, whether it is foreign, whether the physical card was
         present, how old the account is, and how far from home it happened. <strong>Output:</strong> a fraud probability
         from 0 to 1, which becomes an "approve / hold" decision once compared to a cutoff.</p>
 
-      <h4>The decisions we made, and why</h4>
+      <h4>The decisions we made and why</h4>
       <ul>
         <li><span class="ck">✓</span><span>We <strong>did not use accuracy</strong> to judge the tool. Because only 1 in 25 transactions is fraud, a tool that approves everything is 96% "accurate" while catching no fraud at all, a useless model that looks great on paper. We measured what fraction of real fraud we <em>catch</em> instead.</span></li>
         <li><span class="ck">✓</span><span>We <strong>taught the model to take fraud seriously</strong> by telling it a missed fraud is far more costly than a false alarm (and by showing it extra synthetic examples of fraud). This raised the share of fraud caught from about 15% to about 80%.</span></li>
-        <li><span class="ck">✓</span><span>We <strong>chose the alert cutoff by cost</strong>, not by a default. Since a missed fraud can cost hundreds of dollars and a false alarm costs a few, we set the bar low, flag more, review more, and catch far more fraud.</span></li>
+        <li><span class="ck">✓</span><span>We <strong>chose the alert cutoff by cost</strong> instead of using a default. Since a missed fraud can cost hundreds of dollars and a false alarm costs a few, we set the bar low, flag more, review more, and catch far more fraud.</span></li>
       </ul>
 
-      <h4>How good is it, in plain terms</h4>
+      <h4>How much fraud it catches</h4>
       <p>Tuned to cost, the tool catches about <strong>three-quarters of all fraud</strong> while holding about 18% of
         transactions for review, roughly six alerts for each fraud caught, a dial the bank can turn tighter or looser depending on how many alerts its team can
-        handle. It is not perfect (no fraud model is), but it turns an impossible manual task into a focused, high-value
+        handle. No fraud model is perfect, and this one still turns an impossible manual task into a focused, high-value
         review queue.</p>
 
       <h4>What actually flags a fraud</h4>
       <p>The riskiest transactions are large, foreign, made without the physical card, on newer accounts, far from home,
         and in bursts, exactly the profile of a stolen card being tested and drained. Everyday local purchases on
-        established accounts almost never trip the alert. <strong>The upshot: on rare-event problems, choosing the right
+        established accounts almost never trip the alert. <strong>The upshot is that on rare-event problems, choosing the right
         yardstick and the right cutoff matters more than the choice of algorithm.</strong></p>
     </div>
   </section>
@@ -403,7 +403,7 @@
     <div class="nb-cta" style="display:block">
       <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
         <div class="nb-ic">🐍</div>
-        <div class="nb-body"><h3>Run the entire project in Python</h3><p>The companion notebook is the full 12-step pipeline: it loads and cleans the transaction log, visualizes the imbalance and the fraud fingerprint, builds a leakage-free pipeline, exposes the accuracy trap against a baseline, rebalances with <code>class_weight</code> and <strong>SMOTE</strong>, draws the ROC and precision-recall curves, tunes the decision threshold to cost, interprets the risk drivers, and sketches deployment, with every table and chart explained.</p></div>
+        <div class="nb-body"><h3>Run the entire project in Python</h3><p>The companion notebook runs the full 12-step pipeline. It loads and cleans the transaction log, visualizes the imbalance and the fraud fingerprint, builds a leakage-free pipeline, exposes the accuracy trap against a baseline, rebalances with <code>class_weight</code> and <strong>SMOTE</strong>, draws the ROC and precision-recall curves, tunes the decision threshold to cost, interprets the risk drivers, and sketches deployment, with every table and chart explained.</p></div>
       </div>
       <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
         <a class="btn btn-primary" href="notebooks/html/case-study-fraud-detection.html">📓 View Notebook (code &amp; outputs)</a>
@@ -419,7 +419,7 @@
   <!-- ===== takeaways ===== -->
   <section id="takeaways">
     <div class="takeaways">
-      <h3>🎓 Key Takeaways</h3>
+      <h3>🎓 In brief</h3>
       <ul>
         <li><span class="ck">✓</span><span><strong>Accuracy is a trap on rare-event data</strong>: a do-nothing model was 96% accurate and caught zero fraud.</span></li>
         <li><span class="ck">✓</span><span><strong>Judge by precision, recall, and PR-AUC</strong>, and stratify the split so both sets keep the rare rate.</span></li>
@@ -433,12 +433,12 @@
   <!-- ===== §7 take it further ===== -->
   <section id="challenges">
     <div class="section-eyebrow"><div class="num">7</div><h2>Take It Further</h2></div>
-    <p>Five ways to extend the project in the notebook:</p>
+    <p>The notebook works each of these extensions on the same transaction log.</p>
     <div class="challenges">
       <div class="challenge"><div class="cnum">1</div><div class="cbody">
         <h3>A tree-ensemble rival</h3>
-        <p>Fit a random forest and compare it to logistic regression on PR-AUC, does capturing interactions help?</p>
-        <div class="chint">Hint: compare <code>average_precision_score</code>, not accuracy.</div></div></div>
+        <p>Fit a random forest and compare it to logistic regression on PR-AUC. Does capturing interactions help?</p>
+        <div class="chint">Hint: compare <code>average_precision_score</code> instead of accuracy.</div></div></div>
       <div class="challenge"><div class="cnum">2</div><div class="cbody">
         <h3>An operating point under budget</h3>
         <p>If the team can review only K alerts a day, rank by risk and see what recall that buys.</p>
@@ -446,7 +446,7 @@
       <div class="challenge"><div class="cnum">3</div><div class="cbody">
         <h3>A resampling shootout</h3>
         <p>Compare class weights, SMOTE, and undersampling on PR-AUC. Do they really differ?</p>
-        <div class="chint">Hint: they mostly move the threshold, not the ranking.</div></div></div>
+        <div class="chint">Hint: they mostly move the threshold while the ranking barely changes.</div></div></div>
       <div class="challenge"><div class="cnum">4</div><div class="cbody">
         <h3>Let cost move the line</h3>
         <p>Sweep the cost of a false alarm and watch the cost-optimal threshold shift.</p>
@@ -460,7 +460,7 @@
     <div class="nb-cta" style="display:block">
       <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
         <div class="nb-ic">📓</div>
-        <div class="nb-body"><h3>All five, worked in a companion notebook</h3><p>A second notebook, <strong>Take It Further</strong>, rebuilds this chapter's model and works every one of these five extensions with visuals and explanations, a random-forest rival, an operating point under a review budget, a resampling shootout, how the cost ratio moves the threshold, and scoring a live transaction, closing with a plain-English summary.</p></div>
+        <div class="nb-body"><h3>Code and charts for each fraud extension</h3><p>A second notebook, <strong>Take It Further</strong>, rebuilds this chapter's model and works every one of these five extensions with visuals and explanations, covering a random-forest rival, an operating point under a review budget, a resampling shootout, how the cost ratio moves the threshold, and scoring a live transaction, closing with a plain-English summary.</p></div>
       </div>
       <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
         <a class="btn btn-primary" href="notebooks/html/case-study-fraud-detection--take-it-further.html">📓 View Notebook (code &amp; outputs)</a>
@@ -472,7 +472,7 @@
 
   <!-- ===== §8 quiz ===== -->
   <section id="quiz">
-    <div class="section-eyebrow"><div class="num">8</div><h2>Quiz: Test Yourself</h2></div>
+    <div class="section-eyebrow"><div class="num">8</div><h2>Test yourself</h2></div>
     <p>Eight questions on imbalanced classification and fraud detection. Answer them, hit <strong>Check Answers</strong>,
        and keep refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
     <div id="quiz-root"></div>
@@ -522,7 +522,7 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
       q: "Recall in fraud detection measures…",
       options: ["Of flagged transactions, how many were truly fraud", "Of all real frauds, how many the model caught", "Overall accuracy", "The threshold"],
       answer: 1,
-      explain: "Recall = caught fraud / all fraud. Precision is the other view: of the alerts raised, how many were real."
+      explain: "Recall = caught fraud / all fraud. Precision is the other view, the share of raised alerts that were real."
     },
     {
       q: "Why stratify the train/test split here?",
