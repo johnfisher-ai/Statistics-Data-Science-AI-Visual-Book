@@ -102,7 +102,7 @@
       </div>
     </div>
 
-    <div class="section-eyebrow"><div class="num">1</div><h2>Joining Tables</h2></div>
+    <div class="section-eyebrow"><div class="num">1</div><h2>Joining tables</h2></div>
     <p>The key answers "which row here matches which row there?" The <code>how=</code> argument decides which rows
        survive the join. These are the four standard types (with <code>cross</code> for every combination):</p>
 
@@ -146,9 +146,9 @@
         <thead><tr><th>how=</th><th>Keeps</th><th>SQL</th><th>Use when</th></tr></thead>
         <tbody>
           <tr><td class="nm">inner <em>(default)</em></td><td>Only keys in <strong>both</strong> tables</td><td>INNER JOIN</td><td>You want only matched records. <strong>Silently drops</strong> unmatched rows</td></tr>
-          <tr><td class="nm">left</td><td>All left rows; right cols NaN if no match</td><td>LEFT OUTER</td><td>Keep every left row (all orders, attach customer if known)</td></tr>
-          <tr><td class="nm">right</td><td>All right rows; left cols NaN if no match</td><td>RIGHT OUTER</td><td>Symmetric to left (people usually flip the tables)</td></tr>
-          <tr><td class="nm">outer</td><td>Union of keys from both</td><td>FULL OUTER</td><td>Keep everything; see all non-matches</td></tr>
+          <tr><td class="nm">left</td><td>All left rows, with right cols NaN if no match</td><td>LEFT OUTER</td><td>Keep every left row (all orders, attach customer if known)</td></tr>
+          <tr><td class="nm">right</td><td>All right rows, with left cols NaN if no match</td><td>RIGHT OUTER</td><td>Symmetric to left (people usually flip the tables)</td></tr>
+          <tr><td class="nm">outer</td><td>Union of keys from both</td><td>FULL OUTER</td><td>Keep everything and see all non-matches</td></tr>
         </tbody>
       </table>
     </div>
@@ -164,16 +164,16 @@ produces zero matches with no error, and so do mixed types in an object column (
 key merged with a text key raises an error instead.</p></div>
     </div>
     <p style="font-size:0.9rem;color:var(--ink-faint)">When the tables are the <em>same shape</em> (twelve monthly
-       files with identical columns), you don't join, you stack: <code>pd.concat([...], ignore_index=True)</code>
-       glues rows together. Merge matches on a key; concat stacks.</p>
+       files with identical columns), there is no key to match on, so you stack them instead.
+       <code>pd.concat([...], ignore_index=True)</code> glues their rows together, where merge would match rows on a key.</p>
   </section>
 
   <!-- ===== Section 2: reshaping ===== -->
   <section id="reshape">
-    <div class="section-eyebrow"><div class="num">2</div><h2>Reshaping: Wide &#8596; Long</h2></div>
+    <div class="section-eyebrow"><div class="num">2</div><h2>Reshaping between wide and long form</h2></div>
     <p>The same data can wear two shapes. <span class="hl">Long (tidy)</span> form, one row per observation, is what
        plots and models want (see the <a href="the-data-cleaning-mindset.html">Data-Cleaning Mindset</a> chapter). <span class="hl">Wide</span> form, a category spread across columns, is
-       what a human-readable report wants. You move between them constantly.</p>
+       what a human-readable report wants, and you move between the two constantly.</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
       <svg viewBox="0 0 680 210" width="100%" font-family="Inter, sans-serif" aria-label="Wide table with years as columns reshaped to a long tidy table and back">
@@ -220,21 +220,21 @@ key merged with a text key raises an error instead.</p></div>
 
   <!-- ===== Section 3: dates ===== -->
   <section id="dates">
-    <div class="section-eyebrow"><div class="num">3</div><h2>Parsing Dates &amp; Times</h2></div>
-    <p>A date stored as text is nearly useless: it sorts alphabetically (<code>"10/2020"</code> before
+    <div class="section-eyebrow"><div class="num">3</div><h2>Parsing dates &amp; times</h2></div>
+    <p>A date stored as text is nearly useless, because it sorts alphabetically (<code>"10/2020"</code> before
        <code>"9/2020"</code>), can't do arithmetic, and won't filter by range. <code>pd.to_datetime</code> turns it
        into a real datetime, and then a world of operations opens up.</p>
     <div class="cardgrid cols-2">
-      <div class="ic-card bg-cyan"><h3 class="tx-cyan">Parse it</h3><p><code>pd.to_datetime(s, errors="coerce", format="mixed")</code>; bad values become <code>NaT</code> (see <a href="finding-and-removing-duplicates-and-inconsistencies.html">Finding &amp; Removing Duplicates and Inconsistencies</a> and <a href="handling-missing-data.html">Handling Missing Data</a>). Use <code>dayfirst=</code> for EU-style dates.</p></div>
+      <div class="ic-card bg-cyan"><h3 class="tx-cyan">Parse it</h3><p><code>pd.to_datetime(s, errors="coerce", format="mixed")</code> turns bad values into <code>NaT</code> (see <a href="finding-and-removing-duplicates-and-inconsistencies.html">Finding &amp; Removing Duplicates and Inconsistencies</a> and <a href="handling-missing-data.html">Handling Missing Data</a>), and <code>dayfirst=</code> handles EU-style dates.</p></div>
       <div class="ic-card bg-purple"><h3 class="tx-purple">Extract features</h3><p>The <code>.dt</code> accessor: <code>.dt.year</code>, <code>.dt.month</code>, <code>.dt.dayofweek</code>, <code>.dt.day_name()</code>, <code>.dt.quarter</code>, ready for <a href="feature-engineering.html">Feature Engineering</a>.</p></div>
       <div class="ic-card bg-amber"><h3 class="tx-amber">Resample a series</h3><p>With a datetime index, <code>df.resample("ME").sum()</code> rebins daily to monthly, the time-series version of <code>groupby</code>.</p></div>
       <div class="ic-card bg-green"><h3 class="tx-green">Do date math</h3><p>Subtract two datetimes for a duration; <code>.dt.days</code> pulls out the day count.</p></div>
     </div>
     <div class="callout note">
       <div class="cico">🗓️</div>
-      <div><div class="ctitle">Heads-up: modern pandas renamed the frequency codes</div>
-        <p>pandas 2.2 renamed the resample/<code>date_range</code> codes: use <strong><code>"ME"</code></strong>
-           for month-end (not the old <code>"M"</code>), <strong><code>"QE"</code></strong> for quarter, <strong><code>"YE"</code></strong>
+      <div><div class="ctitle">Modern pandas renamed the frequency codes</div>
+        <p>pandas 2.2 renamed the resample/<code>date_range</code> codes. Use <strong><code>"ME"</code></strong>
+           for month-end in place of the old <code>"M"</code>, <strong><code>"QE"</code></strong> for quarter, <strong><code>"YE"</code></strong>
            for year, and <strong><code>"h"</code>, <code>"min"</code>, <code>"s"</code></strong> for hour/minute/second.
            The old single letters still run with a warning in pandas 2.2 and raise an error from
 pandas 3.0, so older tutorials copied verbatim will break.</p></div>
@@ -243,9 +243,9 @@ pandas 3.0, so older tutorials copied verbatim will break.</p></div>
 
   <!-- ===== Section 4: text + workflow ===== -->
   <section id="text">
-    <div class="section-eyebrow"><div class="num">4</div><h2>Cleaning Text &amp; the Workflow</h2></div>
+    <div class="section-eyebrow"><div class="num">4</div><h2>Cleaning text &amp; the workflow</h2></div>
     <p>The <span class="term">.str accessor</span> runs string operations across an entire column at once, no loop.
-       It carries the casing and whitespace fixes from the <a href="finding-and-removing-duplicates-and-inconsistencies.html">Finding &amp; Removing Duplicates and Inconsistencies</a> chapter and adds the two workhorses of field-wrangling:
+       It carries the casing and whitespace fixes from the <a href="finding-and-removing-duplicates-and-inconsistencies.html">Finding &amp; Removing Duplicates and Inconsistencies</a> chapter and adds the two workhorses of field-wrangling,
        splitting and extracting.</p>
     <div class="cardgrid cols-2">
       <div class="ic-card bg-cyan"><h3 class="tx-cyan">Split a field</h3><p><code>s.str.split(",", expand=True)</code> turns "City, State" into two columns. Strip the pieces afterward.</p></div>
@@ -255,11 +255,10 @@ pandas 3.0, so older tutorials copied verbatim will break.</p></div>
     </div>
     <div class="callout note">
       <div class="cico">🔤</div>
-      <div><div class="ctitle">One pandas gotcha worth knowing</div>
+      <div><div class="ctitle">A pandas gotcha worth knowing</div>
         <p>Since pandas 2.0, <code>.str.replace</code> treats its pattern as a <strong>literal string by default</strong>
-           (<code>regex=False</code>). When you mean a regular expression, you must pass <code>regex=True</code>
-           explicitly, e.g. <code>s.str.replace(r"\D", "", regex=True)</code> to strip non-digits. Older code assumed
-           the opposite default.</p></div>
+           (<code>regex=False</code>), the opposite of what older code assumed. When you mean a regular expression
+           you must pass <code>regex=True</code> explicitly, as in <code>s.str.replace(r"\D", "", regex=True)</code>, which strips non-digits.</p></div>
     </div>
 
     <div class="callout key">
@@ -275,7 +274,7 @@ pandas 3.0, so older tutorials copied verbatim will break.</p></div>
       <div class="cico">🤖</div>
       <div><div class="ctitle">Why this matters for data science</div>
         <p>Most projects spend more effort getting data into one clean shape than on the modeling itself. A wrong
-           join can silently double your revenue totals; the right reshape makes a chart trivial; a parsed date
+           join can silently double your revenue totals, the right reshape makes a chart trivial, and a parsed date
            unlocks a dozen features. These are the unglamorous skills that decide whether everything downstream is
            built on solid ground, and they lead straight into feature engineering (see <a href="feature-engineering.html">Feature Engineering</a>) and EDA (see <a href="exploratory-data-analysis-eda.html">Exploratory Data Analysis</a>).</p></div>
     </div>
@@ -283,16 +282,16 @@ pandas 3.0, so older tutorials copied verbatim will break.</p></div>
 
   <!-- ===== Section 5: In ML & AI ===== -->
   <section id="ml-ai">
-    <div class="section-eyebrow"><div class="num">5</div><h2>Combining &amp; Reshaping in Machine Learning &amp; AI</h2></div>
+    <div class="section-eyebrow"><div class="num">5</div><h2>Combining &amp; reshaping in machine learning &amp; AI</h2></div>
     <p>Before any model runs, someone has to assemble the training table, and that is joins and reshapes. Getting the
-       shape and the keys right is quietly where most data-science time actually goes.</p>
+       shape and the keys right is where most data-science time actually goes.</p>
 
     <table class="disp-table">
       <thead>
         <tr><th>Operation</th><th>Where it shows up in ML</th><th>Why it matters</th></tr>
       </thead>
       <tbody>
-        <tr><td class="nm tx-cyan">Merge / join</td><td>Building the feature table from many sources (a <strong>feature store</strong>)</td><td>Most features come from joining tables on a key; a wrong join type silently drops or duplicates rows</td></tr>
+        <tr><td class="nm tx-cyan">Merge / join</td><td>Building the feature table from many sources (a <strong>feature store</strong>)</td><td>Most features come from joining tables on a key, and a wrong join type silently drops or duplicates rows</td></tr>
         <tr><td class="nm tx-purple">Long (tidy) format</td><td>The input shape most modeling and plotting tools expect</td><td>One row per observation, one column per variable, is what pandas, seaborn, and estimators want</td></tr>
         <tr><td class="nm tx-amber">Pivot / groupby-aggregate</td><td>Turning transactions into per-entity features</td><td>Aggregating a log into one row per customer is the core of tabular feature engineering</td></tr>
       </tbody>
@@ -301,17 +300,17 @@ pandas 3.0, so older tutorials copied verbatim will break.</p></div>
     <div class="callout key">
       <div class="cico">🤖</div>
       <div><div class="ctitle">Validate every join, and watch for time leakage</div>
-        <p>Two traps recur. A merge that unexpectedly fans out multiplies your rows, so check the count and use
-           <code>validate=</code>. And when you join time-stamped features, make sure you only attach information that
-           was <strong>known before</strong> the prediction moment, joining in a future value is a subtle but fatal
+        <p>A merge that unexpectedly fans out multiplies your rows, so check the count and use
+           <code>validate=</code>. When you join time-stamped features, also make sure you only attach information that
+           was <strong>known before</strong> the prediction moment, because joining in a future value is a subtle but fatal
            leak.</p></div>
     </div>
   </section>
 
   <!-- ===== Section 6: Real-World Example ===== -->
   <section id="real-world">
-    <div class="section-eyebrow"><div class="num">6</div><h2>Real-World Example: Reshaping Store Sales</h2></div>
-    <p>This store-sales table arrives in <strong>long</strong> (tidy) format: <strong>48 rows</strong>, one per
+    <div class="section-eyebrow"><div class="num">6</div><h2>Reshaping store sales</h2></div>
+    <p>This store-sales table arrives in <strong>long</strong> (tidy) format, with <strong>48 rows</strong>, one per
        store-month. <strong>Pivot</strong> it and you get a compact <strong>4-by-12</strong> report (stores down,
        months across) that a human can read; <strong>melt</strong> it back and you have the tidy shape a model wants.
        The companion notebook also <strong>merges</strong> it with a small store-to-region lookup to roll sales up by
@@ -360,12 +359,12 @@ pandas 3.0, so older tutorials copied verbatim will break.</p></div>
   <!-- ===== Key Takeaways ===== -->
   <section id="takeaways">
     <div class="takeaways">
-      <h3>🎓 Key Takeaways</h3>
+      <h3>🎓 In brief</h3>
       <ul>
-        <li><span class="ck">✓</span><span><strong>merge joins on a key</strong>; <code>how=</code> picks survivors (inner drops unmatched rows, left keeps all left rows); concat stacks same-shaped tables.</span></li>
-        <li><span class="ck">✓</span><span><strong>Duplicate keys cause a fan-out</strong> that multiplies rows; guard with <code>validate=</code> and clean keys first.</span></li>
-        <li><span class="ck">✓</span><span><strong>melt reshapes wide→long</strong> (for plots/models); <strong>pivot_table</strong> aggregates long→wide and survives duplicates (plain pivot does not).</span></li>
-        <li><span class="ck">✓</span><span><strong>to_datetime + .dt</strong> unlock sorting, features, and resample; current pandas uses <code>"ME"/"QE"/"YE"</code> codes.</span></li>
+        <li><span class="ck">✓</span><span><strong>merge joins on a key</strong>, <code>how=</code> picks survivors (inner drops unmatched rows, left keeps all left rows), and concat stacks same-shaped tables.</span></li>
+        <li><span class="ck">✓</span><span><strong>Duplicate keys cause a fan-out</strong> that multiplies rows, so guard with <code>validate=</code> and clean keys first.</span></li>
+        <li><span class="ck">✓</span><span><strong>melt reshapes wide→long</strong> (for plots/models), and <strong>pivot_table</strong> aggregates long→wide and survives duplicates (plain pivot does not).</span></li>
+        <li><span class="ck">✓</span><span><strong>to_datetime + .dt</strong> unlock sorting, features, and resample, and current pandas uses <code>"ME"/"QE"/"YE"</code> codes.</span></li>
         <li><span class="ck">✓</span><span><strong>The .str accessor</strong> cleans text in bulk (split, extract, strip); pass <code>regex=True</code> for patterns.</span></li>
       </ul>
     </div>
@@ -373,8 +372,8 @@ pandas 3.0, so older tutorials copied verbatim will break.</p></div>
 
   <!-- ===== Practice Challenges ===== -->
   <section id="challenges">
-    <div class="section-eyebrow"><div class="num">7</div><h2>Practice Challenges</h2></div>
-    <p>Five short challenges, beginner to intermediate. Try them on paper or in Python before checking the solutions.</p>
+    <div class="section-eyebrow"><div class="num">7</div><h2>Practice challenges</h2></div>
+    <p>These five short challenges run from beginner to intermediate. Try them on paper or in Python before checking the solutions.</p>
 
     <div class="challenges">
       <div class="challenge">
@@ -399,7 +398,7 @@ pandas 3.0, so older tutorials copied verbatim will break.</p></div>
         <div class="cbody">
           <h3>Long to a grid</h3>
           <p>From a long log with repeated region-month pairs, build a region × month table of total amount with row
-             and column totals. Why <code>pivot_table</code> and not <code>pivot</code>?</p>
+             and column totals. Why does this need <code>pivot_table</code> instead of <code>pivot</code>?</p>
           <div class="chint">Hint: <code>aggfunc="sum"</code>, <code>margins=True</code>; pivot fails on duplicate pairs.</div>
         </div>
       </div>
@@ -443,7 +442,7 @@ pandas 3.0, so older tutorials copied verbatim will break.</p></div>
 
   <!-- ===== Quiz ===== -->
   <section id="quiz">
-    <div class="section-eyebrow"><div class="num">8</div><h2>Quiz: Test Yourself</h2></div>
+    <div class="section-eyebrow"><div class="num">8</div><h2>Test yourself</h2></div>
     <p>Eight quick questions on combining and reshaping. Answer them, hit <strong>Check Answers</strong>, and keep
        refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
     <div id="quiz-root"></div>
@@ -489,7 +488,7 @@ window.addEventListener('scroll', () => {
         "Deleting duplicate columns"
       ],
       answer: 1,
-      explain: "A join matches rows on a key (the pandas version of a SQL JOIN). Stacking same-shaped tables is concat, not merge."
+      explain: "A join matches rows on a key (the pandas version of a SQL JOIN). Stacking same-shaped tables is concat's job."
     },
     {
       q: "The DEFAULT pandas merge keeps…",
@@ -533,7 +532,7 @@ window.addEventListener('scroll', () => {
         "concat"
       ],
       answer: 1,
-      explain: "melt unpivots wide → long: it collapses the chosen columns into a name column and a value column, one observation per row."
+      explain: "melt unpivots wide → long, collapsing the chosen columns into a name column and a value column, one observation per row."
     },
     {
       q: "Your long data has duplicate index/column combinations and you want a summary grid. Use…",
