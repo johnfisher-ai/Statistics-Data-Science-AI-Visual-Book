@@ -80,8 +80,8 @@
     </div>
     <h1>Case Study: An <span class="accent">End-to-End ML Project</span></h1>
     <p class="dek">Everything from the machine-learning chapters, applied once, on a messy, realistic teaching file, in the right order.
-       We predict hotel booking cancellations, but the real lesson is the discipline: a proper train / validation / test
-       split, a baseline to beat, cross-validation, tuning, and a leakage-free pipeline. The method, not the model.</p>
+       We predict hotel booking cancellations, but the lesson that carries over is the method around the model, with a
+       proper train / validation / test split, a baseline to beat, cross-validation, tuning, and a leakage-free pipeline.</p>
     <div class="hero-meta">
       <div class="m">⏱️ <b>~26 min</b>&nbsp;read</div>
       <div class="m">🐍 <b>Full notebook</b>&nbsp;included</div>
@@ -95,8 +95,9 @@
   <section id="intro">
     <p class="lead">You have met the algorithms; now watch them work together on a real problem. A hotel wants to know,
        at booking time, which reservations are likely to be <span class="hl">canceled</span>, so it can overbook wisely and
-       send timely reminders. The data is a genuine mess. The challenge is not choosing a clever model, it is running the
-       <span class="hl">whole pipeline honestly</span> so the final number can actually be trusted.</p>
+       send timely reminders. The data is a genuine mess. The hard part is running the
+       <span class="hl">whole pipeline honestly</span> so the final number can actually be trusted, and picking a clever
+       model matters much less.</p>
 
     <div class="def-card">
       <div class="sigma">🎯</div>
@@ -120,7 +121,7 @@
 
   <!-- ===== §1 method ===== -->
   <section id="method">
-    <div class="section-eyebrow"><div class="num">1</div><h2>The 12-Step Method</h2></div>
+    <div class="section-eyebrow"><div class="num">1</div><h2>The 12-step method on hotel bookings</h2></div>
     <p>The same repeatable loop used in every case study, here aimed at a classification model. The companion notebook runs
        all twelve steps; the sections below narrate the story.</p>
 
@@ -204,7 +205,7 @@
 
   <!-- ===== §2 wrangle ===== -->
   <section id="wrangle">
-    <div class="section-eyebrow"><div class="num">2</div><h2>Define, Collect, Inspect, Clean (Steps 1&#8211;4)</h2></div>
+    <div class="section-eyebrow"><div class="num">2</div><h2>Defining the problem and cleaning the bookings export (steps 1&#8211;4)</h2></div>
 
     <div class="step-h"><span class="sn">1</span><h3>Define the objective</h3></div>
     <p>Predict, at booking time, whether a reservation will be <strong>canceled</strong> (a yes/no classification), and
@@ -213,7 +214,7 @@
 
     <div class="step-h"><span class="sn">2</span><h3>Collect the data</h3></div>
     <p>A CSV export from the property-management system. The same one-line pandas readers apply to a SQL warehouse, an
-       Excel workbook, or a REST API, only the first line changes.</p>
+       Excel workbook, or a REST API, where only the first line changes.</p>
 
     <div class="step-h"><span class="sn">3</span><h3>Inspect the data</h3></div>
     <p><code>info()</code>, <code>isna()</code>, and <code>value_counts()</code> expose the mess: duplicate bookings,
@@ -228,7 +229,7 @@
           <tr><td class="nm">Duplicates</td><td>22 repeated <code>booking_id</code></td><td>deduplicate</td></tr>
           <tr><td class="nm">Impossible values</td><td>9 negative <code>lead_time</code> (data errors)</td><td>drop those rows</td></tr>
           <tr><td class="nm">Messy categories</td><td>deposit &#215;11 spellings, segment &#215;15</td><td>standardize to one scheme</td></tr>
-          <tr><td class="nm">Missing values</td><td>34 <code>children</code>, 16 <code>adr</code></td><td><strong>leave for the pipeline</strong> (impute inside CV, not now)</td></tr>
+          <tr><td class="nm">Missing values</td><td>34 <code>children</code>, 16 <code>adr</code></td><td><strong>leave for the pipeline</strong> (impute later, inside CV)</td></tr>
         </tbody>
       </table>
     </div>
@@ -238,35 +239,35 @@
 
   <!-- ===== §3 visualize/transform/analyze ===== -->
   <section id="explore">
-    <div class="section-eyebrow"><div class="num">3</div><h2>Visualize, Transform, Split (Steps 5&#8211;7)</h2></div>
+    <div class="section-eyebrow"><div class="num">3</div><h2>Reading the signal and preparing a leak-free split (steps 5&#8211;7)</h2></div>
 
     <div class="step-h"><span class="sn">5</span><h3>Visualize the signal</h3></div>
     <p>Cancellation risk climbs steeply with <strong>lead time</strong> (a booking made months ahead is far likelier to
-       fall through) and depends strongly on <strong>deposit type</strong>: guests who put money down rarely cancel, while
+       fall through) and depends strongly on <strong>deposit type</strong>. Guests who put money down rarely cancel, while
        <code>No Deposit</code> bookings are the riskiest. That separable structure is what a model can exploit.</p>
 
     <figure class="nb-fig">
       <img src="../assets/img/case-study-an-end-to-end-ml-project--signal.png" alt="Three bar charts: target balance, cancellation rate by deposit type, and cancellation rate by lead time">
       <figcaption><span class="cap-t">From the notebook · Step 5</span><br>
         <strong>Seeing the signal.</strong> <strong>Left</strong>, the target is about 45% canceled, common enough to learn
-        from and a real baseline to beat (not a rare needle in a haystack). <strong>Center</strong>, cancellation rate by
-        deposit type: <code>No Deposit</code> bookings cancel over half the time, while <code>Non Refund</code> guests, who
+        from and a real baseline to beat (not a rare needle in a haystack). <strong>Center</strong>, the cancellation rate by
+        deposit type shows <code>No Deposit</code> bookings canceling over half the time, while <code>Non Refund</code> guests, who
         have money at stake, cancel under 20%. <strong>Right</strong>, the rate climbs steadily with lead time, from under
         30% for last-minute bookings to about 65% for those made six months out. The signal is real and separable, exactly
         what a model needs.</figcaption>
     </figure>
 
-    <div class="step-h"><span class="sn">6</span><h3>Transform, inside a pipeline</h3></div>
+    <div class="step-h"><span class="sn">6</span><h3>Impute, scale and encode inside a pipeline</h3></div>
     <p>Numeric columns are median-imputed and standardized; categoricals are one-hot encoded. Crucially, all of this lives
        <strong>inside a scikit-learn <code>Pipeline</code></strong>, so each cross-validation fold re-fits the preprocessing
-       on its own training data. This is the single most important guard against <span class="term">data leakage</span>:
-       impute or scale before splitting and information from the test set silently contaminates training.</p>
+       on its own training data. This is the single most important guard against <span class="term">data leakage</span>,
+       because imputing or scaling before the split lets information from the test set silently contaminate training.</p>
 
-    <div class="step-h"><span class="sn">7</span><h3>Split: train / validation / test</h3></div>
+    <div class="step-h"><span class="sn">7</span><h3>Lock away the test set before anything else</h3></div>
     <p>Before building anything, quarantine a <strong>test set</strong>, here 20% (259 bookings), locked away until the
        very end. The remaining 80% (1,032 bookings) is for fitting and tuning. Rather than a single fixed validation set,
-       we use <strong>k-fold cross-validation</strong> on the training data: it plays the validation role but rotates
-       through every row, giving a steadier estimate.</p>
+       we use <strong>k-fold cross-validation</strong> on the training data, which plays the validation role but rotates
+       through every row and gives a steadier estimate.</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
       <svg viewBox="0 0 680 300" width="100%" font-family="Inter, sans-serif" aria-label="Honest evaluation workflow: all data splits into a training set and a locked test set; the training set is cross-validated in five folds to compare and tune models; the final model is evaluated once on the test set">
@@ -310,9 +311,9 @@
 
   <!-- ===== §4 build/validate ===== -->
   <section id="build">
-    <div class="section-eyebrow"><div class="num">4</div><h2>Build and Validate (Steps 8&#8211;9)</h2></div>
+    <div class="section-eyebrow"><div class="num">4</div><h2>A baseline to beat and a single look at the test set (steps 8&#8211;9)</h2></div>
 
-    <div class="step-h"><span class="sn">8</span><h3>Build a baseline, then candidates</h3></div>
+    <div class="step-h"><span class="sn">8</span><h3>The majority-class dummy and three candidates</h3></div>
     <p>Never trust a model without a <span class="term">baseline</span>. A dummy that always predicts the majority class
        ("not canceled") is already <strong>54% accurate</strong>, so raw accuracy near that is meaningless. We score by
        <strong>ROC-AUC</strong> (baseline 0.5) and compare three candidates by 5-fold cross-validation:</p>
@@ -326,9 +327,9 @@
         </tbody>
       </table>
     </div>
-    <p>The instructive surprise: <strong>logistic regression beats both tree ensembles</strong>. On clean, mostly-linear
-       tabular data a well-regularized linear model is often the strongest <em>and</em> the most interpretable, do not
-       reach for a boosted forest reflexively. A <strong>learning curve</strong> (in the notebook) confirms the training
+    <p>The instructive surprise is that <strong>logistic regression beats both tree ensembles</strong>. On clean, mostly-linear
+       tabular data a well-regularized linear model is often the strongest <em>and</em> the most interpretable, so there
+       is no reason to reach for a boosted forest by reflex. A <strong>learning curve</strong> (in the notebook) confirms the training
        and validation scores converge, so the model is not badly overfit and much more data would help only a little.</p>
 
     <figure class="nb-fig">
@@ -337,10 +338,10 @@
         <strong>Comparing models fairly.</strong> Each bar is a model's mean AUC across the five cross-validation folds; the
         thin whiskers show how much it varied fold to fold, and the dashed line is random guessing (0.5). All three clear
         the baseline comfortably, but <strong>logistic regression (0.81) edges out both tree ensembles (0.79)</strong>, and
-        its error bar overlaps theirs, so the simplest model is at least as good. That is reason enough to keep it.</figcaption>
+        its error bar overlaps theirs, so the simplest model is at least as good, which is reason enough to keep it.</figcaption>
     </figure>
 
-    <div class="step-h"><span class="sn">9</span><h3>Tune, then the one honest test</h3></div>
+    <div class="step-h"><span class="sn">9</span><h3>Tune C and open the test set once</h3></div>
     <p><code>GridSearchCV</code> sweeps the regularization strength and settles on <strong>C = 0.3</strong> (CV AUC 0.812).
        Only then do we unlock the test set, once, for the final verdict:</p>
     <div style="overflow-x:auto">
@@ -355,7 +356,7 @@
       </table>
     </div>
     <p>Because tuning happened only on cross-validation and the test set was touched exactly once, <strong>0.85 is an unbiased
-       estimate</strong> for bookings drawn the same way as these, not an optimistic mirage. It rests on only 259 test
+       estimate</strong> for bookings drawn the same way as these, free of the optimism that tuning on the test set would add. It rests on only 259 test
        bookings, so a different split could move it a few points (cross-validation gave 0.81), and forecasting next
        month's bookings would need a split by date. The confusion matrix (106 true-honored, 89
        true-canceled, 35 false alarms, 29 misses) makes the trade-off concrete.</p>
@@ -363,10 +364,10 @@
     <figure class="nb-fig">
       <img src="../assets/img/case-study-an-end-to-end-ml-project--eval.png" alt="Confusion matrix and ROC curve on the held-out test set">
       <figcaption><span class="cap-t">From the notebook · Step 9</span><br>
-        <strong>The final verdict, on data the model never saw.</strong> <strong>Left</strong>, the confusion matrix: the
-        model correctly labeled <strong>106</strong> honored and <strong>89</strong> canceled bookings, against
+        <strong>The final verdict on data the model never saw.</strong> <strong>Left</strong>, the confusion matrix shows
+        the model correctly labeled <strong>106</strong> honored and <strong>89</strong> canceled bookings, against
         <strong>35</strong> false alarms (flagged but honored) and <strong>29</strong> misses (canceled but not flagged).
-        <strong>Right</strong>, the ROC curve bows well above the diagonal (<strong>AUC 0.85</strong>): across every possible
+        <strong>Right</strong>, the ROC curve bows well above the diagonal (<strong>AUC 0.85</strong>), so across every possible
         threshold the model ranks risky bookings above safe ones far better than chance. Because the test set was touched
         only here, at the very end, these numbers are trustworthy.</figcaption>
     </figure>
@@ -374,7 +375,7 @@
 
   <!-- ===== §5 interpret/deploy ===== -->
   <section id="interpret">
-    <div class="section-eyebrow"><div class="num">5</div><h2>Interpret and Deploy (Steps 10&#8211;11)</h2></div>
+    <div class="section-eyebrow"><div class="num">5</div><h2>Interpreting the log-odds and saving the pipeline (steps 10&#8211;11)</h2></div>
 
     <div class="step-h"><span class="sn">10</span><h3>Interpret the drivers</h3></div>
     <p>Because the winner is a logistic model, its coefficients read as log-odds. They describe associations in past
@@ -389,52 +390,52 @@
       <img src="../assets/img/case-study-an-end-to-end-ml-project--drivers.png" alt="Horizontal bar chart of logistic regression coefficients for each feature">
       <figcaption><span class="cap-t">From the notebook · Step 10</span><br>
         <strong>What goes with a cancellation.</strong> Each bar is a feature's logistic coefficient (in
-        log-odds). Bars pointing <strong>right (red)</strong> go with higher cancellation odds, no deposit, the <code>Groups</code>
-        segment, long lead time, and prior cancellations; bars pointing <strong>left (green)</strong> mark reliable bookings,
-        a non-refundable deposit, <code>Corporate</code> bookings, and more special requests. The numeric bars are per standard deviation and the category bars per category, so
+        log-odds). Bars pointing <strong>right (red)</strong> go with higher cancellation odds (no deposit, the <code>Groups</code>
+        segment, long lead time, and prior cancellations), and bars pointing <strong>left (green)</strong> mark reliable bookings
+        (a non-refundable deposit, <code>Corporate</code> bookings, and more special requests). The numeric bars are per standard deviation and the category bars per category, so
         their lengths are not on one common scale. This ranking is only readable because we kept a simple, interpretable model.</figcaption>
     </figure>
 
     <div class="step-h"><span class="sn">11</span><h3>Deploy the model</h3></div>
     <p>Persisting the fitted <code>Pipeline</code> with <code>joblib</code> bundles preprocessing and model together, so
        production applies the exact same transforms as training. The model then serves a cancellation probability per
-       booking. The real work begins after launch: watch for <strong>data drift</strong>, track live accuracy, and
-       <strong>retrain</strong> on fresh data before performance decays, the subject of the <a href="case-study-operationalizing-the-model-mlops.html">Operationalizing the Model (MLOps)</a> case study.</p>
+       booking. The real work begins after launch, when the team watches for <strong>data drift</strong>, tracks live accuracy, and
+       <strong>retrains</strong> on fresh data before performance decays. That loop is the subject of the <a href="case-study-operationalizing-the-model-mlops.html">Operationalizing the Model (MLOps)</a> case study.</p>
   </section>
 
   <!-- ===== §6 writeup ===== -->
   <section id="writeup-sec">
-    <div class="section-eyebrow"><div class="num">6</div><h2>Communicate: the Plain-English Write-Up (Step 12)</h2></div>
+    <div class="section-eyebrow"><div class="num">6</div><h2>Explaining the cancellation score to the hotel (step 12)</h2></div>
     <div class="writeup">
-      <h3>For a non-technical reader</h3>
+      <h3>For a reader outside the data team</h3>
       <p><strong>What is this?</strong> We built an early-warning tool that looks at a new hotel reservation and estimates
         how likely it is to be canceled, so the hotel can plan ahead (overbook sensibly, or nudge a wobbly booking with a
         reminder or a small incentive).</p>
 
-      <h4>What goes in, and what comes out</h4>
+      <h4>The booking details it reads and the number it returns</h4>
       <p><strong>Inputs:</strong> ordinary booking details the hotel already has, how far ahead it was booked, how many
         nights and guests, whether a deposit was paid, how the guest booked (online, direct, corporate, group), the room
         rate, the number of special requests, and whether it is a repeat guest. <strong>Output:</strong> a single number
         between 0 and 1, the estimated chance the booking will be canceled.</p>
 
-      <h4>The decisions we made, and why</h4>
+      <h4>Why we built it this way</h4>
       <ul>
         <li><span class="ck">✓</span><span>We <strong>cleaned</strong> the file first, removing duplicate bookings, impossible entries, and tidying labels that were spelled several ways, because a computer treats "No Deposit" and "no deposit" as different things.</span></li>
         <li><span class="ck">✓</span><span>We <strong>hid 20% of the data</strong> ("the test set") and never let the model see it while learning, so we could get an honest grade at the end, the same reason a teacher does not hand out the exam answers in advance.</span></li>
         <li><span class="ck">✓</span><span>We <strong>compared several methods</strong> against a dumb "always guess the common answer" benchmark, and kept the simplest one that did best, because a simple model is easier to trust, explain, and maintain.</span></li>
       </ul>
 
-      <h4>How good is it, in plain terms</h4>
+      <h4>How often the tool is right</h4>
       <p>On bookings it had never seen, the tool is right about <strong>three times in four</strong>, far better than the
         54% you would get by guessing, and it correctly flags roughly <strong>three of every four bookings that really do
-        cancel</strong>. When it says "70% likely to cancel", about 70% of such bookings genuinely do (the numbers are
-        trustworthy, not just relative rankings).</p>
+        cancel</strong>. When it says "70% likely to cancel", about 70% of such bookings genuinely do (the numbers can
+        be read as real probabilities as well as rankings).</p>
 
       <h4>What goes with a cancellation</h4>
       <p>Bookings made far in advance, with no deposit, by groups, or by guests who have canceled before are the most
         likely to fall through. Bookings with a non-refundable deposit, from corporate accounts, or with several special
-        requests are the most reliable. <strong>Bottom line: the biggest single red flag is a no-deposit booking made a
-        long time ahead</strong>, and a simple, explainable model predicts cancellations about as well as anything fancier.</p>
+        requests are the most reliable. <strong>The biggest single red flag is a no-deposit booking made a long time
+        ahead</strong>, and a simple, explainable model predicts cancellations about as well as anything fancier.</p>
     </div>
   </section>
 
@@ -443,7 +444,7 @@
     <div class="nb-cta" style="display:block">
       <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
         <div class="nb-ic">🐍</div>
-        <div class="nb-body"><h3>Run the entire project in Python</h3><p>The companion notebook is the full 12-step pipeline: it loads and cleans the messy bookings file, visualizes the cancellation signal, builds a leakage-free preprocessing pipeline, holds out a test set, benchmarks a baseline against logistic regression, random forest, and gradient boosting by cross-validation, draws a learning curve, tunes the winner with <code>GridSearchCV</code>, evaluates once on the test set (confusion matrix and ROC), interprets the drivers, and saves the model, with every table and chart explained.</p></div>
+        <div class="nb-body"><h3>Run the entire project in Python</h3><p>The companion notebook runs the full 12-step pipeline. It loads and cleans the messy bookings file, visualizes the cancellation signal, builds a leakage-free preprocessing pipeline, holds out a test set, benchmarks a baseline against logistic regression, random forest, and gradient boosting by cross-validation, draws a learning curve, tunes the winner with <code>GridSearchCV</code>, evaluates once on the test set (confusion matrix and ROC), interprets the drivers, and saves the model, with every table and chart explained.</p></div>
       </div>
       <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
         <a class="btn btn-primary" href="notebooks/html/case-study-an-end-to-end-ml-project.html">📓 View Notebook (code &amp; outputs)</a>
@@ -459,13 +460,13 @@
   <!-- ===== takeaways ===== -->
   <section id="takeaways">
     <div class="takeaways">
-      <h3>🎓 Key Takeaways</h3>
+      <h3>🎓 In brief</h3>
       <ul>
         <li><span class="ck">✓</span><span><strong>Split first, test last</strong>: lock away a test set before anything else and evaluate on it exactly once, for an honest performance number.</span></li>
         <li><span class="ck">✓</span><span><strong>Always beat a baseline</strong>: a majority-class dummy was 54% accurate, so judge by AUC and compare against it.</span></li>
         <li><span class="ck">✓</span><span><strong>Cross-validation is your validation set</strong>: it compares models and tunes hyperparameters using the training data efficiently and robustly.</span></li>
-        <li><span class="ck">✓</span><span><strong>Keep every transform in a pipeline</strong>: imputing or scaling before the split leaks the test set into training, a pipeline prevents it by construction.</span></li>
-        <li><span class="ck">✓</span><span><strong>Simple often wins</strong>: a regularized logistic regression beat the tree ensembles and is fully interpretable, complexity must earn its place.</span></li>
+        <li><span class="ck">✓</span><span><strong>Keep every transform in a pipeline</strong>: imputing or scaling before the split leaks the test set into training, and a pipeline prevents it by construction.</span></li>
+        <li><span class="ck">✓</span><span><strong>Simple often wins</strong>: a regularized logistic regression beat the tree ensembles and is fully interpretable, so added complexity needs evidence that it helps.</span></li>
       </ul>
     </div>
   </section>
@@ -473,7 +474,7 @@
   <!-- ===== §7 take it further ===== -->
   <section id="challenges">
     <div class="section-eyebrow"><div class="num">7</div><h2>Take It Further</h2></div>
-    <p>Five ways to extend the project in the notebook:</p>
+    <p>Each challenge below extends the project in the notebook.</p>
     <div class="challenges">
       <div class="challenge"><div class="cnum">1</div><div class="cbody">
         <h3>A business-cost threshold</h3>
@@ -500,7 +501,7 @@
     <div class="nb-cta" style="display:block">
       <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
         <div class="nb-ic">📓</div>
-        <div class="nb-body"><h3>All five, worked in a companion notebook</h3><p>A second notebook, <strong>Take It Further</strong>, rebuilds this chapter's model and works every one of these five extensions with visuals and explanations, a cost-based decision threshold, an engineered interaction, a tuned gradient-boosting rival, a probability-calibration check, and scoring a new booking, closing with a plain-English summary.</p></div>
+        <div class="nb-body"><h3>Each cancellation extension worked in a second notebook</h3><p>A second notebook, <strong>Take It Further</strong>, rebuilds this chapter's model and works each of the five extensions (a cost-based decision threshold, an engineered interaction, a tuned gradient-boosting rival, a probability-calibration check, and scoring a new booking) with visuals and explanations, closing with a plain-English summary.</p></div>
       </div>
       <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
         <a class="btn btn-primary" href="notebooks/html/case-study-an-end-to-end-ml-project--take-it-further.html">📓 View Notebook (code &amp; outputs)</a>
@@ -512,7 +513,7 @@
 
   <!-- ===== §8 quiz ===== -->
   <section id="quiz">
-    <div class="section-eyebrow"><div class="num">8</div><h2>Quiz: Test Yourself</h2></div>
+    <div class="section-eyebrow"><div class="num">8</div><h2>Test yourself</h2></div>
     <p>Eight questions on the end-to-end workflow. Answer them, hit <strong>Check Answers</strong>, and keep refining until
        you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
     <div id="quiz-root"></div>
@@ -592,7 +593,7 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
       q: "Logistic regression beat the tree ensembles here. The lesson is…",
       options: ["Always use logistic regression", "On clean, mostly-linear tabular data a simple, interpretable model is often hard to beat", "Trees never work", "AUC is unreliable"],
       answer: 1,
-      explain: "Complexity should earn its place; a well-regularized linear model was best AND interpretable on this data."
+      explain: "Extra complexity needs evidence that it helps, and on this data a well-regularized linear model was the best model and also interpretable."
     },
     {
       q: "GridSearchCV selects hyperparameters by…",
