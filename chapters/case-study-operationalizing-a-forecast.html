@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ch 140 · Case Study: Operationalizing a Forecast — Statistics, Data Science and AI</title>
-  <meta name="description" content="A forecast is not a one-time number, it is a service that must be kept alive.">
+  <meta name="description" content="A forecast is a service that has to be kept alive long after its first number goes out.">
   <meta name="author" content="John Fisher">
   <link rel="canonical" href="https://johnfisher-ai.github.io/Statistics-Data-Science-AI-Visual-Book/chapters/case-study-operationalizing-a-forecast.html">
 
   <meta property="og:type" content="article">
   <meta property="og:site_name" content="Statistics, Data Science and AI: A Visual Handbook">
   <meta property="og:title" content="Case Study: Operationalizing a Forecast · Chapter 140">
-  <meta property="og:description" content="A forecast is not a one-time number, it is a service that must be kept alive.">
+  <meta property="og:description" content="A forecast is a service that has to be kept alive long after its first number goes out.">
   <meta property="og:url" content="https://johnfisher-ai.github.io/Statistics-Data-Science-AI-Visual-Book/chapters/case-study-operationalizing-a-forecast.html">
   <meta property="og:image" content="https://johnfisher-ai.github.io/Statistics-Data-Science-AI-Visual-Book/assets/img/social-card-v2.png">
   <meta property="og:image:width" content="2400">
@@ -19,7 +19,7 @@
 
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Case Study: Operationalizing a Forecast · Chapter 140">
-  <meta name="twitter:description" content="A forecast is not a one-time number, it is a service that must be kept alive.">
+  <meta name="twitter:description" content="A forecast is a service that has to be kept alive long after its first number goes out.">
   <meta name="twitter:image" content="https://johnfisher-ai.github.io/Statistics-Data-Science-AI-Visual-Book/assets/img/social-card-v2.png">
   <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png">
@@ -74,9 +74,9 @@
       <span>Chapter 140</span>
     </div>
     <h1>Case Study: <span class="accent">Operationalizing a Forecast</span></h1>
-    <p class="dek">A forecast is not a one-time number, it is a service that must be kept alive. This case study takes a
-       demand forecaster to production: package it, serve it, schedule refreshes, and monitor for drift, then watches a
-       set-and-forget forecast rot after a regime shift while a scheduled pipeline stays fresh.</p>
+    <p class="dek">A forecast is a service that has to be kept alive long after its first number goes out. This case study takes a
+       demand forecaster to production, where it is packaged, served, refreshed on a schedule, and monitored for drift,
+       then watches a set-and-forget forecast rot after a regime shift while a scheduled pipeline stays fresh.</p>
     <div class="hero-meta">
       <div class="m">⏱️ <b>~26 min</b>&nbsp;read</div>
       <div class="m">🐍 <b>Full notebook</b>&nbsp;included</div>
@@ -90,9 +90,9 @@
   <section id="intro">
     <p class="lead">Every forecasting chapter so far ended at a good forecast. This one asks what happens <span class="hl">next
        month, and the month after</span>. A forecast that is accurate today can be badly wrong next quarter, because the
-       world it learned from keeps changing. So the last skill is to <span class="hl">operationalize</span> it: package,
-       serve, <span class="hl">schedule refreshes</span>, and <span class="hl">monitor for drift</span>, the forecasting
-       version of MLOps.</p>
+       world it learned from keeps changing. So the last skill is to <span class="hl">operationalize</span> it by packaging
+       and serving it, <span class="hl">scheduling refreshes</span>, and <span class="hl">monitoring for drift</span>, the
+       forecasting version of MLOps.</p>
 
     <div class="def-card">
       <div class="sigma">&#8734;</div>
@@ -109,14 +109,14 @@
       <div><div class="ctitle">Set-and-forget against a scheduled refit</div>
         <p>The same Holt-Winters model, deployed two ways. A one-time forecast, never refreshed, rots to about <strong>28.5%
            MAPE</strong> after a mid-2021 business expansion. A <strong>scheduled monthly refit</strong>, watched by a drift
-           monitor, misses for two months and then averages near <strong>3%</strong> again, almost nine times better. The gap is not the model, it is whether anyone kept it fresh.</p></div>
+           monitor, misses for two months and then averages near <strong>3%</strong> again, almost nine times better. Both runs use the identical model, so the whole gap comes from whether anyone kept it fresh.</p></div>
     </div>
   </section>
 
   <!-- ===== §1 method ===== -->
   <section id="method">
-    <div class="section-eyebrow"><div class="num">1</div><h2>The 12-Step Forecasting-Ops Method</h2></div>
-    <p>The same discipline as the ML MLOps chapter, tuned for forecasting. The companion notebook runs all twelve steps; the
+    <div class="section-eyebrow"><div class="num">1</div><h2>From contract to governed service in 12 steps</h2></div>
+    <p>The method follows the same discipline as the ML MLOps chapter, tuned for forecasting. The companion notebook runs all twelve steps; the
        sections below tell the story and show the plots.</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
@@ -187,10 +187,10 @@
 
     <div class="rw-card">
       <div class="rw-tag">📂 Dataset · case-study-operationalizing-a-forecast--demand_ops.xlsx</div>
-      <p style="margin:0.5rem 0 0">Monthly product demand, <strong>96 months</strong> (8 years, 2016 to 2023), in units,
-        with a trend and 12-month seasonality. Its defining feature is a <strong>regime shift</strong> in mid-2021, a
-        business expansion that permanently lifted demand and steepened its growth. Two columns: <code>month</code> and
-        <code>demand</code>.</p>
+      <p style="margin:0.5rem 0 0">Two columns, <code>month</code> and <code>demand</code>, hold <strong>96 months</strong>
+        (8 years, 2016 to 2023) of product demand in units, with a trend and 12-month seasonality. Its defining feature is a
+        <strong>regime shift</strong> in mid-2021, a business expansion that permanently lifted demand and steepened its
+        growth.</p>
       <div class="ex-files">
         <a class="ex-file xls" href="../data/case-study-operationalizing-a-forecast--demand_ops.xlsx" download>📊 Download dataset &nbsp;<small>XLSX · 96 months</small></a>
       </div>
@@ -199,14 +199,14 @@
 
   <!-- ===== §2 build the service ===== -->
   <section id="serve">
-    <div class="section-eyebrow"><div class="num">2</div><h2>Build the Service: Package, Serve, Schedule (Steps 1&#8211;5)</h2></div>
+    <div class="section-eyebrow"><div class="num">2</div><h2>Packaging, serving and scheduling the forecaster (steps 1&#8211;5)</h2></div>
 
     <div class="step-h"><span class="sn">1&#8211;3</span><h3>Define the contract, package, and serve</h3></div>
     <p>First write the <strong>production contract</strong>: an accuracy floor (retrain if rolling MAPE tops 10%), a refresh
        cadence (monthly), and a horizon. Then <strong>package</strong> the fitted Holt-Winters model with metadata into a
-       versioned artifact, and <strong>serve</strong> it behind a small function: load once, return a forecast with a
+       versioned artifact, and <strong>serve</strong> it behind a small function that loads once and returns a forecast with a
        prediction interval as a simple payload (a dict locally, a JSON response in production). A dashboard, an app, or the
-       ordering system from the <a href="case-study-from-forecast-to-decision.html">From Forecast to Decision</a> case study calls that endpoint, it never touches the model internals.</p>
+       ordering system from the <a href="case-study-from-forecast-to-decision.html">From Forecast to Decision</a> case study calls that endpoint and never touches the model internals.</p>
 
     <figure style="margin:0.4rem 0 1.4rem;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.4rem 1.2rem">
       <svg viewBox="0 0 680 186" width="100%" font-family="Inter, sans-serif" aria-label="A forecasting service architecture: history feeds a scheduled retrain job that publishes a forecast endpoint consumed by apps, with a monitor that watches accuracy and triggers retraining on drift">
@@ -230,8 +230,8 @@
     </figure>
 
     <div class="step-h"><span class="sn">4&#8211;5</span><h3>Schedule the refresh and log everything</h3></div>
-    <p>The single most important forecasting habit is the <strong>scheduled refit</strong>: as each new month lands, refit on
-       the latest data and forecast forward. That lets the model absorb gradual change automatically. We keep two pipelines
+    <p>The single most important forecasting habit is the <strong>scheduled refit</strong>, which refits on the latest data
+       and forecasts forward as each new month lands. That lets the model absorb gradual change automatically. We keep two pipelines
        to compare, the <strong>scheduled</strong> one and a <strong>set-and-forget</strong> champion (a forecast made once at
        deployment and never updated), and <strong>log</strong> every forecast so accuracy can be monitored when the actuals
        arrive.</p>
@@ -239,14 +239,14 @@
 
   <!-- ===== §3 monitor & drift ===== -->
   <section id="monitor">
-    <div class="section-eyebrow"><div class="num">3</div><h2>Monitor, Detect Drift &amp; Diagnose (Steps 6&#8211;8)</h2></div>
+    <div class="section-eyebrow"><div class="num">3</div><h2>Catching the regime shift in rolling MAPE (steps 6&#8211;8)</h2></div>
 
     <div class="step-h"><span class="sn">6</span><h3>Monitor rolling accuracy</h3></div>
     <figure class="nb-fig">
       <img src="../assets/img/case-study-operationalizing-a-forecast--series.png" alt="Monthly demand with a marked regime shift in mid-2021 where the level jumps and the trend steepens">
       <figcaption><span class="cap-t">From the notebook · context</span><br>
         <strong>The event that breaks a stale forecast.</strong> Demand grows steadily, then a <strong>regime shift</strong>
-        (a business expansion) hits in mid-2021: a permanent jump in level and a steeper trend. Everything trained before it
+        (a business expansion) hits in mid-2021 and brings a permanent jump in level and a steeper trend. Everything trained before it
         now describes a world that no longer exists.</figcaption>
     </figure>
 
@@ -259,77 +259,77 @@
         peaks near 7%, under the floor, and recovers. Monitoring is what turns a silent decay into an alarm.</figcaption>
     </figure>
 
-    <div class="step-h"><span class="sn">7&#8211;8</span><h3>Detect the drift, then diagnose it</h3></div>
+    <div class="step-h"><span class="sn">7&#8211;8</span><h3>Detect the drift and diagnose it</h3></div>
     <figure class="nb-fig">
       <img src="../assets/img/case-study-operationalizing-a-forecast--setforget.png" alt="The set-and-forget forecast, made once at deploy, keeps the old trajectory and diverges from the actual demand after the shift">
       <figcaption><span class="cap-t">From the notebook · Step 8</span><br>
         <strong>Set-and-forget rots.</strong> The champion forecast, made once at deployment and never updated, holds the old
         trajectory while actual demand steps up and steepens, so the gap only widens. Diagnosing it shows demand stepped up about
         <strong>30%</strong> in July 2021 and stayed there, and with the steeper trend the months after the shift average
-        <strong>56%</strong> above the two years before, a <strong>persistent regime change</strong>, not a one-off shock. Waiting
-        cannot fix a stale model against a permanent shift; only retraining on the new data can.</figcaption>
+        <strong>56%</strong> above the two years before. A one-off shock would fade on its own, but this is a
+        <strong>persistent regime change</strong>, and against a permanent shift only retraining on the new data can fix a
+        stale model.</figcaption>
     </figure>
   </section>
 
   <!-- ===== §4 retrain & deploy ===== -->
   <section id="retrain">
-    <div class="section-eyebrow"><div class="num">4</div><h2>Retrain, Embed &amp; Deploy (Steps 9&#8211;12)</h2></div>
+    <div class="section-eyebrow"><div class="num">4</div><h2>Refitting through the shift and redeploying (steps 9&#8211;12)</h2></div>
 
     <div class="step-h"><span class="sn">9&#8211;10</span><h3>Retrain and validate the recovery</h3></div>
     <figure class="nb-fig">
       <img src="../assets/img/case-study-operationalizing-a-forecast--recover.png" alt="After the shift, the set-and-forget forecast keeps diverging while the scheduled refit re-locks onto the new higher regime">
       <figcaption><span class="cap-t">From the notebook · Steps 9&#8211;10</span><br>
         <strong>Scheduled retraining is the recovery.</strong> Because the scheduled pipeline refits every month, within a
-        few months its expanding window has enough post-shift data to <strong>re-lock onto the new regime</strong>: its error
-        spikes to about 23% at the shift, then falls back to about 2% three months later. No manual intervention, the
-        automation <em>is</em> the fix.</figcaption>
+        few months its expanding window has enough post-shift data to <strong>re-lock onto the new regime</strong>. Its error
+        spikes to about 23% at the shift, then falls back to about 2% three months later without anyone stepping in,
+        because the automation <em>is</em> the fix.</figcaption>
     </figure>
 
     <figure class="nb-fig">
       <img src="../assets/img/case-study-operationalizing-a-forecast--summary.png" alt="Grouped bars of pre-shift and post-shift MAPE: the set-and-forget champion jumps to 28.5% post-shift while the scheduled refit stays near 3%">
       <figcaption><span class="cap-t">From the notebook · Step 10</span><br>
-        <strong>Same model, opposite outcome.</strong> Pre-shift, both pipelines are near 3%. Post-shift, the set-and-forget
+        <strong>Same model, opposite outcome.</strong> The only difference between the two pipelines is that one is
+        operationalized. Pre-shift, both are near 3%. Post-shift, the set-and-forget
         forecast rots to about <strong>28.5%</strong> while the scheduled, monitored one averages about <strong>3%</strong>,
-        after two months near 22% while it absorbs the break. The
-        only difference is that one is operationalized and the other is not.</figcaption>
+        after two months near 22% while it absorbs the break.</figcaption>
     </figure>
 
     <div class="step-h"><span class="sn">11&#8211;12</span><h3>Embed, deploy, and govern the loop</h3></div>
-    <p>Deployment closes the loop: the scheduled job refits on all data (now including the new regime), repackages the
+    <p>Deployment closes the loop. The scheduled job refits on all data (now including the new regime) and repackages the
        artifact, and the <strong>/forecast endpoint</strong> publishes the next six months with intervals, ready for a
-       dashboard, an app, or the order system to consume. Every month it reruns; every month monitoring re-checks accuracy
-       against the floor, and if it breaches, an alarm fires. The forecast stays alive. The plain-English ops report is
-       below.</p>
+       dashboard, an app, or the order system to consume. It reruns every month, and each run re-checks accuracy against
+       the floor and fires an alarm on a breach, which is what keeps the forecast alive. The plain-English ops report that
+       follows explains this loop to the operations team.</p>
   </section>
 
   <!-- ===== §5 writeup ===== -->
   <section id="writeup-sec">
-    <div class="section-eyebrow"><div class="num">5</div><h2>Communicate: the Plain-English Write-Up (Step 12)</h2></div>
+    <div class="section-eyebrow"><div class="num">5</div><h2>Reporting the live service in plain English (step 12)</h2></div>
     <div class="writeup">
       <h3>For the operations team</h3>
       <p><strong>What is this?</strong> Our demand forecaster, running as a live service the dashboard and ordering system
         call, kept accurate by an automatic monthly refresh and an accuracy monitor.</p>
 
-      <h4>What goes in, and what comes out</h4>
+      <h4>What goes in and what comes out</h4>
       <p><strong>Input:</strong> the demand history, updated each month. <strong>Output:</strong> a fresh six-month forecast
         with intervals, published to whatever app needs it, plus an alarm if accuracy slips.</p>
 
-      <h4>The decisions we made, and why</h4>
+      <h4>The decisions we made and why</h4>
       <ul>
         <li><span class="ck">✓</span><span>We <strong>did not ship a one-time forecast</strong>. A forecast made once and left alone would have gone badly stale after the mid-2021 expansion, its error near 28.5%. So we refit it every month.</span></li>
         <li><span class="ck">✓</span><span>We <strong>monitor its accuracy</strong>. A rolling accuracy check watches for drift; if error crosses a floor, an alarm fires so we can investigate a possible regime change.</span></li>
         <li><span class="ck">✓</span><span>We <strong>served it as a shared endpoint</strong>, so the dashboard, the app, and the order system all consume the same, always-current forecast.</span></li>
       </ul>
 
-      <h4>What it is worth, in plain terms</h4>
+      <h4>What the monthly refresh is worth</h4>
       <p>Keeping the forecast fresh brought its error back to about <strong>3%</strong> within three months of a major
         business change that pushed a set-and-forget forecast to about <strong>28.5%</strong>, almost nine times worse, from
         operations alone.</p>
 
       <h4>The bottom line</h4>
-      <p><strong>A forecast is a living service, not a one-off number. We package it, serve it, refit it on a schedule, and
-        watch it for drift, so it stays trustworthy even when the business changes. That is what keeps every decision built
-        on it sound.</strong></p>
+      <p><strong>Our forecast runs as a living service. We package it, serve it, refit it on a schedule, and watch it for
+        drift, so it stays trustworthy even when the business changes and every decision built on it stays sound.</strong></p>
     </div>
   </section>
 
@@ -338,7 +338,7 @@
     <div class="nb-cta" style="display:block">
       <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
         <div class="nb-ic">🐍</div>
-        <div class="nb-body"><h3>Run the full forecasting-ops loop in Python</h3><p>The companion notebook is the whole 12-step lifecycle: it defines the production contract, packages the forecaster with joblib, serves a forecast endpoint returning a forecast and interval, schedules a monthly refit, logs forecasts against actuals, monitors rolling MAPE, detects the drift after the regime shift, diagnoses it, shows the scheduled retrain recovering, and redeploys the fresh forecast, every step explained.</p></div>
+        <div class="nb-body"><h3>Run the full forecasting-ops loop in Python</h3><p>The companion notebook runs the whole 12-step lifecycle. It defines the production contract, packages the forecaster with joblib, serves a forecast endpoint returning a forecast and interval, schedules a monthly refit, logs forecasts against actuals, monitors rolling MAPE, detects the drift after the regime shift, diagnoses it, shows the scheduled retrain recovering, and redeploys the fresh forecast, explaining every step.</p></div>
       </div>
       <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
         <a class="btn btn-primary" href="notebooks/html/case-study-operationalizing-a-forecast.html">📓 View Notebook (code &amp; outputs)</a>
@@ -354,12 +354,12 @@
   <!-- ===== takeaways ===== -->
   <section id="takeaways">
     <div class="takeaways">
-      <h3>🎓 Key Takeaways</h3>
+      <h3>🎓 In brief</h3>
       <ul>
-        <li><span class="ck">✓</span><span><strong>A forecast is a service, not a number</strong>: package it, serve it behind an endpoint, and let apps consume it.</span></li>
+        <li><span class="ck">✓</span><span><strong>Run the forecast as a service</strong>: package it, serve it behind an endpoint, and let apps consume it.</span></li>
         <li><span class="ck">✓</span><span><strong>Schedule the refresh</strong>: refitting on the latest data each period is the single most important forecasting-ops habit.</span></li>
         <li><span class="ck">✓</span><span><strong>Monitor rolling accuracy</strong>: it turns a silent decay into an alarm; a floor breach is the retraining trigger.</span></li>
-        <li><span class="ck">✓</span><span><strong>Diagnose drift</strong>: a persistent regime shift needs retraining, not patience; a one-off shock does not.</span></li>
+        <li><span class="ck">✓</span><span><strong>Diagnose drift</strong>: a one-off shock passes on its own, while a persistent regime shift needs retraining.</span></li>
         <li><span class="ck">✓</span><span><strong>Set-and-forget vs scheduled</strong>: same model, about 28.5% against 3.3% MAPE after a shift, and the difference is operations.</span></li>
       </ul>
     </div>
@@ -368,7 +368,7 @@
   <!-- ===== §6 take it further ===== -->
   <section id="challenges">
     <div class="section-eyebrow"><div class="num">6</div><h2>Take It Further</h2></div>
-    <p>Five ways to harden the pipeline in the notebook:</p>
+    <p>The notebook hardens the pipeline in the ways below.</p>
     <div class="challenges">
       <div class="challenge"><div class="cnum">1</div><div class="cbody">
         <h3>Automatic change-point detection</h3>
@@ -376,7 +376,7 @@
         <div class="chint">Hint: accumulate errors and alarm when they drift persistently.</div></div></div>
       <div class="challenge"><div class="cnum">2</div><div class="cbody">
         <h3>Interval coverage as a monitor</h3>
-        <p>Track how often actuals fall inside the 95% band, a run outside is an early warning.</p>
+        <p>Track how often actuals fall inside the 95% band, since a run outside it is an early warning.</p>
         <div class="chint">Hint: backtest the one-step prediction interval.</div></div></div>
       <div class="challenge"><div class="cnum">3</div><div class="cbody">
         <h3>Expanding vs rolling window</h3>
@@ -395,7 +395,7 @@
     <div class="nb-cta" style="display:block">
       <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
         <div class="nb-ic">📓</div>
-        <div class="nb-body"><h3>All five, worked in a companion notebook</h3><p>A second notebook, <strong>Take It Further</strong>, rebuilds this chapter's pipeline and works every extension with explanations, a CUSUM change-point detector, interval-coverage monitoring, expanding versus rolling retraining windows, a retraining-cadence comparison, and a rolling-origin backtest as the CI test before deploy.</p></div>
+        <div class="nb-body"><h3>Running each hardening step in Python</h3><p>A second notebook, <strong>Take It Further</strong>, rebuilds this chapter's pipeline and works every extension with explanations: a CUSUM change-point detector, interval-coverage monitoring, expanding versus rolling retraining windows, a retraining-cadence comparison, and a rolling-origin backtest as the CI test before deploy.</p></div>
       </div>
       <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
         <a class="btn btn-primary" href="notebooks/html/case-study-operationalizing-a-forecast--take-it-further.html">📓 View Notebook (code &amp; outputs)</a>
@@ -407,7 +407,7 @@
 
   <!-- ===== §7 quiz ===== -->
   <section id="quiz">
-    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <div class="section-eyebrow"><div class="num">7</div><h2>Test yourself</h2></div>
     <p>Eight questions on serving, scheduling, and monitoring a forecast. Answer them, hit <strong>Check Answers</strong>, and
        keep refining until you score 100%. Your progress is saved.</p>
     <div id="quiz-root"></div>
@@ -452,7 +452,7 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
       q: "Operationalizing a forecast means…",
       options: ["Making it more accurate once", "Running it as a living service: package, serve, schedule refreshes, and monitor for drift", "Deleting old forecasts", "Forecasting further ahead"],
       answer: 1,
-      explain: "A production forecast is a service that must be kept fresh and watched, not a one-time number."
+      explain: "A production forecast is an ongoing service that must be kept fresh and watched."
     },
     {
       q: "Why does a set-and-forget forecast rot after the mid-2021 shift?",
@@ -474,7 +474,7 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
     },
     {
       q: "The regime shift was diagnosed as a persistent change rather than a shock because…",
-      options: ["It happened once", "Demand stepped up about 30% and stayed there, with a steeper trend, so retraining, not patience, is the fix", "The forecast recovered on its own", "It was a data error"],
+      options: ["It happened once", "Demand stepped up about 30% and stayed there, with a steeper trend, so waiting will not help and retraining is the fix", "The forecast recovered on its own", "It was a data error"],
       answer: 1,
       explain: "A one-off spike reverts; a persistent level/trend change is a new regime that only retraining on new data cures."
     },
@@ -482,7 +482,7 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
       q: "How did the scheduled pipeline recover after the shift?",
       options: ["A human rebuilt it", "Its monthly refit absorbed the new-regime data within a few months, error 23% falling back to ~2%", "It never recovered", "It ignored the shift"],
       answer: 1,
-      explain: "Scheduled retraining IS the recovery: the expanding window soon re-locks onto the new regime, no manual step."
+      explain: "Scheduled retraining IS the recovery, because the expanding window soon re-locks onto the new regime with no manual step."
     },
     {
       q: "Serving the forecast behind an endpoint (a /forecast API) matters because…",
@@ -492,9 +492,9 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
     },
     {
       q: "The overall lesson of the chapter is…",
-      options: ["Accuracy is all that matters", "A forecast is a living service; the 28.5%-vs-3% gap after a shift came from operations, not the model", "Never deploy forecasts", "Bigger models never drift"],
+      options: ["Accuracy is all that matters", "A forecast is a living service, and the 28.5%-vs-3% gap after a shift came from operations while the model stayed the same", "Never deploy forecasts", "Bigger models never drift"],
       answer: 1,
-      explain: "Same model, two deployments: the operationalized one stayed accurate. Keeping a forecast fresh is the whole game."
+      explain: "With the same model deployed two ways, only the operationalized one stayed accurate, because keeping a forecast fresh decides the outcome."
     }
   ];
 </script>
