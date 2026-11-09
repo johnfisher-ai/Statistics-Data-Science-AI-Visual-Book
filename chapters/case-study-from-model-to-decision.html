@@ -94,7 +94,7 @@
 
   <section id="intro">
     <p class="lead">A trained model is not a decision. Between the two lie the choices that actually create, or destroy,
-       value: is the score <span class="hl">honest</span> or inflated by a leak? Is one model <span class="hl">really</span>
+       value. Is the score <span class="hl">honest</span> or inflated by a leak? Is one model <span class="hl">really</span>
        better than another, or just luckier on this split? Which <span class="hl">metric</span> matches the goal, and where
        should the <span class="hl">threshold</span> sit? This capstone uses an attrition problem to work through those
        questions, and its lessons apply to every model in the book.</p>
@@ -102,8 +102,8 @@
     <div class="def-card">
       <div class="sigma">&#8594;</div>
       <div class="def-body">
-        Turning a <span class="def-kw">model</span> into a <span class="def-kw">decision</span> means: guarding against
-        <span class="def-kw">leakage</span>, comparing models with cross-validation (not one split), choosing a
+        Turning a <span class="def-kw">model</span> into a <span class="def-kw">decision</span> means guarding against
+        <span class="def-kw">leakage</span>, comparing models across cross-validation folds instead of on one split, choosing a
         <span class="def-kw">metric</span> that reflects the goal (accuracy often does not), setting the
         <span class="def-kw">threshold</span> by the cost of each error, and communicating it plainly.
       </div>
@@ -112,15 +112,15 @@
     <div class="callout key">
       <div class="cico">🧭</div>
       <div><div class="ctitle">Where the value is really made</div>
-        <p>The model is the easy part. The decisions that matter come <em>after</em> it: <strong>Step 5</strong> catches a
-           data leak that fakes a 0.99 AUC; <strong>Step 7</strong> shows accuracy would lead you to help nobody; and
-           <strong>Step 8</strong> sets the threshold where the money is, far from where accuracy is best.</p></div>
+        <p>The model is the easy part. The decisions that matter come <em>after</em> it. <strong>Step 5</strong> catches a
+           data leak that fakes a 0.99 AUC, and <strong>Step 7</strong> shows that judging by accuracy would lead you to help nobody.
+           Then <strong>Step 8</strong> sets the threshold where the money is, far from where accuracy is best.</p></div>
     </div>
   </section>
 
   <!-- ===== §1 method ===== -->
   <section id="method">
-    <div class="section-eyebrow"><div class="num">1</div><h2>The 12-Step Method</h2></div>
+    <div class="section-eyebrow"><div class="num">1</div><h2>The 12-step method for a retention decision</h2></div>
     <p>The same repeatable loop, now with the spotlight on evaluation and decision-making. The companion notebook runs all
        twelve steps; the sections below tell the story and show the plots.</p>
 
@@ -204,12 +204,12 @@
 
   <!-- ===== §2 wrangle ===== -->
   <section id="wrangle">
-    <div class="section-eyebrow"><div class="num">2</div><h2>Define, Collect, Inspect, Clean (Steps 1&#8211;4)</h2></div>
+    <div class="section-eyebrow"><div class="num">2</div><h2>The HR export and its leaky column (steps 1&#8211;4)</h2></div>
 
     <div class="step-h"><span class="sn">1</span><h3>Define the objective</h3></div>
-    <p>An HR team wants to reduce attrition by offering retention support to at-risk employees. The model's job is not to be
-       "accurate", it is to help decide <strong>who to talk to</strong>, given that losing an employee is expensive and a
-       conversation is cheap. Keeping that <em>decision</em> in view is what makes every later choice right or wrong.</p>
+    <p>An HR team wants to reduce attrition by offering retention support to at-risk employees. The model is there to help
+       decide <strong>who to talk to</strong>, given that losing an employee is expensive and a conversation is cheap.
+       Being "accurate" matters only as far as it serves that decision. Keeping that <em>decision</em> in view is what makes every later choice right or wrong.</p>
 
     <div class="step-h"><span class="sn">2</span><h3>Collect the data</h3></div>
     <p>A table of the kind an HR system exports (a realistic teaching dataset written for the book), one row per employee with the usual signals, and one column that will turn out to be a trap.</p>
@@ -217,19 +217,19 @@
     <div class="step-h"><span class="sn">3</span><h3>Inspect the data</h3></div>
     <p>About <strong>19% of employees left</strong>, so predicting "stays" for everyone is already <strong>81%
        accurate</strong>, the first sign accuracy will mislead. And one feature, <code>exit_process_started</code>,
-       correlates far more strongly with attrition (0.92) than any real signal, employees for whom it is 1 leave over 90% of
+       correlates far more strongly with attrition (0.92) than any real signal, and employees for whom it is 1 leave over 90% of
        the time.</p>
 
     <div class="step-h"><span class="sn">4</span><h3>Clean the data</h3></div>
-    <p>Light cleaning (dedupe, impute a few missing values), and one deliberate exclusion: <code>exit_process_started</code>
-       is <strong>left out of the features</strong>. The offboarding process mostly starts <em>after</em> someone resigns
+    <p>Cleaning is light (dedupe, impute a few missing values), and <code>exit_process_started</code>
+       is deliberately <strong>left out of the features</strong>. The offboarding process mostly starts <em>after</em> someone resigns
        (92% of those flagged left), so a current employee who has not resigned would almost always show 0. Using it would build a model that looks brilliant in testing and is useless
        in production, the definition of a leak.</p>
   </section>
 
   <!-- ===== §3 leak ===== -->
   <section id="leak">
-    <div class="section-eyebrow"><div class="num">3</div><h2>Prove the Leak (Step 5)</h2></div>
+    <div class="section-eyebrow"><div class="num">3</div><h2>Measuring what the leak does to the AUC (step 5)</h2></div>
     <p>It is worth <em>quantifying</em> the leak, both to understand its danger and to build the habit of distrusting a
        score that looks too good.</p>
 
@@ -239,14 +239,14 @@
         <strong>Leakage is the most dangerous evaluation mistake.</strong> Including <code>exit_process_started</code>
         rockets the AUC to <strong>0.99</strong> (red), a model that would collapse to <strong>0.76</strong> (indigo) the
         moment it met a real, current employee. The tell was the too-good score; the fix was asking <em>when</em> each
-        feature becomes known. Before trusting any high number, ask: could this feature have been recorded only after the
-        outcome? We proceed with the honest feature set.</figcaption>
+        feature becomes known. Before trusting any high number, ask whether the feature could have been recorded only after the
+        outcome. We proceed with the honest feature set.</figcaption>
     </figure>
   </section>
 
   <!-- ===== §4 compare/metric ===== -->
   <section id="compare">
-    <div class="section-eyebrow"><div class="num">4</div><h2>Compare Models, Choose the Metric (Steps 6&#8211;7)</h2></div>
+    <div class="section-eyebrow"><div class="num">4</div><h2>Picking a model and a yardstick for attrition (steps 6&#8211;7)</h2></div>
 
     <div class="step-h"><span class="sn">6</span><h3>Compare models fold by fold</h3></div>
     <p>The candidate models land within a few points of each other, close enough that on one lucky split any could look best.
@@ -257,14 +257,14 @@
       <figcaption><span class="cap-t">From the notebook · Step 6</span><br>
         <strong>Do not over-read a single split.</strong> Each bar is a model's mean cross-validated AUC; the dots are the
         five individual folds. Logistic regression (0.75) beats gradient boosting (0.72) in <strong>all five folds</strong>,
-        so its edge is consistent and real, not a fluke of one split, and it is the simpler, more interpretable model. That
+        so its edge is consistent and real across every split, and it is also the simpler, more interpretable model. That
         makes it the clear choice. Had the per-fold differences flipped signs, we would have called it a tie and kept the
         simpler model anyway.</figcaption>
     </figure>
 
     <div class="step-h"><span class="sn">7</span><h3>Choose the metric that matches the decision</h3></div>
-    <p>Now the pivotal choice. Which number tells us the model is good? On this problem, the obvious one, accuracy, points
-       in exactly the wrong direction.</p>
+    <p>The pivotal choice is which number should tell us the model is good. On this problem the obvious one, accuracy,
+       points in exactly the wrong direction.</p>
 
     <figure class="nb-fig">
       <img src="../assets/img/case-study-from-model-to-decision--metrics.png" alt="Accuracy versus recall for predict-everyone-stays, the model at 0.5, and the cost-optimal threshold">
@@ -279,7 +279,7 @@
 
   <!-- ===== §5 decision/interpret/deploy ===== -->
   <section id="decide">
-    <div class="section-eyebrow"><div class="num">5</div><h2>Decide, Interpret &amp; Communicate (Steps 8&#8211;12)</h2></div>
+    <div class="section-eyebrow"><div class="num">5</div><h2>Choosing who HR contacts and why they leave (steps 8&#8211;12)</h2></div>
 
     <figure style="margin:0.4rem 0 1.4rem;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.4rem 1.2rem">
       <svg viewBox="0 0 680 150" width="100%" font-family="Inter, sans-serif" aria-label="A flow from model score to metric to threshold to decision to communication; the value is created in the middle steps, not the model">
@@ -309,7 +309,7 @@
       </svg>
     </figure>
 
-    <div class="step-h"><span class="sn">8</span><h3>From score to decision: threshold by cost</h3></div>
+    <div class="step-h"><span class="sn">8</span><h3>Placing the threshold where the money is</h3></div>
     <p>The threshold is where value is made. With a departure costing far more than a conversation (say $25,000 versus
        $1,500, and retention keeping about half of would-be leavers), the profit-maximizing cutoff is nowhere near 0.5.</p>
 
@@ -320,8 +320,8 @@
         out-of-fold predictions for the training rows so the test set stays out of the choice, peaks at a threshold of
         <strong>0.30</strong>. On the test set that cutoff catches 89% of leavers but flags 66% of employees. The accuracy
         line (amber, dashed) <em>rises</em> toward the right, where value collapses, and is highest when almost no one is
-        flagged and almost no value is created. The
-        chapter in one picture: <strong>set the threshold by the decision's economics, never by accuracy.</strong></figcaption>
+        flagged and almost no value is created. This
+        one picture carries the chapter's lesson, to <strong>set the threshold by the decision's economics and never by accuracy.</strong></figcaption>
     </figure>
 
     <div class="step-h"><span class="sn">9</span><h3>Interpret the drivers</h3></div>
@@ -330,7 +330,7 @@
     <figure class="nb-fig">
       <img src="../assets/img/case-study-from-model-to-decision--interpret.png" alt="Logistic coefficients: what raises versus lowers attrition risk">
       <figcaption><span class="cap-t">From the notebook · Step 9</span><br>
-        <strong>Insight, not just a score.</strong> Low <strong>satisfaction</strong> and poor <strong>work-life
+        <strong>The coefficients show what goes with leaving.</strong> Low <strong>satisfaction</strong> and poor <strong>work-life
         balance</strong> are the strongest departure signals, followed by a long time <strong>since the last
         promotion</strong> and a long <strong>commute</strong>, while higher salary and tenure go with staying (the chart
         shows the numeric features). These are associations in past data, so they point HR at factors worth testing,
@@ -339,8 +339,8 @@
     </figure>
 
     <div class="step-h"><span class="sn">10&#8211;12</span><h3>Deploy, monitor, and communicate</h3></div>
-    <p>The saved model scores a new employee, the unhappy, overworked junior with a long commute is flagged (88% risk); the
-       well-paid, satisfied, recently-promoted senior is not (5%), and the result comes with a one-paragraph summary a
+    <p>The saved model scores two new employees. The unhappy, overworked junior with a long commute is flagged (88% risk),
+       and the well-paid, satisfied, recently-promoted senior is not (5%). The result comes with a one-paragraph summary a
        manager can act on. In production, a <strong>holdout control group</strong> left uncontacted confirms whether the
        retention effort actually works, because a good prediction does not guarantee a good outcome. That translation, from
        probabilities to a sentence a decision-maker trusts, is the final and most under-rated step of any project.</p>
@@ -348,34 +348,34 @@
 
   <!-- ===== §6 writeup ===== -->
   <section id="writeup-sec">
-    <div class="section-eyebrow"><div class="num">6</div><h2>Communicate: the Plain-English Write-Up (Step 12)</h2></div>
+    <div class="section-eyebrow"><div class="num">6</div><h2>The attrition findings for HR managers (step 12)</h2></div>
     <div class="writeup">
-      <h3>For a non-technical reader</h3>
+      <h3>The retention tool explained without jargon</h3>
       <p><strong>What is this?</strong> We built a tool that flags the employees most likely to leave, so HR can focus
         retention effort where it will do the most good, and, just as importantly, we made sure we were measuring the tool
         the right way.</p>
 
-      <h4>What goes in, and what comes out</h4>
-      <p><strong>Inputs:</strong> the employee information HR already has, satisfaction, salary, workload, commute,
-        promotion history, and so on. <strong>Output:</strong> a leaving-risk score that becomes a "reach out / no action"
+      <h4>What goes in and what comes out</h4>
+      <p><strong>Inputs:</strong> the employee information HR already has (satisfaction, salary, workload, commute,
+        promotion history and so on). <strong>Output:</strong> a leaving-risk score that becomes a "reach out / no action"
         recommendation.</p>
 
-      <h4>The decisions we made, and why</h4>
+      <h4>The decisions we made and why</h4>
       <ul>
         <li><span class="ck">✓</span><span>We <strong>threw out a column that looked magically predictive</strong>. It recorded the start of the exit paperwork, which only happens <em>after</em> someone has already quit, so it would have made the tool look perfect in testing and useless in real life. Spotting that trap ("leakage") was the most important step.</span></li>
         <li><span class="ck">✓</span><span>We <strong>refused to judge the tool on plain accuracy</strong>. Because only about one in five people leave, a tool that says "nobody will leave" is right 81% of the time while helping no one. We measured how many actual leavers it catches instead.</span></li>
-        <li><span class="ck">✓</span><span>We <strong>chose how aggressively to flag people using money</strong>, since losing an employee costs far more than a conversation, it pays to reach out to more people, even at the cost of some false alarms.</span></li>
+        <li><span class="ck">✓</span><span>We <strong>chose how aggressively to flag people using money</strong>. Losing an employee costs far more than a conversation, so it pays to reach out to more people, even at the cost of some false alarms.</span></li>
       </ul>
 
-      <h4>How good is it, in plain terms</h4>
+      <h4>How good the tool is in plain terms</h4>
       <p>The tool is meaningfully better than guessing at spotting who is likely to leave (though people are hard to
         predict, so it is not close to perfect). Used at the right sensitivity, it catches most would-be leavers, but at the
         profit-maximizing cutoff HR contacts about two-thirds of the workforce, so whether outreach capacity can stretch
         that far is part of the decision.</p>
 
       <h4>The big idea</h4>
-      <p>The hard part of this project was not building the model, it was <em>evaluating</em> it honestly.
-        <strong>Where it lands: a model is not a decision. The value is created in catching leaks, choosing the right yardstick,
+      <p>Building the model was the easy part of this project, and the hard part was <em>evaluating</em> it honestly.
+        <strong>A model is not a decision. The value is created in catching leaks, choosing the right yardstick,
         setting the cutoff by cost, and explaining the result, and the drivers (satisfaction, workload, career progress)
         point at real fixes.</strong></p>
     </div>
@@ -386,7 +386,7 @@
     <div class="nb-cta" style="display:block">
       <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
         <div class="nb-ic">🐍</div>
-        <div class="nb-body"><h3>Run the entire project in Python</h3><p>The companion notebook is the full 12-step pipeline: it spots and proves a data leak, compares three models with fold-by-fold cross-validation, shows why accuracy misleads on an imbalanced target, builds the business-value curve to set the threshold by cost, interprets the drivers, and scores a new employee, with every table and chart explained.</p></div>
+        <div class="nb-body"><h3>Run the attrition project in Python</h3><p>The companion notebook runs the full 12-step pipeline. It spots and proves a data leak, compares three models with fold-by-fold cross-validation, shows why accuracy misleads on an imbalanced target, builds the business-value curve to set the threshold by cost, interprets the drivers, and scores a new employee, with every table and chart explained.</p></div>
       </div>
       <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
         <a class="btn btn-primary" href="notebooks/html/case-study-from-model-to-decision.html">📓 View Notebook (code &amp; outputs)</a>
@@ -402,7 +402,7 @@
   <!-- ===== takeaways ===== -->
   <section id="takeaways">
     <div class="takeaways">
-      <h3>🎓 Key Takeaways</h3>
+      <h3>🎓 In brief</h3>
       <ul>
         <li><span class="ck">✓</span><span><strong>Hunt for leakage first</strong>: a feature known only after the outcome inflated AUC from an honest 0.76 to a fake 0.99.</span></li>
         <li><span class="ck">✓</span><span><strong>Compare models fold by fold</strong>: logistic beat the ensembles in all five CV folds, a consistent, real edge, and it is simpler.</span></li>
@@ -416,7 +416,7 @@
   <!-- ===== §7 take it further ===== -->
   <section id="challenges">
     <div class="section-eyebrow"><div class="num">7</div><h2>Take It Further</h2></div>
-    <p>Five ways to extend the project in the notebook:</p>
+    <p>Each extension below is worked in the second notebook described after the list.</p>
     <div class="challenges">
       <div class="challenge"><div class="cnum">1</div><div class="cbody">
         <h3>Screen for leaks</h3>
@@ -427,8 +427,8 @@
         <p>Bootstrap the test set to put a 95% interval on the 0.76 AUC.</p>
         <div class="chint">Hint: resample the test rows with replacement, recompute AUC.</div></div></div>
       <div class="challenge"><div class="cnum">3</div><div class="cbody">
-        <h3>Are the scores calibrated?</h3>
-        <p>The cost math uses probabilities, check that a "40%" leaves about 40% of the time.</p>
+        <h3>Do the risk scores match reality?</h3>
+        <p>The cost math uses probabilities, so check that a "40%" leaves about 40% of the time.</p>
         <div class="chint">Hint: <code>calibration_curve(y_test, prob)</code>.</div></div></div>
       <div class="challenge"><div class="cnum">4</div><div class="cbody">
         <h3>Decide under a budget</h3>
@@ -436,14 +436,14 @@
         <div class="chint">Hint: sort by probability; take the top N.</div></div></div>
       <div class="challenge"><div class="cnum">5</div><div class="cbody">
         <h3>Is the program worth running?</h3>
-        <p>Sweep how well retention works; when does the program stop paying for itself?</p>
+        <p>Sweep how well retention works and find where the program stops paying for itself.</p>
         <div class="chint">Hint: vary the save-rate in the value curve.</div></div></div>
     </div>
 
     <div class="nb-cta" style="display:block">
       <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
         <div class="nb-ic">📓</div>
-        <div class="nb-body"><h3>All five, worked in a companion notebook</h3><p>A second notebook, <strong>Take It Further</strong>, rebuilds this chapter's model and works every one of these five extensions with visuals and explanations, a systematic leak screen, a bootstrap confidence interval, a calibration check, a budget-constrained decision, and a cost-assumption sensitivity test, closing with a plain-English summary.</p></div>
+        <div class="nb-body"><h3>Leak screens, intervals and budgets in a second notebook</h3><p>A second notebook, <strong>Take It Further</strong>, rebuilds this chapter's model and works every one of these five extensions with visuals and explanations: a systematic leak screen, a bootstrap confidence interval, a calibration check, a budget-constrained decision, and a cost-assumption sensitivity test. It closes with a plain-English summary.</p></div>
       </div>
       <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
         <a class="btn btn-primary" href="notebooks/html/case-study-from-model-to-decision--take-it-further.html">📓 View Notebook (code &amp; outputs)</a>
@@ -455,7 +455,7 @@
 
   <!-- ===== §8 quiz ===== -->
   <section id="quiz">
-    <div class="section-eyebrow"><div class="num">8</div><h2>Quiz: Test Yourself</h2></div>
+    <div class="section-eyebrow"><div class="num">8</div><h2>Test yourself</h2></div>
     <p>Eight questions on evaluation, leakage, metrics, and decisions. Answer them, hit <strong>Check Answers</strong>, and
        keep refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
     <div id="quiz-root"></div>
@@ -511,7 +511,7 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
       q: "Why compare models with cross-validation fold by fold rather than one train/test split?",
       options: ["It is faster", "One split can make any model look best by luck; consistent per-fold wins show a real difference", "It avoids cleaning", "It removes leakage"],
       answer: 1,
-      explain: "Logistic beat gradient boosting in all five folds, so its ~0.02 edge is consistent and real, not a lucky split."
+      explain: "Logistic beat gradient boosting in all five folds, so its ~0.02 edge holds up across splits and is real."
     },
     {
       q: "Why is accuracy a poor metric on this problem?",
@@ -535,13 +535,13 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
       q: "Why deploy with a holdout control group?",
       options: ["To train faster", "To confirm the retention effort actually works, since a good prediction does not guarantee a good outcome", "To remove leakage", "To increase accuracy"],
       answer: 1,
-      explain: "A control group measures the intervention's true incremental effect, the model predicts risk, not whether outreach helps."
+      explain: "A control group measures the intervention's true incremental effect. The model predicts risk and says nothing about whether outreach helps."
     },
     {
       q: "The chapter's overall lesson is…",
       options: ["Bigger models are better", "A model is not a decision; value is created in catching leaks, choosing the metric, thresholding by cost, and communicating", "Accuracy is all that matters", "Never use cross-validation"],
       answer: 1,
-      explain: "The judgment around the model, evaluation, thresholding, explanation, is what turns a score into a trusted decision."
+      explain: "The judgment around the model (evaluation, thresholding, explanation) is what turns a score into a trusted decision."
     }
   ];
 </script>
