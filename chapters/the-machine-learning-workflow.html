@@ -71,10 +71,10 @@
       <span>Chapter 109</span>
     </div>
     <h1>The Machine Learning <span class="accent">Workflow</span></h1>
-    <p class="dek">A good model is the product of a good process. This chapter is the process: split off a test set before
-       anything else, expose overfitting, estimate performance honestly with cross-validation, tune with grid search, wrap
-       preprocessing in a pipeline, and, above all, avoid the data-leakage traps that quietly inflate every beginner's
-       score. All demonstrated on a loan-default table.</p>
+    <p class="dek">A good model is the product of a good process. This chapter walks through that process on a loan-default table,
+       splitting off a test set before anything else, exposing overfitting, estimating performance honestly with
+       cross-validation, tuning with grid search, wrapping preprocessing in a pipeline and, above all, avoiding the
+       data-leakage traps that quietly inflate every beginner's score.</p>
     <div class="hero-meta">
       <div class="m">⏱️ <b>~20 min</b>&nbsp;read</div>
       <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
@@ -112,9 +112,9 @@
 
   <!-- ===== Section 1 ===== -->
   <section id="workflow">
-    <div class="section-eyebrow"><div class="num">1</div><h2>The Workflow at a Glance</h2></div>
-    <p>Every serious project follows the same skeleton. The data is split immediately; all the learning and tuning happen
-       on the training portion; the test set stays <span class="hl">locked in a vault</span> until the final line.</p>
+    <div class="section-eyebrow"><div class="num">1</div><h2>The workflow at a glance</h2></div>
+    <p>Every serious project follows the same skeleton. The data is split immediately, and all the learning and tuning happen
+       on the training portion. The test set stays <span class="hl">locked in a vault</span> until the final line.</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
       <svg viewBox="0 0 720 236" width="100%" font-family="Inter, sans-serif" aria-label="A flow: all data is cleaned first, then split into a training set and a locked test set; the training set flows through a pipeline, cross-validation, and tuning to a tuned model, which is finally evaluated once on the test set">
@@ -156,24 +156,24 @@
 
   <!-- ===== Section 2: DATA CLEANING ===== -->
   <section id="cleaning">
-    <div class="section-eyebrow"><div class="num">2</div><h2>Data Cleaning Comes First</h2></div>
+    <div class="section-eyebrow"><div class="num">2</div><h2>Data cleaning comes first</h2></div>
     <p>Notice the amber box at the front of the diagram. Before a single model is fit, the raw data has to be made
        trustworthy, and this step is not optional in machine learning; if anything it matters <span class="hl">more</span>
-       than in classical statistics, because a model will faithfully learn whatever flaws you leave in. Garbage in,
-       garbage out.</p>
+       than in classical statistics, because a model will faithfully learn whatever flaws you leave in (garbage in,
+       garbage out).</p>
 
-    <p>One distinction keeps this consistent with the leakage rule later. <strong>Row-level cleaning</strong>, fixing
-       typos, parsing dates, correcting data types, and dropping exact duplicates or corrupt rows, uses no information
+    <p>One distinction keeps this consistent with the leakage rule later. <strong>Row-level cleaning</strong> (fixing
+       typos, parsing dates, correcting data types, and dropping exact duplicates or corrupt rows) uses no information
        across rows, so it is safe to do on <em>all</em> the data before the split (the amber box).
-       <strong>Statistical preprocessing</strong>, imputing a missing value with the column mean, scaling, or selecting
-       features, <em>does</em> learn from the data, so it belongs <span class="hl">inside the pipeline</span> after the
+       <strong>Statistical preprocessing</strong> (imputing a missing value with the column mean, scaling, or selecting
+       features) <em>does</em> learn from the data, so it belongs <span class="hl">inside the pipeline</span> after the
        split, exactly where Section 5 puts it to prevent leakage.</p>
 
     <div style="overflow-x:auto" tabindex="0">
       <table class="disp-table">
         <thead><tr><th>Cleaning issue</th><th>Why it bites supervised learning</th><th>Why it bites unsupervised learning</th></tr></thead>
         <tbody>
-          <tr><td class="nm">Missing values</td><td>most estimators error out on NaN; impute or drop</td><td>clustering and PCA cannot run on NaN at all</td></tr>
+          <tr><td class="nm">Missing values</td><td>most estimators error out on NaN, so impute or drop</td><td>clustering and PCA cannot run on NaN at all</td></tr>
           <tr><td class="nm">Unscaled features</td><td>KNN, SVM, logistic are dominated by the big-scale column</td><td>a high-variance feature hijacks the clusters / first component</td></tr>
           <tr><td class="nm">Outliers &amp; bad rows</td><td>a few corrupt rows can pull the fit off course</td><td>one extreme point drags a centroid or tilts an axis</td></tr>
           <tr><td class="nm">Categories as text</td><td>must be encoded to numbers before fitting</td><td>same, and the encoding shapes every distance</td></tr>
@@ -185,23 +185,24 @@
     <p><strong>Why cleaning matters for supervised learning.</strong> A supervised model is only as good as its features
        <em>and its labels</em>. Missing values stop most estimators outright, unscaled features distort every
        distance-based model, and outliers or a handful of corrupt rows can pull the fit off course. The most dangerous
-       case is a <span class="hl">noisy or mislabeled target</span>: the model will dutifully learn the wrong answer and
+       case is a <span class="hl">noisy or mislabeled target</span>, because the model will dutifully learn the wrong answer and
        then report it with confidence. Clean features and trustworthy labels are the price of admission.</p>
 
     <p><strong>Why cleaning matters for unsupervised learning.</strong> Here it matters even more, because there is
        <span class="hl">no label to keep the algorithm honest</span>. K-means and PCA are driven entirely by variance and
        distance, so an unscaled or outlier-laden feature quietly dominates the clusters or the principal components, and
        irrelevant columns, with no target to down-weight them, warp the result directly. Worse, an unsupervised method
-       never fails loudly: it always hands back <em>some</em> clusters or components, and it is on you to notice they are
+       never fails loudly. It always hands back <em>some</em> clusters or components, and it is on you to notice they are
        meaningless because the input was dirty. Standardize and clean first, then look for structure.</p>
   </section>
 
   <!-- ===== Section 3 ===== -->
   <section id="overfitting">
-    <div class="section-eyebrow"><div class="num">3</div><h2>The Split and the Overfitting Trap</h2></div>
+    <div class="section-eyebrow"><div class="num">3</div><h2>The split and the overfitting trap</h2></div>
     <p>Why hold out data at all? Because a flexible model can score <strong>100% on the data it trained on</strong> by
-       simply memorizing it, while performing poorly on anything new. Training accuracy is not evidence of learning.
-       Validation accuracy is, and the gap between the two measures how much the model has memorized.</p>
+       simply memorizing it, while performing poorly on anything new. Training accuracy only shows how well the model fits rows it has
+       already seen. Validation accuracy is the evidence of learning, and the gap between the two measures how much the
+       model has memorized.</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
       <svg viewBox="0 0 680 250" width="100%" font-family="Inter, sans-serif" aria-label="A validation curve: as tree depth grows, training accuracy rises toward 1 while cross-validated accuracy peaks at a moderate depth and then declines, the overfitting zone">
@@ -228,16 +229,16 @@
     </figure>
 
     <p>The notebook draws exactly this curve with <code>validation_curve</code>. As the tree deepens, training accuracy
-       marches to <strong>1.00</strong> while cross-validated accuracy tops out around a depth of 3 and then <em>declines</em>,
-       the model has started memorizing noise. The best model sits at the peak of the validation curve, and the widening
-       gap between the two lines is the definition of <span class="hl">overfitting</span>. A held-out set is the only way
-       to see that gap.</p>
+       marches to <strong>1.00</strong> while cross-validated accuracy tops out around a depth of 3 and then <em>declines</em>
+       as the model starts memorizing noise. The best model sits at the peak of the validation curve. The widening gap
+       between the two lines is the definition of <span class="hl">overfitting</span>, and only a held-out set lets you
+       see it.</p>
   </section>
 
   <!-- ===== Section 4 ===== -->
   <section id="cv-tuning">
-    <div class="section-eyebrow"><div class="num">4</div><h2>Cross-Validation &amp; Hyperparameter Tuning</h2></div>
-    <p>A single train/validation split is noisy, one unlucky partition can flatter or damn a model. <span class="term">k-fold
+    <div class="section-eyebrow"><div class="num">4</div><h2>Cross-validation &amp; hyperparameter tuning</h2></div>
+    <p>A single train/validation split is noisy, because one unlucky partition can flatter or damn a model. <span class="term">k-fold
        cross-validation</span> fixes that by rotating the validation block through the data, so every row is validated
        exactly once and the scores are averaged.</p>
 
@@ -269,13 +270,13 @@
     <p>With a stable estimate in hand, <span class="term">hyperparameter tuning</span> becomes safe. In the notebook,
        <code>GridSearchCV</code> cross-validates every combination of tree depth and leaf size and reports the best,
        <strong>a cross-validated accuracy of 0.74</strong>, entirely without touching the test set. When the grid is too
-       large, <code>RandomizedSearchCV</code> samples it instead. The golden rule holds throughout: <span class="hl">tuning
-       is a decision, and all decisions use cross-validation on the training data</span>, never the test set.</p>
+       large, <code>RandomizedSearchCV</code> samples it instead. The golden rule holds throughout. <span class="hl">Tuning
+       is a decision, and all decisions use cross-validation on the training data</span> and leave the test set alone.</p>
   </section>
 
   <!-- ===== Section 5: REAL-WORLD ===== -->
   <section id="realworld">
-    <div class="section-eyebrow"><div class="num">5</div><h2>Real-World Example: Pipelines and the Leakage Trap</h2></div>
+    <div class="section-eyebrow"><div class="num">5</div><h2>Pipelines and the leakage trap</h2></div>
     <p>A lender has 1,000 past loans and wants to predict default. The workflow runs smoothly, until a single leaked
        feature makes the model look brilliant and useless at the same time. This is the most common, most costly mistake in
        applied machine learning.</p>
@@ -291,7 +292,7 @@
       </div>
     </div>
 
-    <p>Wrapping the scaler and model in a <code>Pipeline</code> stops <strong>preprocessing leakage</strong>: the scaler is
+    <p>Wrapping the scaler and model in a <code>Pipeline</code> stops <strong>preprocessing leakage</strong>. The scaler is
        refit inside each cross-validation fold, so the validation rows never influence the training statistics. Then comes
        the dramatic one, <strong>target leakage</strong>:</p>
 
@@ -319,20 +320,20 @@
         <p>Adding <code>sent_to_collections</code> rockets cross-validated accuracy from <strong>0.71 to 0.95</strong>,
            because that column is almost a copy of the label. But it only exists <em>after</em> a loan has defaulted, so
            at scoring time (a brand-new application) it is unavailable and the model collapses. The rule that catches every
-           such trap: <strong>a feature must be knowable at the moment you make the prediction.</strong> If it encodes the
-           future, it is leakage.</p></div>
+           such trap is that <strong>a feature must be knowable at the moment you make the prediction</strong>, so any
+           feature that encodes the future is leakage.</p></div>
     </div>
 
-    <p>With leakage banned and the tree tuned, the notebook unlocks the test set once: <strong>test accuracy 0.74</strong>,
-       essentially equal to the cross-validated estimate of 0.74. That agreement is the reward for a clean process, the
-       number you report is the number you will actually get.</p>
+    <p>With leakage banned and the tree tuned, the notebook unlocks the test set once and gets a <strong>test accuracy of 0.74</strong>,
+       essentially equal to the cross-validated estimate of 0.74. That agreement is the reward for a clean process, since
+       the number you report is the number you will actually get.</p>
   </section>
 
   <!-- ===== Section 6: ML & AI ===== -->
   <section id="ml-ai">
-    <div class="section-eyebrow"><div class="num">6</div><h2>The Workflow in Production (MLOps)</h2></div>
-    <p>Every step here has a heavier-duty counterpart when a model leaves the notebook and runs a business. The discipline
-       does not change, it scales.</p>
+    <div class="section-eyebrow"><div class="num">6</div><h2>The workflow in production (MLOps)</h2></div>
+    <p>Every step here has a heavier-duty counterpart when a model leaves the notebook and runs a business, and the
+       discipline stays the same at the larger scale.</p>
 
     <div style="overflow-x:auto">
       <table class="disp-table">
@@ -352,10 +353,10 @@
       <div class="cico">🤖</div>
       <div><div class="ctitle">Why this matters for AI research</div>
         <p>Improper validation and data leakage are the leading reasons published machine-learning results fail to
-           reproduce, a whole literature documents models that scored beautifully in a paper and fell apart in the wild
-           because a feature leaked the label or the test set was reused during tuning. The workflow in this chapter, split
+           reproduce. A whole literature documents models that scored beautifully in a paper and fell apart in the wild
+           because a feature leaked the label or the test set was reused during tuning. The workflow in this chapter (split
            first, cross-validate every decision, pipeline your preprocessing, ban future-knowing features, and touch the
-           test set once, is exactly the checklist that separates a trustworthy result from a headline that does not
+           test set once) is exactly the checklist that separates a trustworthy result from a headline that does not
            survive contact with reality.</p></div>
     </div>
   </section>
@@ -395,7 +396,7 @@
   <!-- ===== Takeaways ===== -->
   <section id="takeaways">
     <div class="takeaways">
-      <h3>🎓 Key Takeaways</h3>
+      <h3>🎓 In brief</h3>
       <ul>
         <li><span class="ck">✓</span><span><strong>Split first</strong>: hold out a stratified test set before any exploring or modeling, and unlock it only once.</span></li>
         <li><span class="ck">✓</span><span><strong>Training accuracy lies</strong>: a model can memorize the training set; the train-versus-validation gap is overfitting.</span></li>
@@ -408,7 +409,7 @@
 
   <!-- ===== Challenges ===== -->
   <section id="challenges">
-    <div class="section-eyebrow"><div class="num">7</div><h2>Practice Challenges</h2></div>
+    <div class="section-eyebrow"><div class="num">7</div><h2>Practice challenges</h2></div>
     <p>Five short challenges on the loan table. Try them with scikit-learn before checking the solutions.</p>
     <div class="challenges">
       <div class="challenge"><div class="cnum">1</div><div class="cbody">
@@ -453,7 +454,7 @@
 
   <!-- ===== Quiz ===== -->
   <section id="quiz">
-    <div class="section-eyebrow"><div class="num">8</div><h2>Quiz: Test Yourself</h2></div>
+    <div class="section-eyebrow"><div class="num">8</div><h2>Test yourself</h2></div>
     <p>Eight quick questions on the ML workflow. Answer them, hit <strong>Check Answers</strong>, and keep refining until
        you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
     <div id="quiz-root"></div>
@@ -463,7 +464,7 @@
     <div class="cico">➡️</div>
     <div><div class="ctitle">Up next</div>
       <p>With a sound process in place, we can open the models themselves. <strong>Distance
-         Metrics</strong> covers the rulers, Euclidean, Manhattan, cosine, and more, that so many algorithms use to decide
+         Metrics</strong> covers the rulers (Euclidean, Manhattan, cosine, and more) that so many algorithms use to decide
          which points count as "close", the foundation of nearest neighbors, clustering, and similarity search.</p></div>
   </div>
 
@@ -530,7 +531,7 @@ window.addEventListener('scroll', () => {
       q: "A feature recorded only AFTER the outcome pushed accuracy to 0.95. This is…",
       options: ["A strong feature to keep", "Target leakage: the feature encodes the answer and is unavailable at prediction time", "Cross-validation", "Underfitting"],
       answer: 1,
-      explain: "The feature is essentially a copy of the label but does not exist when you actually make a prediction, a leak."
+      explain: "The feature is essentially a copy of the label but does not exist when you actually make a prediction, which makes it a leak."
     },
     {
       q: "The rule that catches target leakage is…",
