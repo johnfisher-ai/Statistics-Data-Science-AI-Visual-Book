@@ -75,7 +75,7 @@
     <h1>Generalized Linear <span class="accent">Models</span></h1>
     <p class="dek">Linear regression, logistic regression, and count regression look like three different tools. They are
        one. The generalized linear model reveals them as a single recipe with three interchangeable parts, and adds a
-       new member for counts, Poisson regression, along with the pitfall to watch: overdispersion.</p>
+       new member for counts, Poisson regression, along with overdispersion, the pitfall to watch for.</p>
     <div class="hero-meta">
       <div class="m">⏱️ <b>~19 min</b>&nbsp;read</div>
       <div class="m">🐍 <b>Notebook</b>&nbsp;included</div>
@@ -97,24 +97,24 @@
         A <span class="def-kw">generalized linear model (GLM)</span> has three parts: a
         <span class="def-kw">random component</span> (the distribution of y, from the exponential family), a
         <span class="def-kw">linear predictor</span> &#951; = X&#946;, and a <span class="def-kw">link function</span>
-        g connecting them, g(&#956;) = &#951;. Pick <em>Normal + identity</em> and you have linear regression;
-        <em>Binomial + logit</em> gives logistic; <em>Poisson + log</em> gives count regression.
+        g connecting them, g(&#956;) = &#951;. Pick <em>Normal + identity</em> and you have linear regression.
+        <em>Binomial + logit</em> gives logistic, and <em>Poisson + log</em> gives count regression.
       </div>
     </div>
 
     <div class="callout key">
       <div class="cico">🧭</div>
-      <div><div class="ctitle">The workflow, generalized</div>
+      <div><div class="ctitle">How the workflow generalizes</div>
         <p>Step 1 gains one decision, <strong>choose the family and link</strong> to match the outcome (number,
-           probability, count). Step 4 gains one check for counts, <strong>overdispersion</strong>. Everything else, fit
-           by maximum likelihood, evaluate, interpret, carries straight over.</p></div>
+           probability, count). Step 4 gains one check for counts, <strong>overdispersion</strong>. Everything else (fit
+           by maximum likelihood, evaluate, interpret) carries straight over.</p></div>
     </div>
   </section>
 
   <!-- ===== Section 1: the umbrella ===== -->
   <section id="umbrella">
-    <div class="section-eyebrow"><div class="num">1</div><h2>The GLM Umbrella</h2></div>
-    <p>The genius of the GLM is separating <em>what you are predicting</em> from <em>how the predictors combine</em>. The
+    <div class="section-eyebrow"><div class="num">1</div><h2>The GLM umbrella</h2></div>
+    <p>The central idea of the GLM is to separate <em>what you are predicting</em> from <em>how the predictors combine</em>. The
        predictors always combine linearly into &#951; = X&#946;. The link function then bends &#951; onto the right scale
        for the outcome, and the random component says how the outcome scatters around its mean.</p>
 
@@ -171,8 +171,8 @@
     </figure>
 
     <p>This is why everything in Regression Analysis is really one idea. Swapping the family and link is all it takes to move between
-       a house price, a default probability, and a claim count, and the same <code>statsmodels</code> call,
-       <code>glm(formula, family=&#8230;)</code>, fits them all. The most common families:</p>
+       a house price, a default probability, and a claim count. The same <code>statsmodels</code> call,
+       <code>glm(formula, family=&#8230;)</code>, fits them all, and the table lists the most common families.</p>
 
     <div style="overflow-x:auto" tabindex="0">
       <table class="disp-table">
@@ -189,25 +189,25 @@
 
   <!-- ===== Section 2: Poisson ===== -->
   <section id="poisson">
-    <div class="section-eyebrow"><div class="num">2</div><h2>Poisson Regression for Counts</h2></div>
-    <p>When the outcome is a count, how many claims, visits, defects, linear regression is wrong: it can predict negative
-       counts and assumes constant variance. <span class="term">Poisson regression</span> models the log of the expected
+    <div class="section-eyebrow"><div class="num">2</div><h2>Poisson regression for counts</h2></div>
+    <p>When the outcome is a count (how many claims, visits, or defects), linear regression is the wrong tool, because it
+       can predict negative counts and assumes constant variance. <span class="term">Poisson regression</span> models the log of the expected
        count, so predictions stay positive and multiply rather than add.</p>
 
     <div class="fmla">log(&#956;) = b&#8320; + b&#8321;x&#8321; + &#8230; &nbsp;&#8658;&nbsp; a one-unit rise in x multiplies the expected count by e<sup>b&#8321;</sup> (a <strong>rate ratio</strong>)</div>
 
     <p>Just as logistic coefficients exponentiate to odds ratios, Poisson coefficients exponentiate to
-       <span class="term">rate ratios</span>. Two practical notes. First, when observations are exposed for different
+       <span class="term">rate ratios</span>. When observations are exposed for different
        lengths of time (or area, or population), add an <span class="term">offset</span>, log(exposure), so you model a
-       <em>rate</em> rather than a raw count. Second, the model is still fit by maximum likelihood and reads out like any
+       <em>rate</em> rather than a raw count. The model is still fit by maximum likelihood and reads out like any
        other GLM. In the claims data, each extra 10 years of driver age carries a rate ratio of about <strong>0.79</strong>
        (a 21% lower claim rate), and urban drivers file claims at about <strong>2.4&#215;</strong> the rural rate.</p>
   </section>
 
   <!-- ===== Section 3: overdispersion ===== -->
   <section id="overdispersion">
-    <div class="section-eyebrow"><div class="num">3</div><h2>Overdispersion: the Count-Model Pitfall</h2></div>
-    <p>Poisson regression makes one strong, easily-violated assumption: the variance of the count equals its mean. Real
+    <div class="section-eyebrow"><div class="num">3</div><h2>Overdispersion in count models</h2></div>
+    <p>Poisson regression makes one strong, easily-violated assumption, that the variance of the count equals its mean. Real
        counts are usually <span class="term">overdispersed</span>, more variable than that, because of unmeasured
        heterogeneity (some drivers are simply riskier). When you ignore it, the coefficients stay roughly right but the
        standard errors come out <span class="hl">far too small</span>, making everything look more significant than it is.</p>
@@ -237,8 +237,8 @@
       </svg>
     </figure>
 
-    <p>The tell is simple: bin the data and the variance sits well above the mean, and the Pearson chi-square divided by
-       its degrees of freedom is much larger than 1 (here about 4.8, when 1 is ideal). The remedy is to swap the family
+    <p>It is easy to spot. Bin the data and the variance sits well above the mean, and the Pearson chi-square divided by
+       its degrees of freedom comes out much larger than 1 (here about 4.8, when 1 is ideal). The remedy is to swap the family
        for one that lets variance exceed the mean, the <span class="term">negative binomial</span> (or a quasi-Poisson
        correction). It fits the excess zeros and the long tail that Poisson misses:</p>
 
@@ -312,16 +312,16 @@
       </svg>
     </figure>
 
-    <p>The negative binomial does not change the story about which factors matter, but it tells the truth about
+    <p>The negative binomial tells the same story about which factors matter and an honest one about
        <em>how sure</em> we are. On the claims data it slashes the AIC from 2881 to 2068 and roughly <span class="hl">doubles
        the standard errors</span>, turning Poisson's over-confident intervals into honest ones. Checking for overdispersion
-       is to Poisson regression what checking for heteroscedasticity is to linear regression: the diagnostic that keeps
-       your p-values believable.</p>
+       does for Poisson regression what checking for heteroscedasticity does for linear regression, keeping your
+       p-values believable.</p>
   </section>
 
   <!-- ===== Section 4: REAL-WORLD ===== -->
   <section id="realworld">
-    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: Insurance Claim Counts</h2></div>
+    <div class="section-eyebrow"><div class="num">4</div><h2>Insurance claim counts</h2></div>
     <p>We model the number of <code>claims</code> per policy from driver age, car age, and region, with years insured as
        the exposure offset, then run the workflow to its overdispersion fix.</p>
 
@@ -343,11 +343,11 @@
        <em>rate</em> per year rather than a raw count:
        <code>glm("claims ~ driver_age + car_age + C(region)", family=Poisson(), offset=log(exposure))</code>.</p>
 
-    <p><b>Step 3, evaluate.</b> The rate ratios tell a clean story: younger drivers and urban policies file more claims
+    <p><b>Step 3, evaluate.</b> The rate ratios show that younger drivers and urban policies file more claims
        (each +10 years of age carries a rate ratio of 0.79, and urban policies file at about 2.4&#215; the rural rate).</p>
 
     <p><b>Step 4, check the conditions.</b> The key count-model condition is that the variance equals the mean once the
-       predictors and exposure are accounted for. Pearson &#967;&#178;/df of 4.8 says it is badly violated, the counts
+       predictors and exposure are accounted for. A Pearson &#967;&#178;/df of 4.8 says it is badly violated and the counts
        are overdispersed, so we refit as negative binomial:</p>
 
     <div style="overflow-x:auto" tabindex="0">
@@ -395,14 +395,14 @@
       </svg>
     </figure>
 
-    <p>Same coefficients, very different certainty. The Poisson model would have reported the urban effect with an
+    <p>The two models share their coefficients and differ sharply in certainty. The Poisson model would have reported the urban effect with an
        interval half as wide as it should be, overstating the evidence. <span class="hl">The negative binomial keeps the
        rate ratios and fixes the error bars</span>, which is exactly what a trustworthy count model must do.</p>
   </section>
 
   <!-- ===== Section 5: ML & AI ===== -->
   <section id="ml-ai">
-    <div class="section-eyebrow"><div class="num">5</div><h2>GLMs in Machine Learning &amp; AI</h2></div>
+    <div class="section-eyebrow"><div class="num">5</div><h2>GLMs in machine learning &amp; AI</h2></div>
     <p>The GLM is the bridge between classical statistics and the loss functions of machine learning.</p>
 
     <div style="overflow-x:auto" tabindex="0">
@@ -422,12 +422,12 @@
       <div class="cico">🤖</div>
       <div><div class="ctitle">Why this matters for AI research</div>
         <p>Many common regression and classification losses are GLM likelihoods in disguise. Mean-squared error is the Normal
-           likelihood; binary cross-entropy is the Bernoulli likelihood with a logit link; the <strong>softmax</strong>
-           output layer is the multinomial GLM; and a network predicting counts uses a <strong>Poisson</strong> or
+           likelihood, and binary cross-entropy is the Bernoulli likelihood with a logit link. The <strong>softmax</strong>
+           output layer is the multinomial GLM, and a network predicting counts uses a <strong>Poisson</strong> or
            negative-binomial head. The link function is literally the last activation, and the choice of loss is a choice
            of random component. Seeing this, that <em>the loss encodes an assumption about the noise</em>, is what lets
-           researchers design principled objectives for new problems instead of guessing. And the overdispersion lesson
-           generalizes to one of the deepest issues in applied ML: a model can predict the right average while being
+           researchers design principled objectives for new problems instead of guessing. The overdispersion lesson also
+           generalizes to one of the deepest issues in applied ML. A model can predict the right average while being
            dangerously overconfident about its spread, which is why <strong>distributional</strong> and
            <strong>uncertainty-aware</strong> models matter wherever the stakes are real.</p></div>
     </div>
@@ -467,7 +467,7 @@
   <!-- ===== Takeaways ===== -->
   <section id="takeaways">
     <div class="takeaways">
-      <h3>🎓 Key Takeaways</h3>
+      <h3>🎓 In brief</h3>
       <ul>
         <li><span class="ck">✓</span><span><strong>A GLM = random component + linear predictor + link function</strong>; choosing the family and link recovers linear, logistic, and Poisson regression from one recipe.</span></li>
         <li><span class="ck">✓</span><span><strong>Poisson regression models log(count)</strong>, so coefficients exponentiate to <strong>rate ratios</strong>; use a log(exposure) offset to model a rate.</span></li>
@@ -480,7 +480,7 @@
 
   <!-- ===== Challenges ===== -->
   <section id="challenges">
-    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice challenges</h2></div>
     <p>Five short challenges with statsmodels GLMs.</p>
     <div class="challenges">
       <div class="challenge"><div class="cnum">1</div><div class="cbody">
@@ -525,7 +525,7 @@
 
   <!-- ===== Quiz ===== -->
   <section id="quiz">
-    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <div class="section-eyebrow"><div class="num">7</div><h2>Test yourself</h2></div>
     <p>Eight quick questions on generalized linear models. Answer them, hit <strong>Check Answers</strong>, and keep
        refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
     <div id="quiz-root"></div>
