@@ -73,7 +73,7 @@
     <h1>Model <span class="accent">Evaluation</span></h1>
     <p class="dek">A model has learned by minimizing a loss, but a low loss is not the same as a good model. This chapter is
        how to judge one honestly: why accuracy is a trap on imbalanced data, the confusion matrix and the precision-recall
-       trade-off, the ROC curve and AUC, and the regression metrics MAE, MSE, RMSE, and R-squared, the classification metrics on a
+       trade-off, the ROC curve and AUC, and the regression metrics MAE, MSE, RMSE, and R-squared. The classification metrics run on a
        fraud-detection table and the regression metrics on a small simulated regression.</p>
     <div class="hero-meta">
       <div class="m">⏱️ <b>~19 min</b>&nbsp;read</div>
@@ -112,10 +112,10 @@
 
   <!-- ===== Section 1 ===== -->
   <section id="accuracy">
-    <div class="section-eyebrow"><div class="num">1</div><h2>Why Accuracy Lies</h2></div>
+    <div class="section-eyebrow"><div class="num">1</div><h2>Why accuracy lies</h2></div>
     <p>Accuracy is the fraction of predictions that are correct. It is fine when the classes are balanced, and
-       <span class="hl">dangerously misleading when they are not</span>, which is the case for most problems worth solving:
-       fraud, disease, defects, and churn are all rare.</p>
+       <span class="hl">dangerously misleading when they are not</span>, which is the case for most problems worth solving,
+       because fraud, disease, defects, and churn are all rare.</p>
 
     <p>The notebook's fraud data is only <strong>13% fraud</strong>. A lazy model that predicts "legitimate" for
        <em>every</em> transaction is <strong>87% accurate</strong>, and catches <span class="hl">zero fraud</span>, a recall
@@ -126,7 +126,7 @@
 
   <!-- ===== Section 2 ===== -->
   <section id="confusion">
-    <div class="section-eyebrow"><div class="num">2</div><h2>The Confusion Matrix: Precision, Recall, F1</h2></div>
+    <div class="section-eyebrow"><div class="num">2</div><h2>Precision, recall and F1 from the confusion matrix</h2></div>
     <p>Every classification metric is built from four counts, the <span class="term">confusion matrix</span>, which cross-tabulates
        what the model predicted against the truth.</p>
 
@@ -164,27 +164,27 @@
        punishes false alarms). <span class="term">Recall</span> asks: <em>of all the fraud, how much did we catch?</em> (it
        punishes misses). On the fraud model they are <strong>0.51 and 0.31</strong>, very different from the flattering 87%
        accuracy. <span class="term">F1</span>, their harmonic mean, gives one balanced score. Which you optimize is a
-       <span class="hl">business decision</span>: a fraud team dreads missed fraud (recall), an email filter dreads blocking
+       <span class="hl">business decision</span>. A fraud team dreads missed fraud (recall), and an email filter dreads blocking
        real mail (precision).</p>
   </section>
 
   <!-- ===== Section 3 ===== -->
   <section id="roc">
-    <div class="section-eyebrow"><div class="num">3</div><h2>The Threshold, PR Curve &amp; ROC-AUC</h2></div>
+    <div class="section-eyebrow"><div class="num">3</div><h2>The threshold, the PR curve and ROC-AUC</h2></div>
     <p>A classifier really outputs a <span class="hl">probability</span>; a <span class="term">threshold</span> turns it
        into yes/no. The default 0.5 is rarely optimal. Lower it and you flag more, so <strong>recall rises and precision
        falls</strong> (in the notebook, moving from 0.5 to 0.25 lifts recall from 0.31 to 0.43 while precision drops from
        0.51 to 0.38). The <span class="term">precision-recall curve</span> traces every operating point, and you pick the
        threshold from the cost of a miss versus a false alarm.</p>
 
-    <p>The notebook makes "by cost" concrete instead of hand-wavy: charge <strong>$500</strong> for a missed fraud and
-       <strong>$10</strong> to review a false alarm, then sweep every threshold and add up the bill. The sweep runs on out-of-fold predictions for the training rows,
+    <p>The notebook makes "by cost" concrete instead of hand-wavy. It charges <strong>$500</strong> for a missed fraud and
+       <strong>$10</strong> to review a false alarm, then sweeps every threshold and adds up the bill. The sweep runs on out-of-fold predictions for the training rows,
        so the test set stays out of the choice, and the cost falls lowest at a threshold of <strong>0.02</strong>, the
        same value the costs give directly, 10 / (10 + 500). On the test set that threshold costs about
        <strong>$2,900</strong>, roughly <strong>7&#215; cheaper</strong> than blindly using 0.5 (about $20,170). It is
        also a policy of reviewing a lot of traffic, since it flags 66% of the test transactions, and flagging every
-       transaction would cost only a little more, $3,920. The optimal threshold is the one that minimizes expected cost, a
-       business calculation, not a statistical default.</p>
+       transaction would cost only a little more, $3,920. The optimal threshold is the one that minimizes expected cost, so
+       setting it is a business calculation, and the statistical default has no special standing.</p>
 
     <p>To compare models <em>independently of any threshold</em>, use the <span class="term">ROC curve</span> and its area,
        <span class="term">AUC</span>.</p>
@@ -211,16 +211,16 @@
     </figure>
 
     <p>The <span class="term">ROC curve</span> plots the true-positive rate (recall) against the false-positive rate as the
-       threshold sweeps from strict to loose; the <span class="term">AUC</span> is the area beneath it, a single
+       threshold sweeps from strict to loose. The <span class="term">AUC</span> is the area beneath it, a single
        <strong>threshold-free</strong> number equal to the probability the model ranks a random fraud above a random legit
-       transaction. 0.5 is a coin flip, 1.0 is perfect; our model scores about <strong>0.81</strong>. AUC is ideal for
+       transaction. An AUC of 0.5 is a coin flip and 1.0 is perfect, and our model scores about <strong>0.81</strong>. AUC is ideal for
        comparing models, but when positives are very rare the <strong>precision-recall / average-precision</strong> view
        often reflects real usefulness better.</p>
   </section>
 
   <!-- ===== Section 4: REAL-WORLD ===== -->
   <section id="realworld">
-    <div class="section-eyebrow"><div class="num">4</div><h2>Real-World Example: Scoring the Fraud Model</h2></div>
+    <div class="section-eyebrow"><div class="num">4</div><h2>Scoring the fraud model</h2></div>
     <p>Put the whole toolkit on one table, and the difference between "looks great" and "actually works" becomes obvious.</p>
 
     <div class="rw-card">
@@ -245,17 +245,17 @@
     </div>
 
     <p>The baseline and the model have <em>the same accuracy</em>, yet one is worthless and the other catches a third of the
-       fraud, exactly what accuracy conceals. And when the target is a <strong>number</strong> instead of a class, the
-       parallel metrics take over: on a simple regression the notebook reports <strong>MAE = 2.29</strong> and
+       fraud, exactly what accuracy conceals. When the target is a <strong>number</strong> instead of a class, the
+       parallel metrics take over. On a simple regression the notebook reports <strong>MAE = 2.29</strong> and
        <strong>RMSE = 2.90</strong> (the typical error, in the target's units, with RMSE punishing big misses harder) and
-       <strong>R-squared = 0.85</strong> (the share of variance explained). Report an error metric <em>and</em> R-squared:
-       one gives the size of the typical miss, the other the proportion explained.</p>
+       <strong>R-squared = 0.85</strong> (the share of variance explained). Report an error metric <em>and</em> R-squared,
+       since one gives the size of the typical miss and the other the proportion explained.</p>
   </section>
 
   <!-- ===== Section 5: ML & AI ===== -->
   <section id="ml-ai">
-    <div class="section-eyebrow"><div class="num">5</div><h2>Evaluation in Machine Learning &amp; AI</h2></div>
-    <p>Choosing the metric is not a formality, it <span class="hl">defines what "good" means</span>, and different problems
+    <div class="section-eyebrow"><div class="num">5</div><h2>Evaluation in machine learning &amp; AI</h2></div>
+    <p>Choosing the metric <span class="hl">defines what "good" means</span>, and different problems
        demand different measures.</p>
 
     <div style="overflow-x:auto">
@@ -278,7 +278,7 @@
            miss a case, tolerate false alarms); a spam filter is tuned for <strong>precision</strong> (never trash real
            mail). Picking the wrong one, most infamously reporting accuracy on imbalanced data, is a leading way that models
            look great in a demo and fail in production. At the frontier the same logic scales into whole
-           <strong>benchmark suites</strong>: large language models are judged by families of task-specific metrics, and a
+           <strong>benchmark suites</strong>. Large language models are judged by families of task-specific metrics, and a
            deep, active field of <strong>evaluation research</strong> exists precisely because "how good is it?" is never a
            single number. Learning to choose and read the right metric is one of the most valuable skills in applied ML.</p></div>
     </div>
@@ -318,11 +318,11 @@
   <!-- ===== Takeaways ===== -->
   <section id="takeaways">
     <div class="takeaways">
-      <h3>🎓 Key Takeaways</h3>
+      <h3>🎓 In brief</h3>
       <ul>
         <li><span class="ck">✓</span><span><strong>Accuracy lies on imbalanced data</strong>: a do-nothing model scored 87% while catching zero fraud.</span></li>
         <li><span class="ck">✓</span><span><strong>Precision</strong> (of flagged, how many real) and <strong>recall</strong> (of real, how many caught) come from the confusion matrix; <strong>F1</strong> balances them.</span></li>
-        <li><span class="ck">✓</span><span><strong>The threshold is a knob</strong>: lower it for more recall, raise it for more precision; pick it from the cost of each error.</span></li>
+        <li><span class="ck">✓</span><span><strong>The threshold is a knob</strong>: lower it for more recall or raise it for more precision, and pick it from the cost of each error.</span></li>
         <li><span class="ck">✓</span><span><strong>ROC-AUC</strong> scores ranking regardless of threshold (0.5 random, 1 perfect); prefer <strong>average precision</strong> when positives are rare.</span></li>
         <li><span class="ck">✓</span><span><strong>For regression</strong>: RMSE or MAE for the typical error size, plus R-squared for the share of variance explained.</span></li>
       </ul>
@@ -331,7 +331,7 @@
 
   <!-- ===== Challenges ===== -->
   <section id="challenges">
-    <div class="section-eyebrow"><div class="num">6</div><h2>Practice Challenges</h2></div>
+    <div class="section-eyebrow"><div class="num">6</div><h2>Practice challenges</h2></div>
     <p>Five short challenges, the first four on the fraud table and the last on a small simulated regression. Try them with scikit-learn before checking the solutions.</p>
     <div class="challenges">
       <div class="challenge"><div class="cnum">1</div><div class="cbody">
@@ -339,7 +339,7 @@
         <p>Compare a most-frequent <code>DummyClassifier</code> to the real model on accuracy and recall.</p>
         <div class="chint">Hint: <code>DummyClassifier(strategy="most_frequent")</code>.</div></div></div>
       <div class="challenge"><div class="cnum">2</div><div class="cbody">
-        <h3>Precision, recall, F1</h3>
+        <h3>Precision, recall and F1</h3>
         <p>From the confusion matrix, report the three classification scores.</p>
         <div class="chint">Hint: <code>precision_score</code>, <code>recall_score</code>, <code>f1_score</code>.</div></div></div>
       <div class="challenge"><div class="cnum">3</div><div class="cbody">
@@ -376,7 +376,7 @@
 
   <!-- ===== Quiz ===== -->
   <section id="quiz">
-    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <div class="section-eyebrow"><div class="num">7</div><h2>Test yourself</h2></div>
     <p>Eight quick questions on model evaluation. Answer them, hit <strong>Check Answers</strong>, and keep refining until
        you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
     <div id="quiz-root"></div>
@@ -429,13 +429,13 @@ window.addEventListener('scroll', () => {
       q: "Precision is…",
       options: ["Of actual positives, the fraction caught", "Of predicted positives, the fraction that are actually positive (TP/(TP+FP))", "The overall accuracy", "The area under the ROC curve"],
       answer: 1,
-      explain: "Precision measures false-alarm cost: of everything we flagged, how much was really positive."
+      explain: "Precision measures false-alarm cost, asking how much of everything we flagged was really positive."
     },
     {
       q: "Recall is…",
       options: ["Of predicted positives, the fraction correct", "Of actual positives, the fraction the model caught (TP/(TP+FN))", "The mean squared error", "The threshold"],
       answer: 1,
-      explain: "Recall measures the cost of misses: of all the real positives, how many did we catch."
+      explain: "Recall measures the cost of misses, asking how many of all the real positives we caught."
     },
     {
       q: "Lowering the decision threshold of a classifier tends to…",
@@ -447,7 +447,7 @@ window.addEventListener('scroll', () => {
       q: "ROC-AUC measures…",
       options: ["Accuracy at threshold 0.5", "Threshold-free ranking quality: the chance the model ranks a random positive above a random negative", "The mean absolute error", "The number of features"],
       answer: 1,
-      explain: "AUC summarizes performance across all thresholds; 0.5 is random, 1.0 is perfect. It is ideal for comparing models."
+      explain: "AUC summarizes performance across all thresholds, where 0.5 is random and 1.0 is perfect. It is ideal for comparing models."
     },
     {
       q: "When positives are very rare, the most informative curve is often…",
