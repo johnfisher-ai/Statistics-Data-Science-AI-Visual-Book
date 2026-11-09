@@ -88,7 +88,7 @@
 <main class="reading">
 
   <section id="intro">
-    <p class="lead">The retail case study had one seasonal rhythm. Electricity demand has <span class="hl">two at once</span>:
+    <p class="lead">The retail case study had one seasonal rhythm. Electricity demand has <span class="hl">two at once</span>,
        a <span class="hl">weekly</span> cycle (weekdays busy, weekends quiet) layered on a <span class="hl">yearly</span> one
        (winter heating and summer cooling). That is the catch, because the workhorse models,
        <span class="hl">Holt-Winters and SARIMA</span>, each support only <em>one</em> seasonal period. Getting both right
@@ -116,9 +116,9 @@
 
   <!-- ===== §1 method ===== -->
   <section id="method">
-    <div class="section-eyebrow"><div class="num">1</div><h2>The 12-Step Forecasting Method</h2></div>
-    <p>The same case-study discipline, aimed at a double-seasonal series. The companion notebook runs all twelve steps; the
-       sections below tell the story and show the plots.</p>
+    <div class="section-eyebrow"><div class="num">1</div><h2>Planning the grid forecast in 12 steps</h2></div>
+    <p>This chapter aims the same case-study discipline at a double-seasonal series. The companion notebook runs all twelve
+       steps, and the sections below tell the story and show the plots.</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
       <svg viewBox="0 0 678 332" width="100%" font-family="Inter, sans-serif" aria-label="The twelve-step forecasting method as a snaking flow, adapted to a series with two seasonal cycles">
@@ -200,14 +200,14 @@
 
   <!-- ===== §2 inspect & decompose ===== -->
   <section id="inspect">
-    <div class="section-eyebrow"><div class="num">2</div><h2>Inspect &amp; Decompose the Two Seasons (Steps 1&#8211;5)</h2></div>
+    <div class="section-eyebrow"><div class="num">2</div><h2>Weekday dips and winter peaks in four years of demand (steps 1&#8211;5)</h2></div>
 
     <div class="step-h"><span class="sn">1&#8211;2</span><h3>Define and collect</h3></div>
     <p>A grid operator forecasts <strong>daily demand</strong> to schedule generation and avoid both shortfalls and waste.
-       Success: beat a seasonal-naive baseline and, crucially, capture <strong>both</strong> seasonal rhythms, missing the
-       weekend dip or the seasonal peak means mis-scheduling capacity.</p>
+       Success means beating a seasonal-naive baseline and, crucially, capturing <strong>both</strong> seasonal rhythms,
+       because missing the weekend dip or the seasonal peak means mis-scheduling capacity.</p>
 
-    <div class="step-h"><span class="sn">3</span><h3>Inspect: two rhythms at once</h3></div>
+    <div class="step-h"><span class="sn">3</span><h3>Plot the year and zoom in on the week</h3></div>
     <figure class="nb-fig">
       <img src="../assets/img/case-study-energy-demand-forecasting--series.png" alt="Top: four years of demand showing a yearly cycle. Bottom: a four-week zoom showing the weekly weekday/weekend cycle.">
       <figcaption><span class="cap-t">From the notebook · Step 3</span><br>
@@ -221,33 +221,33 @@
     <figure class="nb-fig">
       <img src="../assets/img/case-study-energy-demand-forecasting--mstl.png" alt="MSTL decomposition: observed, trend, a dense weekly seasonal component, a smooth yearly seasonal component, and small residuals">
       <figcaption><span class="cap-t">From the notebook · Step 4</span><br>
-        <strong>Two seasons, separated at once.</strong> Ordinary decomposition handles one season; <strong>MSTL</strong>
+        <strong>MSTL separates both seasons at once.</strong> Ordinary decomposition handles one season, and <strong>MSTL</strong>
         peels off several. It splits the series into a trend, a dense <strong>weekly</strong> component (roughly 100 to
         200 MW swing), a smooth <strong>yearly</strong> component (the winter-and-summer double peak), and a small residual. Both
         swings are large, so a one-season model leaves real, systematic error behind.</figcaption>
     </figure>
 
-    <div class="step-h"><span class="sn">5</span><h3>Stationarity, and the real challenge</h3></div>
-    <p>Unlike the retail series, this one is <strong>trend-stationary</strong> (ADF p &lt; 0.05): the trend is gentle, so we
+    <div class="step-h"><span class="sn">5</span><h3>Stationarity and the real challenge</h3></div>
+    <p>Unlike the retail series, this one is <strong>trend-stationary</strong> (ADF p &lt; 0.05). The trend is gentle, so we
        model it directly rather than differencing. The genuine obstacle is the <strong>double seasonality</strong>, which is
        what the next two steps tackle head-on.</p>
   </section>
 
   <!-- ===== §3 model & validate ===== -->
   <section id="validate">
-    <div class="section-eyebrow"><div class="num">3</div><h2>Baseline, One Season vs Two, &amp; Validate (Steps 6&#8211;10)</h2></div>
+    <div class="section-eyebrow"><div class="num">3</div><h2>Holt-Winters against a two-season regression on the holdout (steps 6&#8211;10)</h2></div>
 
-    <div class="step-h"><span class="sn">6&#8211;7</span><h3>Baseline, then one seasonality</h3></div>
+    <div class="step-h"><span class="sn">6&#8211;7</span><h3>A repeat-last-week baseline and weekly Holt-Winters</h3></div>
     <p>We hold out the last <strong>60 days</strong>. The <strong>weekly seasonal-naive</strong> baseline (repeat last week)
        scores about <strong>10.4% MAPE</strong>. <strong>Holt-Winters</strong> with a weekly period captures the
        weekday/weekend swing and the trend, cutting that to about <strong>3.5%</strong>, but it has <em>no yearly term</em>,
        so it slowly drifts off the seasonal calendar.</p>
 
-    <div class="step-h"><span class="sn">8</span><h3>Both seasonalities: harmonic regression</h3></div>
-    <p>The fix is a <strong>harmonic regression</strong>: a linear model with a trend, <strong>day-of-week dummies</strong>
+    <div class="step-h"><span class="sn">8</span><h3>Harmonic regression for both seasonalities</h3></div>
+    <p>The fix is a <strong>harmonic regression</strong>, which is a linear model with a trend, <strong>day-of-week dummies</strong>
        for the weekly cycle, and <strong>Fourier terms</strong> (pairs of sines and cosines) for the yearly cycle. Fourier
-       terms are how you attach a long seasonal period to any model, a few harmonics trace the smooth annual curve. This
-       captures <strong>both</strong> rhythms.</p>
+       terms are how you attach a long seasonal period to any model. A few harmonics trace the smooth annual curve, so
+       together with the dummies the model captures <strong>both</strong> rhythms.</p>
 
     <div class="step-h"><span class="sn">9</span><h3>Validate on the holdout</h3></div>
     <figure class="nb-fig">
@@ -261,21 +261,21 @@
     <figure class="nb-fig">
       <img src="../assets/img/case-study-energy-demand-forecasting--accuracy.png" alt="MAPE bars: weekly seasonal-naive 10.4%, Holt-Winters one-season 3.5%, harmonic regression two-season 2.2%">
       <figcaption><span class="cap-t">From the notebook · Step 9</span><br>
-        <strong>The full accuracy panel.</strong> Each step down the ladder captures more structure: the baseline (10.4%)
+        <strong>The full accuracy panel.</strong> Each step down the ladder captures more structure. The baseline (10.4%)
         misses everything but the week, one-season Holt-Winters (3.5%) adds the trend, and the two-season harmonic regression
         (2.2%, with an MAE a fifth of the baseline's) captures the yearly cycle too, cutting the baseline error by nearly 80%.</figcaption>
     </figure>
 
     <div class="step-h"><span class="sn">10</span><h3>Interpret</h3></div>
     <p>The winner's residuals are small (a Ljung-Box test flags only a little autocorrelation, spread thinly across the
-       lags, which an AR term on the errors clears, see Take It Further), and its coefficients are readable: the <strong>weekend effect</strong> is a
+       lags, and an AR term on the errors clears it in Take It Further), and its coefficients are readable. The <strong>weekend effect</strong> is a
        large negative shift (Saturday about 174 MW and Sunday about 213 MW below a Monday), while the Fourier terms trace the
        annual curve. A model you can both trust and explain is exactly what a control room needs.</p>
   </section>
 
   <!-- ===== §4 deploy ===== -->
   <section id="deploy">
-    <div class="section-eyebrow"><div class="num">4</div><h2>Deploy the Forecast (Steps 11&#8211;12)</h2></div>
+    <div class="section-eyebrow"><div class="num">4</div><h2>A month-ahead forecast for the control room (steps 11&#8211;12)</h2></div>
 
     <figure style="margin:0.4rem 0 1.4rem;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.4rem 1.2rem">
       <svg viewBox="0 0 680 176" width="100%" font-family="Inter, sans-serif" aria-label="A one-season model captures either the weekly or the yearly cycle; a harmonic regression with Fourier terms captures both at once">
@@ -295,7 +295,7 @@
       </svg>
     </figure>
 
-    <div class="step-h"><span class="sn">11</span><h3>Refit on all data, forecast ahead</h3></div>
+    <div class="step-h"><span class="sn">11</span><h3>Refit on all four years and forecast the next month</h3></div>
     <figure class="nb-fig">
       <img src="../assets/img/case-study-energy-demand-forecasting--forecast.png" alt="History followed by a 30-day forecast that reproduces the weekly dips, with a 95% interval band">
       <figcaption><span class="cap-t">From the notebook · Step 11</span><br>
@@ -306,38 +306,38 @@
     </figure>
 
     <div class="step-h"><span class="sn">12</span><h3>Communicate</h3></div>
-    <p>The last step turns the model into guidance the control room can act on, the plain-English write-up below.</p>
+    <p>The last step turns the model into guidance the control room can act on, in the plain-English write-up below.</p>
   </section>
 
   <!-- ===== §5 writeup ===== -->
   <section id="writeup-sec">
-    <div class="section-eyebrow"><div class="num">5</div><h2>Communicate: the Plain-English Write-Up (Step 12)</h2></div>
+    <div class="section-eyebrow"><div class="num">5</div><h2>Scheduling generation around the week and the year (step 12)</h2></div>
     <div class="writeup">
-      <h3>For the operations team</h3>
+      <h3>Briefing the grid operators</h3>
       <p><strong>What is this?</strong> A day-by-day forecast of electricity demand for the next month, so the team can
         schedule generation, buy power ahead, and hold the right reserve, with a sense of how sure we are.</p>
 
-      <h4>What goes in, and what comes out</h4>
+      <h4>From four years of history to a month ahead</h4>
       <p><strong>Input:</strong> four years of daily demand. <strong>Output:</strong> a forecast for each of the next 30
         days, each with a <em>range</em> (a best estimate plus a 95% band).</p>
 
-      <h4>The decisions we made, and why</h4>
+      <h4>Why the model looks the way it does</h4>
       <ul>
         <li><span class="ck">✓</span><span>We <strong>handled two seasonal patterns at once</strong>. Demand follows both a weekly clock (weekdays high, weekends low) and a yearly clock (winter and summer peaks). Standard tools capture only one, so a model that missed the other would be systematically wrong.</span></li>
         <li><span class="ck">✓</span><span>We <strong>added the yearly cycle with Fourier terms</strong>, a compact way to trace the smooth annual curve, on top of a model that already handled the week.</span></li>
         <li><span class="ck">✓</span><span>We <strong>tested it on two unseen months</strong> before trusting it, and we report a <strong>range</strong>, because a single number would understate the day-to-day uncertainty.</span></li>
       </ul>
 
-      <h4>How good is it, in plain terms</h4>
+      <h4>How close it came on two unseen months</h4>
       <p>Over the last two months the forecast was accurate to about <strong>2.2%</strong>, far better than repeating last
         week (about 10%) and clearly better than a one-season model (about 3.5%). It captures the weekend drop and the
         seasonal drift together.</p>
 
-      <h4>The bottom line</h4>
-      <p>Demand runs on <strong>two clocks</strong>: a weekly one (weekdays about 200 MW above weekends) and a yearly one
+      <h4>What to schedule</h4>
+      <p>Demand runs on <strong>two clocks</strong>, a weekly one (weekdays about 200 MW above weekends) and a yearly one
         (winter and summer peaks). We forecast the next month to average around <strong>1,310 MW</strong>.
-        <strong>Schedule extra capacity for weekdays and the seasonal peak, pull back on weekends, plan against the daily
-        range, and the forecast refreshes every morning.</strong></p>
+        <strong>Schedule extra capacity for weekdays and the seasonal peak, pull back on weekends, and plan against the daily
+        range in the forecast that refreshes every morning.</strong></p>
     </div>
   </section>
 
@@ -346,7 +346,7 @@
     <div class="nb-cta" style="display:block">
       <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
         <div class="nb-ic">🐍</div>
-        <div class="nb-body"><h3>Run the whole project in Python</h3><p>The companion notebook is the full 12-step workflow: it inspects the two rhythms, separates them with MSTL, checks stationarity, sets a weekly-naive baseline, fits a one-season Holt-Winters and a two-season harmonic regression (day-of-week dummies plus yearly Fourier terms), grades them on the holdout with MAE/RMSE/MAPE/MASE, reads the weekday effects, and refits to forecast the next 30 days with a prediction interval, every step explained.</p></div>
+        <div class="nb-body"><h3>Run the two-season forecast in Python</h3><p>The companion notebook runs the full 12-step workflow. It inspects the two rhythms, separates them with MSTL, checks stationarity, sets a weekly-naive baseline, fits a one-season Holt-Winters and a two-season harmonic regression (day-of-week dummies plus yearly Fourier terms), grades them on the holdout with MAE/RMSE/MAPE/MASE, reads the weekday effects, and refits to forecast the next 30 days with a prediction interval, with every step explained.</p></div>
       </div>
       <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
         <a class="btn btn-primary" href="notebooks/html/case-study-energy-demand-forecasting.html">📓 View Notebook (code &amp; outputs)</a>
@@ -362,7 +362,7 @@
   <!-- ===== takeaways ===== -->
   <section id="takeaways">
     <div class="takeaways">
-      <h3>🎓 Key Takeaways</h3>
+      <h3>🎓 In brief</h3>
       <ul>
         <li><span class="ck">✓</span><span><strong>Multiple seasonality is common</strong>: energy demand runs on a weekly and a yearly cycle at the same time.</span></li>
         <li><span class="ck">✓</span><span><strong>MSTL separates the cycles</strong>: it decomposes a series into several seasonal components at once (here weekly + yearly).</span></li>
@@ -376,34 +376,34 @@
   <!-- ===== §6 take it further ===== -->
   <section id="challenges">
     <div class="section-eyebrow"><div class="num">6</div><h2>Take It Further</h2></div>
-    <p>Five ways to sharpen the multiple-seasonality forecast in the notebook:</p>
+    <p>The extensions below push the harmonic regression further on the same four years of demand, and the second notebook works each one.</p>
     <div class="challenges">
       <div class="challenge"><div class="cnum">1</div><div class="cbody">
         <h3>How many harmonics?</h3>
-        <p>Vary the Fourier order K and pick by AIC and holdout error, too few underfits, too many overfits.</p>
+        <p>Vary the Fourier order K and pick by AIC and holdout error. Too few harmonics underfit and too many overfit.</p>
         <div class="chint">Hint: compare K = 1, 2, 3, 5, 8.</div></div></div>
       <div class="challenge"><div class="cnum">2</div><div class="cbody">
         <h3>Rolling-origin backtest</h3>
-        <p>Re-forecast from several cutoffs and average, more trustworthy than one split.</p>
+        <p>Re-forecast from several cutoffs and average the errors, which gives a more trustworthy grade than one split.</p>
         <div class="chint">Hint: slide the train window and average MAPE.</div></div></div>
       <div class="challenge"><div class="cnum">3</div><div class="cbody">
         <h3>How much does each season matter?</h3>
-        <p>Turn the weekly and yearly terms on and off; how much error does each remove?</p>
+        <p>Turn the weekly and yearly terms on and off and measure how much error each one removes.</p>
         <div class="chint">Hint: fit trend-only, weekly-only, yearly-only, and both.</div></div></div>
       <div class="challenge"><div class="cnum">4</div><div class="cbody">
         <h3>Dynamic regression</h3>
         <p>Add an AR term on the residual errors to mop up the small leftover autocorrelation.</p>
         <div class="chint">Hint: fit AutoReg on the regression residuals.</div></div></div>
       <div class="challenge"><div class="cnum">5</div><div class="cbody">
-        <h3>Does the interval hold?</h3>
-        <p>Backtest the 95% coverage, do about 95% of actual days land inside the band?</p>
+        <h3>Coverage of the prediction band</h3>
+        <p>Backtest the 95% coverage to see whether about 95% of actual days land inside the band.</p>
         <div class="chint">Hint: count actuals inside the prediction interval over several windows.</div></div></div>
     </div>
 
     <div class="nb-cta" style="display:block">
       <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
         <div class="nb-ic">📓</div>
-        <div class="nb-body"><h3>All five, worked in a companion notebook</h3><p>A second notebook, <strong>Take It Further</strong>, rebuilds this chapter's forecast and works every extension with explanations, choosing the Fourier order, a rolling-origin backtest, measuring each seasonality's contribution, dynamic regression to clean the residuals, and a prediction-interval coverage check.</p></div>
+        <div class="nb-body"><h3>The extensions worked on the demand series</h3><p>A second notebook, <strong>Take It Further</strong>, rebuilds this chapter's forecast and works every extension with explanations: choosing the Fourier order, a rolling-origin backtest, measuring each seasonality's contribution, dynamic regression to clean the residuals, and a prediction-interval coverage check.</p></div>
       </div>
       <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
         <a class="btn btn-primary" href="notebooks/html/case-study-energy-demand-forecasting--take-it-further.html">📓 View Notebook (code &amp; outputs)</a>
@@ -415,7 +415,7 @@
 
   <!-- ===== §7 quiz ===== -->
   <section id="quiz">
-    <div class="section-eyebrow"><div class="num">7</div><h2>Quiz: Test Yourself</h2></div>
+    <div class="section-eyebrow"><div class="num">7</div><h2>Test yourself</h2></div>
     <p>Eight questions on multiple seasonality, MSTL, and harmonic regression. Answer them, hit <strong>Check Answers</strong>,
        and keep refining until you score 100%. Your progress is saved.</p>
     <div id="quiz-root"></div>
@@ -424,7 +424,7 @@
   <div class="callout key" style="margin-top:2rem">
     <div class="cico">➡️</div>
     <div><div class="ctitle">Up next</div>
-      <p>We have built forecasts three ways; now turn a forecast into a decision. <strong>Case Study:
+      <p>We have built forecasts three ways, and the next step turns a forecast into a decision. <strong>Case Study:
          From Forecast to Decision</strong> compares competing forecasts and turns their prediction intervals into inventory
          and staffing choices.</p></div>
   </div>
@@ -463,7 +463,7 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
     },
     {
       q: "Why do Holt-Winters and SARIMA struggle here?",
-      options: ["They are too slow", "Each supports only one seasonal period, so it captures the week or the year, not both", "They cannot handle daily data", "They require a normal distribution"],
+      options: ["They are too slow", "Each supports only one seasonal period, so it captures only one of the week and the year", "They cannot handle daily data", "They require a normal distribution"],
       answer: 1,
       explain: "A single-season model set to 7 gets the week but drifts off the year; you need a way to include both periods."
     },
@@ -475,7 +475,7 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
     },
     {
       q: "Fourier terms (pairs of sines and cosines) are used to…",
-      options: ["Remove the trend", "Model a long seasonal cycle (the yearly one) compactly, a few harmonics trace the annual curve", "Clean the data", "Split train and test"],
+      options: ["Remove the trend", "Model a long seasonal cycle (the yearly one) compactly, with a few harmonics tracing the annual curve", "Clean the data", "Split train and test"],
       answer: 1,
       explain: "Fourier terms are the standard way to attach a long or non-integer seasonal period to a model without a huge seasonal order."
     },
