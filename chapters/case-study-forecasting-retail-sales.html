@@ -88,10 +88,10 @@
 <main class="reading">
 
   <section id="intro">
-    <p class="lead">A forecast is not a party trick, it is an input to a decision: how much to stock, how many people to
-       schedule, what budget to set. That raises the bar. A number without a <span class="hl">baseline</span> to beat,
+    <p class="lead">A retail forecast feeds decisions about how much to stock, how many people to schedule and what
+       budget to set, and that raises the bar for it. A number that comes without a <span class="hl">baseline</span> to beat,
        proof it works <span class="hl">out of sample</span>, and an honest <span class="hl">range</span> is worse than
-       useless, it is a false promise. This chapter runs the disciplined workflow end to end and ends with a forecast a
+       useless, because it makes a false promise to the people who plan around it. This chapter runs the disciplined workflow end to end and ends with a forecast a
        planner can actually act on.</p>
 
     <div class="def-card">
@@ -107,7 +107,7 @@
 
     <div class="callout key">
       <div class="cico">&#127919;</div>
-      <div><div class="ctitle">What this case study ties together</div>
+      <div><div class="ctitle">The earlier chapters this forecast leans on</div>
         <p>It uses every idea from the part: <strong>decomposition and stationarity</strong> (see <a href="components-of-a-time-series.html">Components of a Time Series</a>), <strong>Holt-Winters
            and SARIMA</strong> (see <a href="forecasting-models.html">Forecasting Models</a>), and the <strong>accuracy metrics and baselines</strong> (see <a href="forecast-accuracy.html">Forecast Accuracy</a>), on one messy,
            real-shaped series, all the way to a deployed forecast.</p></div>
@@ -116,9 +116,9 @@
 
   <!-- ===== §1 method ===== -->
   <section id="method">
-    <div class="section-eyebrow"><div class="num">1</div><h2>The 12-Step Forecasting Method</h2></div>
-    <p>The same repeatable loop as the other case studies, tuned for time series. The companion notebook runs all twelve
-       steps; the sections below tell the story and show the plots.</p>
+    <div class="section-eyebrow"><div class="num">1</div><h2>From a raw sales series to a deployed forecast in 12 steps</h2></div>
+    <p>This is the same repeatable loop as the other case studies, tuned for time series. The companion notebook runs all twelve
+       steps, and the sections below tell the story and show the plots.</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
       <svg viewBox="0 0 678 332" width="100%" font-family="Inter, sans-serif" aria-label="The twelve-step forecasting method as a snaking flow, from defining the decision to communicating a forecast with its uncertainty">
@@ -200,15 +200,15 @@
 
   <!-- ===== §2 inspect & clean ===== -->
   <section id="inspect">
-    <div class="section-eyebrow"><div class="num">2</div><h2>Define, Inspect &amp; Clean (Steps 1&#8211;4)</h2></div>
+    <div class="section-eyebrow"><div class="num">2</div><h2>Catching the bad month before modeling (steps 1&#8211;4)</h2></div>
 
-    <div class="step-h"><span class="sn">1</span><h3>Define the decision and the bar</h3></div>
-    <p>The retailer needs a <strong>12-month sales forecast</strong> for inventory, staffing, and budgets. Success is
-       concrete: beat a <strong>seasonal-naive baseline</strong>, keep error (MAPE) low, and deliver an <strong>uncertainty
+    <div class="step-h"><span class="sn">1</span><h3>What the retailer needs from the forecast</h3></div>
+    <p>The retailer needs a <strong>12-month sales forecast</strong> for inventory, staffing, and budgets. To count as a
+       success, it has to beat a <strong>seasonal-naive baseline</strong>, keep error (MAPE) low, and deliver an <strong>uncertainty
        band</strong>, because a single number is a false promise for year-ahead planning.</p>
 
-    <div class="step-h"><span class="sn">2&#8211;3</span><h3>Collect and inspect</h3></div>
-    <p>Always plot before you model, the eye catches what summaries miss.</p>
+    <div class="step-h"><span class="sn">2&#8211;3</span><h3>Load and plot the monthly series</h3></div>
+    <p>Always plot before you model, because the eye catches what summaries miss.</p>
 
     <figure class="nb-fig">
       <img src="../assets/img/case-study-forecasting-retail-sales--series.png" alt="Monthly retail sales: rising trend, yearly December peaks, one red outlier in Nov 2019, last 12 months shaded as holdout">
@@ -222,13 +222,13 @@
     <div class="step-h"><span class="sn">4</span><h3>Clean the error month</h3></div>
     <p>A <strong>rolling-median</strong> check flags the month sitting farthest from its local neighbors, November 2019, at
        roughly double the surrounding level. We blank it and <strong>interpolate</strong> from its neighbors, then model the
-       cleaned series. Cleaning one bad point is unglamorous but decisive: left in, it would drag the trend and distort every
-       forecast.</p>
+       cleaned series. Cleaning one bad point is unglamorous but decisive, since the spike, left in, would drag the trend and distort
+       every forecast.</p>
   </section>
 
   <!-- ===== §3 decompose & stationarity ===== -->
   <section id="decompose">
-    <div class="section-eyebrow"><div class="num">3</div><h2>Decompose &amp; Check Stationarity (Steps 5&#8211;6)</h2></div>
+    <div class="section-eyebrow"><div class="num">3</div><h2>How the trend and the December swing shape the model (steps 5&#8211;6)</h2></div>
 
     <div class="step-h"><span class="sn">5</span><h3>Decompose into trend, season, and noise</h3></div>
     <p>Before choosing a model, see the pieces it must capture.</p>
@@ -252,15 +252,15 @@
 
   <!-- ===== §4 model & validate ===== -->
   <section id="validate">
-    <div class="section-eyebrow"><div class="num">4</div><h2>Baseline, Model &amp; Validate (Steps 7&#8211;10)</h2></div>
+    <div class="section-eyebrow"><div class="num">4</div><h2>Holt-Winters against SARIMA and a last-year baseline (steps 7&#8211;10)</h2></div>
 
-    <div class="step-h"><span class="sn">7&#8211;8</span><h3>Split, set a baseline, fit two models</h3></div>
+    <div class="step-h"><span class="sn">7&#8211;8</span><h3>Train on eight years and grade on the ninth</h3></div>
     <p>We split <strong>in time</strong> (96 months to train, the last 12 to test) so the evaluation mimics real forecasting.
        The <strong>seasonal-naive</strong> forecast already captures the yearly pattern and scores about <strong>5.4%
        MAPE</strong>, the bar to beat. Then we fit <strong>Holt-Winters</strong> (multiplicative, matching the data) and
        <strong>SARIMA(1,1,1)(1,1,1,12)</strong>.</p>
 
-    <div class="step-h"><span class="sn">9</span><h3>Validate on the held-out year</h3></div>
+    <div class="step-h"><span class="sn">9</span><h3>How each model did on the held-out year</h3></div>
 
     <figure class="nb-fig">
       <img src="../assets/img/case-study-forecasting-retail-sales--backtest.png" alt="Actual vs seasonal-naive, SARIMA, and Holt-Winters over the holdout year; Holt-Winters tracks the actual most closely">
@@ -280,16 +280,16 @@
         and agree that Holt-Winters wins, which is what makes the pick defensible.</figcaption>
     </figure>
 
-    <div class="step-h"><span class="sn">10</span><h3>Interpret: are the residuals clean?</h3></div>
+    <div class="step-h"><span class="sn">10</span><h3>Are the winner's residuals clean?</h3></div>
     <p>A trustworthy forecast leaves behind <strong>white noise</strong>. A <strong>Ljung-Box test</strong> at lag 12 on the
        winner's in-sample residuals gives p = 0.17, so it detects no significant leftover autocorrelation. A test that finds
-       nothing falls short of proof of white noise, though it does mean no obvious signal is left for the model to capture.
-       Only now is it safe to deploy.</p>
+       nothing falls short of proof of white noise, though it does mean no obvious signal is left for the model to capture,
+       so the model is now safe to deploy.</p>
   </section>
 
   <!-- ===== §5 deploy ===== -->
   <section id="deploy">
-    <div class="section-eyebrow"><div class="num">5</div><h2>Deploy the Forecast (Steps 11&#8211;12)</h2></div>
+    <div class="section-eyebrow"><div class="num">5</div><h2>Forecasting the year after the data ends (steps 11&#8211;12)</h2></div>
 
     <figure style="margin:0.4rem 0 1.4rem;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.4rem 1.2rem">
       <svg viewBox="0 0 680 150" width="100%" font-family="Inter, sans-serif" aria-label="Backtesting uses train and test to choose a model, but before forecasting the true future you refit on all the data">
@@ -309,7 +309,7 @@
       </svg>
     </figure>
 
-    <div class="step-h"><span class="sn">11</span><h3>Refit on all data, forecast the true future</h3></div>
+    <div class="step-h"><span class="sn">11</span><h3>Refit on the full history and forecast the year ahead</h3></div>
     <p>Holding out was only for grading. Before forecasting the real future we <strong>refit the winner on the entire
        cleaned history</strong>, using every scrap of information, then project 12 months ahead.</p>
 
@@ -318,39 +318,39 @@
       <figcaption><span class="cap-t">From the notebook · Step 11</span><br>
         <strong>The deployed forecast.</strong> The model projects about <strong>$2.4M over the next 12 months</strong>, with
         the familiar December peak near <strong>$296k</strong> and a 95% interval of roughly $268k to $325k. Notice the band
-        <em>widens</em> the further out it goes, honest horizon risk. A planner should budget against that <strong>fan of
-        uncertainty</strong>, not the single line, and in production you rerun this each month as new sales land.</figcaption>
+        <em>widens</em> the further out it goes, which is the honest picture of horizon risk. A planner should budget
+        against that whole <strong>fan of uncertainty</strong> around the line, and in production you rerun this each month as new sales land.</figcaption>
     </figure>
 
-    <div class="step-h"><span class="sn">12</span><h3>Communicate</h3></div>
+    <div class="step-h"><span class="sn">12</span><h3>Put the forecast in a manager's words</h3></div>
     <p>The final step turns the model into a sentence a manager can act on, which is the plain-English write-up below.</p>
   </section>
 
   <!-- ===== §6 writeup ===== -->
   <section id="writeup-sec">
-    <div class="section-eyebrow"><div class="num">6</div><h2>Communicate: the Plain-English Write-Up (Step 12)</h2></div>
+    <div class="section-eyebrow"><div class="num">6</div><h2>What the planning team should budget for (step 12)</h2></div>
     <div class="writeup">
-      <h3>For the planning team</h3>
+      <h3>Next year's sales outlook</h3>
       <p><strong>What is this?</strong> A month-by-month sales forecast for the next year, built from nine years of history,
         so the team can plan inventory, staffing, and budget with a realistic view of what is coming, and how sure we are.</p>
 
-      <h4>What goes in, and what comes out</h4>
+      <h4>From sales history to a monthly range</h4>
       <p><strong>Input:</strong> our monthly sales history. <strong>Output:</strong> a forecast for each of the next 12
         months, each with a <em>range</em> (a best estimate plus a 95% band) rather than a single number.</p>
 
-      <h4>The decisions we made, and why</h4>
+      <h4>Choices that shaped the forecast</h4>
       <ul>
         <li><span class="ck">✓</span><span>We <strong>fixed one bad month</strong> first. One historical month was recorded at roughly double its true value; left in, it would have skewed the whole forecast, so we replaced it with a sensible estimate from the months around it.</span></li>
-        <li><span class="ck">✓</span><span>We <strong>insisted the model beat a simple benchmark</strong>. &#8220;Same as last year&#8221; is already a decent forecast, so anything we ship has to do clearly better, and ours does, less than half the error.</span></li>
+        <li><span class="ck">✓</span><span>We <strong>insisted the model beat a simple benchmark</strong>. &#8220;Same as last year&#8221; is already a decent forecast, so anything we ship has to do clearly better, and ours does, with less than half the error.</span></li>
         <li><span class="ck">✓</span><span>We <strong>tested it on a year it had never seen</strong> before trusting it, and we report a <strong>range</strong>, because pretending a year-ahead number is exact would mislead the plan.</span></li>
       </ul>
 
-      <h4>How good is it, in plain terms</h4>
+      <h4>How close it came on the last year</h4>
       <p>On the most recent year, the forecast was accurate to about <strong>2.3%</strong>, roughly $4,500 off in a typical
         month near $190k, and well ahead of a naive last-year guess. It is reliable enough to plan against, as long as you
         respect the widening band further out.</p>
 
-      <h4>The bottom line</h4>
+      <h4>What to plan for</h4>
       <p>Sales are growing about <strong>$960 a month</strong> with a strong, predictable December surge. We forecast the
         next year at roughly <strong>$2.4M</strong>, with December near <strong>$296k</strong> (anywhere from about $268k to
         $325k). <strong>Plan against the range, refresh the forecast each month, and expect the busiest month, by far, to be
@@ -363,7 +363,7 @@
     <div class="nb-cta" style="display:block">
       <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
         <div class="nb-ic">🐍</div>
-        <div class="nb-body"><h3>Run the whole project in Python</h3><p>The companion notebook is the full 12-step workflow: it loads and cleans the series (fixing the bad month), decomposes it, tests stationarity with ADF, sets a seasonal-naive baseline, fits Holt-Winters and SARIMA, grades them on the holdout with MAE, RMSE, MAPE and MAE relative to the baseline, checks the winner's residuals, then refits on all the data and forecasts the next 12 months with a simulated prediction interval, every step explained.</p></div>
+        <div class="nb-body"><h3>Run the whole project in Python</h3><p>The companion notebook works through all 12 steps. It loads and cleans the series (fixing the bad month), decomposes it, tests stationarity with ADF, sets a seasonal-naive baseline, fits Holt-Winters and SARIMA, grades them on the holdout with MAE, RMSE, MAPE and MAE relative to the baseline, checks the winner's residuals, then refits on all the data and forecasts the next 12 months with a simulated prediction interval, every step explained.</p></div>
       </div>
       <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
         <a class="btn btn-primary" href="notebooks/html/case-study-forecasting-retail-sales.html">📓 View Notebook (code &amp; outputs)</a>
@@ -379,13 +379,13 @@
   <!-- ===== takeaways ===== -->
   <section id="takeaways">
     <div class="takeaways">
-      <h3>🎓 Key Takeaways</h3>
+      <h3>🎓 In brief</h3>
       <ul>
         <li><span class="ck">✓</span><span><strong>Clean before you model</strong>: one bad month (Nov 2019) would have skewed everything; a rolling-median check caught it.</span></li>
         <li><span class="ck">✓</span><span><strong>Decomposition guides the model</strong>: a growing seasonal swing meant multiplicative seasonality, so multiplicative Holt-Winters.</span></li>
         <li><span class="ck">✓</span><span><strong>Beat the baseline, prove it out of sample</strong>: Holt-Winters at ~2.3% MAPE more than halved the seasonal-naive 5.4%.</span></li>
         <li><span class="ck">✓</span><span><strong>Refit on all data before deploying</strong>: holding out is only for grading; the shipped forecast uses every month.</span></li>
-        <li><span class="ck">✓</span><span><strong>Ship a range, not a line</strong>: the 95% interval widens with the horizon, and that band is what the business plans against.</span></li>
+        <li><span class="ck">✓</span><span><strong>Ship the forecast with its range</strong>: the 95% interval widens with the horizon, and that band is what the business plans against.</span></li>
       </ul>
     </div>
   </section>
@@ -393,19 +393,19 @@
   <!-- ===== §7 take it further ===== -->
   <section id="challenges">
     <div class="section-eyebrow"><div class="num">7</div><h2>Take It Further</h2></div>
-    <p>Five ways to stress-test the forecast in the notebook:</p>
+    <p>Each challenge below stress-tests the retail forecast from a different side, and the companion notebook works them all.</p>
     <div class="challenges">
       <div class="challenge"><div class="cnum">1</div><div class="cbody">
         <h3>Rolling-origin backtest</h3>
-        <p>Re-forecast from several cutoffs and average the error, more trustworthy than one split.</p>
+        <p>Re-forecast from several cutoffs and average the error, which is more trustworthy than one split.</p>
         <div class="chint">Hint: slide the train/test window and average MAPE.</div></div></div>
       <div class="challenge"><div class="cnum">2</div><div class="cbody">
-        <h3>Does the 95% interval hold?</h3>
-        <p>Backtest the coverage: do about 95% of actuals fall inside the band?</p>
+        <h3>Coverage of the 95% interval</h3>
+        <p>Backtest the coverage and check whether about 95% of actuals fall inside the band.</p>
         <div class="chint">Hint: count how often actuals land in the simulated interval.</div></div></div>
       <div class="challenge"><div class="cnum">3</div><div class="cbody">
         <h3>A log-transform for SARIMA</h3>
-        <p>Log the series to turn multiplicative seasonality additive; does SARIMA improve?</p>
+        <p>Log the series to turn multiplicative seasonality additive, and see whether SARIMA improves.</p>
         <div class="chint">Hint: fit on <code>np.log(train)</code>, forecast, then <code>np.exp</code>.</div></div></div>
       <div class="challenge"><div class="cnum">4</div><div class="cbody">
         <h3>Automatic order search</h3>
@@ -420,7 +420,7 @@
     <div class="nb-cta" style="display:block">
       <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
         <div class="nb-ic">📓</div>
-        <div class="nb-body"><h3>All five, worked in a companion notebook</h3><p>A second notebook, <strong>Take It Further</strong>, rebuilds this chapter's forecast and works every extension with visuals and explanations, a rolling-origin backtest, a prediction-interval coverage check, a log-transform for SARIMA, an automatic AIC order search, and how the interval widens with the horizon.</p></div>
+        <div class="nb-body"><h3>Code and figures for each retail stress test</h3><p>A second notebook, <strong>Take It Further</strong>, rebuilds this chapter's forecast and works every extension with visuals and explanations: a rolling-origin backtest, a prediction-interval coverage check, a log-transform for SARIMA, an automatic AIC order search, and how the interval widens with the horizon.</p></div>
       </div>
       <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
         <a class="btn btn-primary" href="notebooks/html/case-study-forecasting-retail-sales--take-it-further.html">📓 View Notebook (code &amp; outputs)</a>
@@ -432,7 +432,7 @@
 
   <!-- ===== §8 quiz ===== -->
   <section id="quiz">
-    <div class="section-eyebrow"><div class="num">8</div><h2>Quiz: Test Yourself</h2></div>
+    <div class="section-eyebrow"><div class="num">8</div><h2>Test yourself</h2></div>
     <p>Eight questions on the forecasting workflow, from cleaning to deployment. Answer them, hit <strong>Check
        Answers</strong>, and keep refining until you score 100%. Your progress is saved.</p>
     <div id="quiz-root"></div>
@@ -492,7 +492,7 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
     },
     {
       q: "The seasonal-naive baseline scored about 5.4% MAPE. Its role is…",
-      options: ["It is the final model", "The bar every real model must beat, if you cannot beat 'same as last year', stop", "A data error", "The prediction interval"],
+      options: ["It is the final model", "The bar every real model must beat, so if you cannot beat 'same as last year', stop", "A data error", "The prediction interval"],
       answer: 1,
       explain: "Seasonal-naive is a cheap, sensible benchmark. A model that cannot beat it is not earning its complexity."
     },
@@ -512,13 +512,13 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
       q: "The deployed forecast came with a 95% interval that widened with the horizon because…",
       options: ["The model is broken", "Uncertainty compounds the further ahead you forecast, so the band fans out", "December is always uncertain", "The data was dirty"],
       answer: 1,
-      explain: "Even when the point forecast stays accurate, uncertainty grows with the horizon; plan against the widening band, not the line."
+      explain: "Even when the point forecast stays accurate, uncertainty grows with the horizon, so plan against the whole widening band."
     },
     {
       q: "The overall lesson of the case study is…",
-      options: ["Bigger models are always better", "A forecast is a decision tool: clean honestly, beat a baseline, prove accuracy out of sample, and ship a range", "Accuracy is the only thing that matters", "Never use a baseline"],
+      options: ["Bigger models are always better", "A forecast is a decision tool, so clean honestly, beat a baseline, prove accuracy out of sample, and ship a range", "Accuracy is the only thing that matters", "Never use a baseline"],
       answer: 1,
-      explain: "The workflow, not just the model, is the deliverable: honest cleaning, a beaten baseline, out-of-sample proof, and an interval to plan against."
+      explain: "The deliverable is the whole workflow around the model, with honest cleaning, a beaten baseline, out-of-sample proof, and an interval to plan against."
     }
   ];
 </script>
