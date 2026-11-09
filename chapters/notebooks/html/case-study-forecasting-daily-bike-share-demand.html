@@ -7839,7 +7839,7 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="Forecasting-Daily-Bike-Share-Demand:-a-count-regression-case-study">Forecasting Daily Bike-Share Demand: a count-regression case study<a class="anchor-link" href="#Forecasting-Daily-Bike-Share-Demand:-a-count-regression-case-study">¶</a></h1><p>The third end-to-end case study, and the one where the outcome is a <strong>count</strong>: how many bikes will be rented today? We follow the same <strong>12-step method</strong>, on a messy daily-operations export (three date formats, categories in every spelling, missing weather readings, duplicate days, a missing-target row), and meet the signature hazard of count models: <strong>overdispersion</strong>. Library-first with <code>pandas</code>, <code>seaborn</code>, and <code>statsmodels</code>.</p>
+<h1 id="Forecasting-daily-bike-share-demand-with-count-regression">Forecasting daily bike-share demand with count regression<a class="anchor-link" href="#Forecasting-daily-bike-share-demand-with-count-regression">¶</a></h1><p>The third end-to-end case study has a <strong>count</strong> for its outcome, how many bikes will be rented today. We follow the same <strong>12-step method</strong>, on a messy daily-operations export (three date formats, categories in every spelling, missing weather readings, duplicate days, a missing-target row), and meet <strong>overdispersion</strong>, the signature hazard of count models. Library-first with <code>pandas</code>, <code>seaborn</code>, and <code>statsmodels</code>.</p>
 </div>
 </div>
 </div>
@@ -7901,7 +7901,7 @@ a.anchor-link {
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <div style="background:#f0fdf4;border-left:5px solid #059669;border-radius:10px;padding:16px 20px;font-family:Inter,sans-serif">
 <span style="font-size:13px;font-weight:800;color:#047857;letter-spacing:1px">STEP 1 · DEFINE THE OBJECTIVE</span>
-<div style="font-size:21px;font-weight:800;color:#1a2138;margin-top:4px">How many bikes today, and why?</div>
+<div style="font-size:21px;font-weight:800;color:#1a2138;margin-top:4px">Each day's rentals and what drives them</div>
 <div style="color:#4a5578;margin-top:6px">A forecast the operations team can staff and rebalance against.</div>
 </div>
 </div>
@@ -8167,7 +8167,7 @@ rentals       5
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <div style="background:#f0fdf4;border-left:5px solid #059669;border-radius:10px;padding:16px 20px;font-family:Inter,sans-serif">
 <span style="font-size:13px;font-weight:800;color:#047857;letter-spacing:1px">STEP 4 · CLEAN THE DATA</span>
-<div style="font-size:21px;font-weight:800;color:#1a2138;margin-top:4px">Standardize, parse, impute</div>
+<div style="font-size:21px;font-weight:800;color:#1a2138;margin-top:4px">Standardize, parse and impute</div>
 <div style="color:#4a5578;margin-top:6px">Then engineer calendar features from the date.</div>
 </div>
 </div>
@@ -8322,7 +8322,7 @@ seasons: ['Fall', 'Spring', 'Summer', 'Winter'] | weather: ['Clear', 'Heavy Rain
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>We already engineered <code>month</code> and <code>is_weekend</code> from the date. Weather and season are nominal, so they enter as <strong>dummy variables</strong> via <code>C(...)</code>. Because demand rises with temperature and then flattens off, we add a <strong>squared temperature term</strong> written <code>I((temp_c-14)**2)</code> (a touch of the flexible-model idea from earlier chapters). And the outcome is a count, so the model family is <strong>Poisson with a log link</strong>, not ordinary least squares.</p>
+<p>We already engineered <code>month</code> and <code>is_weekend</code> from the date. Weather and season are nominal, so they enter as <strong>dummy variables</strong> via <code>C(...)</code>. Because demand rises with temperature and then flattens off, we add a <strong>squared temperature term</strong> written <code>I((temp_c-14)**2)</code> (a touch of the flexible-model idea from earlier chapters). The outcome is a count, so the model family is <strong>Poisson with a log link</strong> in place of ordinary least squares.</p>
 <p><strong>Why subtract 14 inside the square?</strong> We <em>center</em> the temperature at the middle of the data (the average day is about 14°C) before squaring. Centering strips out most of the correlation between the linear <code>temp_c</code> term and its square, which keeps both coefficients stable and easy to read. Note that the 14 does <strong>not</strong> change the fitted curve or the accuracy at all (the linear term absorbs the shift, algebraically <code>(temp_c-14)**2</code> just adds a constant and a multiple of <code>temp_c</code>); it is purely a choice for numerical stability and interpretation, and any value near the mean would serve. The <code>I(...)</code> wrapper tells the formula parser to treat <code>**2</code> as literal arithmetic (square it) rather than as a formula operator. The cell below verifies, with numbers and a picture, that 14 really is the center.</p>
 </div>
 </div>
@@ -8386,7 +8386,7 @@ corr(temp, (temp-14)^2) = -0.06   (centered square is symmetric -&gt; not collin
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p><strong>Reading the check.</strong> <em>Left:</em> the mean, median, and range midpoint of temperature all land at about <strong>14°C</strong>, so 14 genuinely is the center of the data (the red line sits right on the average). <em>Right:</em> subtracting 14 before squaring turns the term into a <strong>symmetric U whose low point is exactly 14</strong>, while the raw <code>temp^2</code> just climbs with temperature. That difference is the whole point: the correlation between temperature and its square falls from about <strong>+0.97</strong> (raw, badly collinear) to roughly <strong>0</strong> (centered), so the straight-line piece and the curved piece no longer fight each other for the same signal. Any center near the mean gives the same benefit, 14 is simply the clean round number at the middle of this data.</p>
+<p><strong>Reading the check.</strong> <em>Left:</em> the mean, median, and range midpoint of temperature all land at about <strong>14°C</strong>, so 14 genuinely is the center of the data (the red line sits right on the average). <em>Right:</em> subtracting 14 before squaring turns the term into a <strong>symmetric U whose low point is exactly 14</strong>, while the raw <code>temp^2</code> just climbs with temperature. That difference is the whole point, because the correlation between temperature and its square falls from about <strong>+0.97</strong> (raw, badly collinear) to roughly <strong>0</strong> (centered), so the straight-line piece and the curved piece no longer fight each other for the same signal. Any center near the mean gives the same benefit, and 14 is simply the clean round number at the middle of this data.</p>
 </div>
 </div>
 </div>
@@ -8399,7 +8399,7 @@ corr(temp, (temp-14)^2) = -0.06   (centered square is symmetric -&gt; not collin
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <div style="background:#f0fdf4;border-left:5px solid #059669;border-radius:10px;padding:16px 20px;font-family:Inter,sans-serif">
 <span style="font-size:13px;font-weight:800;color:#047857;letter-spacing:1px">STEP 7 · ANALYZE PATTERNS</span>
-<div style="font-size:21px;font-weight:800;color:#1a2138;margin-top:4px">Quantify the drivers, and confirm overdispersion</div>
+<div style="font-size:21px;font-weight:800;color:#1a2138;margin-top:4px">Quantify the drivers and confirm overdispersion</div>
 <div style="color:#4a5578;margin-top:6px">Group means and the variance-to-mean ratio.</div>
 </div>
 </div>
@@ -8449,7 +8449,7 @@ Mist          1515.0
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>The variance-to-mean ratio is in the <strong>hundreds</strong>, not near 1. A pure Poisson model assumes they are equal, so it will badly understate the uncertainty. We fit Poisson first (to see the problem), then fix it.</p>
+<p>The variance-to-mean ratio is in the <strong>hundreds</strong>, where a pure Poisson model, which assumes the variance equals the mean, expects it near 1. That means Poisson will badly understate the uncertainty. We fit Poisson first (to see the problem), then fix it.</p>
 </div>
 </div>
 </div>
@@ -8507,7 +8507,7 @@ Pearson chi2 / df = 255.0   (should be ~1 if Poisson fits)
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>The fit explains the data well, but that <strong>Pearson chi-square / df in the hundreds</strong> is a screaming overdispersion warning: the Poisson standard errors are far too small. Step 9 fixes it.</p>
+<p>The fit explains the data well, but that <strong>Pearson chi-square / df in the hundreds</strong> is a screaming overdispersion warning that the Poisson standard errors are far too small, which Step 9 fixes.</p>
 </div>
 </div>
 </div>
@@ -8520,7 +8520,7 @@ Pearson chi2 / df = 255.0   (should be ~1 if Poisson fits)
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <div style="background:#f0fdf4;border-left:5px solid #059669;border-radius:10px;padding:16px 20px;font-family:Inter,sans-serif">
 <span style="font-size:13px;font-weight:800;color:#047857;letter-spacing:1px">STEP 9 · VALIDATE THE MODEL</span>
-<div style="font-size:21px;font-weight:800;color:#1a2138;margin-top:4px">Fix the overdispersion, then check the fit</div>
+<div style="font-size:21px;font-weight:800;color:#1a2138;margin-top:4px">Fix the overdispersion and then check the fit</div>
 <div style="color:#4a5578;margin-top:6px">Negative binomial, VIF, predicted vs actual.</div>
 </div>
 </div>
@@ -8602,7 +8602,7 @@ VIF: {'temp_c': np.float64(1.0), 'humidity': np.float64(1.0), 'windspeed': np.fl
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p><strong>Validation verdict.</strong> The variance sits far above the mean (left), confirming overdispersion, so we switch to the <strong>negative binomial</strong>, which adds a dispersion parameter and slashes the AIC by orders of magnitude. VIFs for temperature, humidity and wind are about 1 (no multicollinearity among the weather inputs). The predicted-vs-actual plot (right) tracks typical days well but underpredicts the busiest ones (deviance pseudo-R-squared about 0.66). Same rate ratios as Poisson, but now with honest standard errors.</p>
+<p><strong>Validation verdict.</strong> The variance sits far above the mean (left), confirming overdispersion, so we switch to the <strong>negative binomial</strong>, which adds a dispersion parameter and slashes the AIC by orders of magnitude. VIFs for temperature, humidity and wind are about 1 (no multicollinearity among the weather inputs). The predicted-vs-actual plot (right) tracks typical days well but underpredicts the busiest ones (deviance pseudo-R-squared about 0.66). The rate ratios match Poisson's, and now the standard errors are honest.</p>
 </div>
 </div>
 </div>
@@ -8704,8 +8704,8 @@ Forecast, warm clear working day: 3,033 rentals
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p><strong>What the model says.</strong> Weather rules demand: a <strong>heavy-rain day</strong> sees only about a quarter of clear-day rentals, light rain about half. Warmth helps (<strong>+33% for 5°C near the typical 14°C</strong>, less in warm weather), working days run about 10% busier than weekends, and holidays about 43% quieter than ordinary working days.</p>
-<p><strong>Actionable:</strong> pre-position fewer bikes and staff on forecast rain and cold; scale up for warm, clear working days; plan holidays below even a weekend. The forecast feeds directly into the next day's rebalancing plan.</p>
+<p><strong>Reading the rate ratios.</strong> Weather rules demand. A <strong>heavy-rain day</strong> sees only about a quarter of clear-day rentals, and light rain about half. Warmth helps (<strong>+33% for 5°C near the typical 14°C</strong>, less in warm weather), working days run about 10% busier than weekends, and holidays about 43% quieter than ordinary working days.</p>
+<p><strong>Actionable:</strong> pre-position fewer bikes and staff on forecast rain and cold, scale up for warm clear working days, and plan holidays below even a weekend. The forecast feeds directly into the next day's rebalancing plan.</p>
 </div>
 </div>
 </div>
@@ -8736,7 +8736,7 @@ Forecast, warm clear working day: 3,033 rentals
 <li><strong>Score daily</strong>: each evening, feed tomorrow's <strong>weather forecast</strong> (temp, conditions, wind) plus the calendar (weekday, holiday) to get a predicted rental count, and a range.</li>
 <li><strong>Feed operations</strong>: the forecast drives bike <strong>rebalancing</strong>, <strong>staff scheduling</strong>, and <strong>maintenance</strong> windows (do it on low-demand rainy days).</li>
 <li><strong>Monitor and retrain</strong>: track forecast error, and retrain as ridership grows or the system expands; watch for a changing base level (a growing city).</li>
-<li><strong>Guardrail</strong>: report the prediction interval, not just a point count, and do not extrapolate to weather far outside the training range.</li>
+<li><strong>Guardrail</strong>: report the prediction interval alongside the point count, and do not extrapolate to weather far outside the training range.</li>
 </ul>
 </div>
 </div>
@@ -8767,7 +8767,7 @@ Forecast, warm clear working day: 3,033 rentals
 <p><strong>How good is it?</strong> It explains about <strong>two-thirds</strong> of the deviance in daily demand (a likelihood-based measure that runs above the ordinary R-squared). It tracks typical days well and underpredicts the busiest ones, so a forecast should come with a range, as the Take It Further notebook builds.</p>
 <p><strong>What drives demand:</strong> weather first (a rainy day can cut rentals by 75%), then temperature (warmer is busier), then the calendar (working days busier than weekends and holidays).</p>
 <p><strong>A note on the method.</strong> Daily counts bounce around far more than a simple model expects, so we used a model built for that (a 'negative binomial'), which gives honest confidence in the forecast.</p>
-<p><strong>Bottom line: let tomorrow's weather forecast set tomorrow's bike plan</strong>, scale down for rain and cold, scale up for warm clear working days.</p>
+<p><strong>Let tomorrow's weather forecast set tomorrow's bike plan</strong>, scaling down for rain and cold and up for warm clear working days.</p>
 </div>
 </div>
 </div>

@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ch 105 · Case Study: Forecasting Daily Bike-Share Demand — Statistics, Data Science and AI</title>
-  <meta name="description" content="The third capstone, and the one where the answer is a count: how many bikes will be rented today?">
+  <meta name="description" content="The third capstone predicts a count, the number of bikes rented on a given day.">
   <meta name="author" content="John Fisher">
   <link rel="canonical" href="https://johnfisher-ai.github.io/Statistics-Data-Science-AI-Visual-Book/chapters/case-study-forecasting-daily-bike-share-demand.html">
 
   <meta property="og:type" content="article">
   <meta property="og:site_name" content="Statistics, Data Science and AI: A Visual Handbook">
   <meta property="og:title" content="Case Study: Forecasting Daily Bike-Share Demand · Chapter 105">
-  <meta property="og:description" content="The third capstone, and the one where the answer is a count: how many bikes will be rented today?">
+  <meta property="og:description" content="The third capstone predicts a count, the number of bikes rented on a given day.">
   <meta property="og:url" content="https://johnfisher-ai.github.io/Statistics-Data-Science-AI-Visual-Book/chapters/case-study-forecasting-daily-bike-share-demand.html">
   <meta property="og:image" content="https://johnfisher-ai.github.io/Statistics-Data-Science-AI-Visual-Book/assets/img/social-card-v2.png">
   <meta property="og:image:width" content="2400">
@@ -19,7 +19,7 @@
 
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Case Study: Forecasting Daily Bike-Share Demand · Chapter 105">
-  <meta name="twitter:description" content="The third capstone, and the one where the answer is a count: how many bikes will be rented today?">
+  <meta name="twitter:description" content="The third capstone predicts a count, the number of bikes rented on a given day.">
   <meta name="twitter:image" content="https://johnfisher-ai.github.io/Statistics-Data-Science-AI-Visual-Book/assets/img/social-card-v2.png">
   <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png">
@@ -78,9 +78,9 @@
       <span>Chapter 105</span>
     </div>
     <h1>Case Study: Forecasting Daily <span class="accent">Bike-Share Demand</span></h1>
-    <p class="dek">The third capstone, and the one where the answer is a count: how many bikes will be rented today? Same
-       12-step method, a messy daily-operations file to clean, and the signature hazard of count models to diagnose and
-       fix, overdispersion.</p>
+    <p class="dek">The third capstone predicts a count, the number of bikes rented on a given day. It follows the same
+       12-step method through a messy daily-operations file, then diagnoses and fixes overdispersion, the signature
+       hazard of count models.</p>
     <div class="hero-meta">
       <div class="m">⏱️ <b>~26 min</b>&nbsp;read</div>
       <div class="m">🐍 <b>Full notebook</b>&nbsp;included</div>
@@ -92,7 +92,7 @@
 <main class="reading">
 
   <section id="intro">
-    <p class="lead">Ames predicted a <em>number</em> (price), churn predicted a <em>yes/no</em>. This one predicts a
+    <p class="lead">Ames predicted a <em>number</em> (price) and churn predicted a <em>yes/no</em>. This one predicts a
        <span class="hl">count</span>, whole, non-negative, unbounded, which needs its own model. Fit a straight line to
        daily rentals and it will happily forecast negative demand; the right tool is Poisson regression, and it has one
        famous failure to watch.</p>
@@ -102,24 +102,24 @@
       <div class="def-body">
         A <span class="def-kw">count-regression case study</span> models a non-negative count with a
         <span class="def-kw">Poisson</span> (log-link) regression, whose coefficients exponentiate to
-        <span class="def-kw">rate ratios</span>. When the counts vary more than Poisson allows,
-        <span class="def-kw">overdispersion</span>, the fix is a <span class="def-kw">negative binomial</span> model.
+        <span class="def-kw">rate ratios</span>. When the counts vary more than Poisson allows
+        (<span class="def-kw">overdispersion</span>), the fix is a <span class="def-kw">negative binomial</span> model.
       </div>
     </div>
 
     <div class="callout key">
       <div class="cico">🧭</div>
       <div><div class="ctitle">The count-model twist</div>
-        <p>Everything from steps 1&#8211;7 is the familiar pipeline. The new content lands at steps 8&#8211;9: choose a
-           <strong>Poisson</strong> family, then discover the daily counts are <strong>wildly overdispersed</strong> and
+        <p>Everything from steps 1&#8211;7 is the familiar pipeline. The new content lands at steps 8&#8211;9 where we choose a
+           <strong>Poisson</strong> family, discover the daily counts are <strong>wildly overdispersed</strong>, and
            switch to a <strong>negative binomial</strong>.</p></div>
     </div>
   </section>
 
   <!-- ===== §1 method ===== -->
   <section id="method">
-    <div class="section-eyebrow"><div class="num">1</div><h2>The 12-Step Method</h2></div>
-    <p>The same repeatable loop, now applied to a count outcome. The companion notebook runs all twelve steps in code; the
+    <div class="section-eyebrow"><div class="num">1</div><h2>Daily rentals through the 12-step method</h2></div>
+    <p>The same repeatable loop now runs on a count outcome. The companion notebook runs all twelve steps in code, and the
        sections below narrate the story with the key numbers and pictures.</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
@@ -201,7 +201,7 @@
 
   <!-- ===== §2 wrangle ===== -->
   <section id="wrangle">
-    <div class="section-eyebrow"><div class="num">2</div><h2>Define, Collect, Inspect, Clean (Steps 1&#8211;4)</h2></div>
+    <div class="section-eyebrow"><div class="num">2</div><h2>A daily export with three date formats (steps 1&#8211;4)</h2></div>
 
     <div class="step-h"><span class="sn">1</span><h3>Define the objective</h3></div>
     <p>Predict the <strong>daily rental count</strong> and identify its drivers, so operations can pre-position bikes,
@@ -224,7 +224,7 @@
         <tbody>
           <tr><td class="nm">Missing target</td><td>5 rows with no <code>rentals</code></td><td>drop</td></tr>
           <tr><td class="nm">Duplicate days</td><td>14 repeated dates</td><td>deduplicate</td></tr>
-          <tr><td class="nm">Messy categories</td><td>season &#215;12, weather &#215;8, workingday 0/1 + Yes/No</td><td>normalize case, map to one scheme</td></tr>
+          <tr><td class="nm">Messy categories</td><td>season &#215;12, weather &#215;8, workingday 0/1 + Yes/No</td><td>normalize case and map to one scheme</td></tr>
           <tr><td class="nm">Three date formats</td><td><code>date</code></td><td><code>pd.to_datetime(format="mixed")</code>, then engineer month &amp; weekend</td></tr>
           <tr><td class="nm">Missing weather</td><td>humidity 18, windspeed 9</td><td>impute the median</td></tr>
         </tbody>
@@ -236,7 +236,7 @@
 
   <!-- ===== §3 explore ===== -->
   <section id="explore">
-    <div class="section-eyebrow"><div class="num">3</div><h2>Visualize, Transform, Analyze (Steps 5&#8211;7)</h2></div>
+    <div class="section-eyebrow"><div class="num">3</div><h2>Weather, warmth and the first hint of overdispersion (steps 5&#8211;7)</h2></div>
 
     <div class="step-h"><span class="sn">5</span><h3>Visualize the data</h3></div>
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
@@ -472,13 +472,13 @@
        the rise-then-flatten shape. The outcome is a count, so the model family is <strong>Poisson with a log link</strong>.</p>
 
     <div class="step-h"><span class="sn">7</span><h3>Analyze patterns</h3></div>
-    <p>Quantifying the hint: the daily rentals have a <strong>variance-to-mean ratio in the hundreds</strong>, when a
+    <p>Putting a number on the hint, the daily rentals have a <strong>variance-to-mean ratio in the hundreds</strong>, when a
        Poisson model assumes it is about 1. That is <span class="hl">overdispersion</span>, and step 9 must deal with it.</p>
   </section>
 
   <!-- ===== §4 build & validate ===== -->
   <section id="build">
-    <div class="section-eyebrow"><div class="num">4</div><h2>Build and Validate (Steps 8&#8211;9)</h2></div>
+    <div class="section-eyebrow"><div class="num">4</div><h2>From Poisson to negative binomial (steps 8&#8211;9)</h2></div>
 
     <div class="step-h"><span class="sn">8</span><h3>Build the model</h3></div>
     <p>A Poisson GLM of <code>rentals</code> on temperature (and its square), humidity, windspeed, weather, season,
@@ -486,7 +486,7 @@
        near 1), the overdispersion alarm.</p>
 
     <div class="step-h"><span class="sn">9</span><h3>Validate the model</h3></div>
-    <p>Bin the data and the variance sits far above the mean, Poisson's core assumption is badly violated:</p>
+    <p>Bin the data and the variance sits far above the mean, which badly violates Poisson's core assumption:</p>
 
     <figure style="margin:1.4rem 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.6rem 1.2rem">
       <svg viewBox="0 0 680 290" width="100%" font-family="Inter, sans-serif" aria-label="Variance versus mean for binned daily rentals sits far above the Poisson equal line, showing extreme overdispersion that needs a negative binomial model">
@@ -771,13 +771,14 @@
       </svg>
     </figure>
 
-    <p>Same rate ratios as the Poisson fit, but now with <span class="hl">honest standard errors</span>. This is the count
-       analog of the log transform in the house-price study: diagnose the violation, switch to the right model, re-check.</p>
+    <p>The rate ratios match the Poisson fit, and now the model reports <span class="hl">honest standard errors</span>. This
+       mirrors the log transform in the house-price study, where we also diagnosed the violation, switched to the right
+       model and re-checked.</p>
   </section>
 
   <!-- ===== §5 interpret & deploy ===== -->
   <section id="interpret">
-    <div class="section-eyebrow"><div class="num">5</div><h2>Interpret and Deploy (Steps 10&#8211;11)</h2></div>
+    <div class="section-eyebrow"><div class="num">5</div><h2>How weather multiplies demand and feeds the daily plan (steps 10&#8211;11)</h2></div>
 
     <div class="step-h"><span class="sn">10</span><h3>Interpret the results</h3></div>
     <figure class="nb-fig">
@@ -843,22 +844,22 @@
 
     <p><span class="hl">Weather rules demand.</span> A <strong>heavy-rain day sees only ~25%</strong> of clear-day
        rentals, light rain about half. Warmth helps (<strong>+33% for 5&#176;C near the typical 14&#176;C</strong>, less in warm weather because the curve bends), working
-       days run ~10% busier than weekends, and holidays ~43% quieter than ordinary working days. A concrete forecast: a warm, clear working day predicts about
+       days run ~10% busier than weekends, and holidays ~43% quieter than ordinary working days. As a concrete forecast, a warm, clear working day predicts about
        <strong>3,000 rentals</strong>.</p>
     <p><b>Actionable:</b> scale bikes and staff down on forecast rain and cold, up on warm clear working days, and plan
        holidays below even a weekend. The forecast feeds straight into the next day's rebalancing plan.</p>
 
     <div class="step-h"><span class="sn">11</span><h3>Deploy the model</h3></div>
-    <p><span class="term">Persist</span> the model and cleaning as one pipeline; <span class="term">score daily</span> by
-       feeding tomorrow's <em>weather forecast</em> plus the calendar to get a predicted count with a range; feed it into
-       bike <span class="term">rebalancing</span>, staffing, and maintenance planning; <span class="term">monitor</span>
-       forecast error and <span class="term">retrain</span> as ridership grows. Guardrail: report the interval and do not
+    <p><span class="term">Persist</span> the model and cleaning as one pipeline, then <span class="term">score daily</span> by
+       feeding tomorrow's <em>weather forecast</em> plus the calendar to get a predicted count with a range. That count
+       feeds bike <span class="term">rebalancing</span>, staffing, and maintenance planning. <span class="term">Monitor</span>
+       forecast error and <span class="term">retrain</span> as ridership grows. As a guardrail, report the interval and do not
        extrapolate to weather far outside the training range.</p>
   </section>
 
   <!-- ===== §6 writeup ===== -->
   <section id="writeup-sec">
-    <div class="section-eyebrow"><div class="num">6</div><h2>Communicate: the Plain-English Write-Up (Step 12)</h2></div>
+    <div class="section-eyebrow"><div class="num">6</div><h2>What rain, warmth and the calendar mean for operations (step 12)</h2></div>
     <div class="writeup">
       <h3>For the operations manager</h3>
       <p><strong>What we did.</strong> We took two years of daily rental records, cleaned them (removed duplicate days and
@@ -875,7 +876,7 @@
       </ul>
       <p><strong>A note on method.</strong> Daily counts bounce around far more than a simple model expects, so we used
         one built for that (a "negative binomial"), which makes the forecast's confidence honest.</p>
-      <p><strong>In practice: let tomorrow's weather forecast set tomorrow's bike plan.</strong></p>
+      <p><strong>In practice, let tomorrow's weather forecast set tomorrow's bike plan.</strong></p>
     </div>
   </section>
 
@@ -884,7 +885,7 @@
     <div class="nb-cta" style="display:block">
       <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
         <div class="nb-ic">🐍</div>
-        <div class="nb-body"><h3>Run the entire forecast project in Python</h3><p>The companion notebook is the full 12-step pipeline: it loads and cleans the messy daily export (dates, categories, missing weather), visualizes demand and its seasonal rhythm, engineers calendar features, fits Poisson then negative-binomial regression, diagnoses overdispersion (variance-vs-mean, Pearson chi-square), reads rate ratios, and forecasts a day, with every table and chart explained.</p></div>
+        <div class="nb-body"><h3>Run the entire forecast project in Python</h3><p>The companion notebook runs the full 12-step pipeline. It loads and cleans the messy daily export (dates, categories, missing weather), visualizes demand and its seasonal rhythm, engineers calendar features, fits Poisson then negative-binomial regression, diagnoses overdispersion (variance-vs-mean, Pearson chi-square), reads rate ratios, and forecasts a day, with every table and chart explained.</p></div>
       </div>
       <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
         <a class="btn btn-primary" href="notebooks/html/case-study-forecasting-daily-bike-share-demand.html">📓 View Notebook (code &amp; outputs)</a>
@@ -900,13 +901,13 @@
   <!-- ===== takeaways ===== -->
   <section id="takeaways">
     <div class="takeaways">
-      <h3>🎓 Key Takeaways</h3>
+      <h3>🎓 In brief</h3>
       <ul>
         <li><span class="ck">✓</span><span><strong>Counts need a count model</strong>: Poisson regression (log link) predicts a non-negative rate; ordinary regression can predict negative demand.</span></li>
         <li><span class="ck">✓</span><span><strong>Coefficients exponentiate to rate ratios</strong>: heavy rain &#215;0.25, +5&#176;C &#215;1.33 near 14&#176;C, working day &#215;1.10.</span></li>
         <li><span class="ck">✓</span><span><strong>Overdispersion is the count-model pitfall</strong>: the variance-to-mean ratio and Pearson chi-square / df flagged it (in the hundreds).</span></li>
-        <li><span class="ck">✓</span><span><strong>The negative binomial is the fix</strong>: it let variance exceed the mean and cut the AIC from ~183,000 to ~11,000, honest error bars, same rate ratios.</span></li>
-        <li><span class="ck">✓</span><span><strong>Same 12-step method</strong> as the other case studies, only the model family (and its diagnostic) changed for a count outcome.</span></li>
+        <li><span class="ck">✓</span><span><strong>The negative binomial is the fix</strong>: it let variance exceed the mean and cut the AIC from ~183,000 to ~11,000, giving honest error bars with the same rate ratios.</span></li>
+        <li><span class="ck">✓</span><span><strong>Same 12-step method</strong> as the other case studies, with only the model family (and its diagnostic) changed for a count outcome.</span></li>
       </ul>
     </div>
   </section>
@@ -914,10 +915,10 @@
   <!-- ===== §7 take it further ===== -->
   <section id="challenges">
     <div class="section-eyebrow"><div class="num">7</div><h2>Take It Further</h2></div>
-    <p>Five ways to extend the forecast in the notebook:</p>
+    <p>Each of these pushes the demand forecast a step further, and the notebook below works them all.</p>
     <div class="challenges">
       <div class="challenge"><div class="cnum">1</div><div class="cbody">
-        <h3>Poisson vs negative binomial, quantified</h3>
+        <h3>Poisson vs negative binomial standard errors</h3>
         <p>Compare the two models' standard errors on the weather coefficients to see how much Poisson understated them.</p>
         <div class="chint">Hint: line up <code>.bse</code> from each fit.</div></div></div>
       <div class="challenge"><div class="cnum">2</div><div class="cbody">
@@ -941,7 +942,7 @@
     <div class="nb-cta" style="display:block">
       <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
         <div class="nb-ic">📓</div>
-        <div class="nb-body"><h3>All five, worked in a companion notebook</h3><p>A second notebook, <strong>Take It Further</strong>, recaps this chapter's model and then works every one of these five extensions with visuals and explanations, the Poisson-vs-NB standard errors, the temperature curve, a test on a later year, a weekend-weather interaction, and a week-ahead forecast, closing with a plain-English summary.</p></div>
+        <div class="nb-body"><h3>A worked notebook for the bike-share extensions</h3><p>A second notebook, <strong>Take It Further</strong>, recaps this chapter's model and then works every one of these five extensions with visuals and explanations: the Poisson-vs-NB standard errors, the temperature curve, a test on a later year, a weekend-weather interaction, and a week-ahead forecast. It closes with a plain-English summary.</p></div>
       </div>
       <div style="display:flex;gap:0.7rem;flex-wrap:wrap">
         <a class="btn btn-primary" href="notebooks/html/case-study-forecasting-daily-bike-share-demand--take-it-further.html">📓 View Notebook (code &amp; outputs)</a>
@@ -953,7 +954,7 @@
 
   <!-- ===== §8 quiz ===== -->
   <section id="quiz">
-    <div class="section-eyebrow"><div class="num">8</div><h2>Quiz: Test Yourself</h2></div>
+    <div class="section-eyebrow"><div class="num">8</div><h2>Test yourself</h2></div>
     <p>Eight questions on the count-regression case study. Answer them, hit <strong>Check Answers</strong>, and keep
        refining until you score 100%. Your progress is saved, so you can hop back to the chapter and return anytime.</p>
     <div id="quiz-root"></div>
@@ -963,7 +964,7 @@
     <div class="cico">🏁</div>
     <div><div class="ctitle">Onward</div>
       <p>You have now modeled a number, a yes/no, and a count, end to end. <strong>Predicting Medical
-         Charges</strong> tackles the last frontier of this Part: a regression with <em>many</em> predictors, where
+         Charges</strong> closes this Part with a regression that has <em>many</em> predictors, where
          regularization picks the signal from the noise.</p></div>
   </div>
 
@@ -1007,13 +1008,13 @@ window.addEventListener('scroll', () => { const h = document.documentElement; ba
     },
     {
       q: "A Poisson coefficient, once exponentiated, is…",
-      options: ["An odds ratio", "A rate ratio: the multiplier on the expected count", "A probability", "A residual"],
+      options: ["An odds ratio", "A rate ratio, the multiplier on the expected count", "A probability", "A residual"],
       answer: 1,
       explain: "With the log link, e^coef is the factor by which expected demand multiplies per one-unit change."
     },
     {
       q: "The daily rentals had a variance-to-mean ratio in the hundreds. This signals…",
-      options: ["A perfect Poisson fit", "Overdispersion, the counts vary far more than Poisson assumes", "Missing data", "Multicollinearity"],
+      options: ["A perfect Poisson fit", "Overdispersion, with counts varying far more than Poisson assumes", "Missing data", "Multicollinearity"],
       answer: 1,
       explain: "Poisson assumes variance = mean; a much larger ratio (and Pearson chi-square/df) means overdispersion."
     },
