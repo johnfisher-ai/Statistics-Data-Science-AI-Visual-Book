@@ -114,7 +114,7 @@
       <dl>
         <dt>Setting</dt><dd>An emergency department: 8,938 presentations with chest pain, each with age, sex, vital signs, troponin, comorbidities and ECG findings, and whether a major cardiac event followed within 30 days.</dd>
         <dt>The question</dt><dd><strong>Which patients can safely be discharged, and which should be admitted for observation?</strong></dd>
-        <dt>Why it matters</dt><dd>The score is not a research output. It is a rule that sends people home, so it has to be right about how much risk a patient carries and not merely about which patient carries more.</dd>
+        <dt>Why it matters</dt><dd>The score will be used as a rule that sends people home, so it has to be right about how much risk a patient carries as well as about which patient carries more.</dd>
         <dt>What we do</dt><dd>Fit the model on a training set and evaluate only on held-out data, report AUC because everyone asks for it, then build a second model with the same AUC and half the accuracy about risk, measure calibration properly, derive the threshold from a stated cost ratio rather than from the data, and check the whole thing with decision curve analysis.</dd>
       </dl>
     </div>
@@ -131,7 +131,7 @@
 
     <div class="callout key">
       <div class="cico">&#11088;</div>
-      <div><div class="ctitle">The finding, up front</div>
+      <div><div class="ctitle">Identical AUC and very different admission counts</div>
         <p>Two models, <strong>AUC 0.8097 both</strong>, identical to four decimals. One predicts a mean risk of
            <strong>3.93 percent</strong> against an observed <strong>3.93 percent</strong>. The other predicts
            <strong>8.64 percent</strong>. At the clinicians' own threshold the second admits <strong>951 more
@@ -142,7 +142,7 @@
 
   <!-- 1 -->
   <section id="decision">
-    <div class="section-eyebrow"><div class="num">1</div><h2>The Decision the Score Is For</h2></div>
+    <div class="section-eyebrow"><div class="num">1</div><h2>The admit-or-discharge decision behind the score</h2></div>
 
     <p>A patient scoring above the threshold is admitted for observation. Below it they go home with advice. Everything
        about how this model should be built and judged follows from that sentence, and almost none of it follows from
@@ -167,7 +167,7 @@
 
   <!-- 2 -->
   <section id="auc">
-    <div class="section-eyebrow"><div class="num">2</div><h2>Two Models, One AUC</h2></div>
+    <div class="section-eyebrow"><div class="num">2</div><h2>A shifted model with the same AUC</h2></div>
 
     <p>Fit the model on 5,809 patients and hold back 3,129. Then build a second model that ranks every patient in
        exactly the same order and is wrong about the level, by adding a constant to the log-odds. That operation cannot
@@ -181,8 +181,8 @@
       </table>
     </div>
 
-    <p>The AUCs are identical to four decimal places, and they should be. AUC asks exactly one question: given a patient
-       who had an event and one who did not, how often does the model score the first one higher? That is a question
+    <p>The AUCs are identical to four decimal places, and they should be. AUC asks exactly one question, how often the
+       model scores a patient who had an event above one who did not, and that is a question
        about <em>order</em>. Model B is wrong about the level by more than a factor of two, and
        <strong>the metric quoted in every paper and every model card cannot detect it</strong>.</p>
 
@@ -200,7 +200,7 @@
 
   <!-- 3 -->
   <section id="calibration">
-    <div class="section-eyebrow"><div class="num">3</div><h2>Calibration, Measured Rather Than Eyeballed</h2></div>
+    <div class="section-eyebrow"><div class="num">3</div><h2>Only the calibration intercept tells the models apart</h2></div>
 
     <p>Regressing the outcome on the predicted log-odds gives two numbers. The <strong>slope</strong> says whether the
        spread of predicted risks is right. The <strong>intercept</strong> says whether the level is.</p>
@@ -212,17 +212,17 @@
       <div class="rchip"><div class="rk">B, slope</div><div class="rv">0.980</div><div class="rd">identical to A</div></div>
     </div>
 
-    <p><strong>Both models have a slope of 0.98, and that is the point.</strong> Model B inherited model A's spread
+    <p><strong>Both models have a slope of 0.98.</strong> Model B inherited model A's spread
        exactly, so the slope cannot distinguish them either. Only the intercept notices. A model card reporting AUC and
        calibration slope, which is a common pairing, would pass model B without comment.</p>
 
-    <p>Model A's decile table is what a well-calibrated score looks like: 0.88 percent predicted against 0.96 observed,
-       3.08 against 4.15, 7.01 against 7.03, 17.99 against 16.93. The numbers mean what they say.</p>
+    <p>Model A's decile table is what a well-calibrated score looks like, with numbers that mean what they say:
+       0.88 percent predicted against 0.96 observed, 3.08 against 4.15, 7.01 against 7.03, 17.99 against 16.93.</p>
   </section>
 
   <!-- 4 -->
   <section id="threshold">
-    <div class="section-eyebrow"><div class="num">4</div><h2>The Threshold Comes From Costs</h2></div>
+    <div class="section-eyebrow"><div class="num">4</div><h2>Setting the threshold from the clinicians' cost ratio</h2></div>
 
     <p>A threshold is a statement about how much worse one error is than the other, and that ratio belongs to the
        clinicians. Here they judge a missed event <strong>40 times</strong> worse than an unnecessary night of
@@ -237,23 +237,23 @@
       </table>
     </div>
 
-    <p>Model B misses nothing, and <strong>that is not the good news it appears to be</strong>. It buys those eighteen
-       events at 951 extra admissions, 933 of them patients with no event, or about 52 unnecessary admissions each. The clinicians said 40. A miscalibrated model does not become more
-       cautious; it <strong>silently applies a different threshold than the one the clinical team chose</strong>, and
-       nobody in the room knows the trade-off has been changed.</p>
+    <p>Model B misses nothing, and <strong>that apparent good news has a price</strong>. It buys those eighteen
+       events at 951 extra admissions, 933 of them patients with no event, or about 52 unnecessary admissions each where the
+       clinicians said 40. A miscalibrated model looks more cautious while it <strong>silently applies a different threshold
+       than the one the clinical team chose</strong>, and nobody in the room knows the trade-off has been changed.</p>
 
     <div class="embox">
       <span class="gb-tag">What calibration error actually looks like in practice</span>
-      <p style="margin:0.45rem 0 0">It does not look like error. It does not produce worse rankings, worse AUC, or a
-         model that obviously fails. It produces a rule that quietly implements a different decision from the one it
-         was asked to implement, while every metric on the dashboard stays green. That is why calibration belongs next
-         to discrimination in every report, and not in an appendix.</p>
+      <p style="margin:0.45rem 0 0">Calibration error does not look like error. The rankings and the AUC are no worse,
+         and the model never obviously fails. What it produces is a rule that quietly implements a different decision
+         from the one it was asked to implement, while every metric on the dashboard stays green. That is why calibration
+         belongs next to discrimination in every report instead of in an appendix.</p>
     </div>
   </section>
 
   <!-- 5 -->
   <section id="dca">
-    <div class="section-eyebrow"><div class="num">5</div><h2>Decision Curve Analysis</h2></div>
+    <div class="section-eyebrow"><div class="num">5</div><h2>Decision curve analysis</h2></div>
 
     <p>The threshold above rests on one cost ratio, and reasonable clinicians will disagree about it. Net benefit
        evaluates across the whole range, putting true and false positives on one scale using the threshold itself as
@@ -271,10 +271,10 @@
       </table>
     </div>
 
-    <p>Model A is better at every threshold anybody would choose, and the gap widens as the threshold rises. Two other
-       things are worth reading off this table. Admitting everyone becomes worse than doing nothing above about a 4
-       percent threshold. And model B goes <em>negative</em> just above 10 percent, meaning that at that cost ratio a clinician
-       would do better ignoring it entirely.</p>
+    <p>Model A is better at every threshold anybody would choose, and the gap widens as the threshold rises. The table
+       also shows that admitting everyone becomes worse than doing nothing above about a 4 percent threshold. Model B
+       goes <em>negative</em> just above 10 percent, meaning that at that cost ratio a clinician would do better ignoring
+       it entirely.</p>
 
     <figure class="nb-fig">
       <img src="../assets/img/capstone-risk-decision.png"
@@ -287,9 +287,9 @@
 
   <!-- 6 -->
   <section id="decoy">
-    <div class="section-eyebrow"><div class="num">6</div><h2>The Decoy, and Why Held-Out Data Is Not Optional</h2></div>
+    <div class="section-eyebrow"><div class="num">6</div><h2>The arrival-month decoy and the held-out test set</h2></div>
 
-    <p>The dataset carries a variable with no effect whatsoever: the month the patient arrived. Adding it to the model
+    <p>The dataset carries a variable with no effect whatsoever, the month the patient arrived. Adding it to the model
        is a test of the evaluation rather than of the model.</p>
 
     <div class="resultline">
@@ -307,13 +307,13 @@
 
   <!-- 7 -->
   <section id="watch">
-    <div class="section-eyebrow"><div class="num">7</div><h2>What to Watch</h2></div>
+    <div class="section-eyebrow"><div class="num">7</div><h2>What to watch</h2></div>
 
     <ul class="checklist">
       <li><span class="ck">&#10003;</span><span><strong>Report calibration next to discrimination, always.</strong> AUC answers a question about ranking and gets quoted as though it answered a question about risk. Two models here differ by a factor of two in predicted risk and by nothing at all in AUC.</span></li>
       <li><span class="ck">&#10003;</span><span><strong>The calibration slope is not enough either.</strong> Both models scored 0.98. Only the intercept caught it, and a report giving AUC and slope would have passed the broken model.</span></li>
       <li><span class="ck">&#10003;</span><span><strong>A threshold is a clinical decision.</strong> Youden's index and the elbow of the ROC curve both encode a cost ratio, silently, and neither asked anyone what it should be.</span></li>
-      <li><span class="ck">&#10003;</span><span><strong>A miscalibrated model overrides the clinical team without telling them.</strong> Model B does not look reckless or broken. It looks careful, and it is applying a threshold nobody chose.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>A miscalibrated model overrides the clinical team without telling them.</strong> Nothing about model B looks reckless or broken. It looks careful, and it is applying a threshold nobody chose.</span></li>
       <li><span class="ck">&#10003;</span><span><strong>Never quote accuracy on an imbalanced outcome.</strong> Sending everybody home scores 96.1 percent here and misses all 123 events.</span></li>
       <li><span class="ck">&#10003;</span><span><strong>A risk score is not a diagnosis.</strong> It estimates a rate among similar patients. No individual has a 4 percent event, and the score belongs alongside clinical judgment rather than in place of it.</span></li>
       <li><span class="ck">&#10003;</span><span><strong>Check who the model works for.</strong> One AUC and one calibration curve describe the whole cohort. A score well calibrated on average can be badly calibrated for a subgroup the average conceals, which <a href="capstone-fairness-audit.html">Capstone 41</a> takes up directly.</span></li>
@@ -322,11 +322,11 @@
 
   <!-- 8 -->
   <section id="ml">
-    <div class="section-eyebrow"><div class="num">8</div><h2>Calibration in Data Science &amp; AI</h2></div>
+    <div class="section-eyebrow"><div class="num">8</div><h2>Calibration in data science &amp; AI</h2></div>
 
     <div class="table-scroll" tabindex="0">
       <table class="disp-table">
-        <tr><th>Where it appears</th><th>The same failure, in a different costume</th></tr>
+        <tr><th>Where it appears</th><th>The same failure in another setting</th></tr>
         <tr><td class="nm">Gradient boosting and random forests</td><td>Both are systematically miscalibrated out of the box, and both report excellent AUC while doing it</td></tr>
         <tr><td class="nm">Any model trained with class weights or resampling</td><td>Rebalancing fixes the ranking and destroys the level, which is fine until somebody reads the probability</td></tr>
         <tr><td class="nm">Credit scoring and pricing</td><td>The predicted probability is multiplied by an amount of money, so a calibration error becomes a pricing error directly</td></tr>
@@ -338,7 +338,7 @@
     <div class="research">
       <span class="rtag">Where the research went</span>
       <p style="margin:0.4rem 0 0">The <strong>Brier score</strong> dates from 1950 and weather forecasting, which is
-         the field that took calibration seriously first and for the obvious reason: a forecast of rain is consumed as
+         the field that took calibration seriously first, for the obvious reason that a forecast of rain is consumed as
          a number. <strong>Cox's</strong> 1958 calibration regression is the slope-and-intercept decomposition used
          here. <strong>Vickers and Elkin</strong> introduced decision curve analysis in 2006 precisely because
          discrimination metrics could not answer whether a model was worth using. On the repair side,
@@ -354,7 +354,7 @@
       <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
         <div class="nb-ic">&#128013;</div>
         <div class="nb-body">
-          <h3>The full project, step by step</h3>
+          <h3>The full project step by step</h3>
           <p>The companion notebook reads the plan before fitting anything, cleans the extract and keeps the patients
              with no troponin result, holds out 3,129 presentations, constructs the second model with identical
              ordering, measures calibration by slope and intercept and by decile, shows what accuracy would have said,
@@ -392,7 +392,7 @@
   <!-- takeaways -->
   <section id="takeaways">
     <div class="takeaways">
-      <h3>&#127891; Key Takeaways</h3>
+      <h3>&#127891; In brief</h3>
       <ul>
         <li><span class="ck">&#10003;</span><span><strong>AUC reads order, decisions read level.</strong> Two models with AUC 0.8097 differed by a factor of two in predicted risk.</span></li>
         <li><span class="ck">&#10003;</span><span><strong>The calibration slope missed it too.</strong> Both scored 0.980; only the intercept, &#8722;0.983 against 0, caught the fault.</span></li>
@@ -405,7 +405,7 @@
 
   <!-- quiz -->
   <section id="quiz">
-    <div class="section-eyebrow"><div class="num">&#10067;</div><h2>Quiz: Test Yourself</h2></div>
+    <div class="section-eyebrow"><div class="num">&#10067;</div><h2>Test yourself</h2></div>
     <div id="quiz-root"></div>
   </section>
 
@@ -460,7 +460,7 @@ window.addEventListener('scroll', () => {
       q: "At the 2.4 percent threshold model B missed zero events while model A missed 18. Why is model A still preferred?",
       options: ["Because model A has a higher AUC", "Because model B admitted 951 extra patients for those 18 events, about 52 unnecessary admissions each, against a stated tolerance of 40", "Because model B is overfitted", "Because missing events is acceptable"],
       answer: 1,
-      explain: "Miscalibration does not look like error, it looks like caution. Model B is silently applying a lower threshold than the clinical team chose, and the decision curve confirms A is better at every threshold."
+      explain: "Miscalibration passes for caution. Model B is silently applying a lower threshold than the clinical team chose, and the decision curve confirms A is better at every threshold."
     },
     {
       q: "A rule that admits nobody achieves 96.07 percent accuracy on this data. What does that show?",
