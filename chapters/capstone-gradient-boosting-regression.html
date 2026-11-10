@@ -113,7 +113,7 @@
       <div class="bh">The brief</div>
       <dl>
         <dt>Setting</dt><dd>Eighty-four days of food delivery orders from one city zone: 41,410 usable orders with distance, hour, items, weather, traffic, courier supply and the restaurant, plus the minutes from order placed to delivered.</dd>
-        <dt>The question</dt><dd><strong>What arrival time should the app display when the order is placed?</strong> Not what the delivery will take. What number to promise.</dd>
+        <dt>The question</dt><dd><strong>What arrival time should the app display when the order is placed?</strong> The question is what number to promise, which differs from how long the delivery will take.</dd>
         <dt>Why it matters</dt><dd>Arriving late is roughly three times as costly as arriving early, and the service target is that no more than 15 percent of orders arrive after the displayed time. The platform currently shows the prediction plus a flat 8 minutes, and nobody remembers who chose 8.</dd>
         <dt>What we do</dt><dd>Split by time, beat a linear baseline, price feature engineering against model family against hyperparameter search, read the learning curve to decide whether more data would help, find where the model is wrong, and then work out what to display.</dd>
       </dl>
@@ -130,7 +130,7 @@
 
     <div class="callout key">
       <div class="cico">&#11088;</div>
-      <div><div class="ctitle">The finding, up front</div>
+      <div><div class="ctitle">Where the seconds went and who ends up late</div>
         <p>Four engineered features removed <strong>99 seconds</strong> of error, switching from linear regression to
            gradient boosting removed <strong>19</strong>, and twenty configurations of hyperparameter search removed
            <strong>five</strong>. Then a conditional quantile and a flat buffer with the same average padding produced
@@ -141,19 +141,19 @@
 
   <!-- 1 -->
   <section id="setup">
-    <div class="section-eyebrow"><div class="num">1</div><h2>The Baseline, and a Split That Respects Time</h2></div>
+    <div class="section-eyebrow"><div class="num">1</div><h2>Splitting the orders by day and setting a linear baseline</h2></div>
 
     <p>After removing a duplicated export block, 382 cancellations recorded as a delivery time of zero and 208 orders
        with a GPS distance of 999 kilometers, 41,410 orders remain. Mean delivery time is 51.0 minutes with a standard
        deviation of 17.9.</p>
 
-    <p>Three windows, in time order rather than sampled at random, because the model will always be predicting orders
-       that have not happened yet: <strong>days 0 to 69</strong> to train (34,462 orders), <strong>70 to 76</strong> to
-       choose (3,425), <strong>77 to 83</strong> to report (3,523). The middle window does the choosing. The last one
-       is opened once.</p>
+    <p>The orders go into three windows in time order rather than sampled at random, because the model will always be
+       predicting orders that have not happened yet. <strong>Days 0 to 69</strong> train the model (34,462 orders),
+       <strong>70 to 76</strong> choose among models (3,425), and <strong>77 to 83</strong> report the result (3,523).
+       The middle window does the choosing, and the last one is opened once.</p>
 
-    <p>The baseline is not an aspiration, it is a hurdle: <strong>a linear regression on the raw columns of the
-       export</strong>. Every number below is measured against it.</p>
+    <p>The baseline is <strong>a linear regression on the raw columns of the export</strong>, a hurdle every later
+       model has to clear. Every number below is measured against it.</p>
     <figure class="nb-fig">
       <img src="../assets/img/capstone-eta-firstlook.png"
            alt="Left: a histogram of delivery time in minutes over the training window, peaking near 49 minutes with a long right tail out past 150, with dashed lines at the median of 49 and the 85th percentile of 69. Right: median and 85th percentile delivery time by hour of day, with the band between them shaded. The band is about twelve minutes wide in the mid-afternoon and about eighteen through the lunch and dinner peaks.">
@@ -164,7 +164,7 @@
 
   <!-- 2 -->
   <section id="hierarchy">
-    <div class="section-eyebrow"><div class="num">2</div><h2>What Each Decision Was Worth</h2></div>
+    <div class="section-eyebrow"><div class="num">2</div><h2>Seconds saved by features, model family and tuning</h2></div>
 
     <div class="table-scroll" tabindex="0">
       <table class="disp-table">
@@ -191,12 +191,12 @@
       <div class="rchip"><div class="rk">Best of the ten on test</div><div class="rv">7.848</div><div class="rd">it ranked 2nd on validation</div></div>
     </div>
 
-    <p>Five seconds is real and it is not nothing. Set it beside the 94 seconds the fourth engineered feature was
+    <p>Five seconds is a real gain. Set it beside the 94 seconds the fourth engineered feature was
        worth and the hierarchy is settled. It is also worth noticing that the configuration ranked second on the
-       validation window did best on the test window, and that the test scores of the top eight do not fall in their validation order. <strong>Among the leaders, the search is ranking noise.</strong></p>
+       validation window did best on the test window, and that the test scores of the top eight do not fall in their validation order, so <strong>among the leaders the search is ranking noise</strong>.</p>
 
     <div class="embox">
-      <span class="gb-tag">The reporting point</span>
+      <span class="gb-tag">Which score to report</span>
       <p style="margin:0.45rem 0 0">The score you selected on and the score you did not select on are different
          numbers. The validation figure is usually optimistic by however much the search exploited that window. Here the
          test window happened to be easier (7.857 against 7.911), but the validation figure was used to choose, so it is
@@ -215,7 +215,7 @@
 
   <!-- 3 -->
   <section id="features">
-    <div class="section-eyebrow"><div class="num">3</div><h2>Engineer What the Model Cannot Derive</h2></div>
+    <div class="section-eyebrow"><div class="num">3</div><h2>Engineer what the model cannot derive</h2></div>
 
     <p>Four features were added: a <strong>load ratio</strong> (pending orders per available courier), a
        <strong>peak-hour flag</strong>, a <strong>weekend flag</strong>, and the restaurant's own
@@ -239,13 +239,13 @@
 
     <div class="callout key">
       <div class="cico">&#128161;</div>
-      <div><div class="ctitle">The rule</div>
+      <div><div class="ctitle">What is worth engineering</div>
         <p><strong>Engineer what the model cannot derive from what it already has.</strong> Ratios, flags and
            thresholds of existing columns are convenience. Aggregates across rows, histories, and anything joined in
            from outside the table are information.</p></div>
     </div>
 
-    <p>A note on how that feature was built. The expanding median uses each restaurant's previous orders and stops
+    <p>The expanding median behind that feature uses each restaurant's previous orders and stops
        there. Taking a plain <code>groupby(...).median()</code> over the whole file would have been shorter, slightly
        more accurate on this test set, and wrong, because it would use next month's orders to predict this month's.
        That is the trap <a href="capstone-credit-card-fraud.html">Chapter 191</a> is about, and it is easiest to fall
@@ -254,7 +254,7 @@
 
   <!-- 4 -->
   <section id="curve">
-    <div class="section-eyebrow"><div class="num">4</div><h2>More Data, or a Better Model?</h2></div>
+    <div class="section-eyebrow"><div class="num">4</div><h2>More data or a better model?</h2></div>
 
     <p>Both cost money and they are different purchases, so it is worth answering rather than guessing. Fit on growing
        subsets of the training window and watch the two errors converge.</p>
@@ -277,13 +277,13 @@
        some may be information the table does not hold, as the restaurant history showed. A more flexible model is
        unlikely to find it, because twenty configurations moved the test error by seconds.</p>
 
-    <p>Which changes the question the project is answering. If the uncertainty cannot be removed, it has to be
+    <p>That changes the question the project is answering. If the uncertainty cannot be removed, it has to be
        <strong>communicated</strong>, and that is a different piece of work from making the model better.</p>
   </section>
 
   <!-- 5 -->
   <section id="errors">
-    <div class="section-eyebrow"><div class="num">5</div><h2>Where the Model Is Wrong</h2></div>
+    <div class="section-eyebrow"><div class="num">5</div><h2>Where the delivery estimate is least precise</h2></div>
 
     <p>An average error of 7.9 minutes is a summary. The question is whether it is the same 7.9 minutes everywhere.</p>
 
@@ -303,10 +303,10 @@
 
     <p><strong>The bias is near zero everywhere and the spread is nowhere near constant.</strong> Off peak the model is
        good to about five minutes. When the zone has more than two pending orders per courier it is good to about
-       twelve. A factor of two and a half, and predictable from features already in the model.</p>
+       twelve, a factor of two and a half that is predictable from features already in the model.</p>
 
-    <p>A model with this property is not broken. It is reporting something true: some orders are inherently harder to
-       forecast than others. What would be broken is a system that shows the same kind of number for both.</p>
+    <p>A model with this property is not broken. It is reporting the true fact that some orders are inherently harder
+       to forecast than others. What would be broken is a system that shows the same kind of number for both.</p>
 
     <figure class="nb-fig">
       <img src="../assets/img/capstone-eta-quantile.png"
@@ -318,13 +318,13 @@
 
   <!-- 6 -->
   <section id="display">
-    <div class="section-eyebrow"><div class="num">6</div><h2>What Number to Display</h2></div>
+    <div class="section-eyebrow"><div class="num">6</div><h2>What number the app should display</h2></div>
 
     <p>The point prediction is the best guess at the middle of the distribution, so <strong>46.3 percent of orders
-       arrive after it</strong>. That is not a defect. It is what a conditional mean is.</p>
+       arrive after it</strong>. That is how a conditional mean is supposed to behave.</p>
 
-    <p>With late costing three times as much as early, the quantity that minimizes expected cost is not the mean but
-       the quantile at <strong>&#964; = 3 &#247; (3 + 1) = 0.75</strong>, which is the newsvendor result, and gradient
+    <p>With late costing three times as much as early, the quantity that minimizes expected cost moves from the mean
+       to the quantile at <strong>&#964; = 3 &#247; (3 + 1) = 0.75</strong>. That is the newsvendor result, and gradient
        boosting can be fitted directly to that loss.</p>
 
     <div class="table-scroll" tabindex="0">
@@ -354,7 +354,7 @@
 
   <!-- 7 -->
   <section id="matched">
-    <div class="section-eyebrow"><div class="num">7</div><h2>The Same Padding, Spent Differently</h2></div>
+    <div class="section-eyebrow"><div class="num">7</div><h2>The same padding spent on different orders</h2></div>
 
     <p>The conditional 85th percentile pads by 6.82 minutes on average. Give a flat buffer the <strong>same</strong>
        average padding and compare. If the model's uncertainty estimates are worth anything, the two will differ in
@@ -390,40 +390,40 @@
     <p>The overall late rate barely separates the two, and RMSE and MAE differ by a quarter of a minute or less and
        disagree about which is better (RMSE 10.70 against 10.44, MAE 8.51 against 8.68). What separates them is the
        difference between a service level and an average of service levels, and it falls on the same customers every
-       time: the ones who live further out, order at dinner time, or order when it is raining.</p>
+       time, the ones who live further out, order at dinner time, or order when it is raining.</p>
 
     <p>The current +8 policy has the same shape. Its overall figure of 11.8 percent is comfortably inside the target,
-       and it is failing that target for <strong>22.1 percent</strong> of the highest-load orders. The headline number
-       is hiding it.</p>
+       and it is failing that target for <strong>22.1 percent</strong> of the highest-load orders, which the
+       headline number hides.</p>
   </section>
 
   <!-- 8 -->
   <section id="watch">
-    <div class="section-eyebrow"><div class="num">8</div><h2>What to Watch</h2></div>
+    <div class="section-eyebrow"><div class="num">8</div><h2>What to watch</h2></div>
 
     <ul class="checklist">
       <li><span class="ck">&#10003;</span><span><strong>Spend the effort in proportion to what it buys.</strong> Here that was 99 seconds, 19 seconds, and 5 seconds, and the usual order of attention is close to the reverse.</span></li>
       <li><span class="ck">&#10003;</span><span><strong>Engineer what the model cannot derive.</strong> A ratio of two present columns is convenience; an aggregate over other rows is information.</span></li>
-      <li><span class="ck">&#10003;</span><span><strong>Quote the test score, not the validation score.</strong> The one you selected on is usually optimistic by however much the search exploited it, and among the leaders the ranking is noise.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Quote the test score as the model's accuracy.</strong> The validation score is the one you selected on, so it is usually optimistic by however much the search exploited it, and among the leaders the ranking is noise.</span></li>
       <li><span class="ck">&#10003;</span><span><strong>Draw the learning curve before buying more data.</strong> It answers a question people usually argue about instead.</span></li>
-      <li><span class="ck">&#10003;</span><span><strong>Check the residual spread by segment, not just the residual mean.</strong> Unbiased everywhere is compatible with useless somewhere.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>Check the residual spread by segment as well as the residual mean.</strong> Unbiased everywhere is compatible with useless somewhere.</span></li>
       <li><span class="ck">&#10003;</span><span><strong>An average service level is not a service level.</strong> A policy can hit 15 percent overall while failing a quarter of the customers who need it most.</span></li>
-      <li><span class="ck">&#10003;</span><span><strong>When the error is irreducible, communicate it.</strong> The remaining work is not a better point estimate, it is the right interval around it.</span></li>
+      <li><span class="ck">&#10003;</span><span><strong>When the error is irreducible, communicate it.</strong> The remaining work is to put the right interval around the point estimate.</span></li>
     </ul>
   </section>
 
   <!-- 9 -->
   <section id="ml">
-    <div class="section-eyebrow"><div class="num">9</div><h2>Quantiles and Cost in Data Science &amp; AI</h2></div>
+    <div class="section-eyebrow"><div class="num">9</div><h2>Quantiles and cost in data science &amp; AI</h2></div>
 
     <div class="table-scroll" tabindex="0">
       <table class="disp-table">
-        <tr><th>Where it appears</th><th>The same question, in a different costume</th></tr>
-        <tr><td class="nm">Inventory and supply chain</td><td>The original newsvendor problem: stock the quantile set by the ratio of stockout cost to holding cost, not the forecast</td></tr>
-        <tr><td class="nm">Capacity and staffing</td><td>Rostering to the mean leaves a team short roughly half the time; the target is a service level, which is a quantile</td></tr>
+        <tr><th>Where it appears</th><th>The same question in a different costume</th></tr>
+        <tr><td class="nm">Inventory and supply chain</td><td>The original newsvendor problem: stock the quantile set by the ratio of stockout cost to holding cost instead of the forecast</td></tr>
+        <tr><td class="nm">Capacity and staffing</td><td>Rostering to the mean leaves a team short roughly half the time, and the target is a service level, which is a quantile</td></tr>
         <tr><td class="nm">Project estimation</td><td>The reason a schedule slips is that every task was estimated at its mode and summed as if it were a maximum</td></tr>
-        <tr><td class="nm">Energy and load forecasting</td><td>Grid operators buy reserve against a high quantile, because the cost of being short is not the cost of being long</td></tr>
-        <tr><td class="nm">Any user-facing estimate</td><td>Arrival times, wait times, download times: the displayed number is a promise, and a promise is a quantile</td></tr>
+        <tr><td class="nm">Energy and load forecasting</td><td>Grid operators buy reserve against a high quantile, because being short and being long carry different costs</td></tr>
+        <tr><td class="nm">Any user-facing estimate</td><td>For arrival times, wait times and download times, the displayed number is a promise, and a promise is a quantile</td></tr>
       </table>
     </div>
 
@@ -450,7 +450,7 @@
       <div style="display:flex;align-items:center;gap:1.3rem;flex-wrap:wrap;margin-bottom:1.3rem">
         <div class="nb-ic">&#128013;</div>
         <div class="nb-body">
-          <h3>The full project, step by step</h3>
+          <h3>The full project step by step</h3>
           <p>The companion notebook cleans three faults out of the export, splits by time, fits the linear baseline,
              builds and prices the four engineered features, runs the twenty-configuration search and scores it
              honestly, draws the learning curve, breaks the residuals down by segment, fits the quantile models, and
@@ -487,7 +487,7 @@
   <!-- takeaways -->
   <section id="takeaways">
     <div class="takeaways">
-      <h3>&#127891; Key Takeaways</h3>
+      <h3>&#127891; In brief</h3>
       <ul>
         <li><span class="ck">&#10003;</span><span><strong>Features 99 seconds, model family 19, hyperparameters 5.</strong> The effort usually runs in the other order.</span></li>
         <li><span class="ck">&#10003;</span><span><strong>One feature did all of it.</strong> The three the model could have derived were worth 0.10 minutes between them; the cross-row history was worth 1.56.</span></li>
@@ -500,7 +500,7 @@
 
   <!-- quiz -->
   <section id="quiz">
-    <div class="section-eyebrow"><div class="num">&#10067;</div><h2>Quiz: Test Yourself</h2></div>
+    <div class="section-eyebrow"><div class="num">&#10067;</div><h2>Test yourself</h2></div>
     <div id="quiz-root"></div>
   </section>
 
@@ -561,7 +561,7 @@ window.addEventListener('scroll', () => {
       q: "Between 17,231 and 34,462 training orders, test RMSE fell from 8.000 to 7.857 and the train-test gap closed to 0.204. What should the team do?",
       options: ["Collect more orders", "Shuffle the split so the test window looks like training", "Stop collecting more of the same data and communicate the error that remains, since neither more orders nor the tuning search moved it by more than seconds", "Add regularization"],
       answer: 2,
-      explain: "A small gap means more data of this kind will not help, and the tuning search showed little to gain from flexibility. The remaining error is unexplained by these features: some is variation in deliveries, and some may be information the table does not hold."
+      explain: "A small gap means more data of this kind will not help, and the tuning search showed little to gain from flexibility. These features leave the remaining error unexplained. Some of it is variation in deliveries, and some may be information the table does not hold."
     },
     {
       q: "Residual bias is near zero in every segment while the residual spread runs from 4.64 minutes off peak to 11.54 at high load. How should that be read?",
